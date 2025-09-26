@@ -1,5 +1,7 @@
 import LogoGroup from "./LogoGroup";
 import SearchForm from "./SearchForm";
+import menuData from "@/app/data/menu.json";
+import { MenuItem, slugify } from "./menuUtils";
 
 const MobileHeader = () => {
   return (
@@ -65,300 +67,52 @@ const MobileHeader = () => {
             <nav className="main-navigation mb-4" aria-label="Main navigation">
               <div className="menu-main-menu-container">
                 <ul id="responsive-header-collapse" data-accordion="collapse" className="menu nav-menu">
-                  <li className="menu-item has-link-icon">
-                    <a href="#">
-                      <svg className="text-inherit" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
-                        <rect width="256" height="256" fill="none" />
-                        <path d="M152,208V160a8,8,0,0,0-8-8H112a8,8,0,0,0-8,8v48a8,8,0,0,1-8,8H48a8,8,0,0,1-8-8V115.54a8,8,0,0,1,2.62-5.92l80-75.54a8,8,0,0,1,10.77,0l80,75.54a8,8,0,0,1,2.62,5.92V208a8,8,0,0,1-8,8H160A8,8,0,0,1,152,208Z" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="16" />
-                      </svg>
-                      <span>Home</span>
-                    </a>
-                  </li>
-
-                  <li className="menu-item relative menu-item-has-children">
-                    <a href="#">services</a>
-                    <button className="submenu-btn flex-shrink-0" id="accordionOurServices" data-accordion-target="#accordion-collapse-service" aria-controls="accordion-collapse-service">
-                      <span>
-                        <span className="sr-only">show submenu for "services"</span>
-                      </span>
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
-                        <rect width="256" height="256" fill="none" />
-                        <polyline points="208 96 128 176 48 96" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="16" />
-                      </svg>
-                    </button>
-                    {/* submenu start from left */}
-                    <div id="accordion-collapse-service" className="submenu hidden z-10 bg-transparent" aria-labelledby="accordionOurServices">
-                      <div className="[&>div]:p-3 [&_ul]:space-y-1.5">
-                        <div>
-                          <h2 className="submenu-title max-lg:text-sm">Service category</h2>
-                          <ul>
-                            <li className="menu-item">
-                              <a href="#">Service item number #1</a>
-                            </li>
-                            <li className="menu-item">
-                              <a href="#">Service item number #2</a>
-                            </li>
-                            <li className="menu-item">
-                              <a href="#">Service item number #3</a>
-                            </li>
-                            <li className="menu-item">
-                              <a href="#">Service item number #4</a>
-                            </li>
-                            <li className="menu-item">
-                              <a href="#">Service item number #5</a>
-                            </li>
-                            <li className="menu-item">
-                              <a href="#">Service item number #6</a>
-                            </li>
-                            <li className="menu-item">
-                              <a href="#">Service item number #7</a>
-                            </li>
-                            <li className="menu-item">
-                              <a href="#">Service item number #8</a>
-                            </li>
-                            <li className="menu-item">
-                              <a href="#">Service item number #9</a>
-                            </li>
-                            <li className="menu-item">
-                              <a href="#">View all 40 services</a>
-                            </li>
-                          </ul>
-                        </div>
-                        <div>
-                          <h2 className="submenu-title max-lg:text-sm">Service category</h2>
-                          <ul>
-                            <li className="menu-item">
-                              <a href="#">Service item number #1</a>
-                            </li>
-                            <li className="menu-item">
-                              <a href="#">Service item number #2</a>
-                            </li>
-                            <li className="menu-item">
-                              <a href="#">Service item number #3</a>
-                            </li>
-                            <li className="menu-item">
-                              <a href="#">Service item number #4</a>
-                            </li>
-                            <li className="menu-item">
-                              <a href="#">Service item number #5</a>
-                            </li>
-                            <li className="menu-item">
-                              <a href="#">Service item number #6</a>
-                            </li>
-                            <li className="menu-item">
-                              <a href="#">Service item number #7</a>
-                            </li>
-                            <li className="menu-item">
-                              <a href="#">View all 40 services</a>
-                            </li>
-                          </ul>
-                        </div>
-                        <div>
-                          <h2 className="submenu-title max-lg:text-sm">Service category</h2>
-                          <ul>
-                            <li className="menu-item">
-                              <a href="#">Service item number #1</a>
-                            </li>
-                            <li className="menu-item">
-                              <a href="#">Service item number #2</a>
-                            </li>
-                            <li className="menu-item">
-                              <a href="#">Service item number #3</a>
-                            </li>
-                            <li className="menu-item">
-                              <a href="#">Service item number #4</a>
-                            </li>
-                            <li className="menu-item">
-                              <a href="#">Service item number #5</a>
-                            </li>
-                            <li className="menu-item">
-                              <a href="#">Service item number #6</a>
-                            </li>
-                            <li className="menu-item">
-                              <a href="#">Service item number #7</a>
-                            </li>
-                            <li className="menu-item">
-                              <a href="#">View all 20 services</a>
-                            </li>
-                          </ul>
-                        </div>
-                        <div>
-                          <h2 className="submenu-title max-lg:text-sm">Service category</h2>
-                          <ul>
-                            <li className="menu-item">
-                              <a href="#">Service item number #1</a>
-                            </li>
-                            <li className="menu-item">
-                              <a href="#">Service item number #2</a>
-                            </li>
-                            <li className="menu-item">
-                              <a href="#">Service item number #3</a>
-                            </li>
-                            <li className="menu-item">
-                              <a href="#">Service item number #4</a>
-                            </li>
-                            <li className="menu-item">
-                              <a href="#">Service item number #5</a>
-                            </li>
-                            <li className="menu-item">
-                              <a href="#">View all 10 services</a>
-                            </li>
-                          </ul>
-                        </div>
-                      </div>
-                    </div>
-                  </li>
-
-                  <li className="menu-item relative">
-                    <a href="#">A custom link</a>
-                  </li>
-
-                  <li className="menu-item relative menu-item-has-children">
-                    <a href="#">Digital participation</a>
-                    <button className="submenu-btn flex-shrink-0" id="accordionOurDigital" data-accordion-target="#accordion-collapse-digital" aria-controls="accordion-collapse-digital">
-                      <span>
-                        <span className="sr-only">show submenu for "Digital participation"</span>
-                      </span>
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
-                        <rect width="256" height="256" fill="none" />
-                        <polyline points="208 96 128 176 48 96" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="16" />
-                      </svg>
-                    </button>
-                    <div id="accordion-collapse-digital" className="submenu hidden z-10 bg-transparent">
-                      <div className="[&>div]:p-3 [&_ul]:space-y-1.5" aria-labelledby="DigitalParticipationButton">
-                        <div>
-                          <h2 className="submenu-title max-lg:text-sm">Participate</h2>
-                          <ul>
-                            <li className="menu-item">
-                              <a href="#">Events</a>
-                            </li>
-                            <li className="menu-item">
-                              <a href="#">Social media channels</a>
-                            </li>
-                            <li className="menu-item">
-                              <a href="#">Survey and polls</a>
-                            </li>
-                          </ul>
-                        </div>
-                        <div>
-                          <h2 className="submenu-title max-lg:text-sm">Media</h2>
-                          <ul>
-                            <li className="menu-item">
-                              <a href="#">News and press releases</a>
-                            </li>
-                            <li className="menu-item">
-                              <a href="#">Video archives</a>
-                            </li>
-                            <li className="menu-item">
-                              <a href="#">Media gallery</a>
-                            </li>
-                            <li className="menu-item">
-                              <a href="#">Insights and blogs</a>
-                            </li>
-                            <li className="menu-item">
-                              <a href="#">Publications</a>
-                            </li>
-                          </ul>
-                        </div>
-                        <div>
-                          <h2 className="submenu-title max-lg:text-sm">Policies</h2>
-                          <ul>
-                            <li className="menu-item">
-                              <a href="#">Digital participation policy</a>
-                            </li>
-                            <li className="menu-item">
-                              <a href="#">Social media content policy</a>
-                            </li>
-                            <li className="menu-item">
-                              <a href="#">National relationship management</a>
-                            </li>
-                          </ul>
-                        </div>
-                      </div>
-                    </div>
-                  </li>
-
-                  <li className="menu-item relative">
-                    <a href="#">Open data</a>
-                  </li>
-
-                  <li className="menu-item relative menu-item-has-children active-page">
-                    <a href="#" id="AboutUsButton">About us</a>
-                    <button className="submenu-btn flex-shrink-0" id="accordionAbout" data-accordion-target="#accordion-collapse-about" aria-controls="accordion-collapse-about">
-                      <span>
-                        <span className="sr-only">show submenu for "About us"</span>
-                      </span>
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
-                        <rect width="256" height="256" fill="none" />
-                        <polyline points="208 96 128 176 48 96" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="16" />
-                      </svg>
-                    </button>
-                    {/* submenu start from center */}
-                    <div id="accordion-collapse-about" className="submenu hidden z-10 bg-transparent">
-                      <div className="[&>div]:p-3 [&_ul]:space-y-1.5" aria-labelledby="AboutUsButton">
-                        <div>
-                          <ul>
-                            <li className="menu-item">
-                              <a href="#">About the Ministry</a>
-                            </li>
-                            <li className="menu-item">
-                              <a href="#">The Minister</a>
-                            </li>
-                            <li className="menu-item">
-                              <a href="#">Minister of State for
-                                Financial Affairs</a>
-                            </li>
-                            <li className="menu-item">
-                              <a href="#">Organization chart</a>
-                            </li>
-                            <li className="menu-item">
-                              <a href="#">Strategy</a>
-                            </li>
-                            <li className="menu-item">
-                              <a href="#">Awards</a>
-                            </li>
-                            <li className="menu-item">
-                              <a href="#">Contact</a>
-                            </li>
-                          </ul>
-                        </div>
-                      </div>
-                    </div>
-                  </li>
-
-                  <li className="menu-item relative menu-item-has-children">
-                    <a href="#" id="MoreButton">More</a>
-                    <button className="submenu-btn flex-shrink-0" id="accordionMore" data-accordion-target="#accordion-collapse-more" aria-controls="accordion-collapse-more">
-                      <span>
-                        <span className="sr-only">show submenu for "More"</span>
-                      </span>
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
-                        <rect width="256" height="256" fill="none" />
-                        <polyline points="208 96 128 176 48 96" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="16" />
-                      </svg>
-                    </button>
-                    {/* submenu start from center with single or two col */}
-                    <div id="accordion-collapse-more" className="submenu hidden z-10 bg-transparent">
-                      <div className="[&>div]:p-3 [&_ul]:space-y-1.5" aria-labelledby="MoreButton">
-                        <div>
-                          <ul>
-                            <li className="menu-item">
-                              <a href="#">Publications</a>
-                            </li>
-                            <li className="menu-item">
-                              <a href="#">Press contact and media kit</a>
-                            </li>
-                            <li className="menu-item">
-                              <a href="#">Federal debt management office</a>
-                            </li>
-                            <li className="menu-item">
-                              <a href="#">Digital procurement</a>
-                            </li>
-                          </ul>
-                        </div>
-                      </div>
-                    </div>
-                  </li>
+                  {menuData.items.map((item: MenuItem) => {
+                    const id = slugify(item.label);
+                    const hasChildren = !!item.children?.length;
+                    return (
+                      <li key={id} className={`menu-item relative ${hasChildren ? "menu-item-has-children" : ""} ${item.icon ? "has-link-icon" : ""}`}>
+                        <a href={item.href || "#"} id={`${id}Button`}>
+                          {item.icon === "home" && (
+                            <svg className="text-inherit" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+                              <rect width="256" height="256" fill="none" />
+                              <path d="M152,208V160a8,8,0,0,0-8-8H112a8,8,0,0,0-8,8v48a8,8,0,0,1-8,8H48a8,8,0,0,1-8-8V115.54a8,8,0,0,1,2.62-5.92l80-75.54a8,8,0,0,1,10.77,0l80,75.54a8,8,0,0,1,2.62,5.92V208a8,8,0,0,1-8,8H160A8,8,0,0,1,152,208Z" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="16" />
+                            </svg>
+                          )}
+                          <span>{item.label}</span>
+                        </a>
+                        {hasChildren && (
+                          <>
+                            <button className="submenu-btn flex-shrink-0" id={`accordion-${id}`} data-accordion-target={`#accordion-collapse-${id}`} aria-controls={`accordion-collapse-${id}`}>
+                              <span>
+                                <span className="sr-only">show submenu for {item.label}</span>
+                              </span>
+                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+                                <rect width="256" height="256" fill="none" />
+                                <polyline points="208 96 128 176 48 96" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="16" />
+                              </svg>
+                            </button>
+                            <div id={`accordion-collapse-${id}`} className="submenu hidden z-10 bg-transparent" aria-labelledby={`accordion-${id}`}>
+                              <div className="[&>div]:p-3 [&_ul]:space-y-1.5">
+                                {item.children!.map((group, gi) => (
+                                  <div key={`${id}-g-${gi}`}>
+                                    {group.title && <h2 className="submenu-title max-lg:text-sm">{group.title}</h2>}
+                                    <ul>
+                                      {group.links.map((l, li) => (
+                                        <li className="menu-item" key={`${id}-l-${gi}-${li}`}>
+                                          <a href={l.href}>{l.label}</a>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </>
+                        )}
+                      </li>
+                    );
+                  })}
                 </ul>
               </div>
             </nav>
