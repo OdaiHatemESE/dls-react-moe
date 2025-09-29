@@ -16,8 +16,10 @@ import {
   XIcon
 } from './icons';
 import { mockChildren, mockParent } from '../data/mockData';
+import { useI18n } from '@/app/i18n/I18nProvider';
 
 export default function Header() {
+  const { t, locale, setLocale } = useI18n();
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [selectedChild, setSelectedChild] = useState(mockChildren[0]);
@@ -75,6 +77,24 @@ export default function Header() {
 
           {/* Secondary Navigation */}
           <div className="flex items-center space-x-3">
+            {/* Language Switch */}
+            <button
+              className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center gap-2"
+              aria-label={t.common.switchLanguage}
+              onClick={() => setLocale(locale === 'ar' ? 'en' : 'ar')}
+              title={t.common.switchLanguage}
+            >
+              <svg className="w-5 h-5" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" viewBox="0 0 256 256">
+                <rect width="256" height="256" fill="none"></rect>
+                <circle cx="128" cy="128" r="96" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="16"></circle>
+                <path d="M168,128c0,64-40,96-40,96s-40-32-40-96,40-96,40-96S168,64,168,128Z" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="16"></path>
+                <line x1="37.46" y1="96" x2="218.54" y2="96" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="16"></line>
+                <line x1="37.46" y1="160" x2="218.54" y2="160" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="16"></line>
+              </svg>
+              <span className="hidden sm:inline text-sm">{t.common.switchLanguage}</span>
+              <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-gray-200 text-gray-700">{locale.toUpperCase()}</span>
+            </button>
+
             {/* Child Switcher - Desktop */}
             <div className="hidden md:block relative">
               <select 

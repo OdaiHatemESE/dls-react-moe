@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import React from 'react';
 import Link from 'next/link';
@@ -13,18 +13,18 @@ import {
   ChevronRightIcon 
 } from '../components/icons';
 import { mockChildren, mockAnnouncements, mockCalendarEvents } from '../data/mockData';
+import { useI18n } from "@/app/i18n/I18nProvider";
 
 export default function DashboardPage() {
+  const { t, locale } = useI18n();
   const recentAnnouncements = mockAnnouncements.slice(0, 3);
   const upcomingEvents = mockCalendarEvents.slice(0, 3);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-        <p className="mt-1 text-sm text-gray-600">
-          Welcome back! Here&apos;s what&apos;s happening with your children.
-        </p>
+        <h1 className="text-2xl font-bold text-gray-900">{t.dashboard.title}</h1>
+        <p className="mt-1 text-sm text-gray-600">{t.dashboard.welcome}</p>
       </div>
 
       {/* Children Cards */}
@@ -78,14 +78,14 @@ export default function DashboardPage() {
                       style={{ width: `${child.attendanceRate}%` }}
                     />
                   </div>
-                  <p className="text-xs text-gray-600 mt-1">Attendance</p>
+                  <p className="text-xs text-gray-600 mt-1">{t.dashboard.attendance}</p>
                 </div>
                 <div>
                   <div className="flex items-center justify-center mb-2">
                     <GradesIcon className="w-5 h-5 text-blue-600" />
                   </div>
                   <p className="text-2xl font-semibold text-gray-900">{child.latestGrade}</p>
-                  <p className="text-xs text-gray-600">Latest Grade</p>
+                  <p className="text-xs text-gray-600">{t.dashboard.latestGrade}</p>
                 </div>
                 <div>
                   <div className="flex items-center justify-center mb-2">
@@ -97,7 +97,7 @@ export default function DashboardPage() {
                       {child.nextEvent}
                     </p>
                   </div>
-                  <p className="text-xs text-gray-600 mt-1">Next Event</p>
+                  <p className="text-xs text-gray-600 mt-1">{t.dashboard.nextEvent}</p>
                 </div>
               </div>
             </CardContent>
@@ -112,13 +112,13 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center">
                 <AnnouncementsIcon className="w-5 h-5 mr-2 text-orange-600" />
-                Recent Announcements
+                {t.dashboard.recentAnnouncements}
               </CardTitle>
               <Link
                 href="/announcements"
                 className="text-sm text-blue-600 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-md px-2 py-1"
               >
-                View all
+                {t.dashboard.viewAll}
               </Link>
             </div>
           </CardHeader>
@@ -145,7 +145,7 @@ export default function DashboardPage() {
                           {announcement.category}
                         </Badge>
                         <span className="text-xs text-gray-500">
-                          {new Date(announcement.date).toLocaleDateString()}
+                          {new Date(announcement.date).toLocaleDateString(locale)}
                         </span>
                       </div>
                     </div>
@@ -154,7 +154,7 @@ export default function DashboardPage() {
               ))}
               {recentAnnouncements.length === 0 && (
                 <p className="text-sm text-gray-500 text-center py-4">
-                  No recent announcements
+                  {t.dashboard.noRecentAnnouncements}
                 </p>
               )}
             </div>
@@ -167,13 +167,13 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center">
                 <CalendarIcon className="w-5 h-5 mr-2 text-purple-600" />
-                Upcoming Events
+                {t.dashboard.upcomingEvents}
               </CardTitle>
               <Link
                 href="/calendar"
                 className="text-sm text-blue-600 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-md px-2 py-1"
               >
-                View calendar
+                {t.dashboard.viewCalendar}
               </Link>
             </div>
           </CardHeader>
@@ -185,14 +185,12 @@ export default function DashboardPage() {
                     <h4 className="text-sm font-medium text-gray-900 mb-1">
                       {event.title}
                     </h4>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center gap-2">
                       <span className="text-sm text-gray-600">
-                        {new Date(event.date).toLocaleDateString()}
+                        {new Date(event.date).toLocaleDateString(locale)}
                       </span>
                       {event.time && (
-                        <span className="text-sm text-gray-600">
-                          • {event.time}
-                        </span>
+                        <span className="text-sm text-gray-600">• {event.time}</span>
                       )}
                     </div>
                   </div>
@@ -209,7 +207,7 @@ export default function DashboardPage() {
               ))}
               {upcomingEvents.length === 0 && (
                 <p className="text-sm text-gray-500 text-center py-4">
-                  No upcoming events
+                  {t.dashboard.noUpcomingEvents}
                 </p>
               )}
             </div>

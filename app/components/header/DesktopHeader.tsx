@@ -1,10 +1,14 @@
+"use client";
+
 import LogoGroup from "./LogoGroup";
 import SearchForm from "./SearchForm";
 import menuData from "@/app/data/menu.json";
 import { MenuItem, isMegaMenu, slugify } from "./menuUtils";
 import AuthButtons from "@/app/components/AuthButtons";
+import { useI18n } from "@/app/i18n/I18nProvider";
 
 const DesktopHeader = () => {
+  const { t } = useI18n();
   return (
     <div className="header-desktop hidden lg:block">
       <div className="header-top py-3">
@@ -139,10 +143,10 @@ const DesktopHeader = () => {
                       <line x1="37.46" y1="96" x2="218.54" y2="96" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"></line>
                       <line x1="37.46" y1="160" x2="218.54" y2="160" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"></line>
                     </svg>
-                    <span className="sr-only">Switch Language</span>
+                    <span className="sr-only">{t.common.switchLanguage}</span>
                   </a>
                   <div id="tooltip-Switch-language" role="tooltip" className="z-50 aegov-tooltip">
-                    Switch language
+                    {t.common.switchLanguage}
                     <div className="tooltip-arrow" data-popper-arrow=""></div>
                   </div>
                 </li>

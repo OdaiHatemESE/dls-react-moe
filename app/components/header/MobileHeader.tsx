@@ -1,10 +1,14 @@
+"use client";
+
 import LogoGroup from "./LogoGroup";
 import SearchForm from "./SearchForm";
 import menuData from "@/app/data/menu.json";
 import { MenuItem, slugify } from "./menuUtils";
 import AuthButtons from "@/app/components/AuthButtons";
+import { useI18n } from "@/app/i18n/I18nProvider";
 
 const MobileHeader = () => {
+  const { t } = useI18n();
   return (
     <div className="header-mobile lg:hidden">
       <div className="header-top py-2">
@@ -144,7 +148,7 @@ const MobileHeader = () => {
                         <line x1="37.46" y1="96" x2="218.54" y2="96" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"></line>
                         <line x1="37.46" y1="160" x2="218.54" y2="160" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"></line>
                       </svg>
-                      <span>Switch Language</span>
+                      <span>{t.common.switchLanguage}</span>
                     </a>
                   </li>
                 </ul>
