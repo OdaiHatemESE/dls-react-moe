@@ -6,6 +6,7 @@ module.exports = {
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx}",
     "./pages/**/*.{js,ts,jsx,tsx}",
+     './node_modules/@aegov/design-system-react/**/*.{js,jsx,ts,tsx}',
   ],
   future: {
     hoverOnlyWhenSupported: false,
