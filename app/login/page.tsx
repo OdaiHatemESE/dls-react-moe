@@ -1,72 +1,130 @@
-"use client";
-import { useEffect, useRef } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
-import { signIn, useSession } from "next-auth/react";
+'use client';
+
+import React, { useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 
 export default function LoginPage() {
-  const params = useSearchParams();
   const router = useRouter();
-  const { status } = useSession();
-  const startedRef = useRef(false);
-  const callbackUrl = params.get("callbackUrl") ?? "/";
+  const [formData, setFormData] = useState({
+    email: '',
+    password: ''
+  });
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Auto-start the Auth0 sign-in when visiting /login.
-  useEffect(() => {
-    // If already authenticated, go to the intended page directly
-    if (status === "authenticated") {
-      router.replace(callbackUrl);
-      return;
-    }
-    // Avoid multiple triggers; wait until session status is resolved
-    if (!startedRef.current && status !== "loading") {
-      startedRef.current = true;
-      // Initiate the Auth0 flow; NextAuth will handle the redirect
-  void signIn("oidc", { callbackUrl });
-    }
-  }, [status, callbackUrl, router]);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    
+    // Simulate login process
+    setTimeout(() => {
+      setIsLoading(false);
+      router.push('/dashboard');
+    }, 1500);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({
+      ...prev,
+      [e.target.name]: e.target.value
+    }));
+  };
 
   return (
-    <>
-      {/* Fallback content (covered by overlay) */}
-      <main className="min-h-[60vh] flex items-center justify-center p-6">
-        <div className="max-w-md w-full space-y-6 text-center">
-          <h1 className="text-2xl font-semibold">Redirecting…</h1>
-          <p className="text-gray-600">Taking you to the MOE sign-in page.</p>
-          <div>
-            <button
-              onClick={() => signIn("oidc", { callbackUrl })}
-              className="inline-flex items-center px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
-            >
-              Click here if you are not redirected
-            </button>
-          </div>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold text-gray-900">Parent Portal</h1>
+          <p className="mt-2 text-gray-600">Sign in to your account</p>
         </div>
-      </main>
 
-      {/* Full-screen overlay above everything (including header) */}
-      <div className="fixed inset-0 z-[9999] bg-black/50 backdrop-blur-sm flex items-center justify-center p-6">
-        <div
-          role="alert"
-          aria-live="polite"
-          className="w-full max-w-md rounded-lg bg-white dark:bg-neutral-900 shadow-xl p-6 text-center space-y-4"
-        >
-          <div className="flex items-center justify-center gap-3">
-            <span className="inline-block h-5 w-5 rounded-full border-2 border-blue-600 border-t-transparent animate-spin" aria-hidden="true" />
-            <h1 className="text-xl font-semibold">Redirecting to MOE sign-in…</h1>
-          </div>
-          <p className="text-gray-600 dark:text-gray-300">
-            Please wait while we securely connect you to the identity provider.
-          </p>
-          <div>
-            <button
-              onClick={() => signIn("oidc", { callbackUrl })}
-              className="inline-flex items-center px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
-            >
-              Click here if you are not redirected
-            </button>
-          </div>
+        <Card className="mt-8">
+          <CardContent>
+            <form className="space-y-6" onSubmit={handleSubmit}>
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                  Email address
+                </label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Enter your email"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                  Password
+                </label>
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Enter your password"
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <input
+                    id="remember-me"
+                    name="remember-me"
+                    type="checkbox"
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
+                    Remember me
+                  </label>
+                </div>
+
+                <Link
+                  href="/forgot-password"
+                  className="text-sm text-blue-600 hover:text-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-md px-1"
+                >
+                  Forgot your password?
+                </Link>
+              </div>
+
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={isLoading || !formData.email || !formData.password}
+              >
+                {isLoading ? 'Signing in...' : 'Sign in'}
+              </Button>
+            </form>
+
+            <div className="mt-6 text-center">
+              <p className="text-sm text-gray-600">
+                Need help accessing your account?{' '}
+                <Link
+                  href="/support"
+                  className="text-blue-600 hover:text-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-md px-1"
+                >
+                  Contact support
+                </Link>
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="text-center text-xs text-gray-500">
+          <p>Demo credentials: any email and password will work</p>
         </div>
       </div>
-    </>
+    </div>
   );
 }
