@@ -26,10 +26,12 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col bg-white dark:bg-black text-gray-900 dark:text-gray-100`}>
         <AuthProvider>
-          {/* Global Header */}
-          <SiteHeader />
-          <main className="flex-1">{children}</main>
-          <SiteFooter />
+          <IconProvider>
+            {/* Global Header */}
+            <SiteHeader />
+            <main className="flex-1">{children}</main>
+            <SiteFooter />
+          </IconProvider>
         </AuthProvider>
       </body>
     </html>
@@ -40,6 +42,7 @@ export default function RootLayout({
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import AuthProvider from "./components/AuthProvider";
+import IconProvider from "./components/icons/IconProvider";
 
 function SiteHeader() {
   return <Header />;

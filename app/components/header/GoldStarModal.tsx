@@ -1,3 +1,5 @@
+import Image from 'next/image'
+
 const GoldStarModal = () => {
   return (
     <div id="modal-gold-star" tabIndex={-1} aria-hidden="true" className="aegov-modal hidden z-[60]" role="dialog">
@@ -11,7 +13,7 @@ const GoldStarModal = () => {
           </button>
           <div>
             <div className="text-center">
-              <img
+              <Image
                 className="inline-block w-28 md:w-32 lg:w-36 xl:w-40 2xl:w-44 mb-4 xl:mb-6"
                 src="https://designsystem.gov.ae/img/global-star.png"
                 alt="Gold Star Rating"

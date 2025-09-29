@@ -79,26 +79,20 @@ export default function CalendarPage() {
         </div>
         <div className="flex items-center space-x-3">
           <div className="flex bg-gray-100 rounded-lg p-1">
-            <button
+            <Button
+              variant={viewMode === 'month' ? 'default' : 'ghost'}
+              size="sm"
               onClick={() => setViewMode('month')}
-              className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
-                viewMode === 'month' 
-                  ? 'bg-white text-gray-900 shadow-sm' 
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
             >
               Month
-            </button>
-            <button
+            </Button>
+            <Button
+              variant={viewMode === 'list' ? 'default' : 'ghost'}
+              size="sm"
               onClick={() => setViewMode('list')}
-              className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
-                viewMode === 'list' 
-                  ? 'bg-white text-gray-900 shadow-sm' 
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
             >
               List
-            </button>
+            </Button>
           </div>
           <div className="relative">
             <Button variant="outline" size="sm" className="flex items-center space-x-2">
@@ -119,26 +113,18 @@ export default function CalendarPage() {
                 {selectedMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
               </CardTitle>
               <div className="flex items-center space-x-2">
-                <button
-                  onClick={() => navigateMonth('prev')}
-                  className="p-2 text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-md"
-                  aria-label="Previous month"
-                >
+                <Button variant="ghost" size="icon" onClick={() => navigateMonth('prev')} aria-label="Previous month">
                   <ChevronRightIcon className="w-4 h-4 transform rotate-180" />
-                </button>
+                </Button>
                 <button
                   onClick={() => setSelectedMonth(new Date())}
                   className="px-3 py-1 text-sm font-medium text-gray-600 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-md"
                 >
                   Today
                 </button>
-                <button
-                  onClick={() => navigateMonth('next')}
-                  className="p-2 text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-md"
-                  aria-label="Next month"
-                >
+                <Button variant="ghost" size="icon" onClick={() => navigateMonth('next')} aria-label="Next month">
                   <ChevronRightIcon className="w-4 h-4" />
-                </button>
+                </Button>
               </div>
             </div>
           </CardHeader>
@@ -282,20 +268,21 @@ export default function CalendarPage() {
 
       {/* Quick Export Actions */}
       <div className="mt-6 flex justify-center space-x-4">
-        <button
+        <Button
           onClick={() => handleExport('google')}
-          className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+          className="flex items-center space-x-2"
         >
           <ExportIcon className="w-4 h-4" />
           <span>Export to Google Calendar</span>
-        </button>
-        <button
+        </Button>
+        <Button
           onClick={() => handleExport('outlook')}
-          className="flex items-center space-x-2 px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"
+          variant="secondary"
+          className="flex items-center space-x-2"
         >
           <ExportIcon className="w-4 h-4" />
           <span>Export to Outlook</span>
-        </button>
+        </Button>
       </div>
     </div>
   );

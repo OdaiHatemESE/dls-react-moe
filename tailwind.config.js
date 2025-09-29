@@ -1,7 +1,8 @@
-const defaultTheme = require('tailwindcss/defaultTheme')
+import defaultTheme from 'tailwindcss/defaultTheme'
+import animate from 'tailwindcss-animate'
 
 /** @type {import('tailwindcss').Config} */
-module.exports = {
+const config = {
     darkMode: ["class"],
     content: [
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
@@ -81,16 +82,15 @@ module.exports = {
   		}
   	}
   },
-  plugins: [
-    require("@aegov/design-system"),
-    require('@tailwindcss/typography'),
-    require('@tailwindcss/forms'),
-    function ({ addUtilities }) {
+	plugins: [
+		function ({ addUtilities }) {
       addUtilities({
         '.direction-rtl': { direction: 'rtl' },
         '.direction-ltr': { direction: 'ltr' },
       })
     },
-      require("tailwindcss-animate")
+			animate
 ],
 }
+
+export default config

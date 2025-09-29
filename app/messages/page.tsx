@@ -4,12 +4,29 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import { EmptyState } from '../components/custom/States';
 import { 
   MessagesIcon, 
   PlusIcon, 
   SearchIcon,
-  XIcon
+  
 } from '../components/icons';
 import { mockMessageThreads, mockMessages } from '../data/mockData';
 
@@ -76,12 +93,11 @@ export default function MessagesPage() {
               {/* Search */}
               <div className="relative">
                 <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type="text"
+                <Input
                   placeholder="Search conversations..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="pl-10"
                 />
               </div>
             </CardHeader>
@@ -182,10 +198,9 @@ export default function MessagesPage() {
                 {/* Reply Form */}
                 <div className="border-t border-gray-200 p-4">
                   <form className="flex space-x-2">
-                    <input
-                      type="text"
+                    <Input
                       placeholder="Type your message..."
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="flex-1"
                     />
                     <Button type="submit" size="sm">
                       Send
@@ -207,84 +222,57 @@ export default function MessagesPage() {
       </div>
 
       {/* New Message Modal */}
-      {showNewMessageModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <Card className="w-full max-w-md">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>New Message</CardTitle>
-                <button
-                  onClick={() => setShowNewMessageModal(false)}
-                  className="text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-md p-1"
-                >
-                  <XIcon className="w-5 h-5" />
-                </button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSendMessage} className="space-y-4">
-                <div>
-                  <label htmlFor="to" className="block text-sm font-medium text-gray-700 mb-1">
-                    To
-                  </label>
-                  <select
-                    id="to"
-                    value={newMessage.to}
-                    onChange={(e) => setNewMessage(prev => ({ ...prev, to: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    required
-                  >
-                    <option value="">Select a teacher...</option>
-                    <option value="ms-martinez">Ms. Martinez</option>
-                    <option value="mr-thompson">Mr. Thompson</option>
-                    <option value="school-nurse">School Nurse</option>
-                  </select>
-                </div>
-                <div>
-                  <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-1">
-                    Subject
-                  </label>
-                  <input
-                    type="text"
-                    id="subject"
-                    value={newMessage.subject}
-                    onChange={(e) => setNewMessage(prev => ({ ...prev, subject: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Enter subject..."
-                    required
-                  />
-                </div>
-                <div>
-                  <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-1">
-                    Message
-                  </label>
-                  <textarea
-                    id="content"
-                    rows={4}
-                    value={newMessage.content}
-                    onChange={(e) => setNewMessage(prev => ({ ...prev, content: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Type your message..."
-                    required
-                  />
-                </div>
-                <div className="flex space-x-3">
-                  <Button type="submit" className="flex-1">
-                    Send Message
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setShowNewMessageModal(false)}
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+      <Dialog open={showNewMessageModal} onOpenChange={setShowNewMessageModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>New Message</DialogTitle>
+            <DialogDescription>Start a conversation with a teacher or staff member.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleSendMessage} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">To</label>
+              <Select
+                value={newMessage.to}
+                onValueChange={(val) => setNewMessage((prev) => ({ ...prev, to: val }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a teacher..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ms-martinez">Ms. Martinez</SelectItem>
+                  <SelectItem value="mr-thompson">Mr. Thompson</SelectItem>
+                  <SelectItem value="school-nurse">School Nurse</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Subject</label>
+              <Input
+                value={newMessage.subject}
+                onChange={(e) => setNewMessage((prev) => ({ ...prev, subject: e.target.value }))}
+                placeholder="Enter subject..."
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Message</label>
+              <Textarea
+                rows={4}
+                value={newMessage.content}
+                onChange={(e) => setNewMessage((prev) => ({ ...prev, content: e.target.value }))}
+                placeholder="Type your message..."
+                required
+              />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setShowNewMessageModal(false)}>
+                Cancel
+              </Button>
+              <Button type="submit">Send Message</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

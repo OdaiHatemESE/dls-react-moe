@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AttendanceBadge, AssignmentStatusBadge } from '../../components/custom/Badge';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Breadcrumb } from '../../components/custom/Breadcrumb';
 import { EmptyState } from '../../components/custom/States';
 import { 
@@ -25,6 +26,7 @@ import {
 export default function ChildDetailPage() {
   const params = useParams();
   const childId = params.id as string;
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState('overview');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -79,51 +81,113 @@ export default function ChildDetailPage() {
         className="mb-6"
       />
 
-      {/* Child Header */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">{child.name}</h1>
-            <p className="mt-1 text-sm text-gray-600">
-              {child.grade} • {child.classroom} • {child.teacher}
-            </p>
-          </div>
-          <div className="text-right">
-            <p className="text-sm text-gray-600">Attendance Rate</p>
-            <p className="text-2xl font-bold text-green-600">{child.attendanceRate}%</p>
-          </div>
-        </div>
+      {/* Mobile child switcher */}
+      <div className="lg:hidden mb-6">
+        <label htmlFor="child-switcher" className="block text-sm font-medium text-gray-700 mb-1">
+          Select child
+        </label>
+        <select
+          id="child-switcher"
+          value={childId}
+          onChange={(e) => router.push(`/child/${e.target.value}`)}
+          className="appearance-none w-full bg-white border border-gray-300 rounded-md px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        >
+          {mockChildren.map((c) => (
+            <option key={c.id} value={c.id}>{c.name}</option>
+          ))}
+        </select>
       </div>
 
-      {/* Tabs */}
-      <div className="border-b border-gray-200 mb-8">
-        <nav className="-mb-px flex space-x-8" aria-label="Tabs">
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center space-x-2 py-2 px-1 border-b-2 font-medium text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-white rounded-t-md ${
-                  isActive
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-                aria-current={isActive ? 'page' : undefined}
-              >
-                <Icon className="w-4 h-4" />
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
-        </nav>
-      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {/* Children list (desktop) */}
+        <aside className="hidden lg:block lg:col-span-3">
+          <Card>
+            <CardHeader>
+              <CardTitle>Your Children</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <nav className="space-y-2" aria-label="Children list">
+                {mockChildren.map((c) => {
+                  const isActiveChild = c.id === childId;
+                  return (
+                    <button
+                      key={c.id}
+                      onClick={() => router.push(`/child/${c.id}`)}
+                      className={`w-full text-left flex items-center gap-3 px-3 py-2 rounded-md border transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        isActiveChild
+                          ? 'bg-blue-50 border-blue-200 text-blue-700'
+                          : 'bg-white border-gray-200 hover:bg-gray-50 text-gray-700'
+                      }`}
+                      aria-current={isActiveChild ? 'page' : undefined}
+                    >
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={c.avatar} alt={c.name} />
+                        <AvatarFallback>
+                          {c.name.split(' ').map((n) => n[0]).slice(0, 2).join('')}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <p className={`truncate text-sm font-medium ${isActiveChild ? 'text-blue-800' : 'text-gray-900'}`}>{c.name}</p>
+                        <p className="truncate text-xs text-gray-500">{c.grade}</p>
+                      </div>
+                      <div className="text-right">
+                        <span className={`text-xs font-medium ${c.attendanceRate >= 90 ? 'text-green-600' : 'text-amber-600'}`}>{c.attendanceRate}%</span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </nav>
+            </CardContent>
+          </Card>
+        </aside>
 
-      {/* Tab Content */}
-      {activeTab === 'overview' && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Main content */}
+        <section className="lg:col-span-9">
+          {/* Child Header */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">{child.name}</h1>
+                <p className="mt-1 text-sm text-gray-600">
+                  {child.grade} • {child.classroom} • {child.teacher}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-sm text-gray-600">Attendance Rate</p>
+                <p className="text-2xl font-bold text-green-600">{child.attendanceRate}%</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Tabs */}
+          <div className="border-b border-gray-200 mb-8">
+            <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+              {tabs.map((tab) => {
+                const Icon = tab.icon;
+                const isActive = activeTab === tab.id;
+                
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`flex items-center space-x-2 py-2 px-1 border-b-2 font-medium text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-white rounded-t-md ${
+                      isActive
+                        ? 'border-blue-500 text-blue-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    }`}
+                    aria-current={isActive ? 'page' : undefined}
+                  >
+                    <Icon className="w-4 h-4" />
+                    <span>{tab.label}</span>
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
+
+          {/* Tab Content */}
+          {activeTab === 'overview' && (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Attendance Summary */}
           <Card>
             <CardHeader>
@@ -219,10 +283,10 @@ export default function ChildDetailPage() {
             </CardContent>
           </Card>
         </div>
-      )}
+          )}
 
-      {activeTab === 'attendance' && (
-        <Card>
+          {activeTab === 'attendance' && (
+            <Card>
           <CardHeader>
             <CardTitle>Attendance Calendar</CardTitle>
             <p className="text-sm text-gray-600">Monthly view of attendance records</p>
@@ -272,11 +336,11 @@ export default function ChildDetailPage() {
               ))}
             </div>
           </CardContent>
-        </Card>
-      )}
+            </Card>
+          )}
 
-      {activeTab === 'grades' && (
-        <Card>
+          {activeTab === 'grades' && (
+            <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
@@ -350,11 +414,11 @@ export default function ChildDetailPage() {
               </table>
             </div>
           </CardContent>
-        </Card>
-      )}
+            </Card>
+          )}
 
-      {activeTab === 'assignments' && (
-        <Card>
+          {activeTab === 'assignments' && (
+            <Card>
           <CardHeader>
             <CardTitle>Assignments</CardTitle>
             <p className="text-sm text-gray-600">All assignments with due dates and status</p>
@@ -387,8 +451,10 @@ export default function ChildDetailPage() {
               ))}
             </div>
           </CardContent>
-        </Card>
-      )}
+            </Card>
+          )}
+        </section>
+      </div>
     </div>
   );
 }

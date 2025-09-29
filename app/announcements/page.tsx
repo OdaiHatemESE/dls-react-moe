@@ -2,7 +2,10 @@
 
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { EmptyState } from '../components/custom/States';
 import { 
   AnnouncementsIcon, 
@@ -46,44 +49,45 @@ export default function AnnouncementsPage() {
             {/* Search */}
             <div className="relative">
               <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input
-                type="text"
+              <Input
                 placeholder="Search announcements..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="pl-10"
               />
             </div>
 
             {/* Category Filter */}
             <div className="relative">
               <FilterIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none"
-              >
-                {categories.map(category => (
-                  <option key={category} value={category}>
-                    {category === 'all' ? 'All Categories' : category.charAt(0).toUpperCase() + category.slice(1)}
-                  </option>
-                ))}
-              </select>
+              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                <SelectTrigger className="pl-10">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category === 'all' ? 'All Categories' : category.charAt(0).toUpperCase() + category.slice(1)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Tag Filter */}
-            <select
-              value={selectedTag}
-              onChange={(e) => setSelectedTag(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="all">All Tags</option>
-              {allTags.map(tag => (
-                <option key={tag} value={tag}>
-                  {tag.charAt(0).toUpperCase() + tag.slice(1)}
-                </option>
-              ))}
-            </select>
+            <Select value={selectedTag} onValueChange={setSelectedTag}>
+              <SelectTrigger>
+                <SelectValue placeholder="All Tags" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Tags</SelectItem>
+                {allTags.map((tag) => (
+                  <SelectItem key={tag} value={tag}>
+                    {tag.charAt(0).toUpperCase() + tag.slice(1)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </CardContent>
       </Card>
@@ -144,9 +148,7 @@ export default function AnnouncementsPage() {
                 {announcement.category === 'urgent' && (
                   <div className="ml-4">
                     <div className="flex items-center justify-center w-12 h-12 bg-red-100 rounded-full">
-                      <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                      </svg>
+                      <AnnouncementsIcon className="w-6 h-6 text-red-600" />
                     </div>
                   </div>
                 )}
@@ -181,9 +183,7 @@ export default function AnnouncementsPage() {
       {/* Load More (Pagination Placeholder) */}
       {filteredAnnouncements.length > 10 && (
         <div className="mt-8 text-center">
-          <button className="px-6 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-            Load More Announcements
-          </button>
+          <Button variant="outline">Load More Announcements</Button>
         </div>
       )}
     </div>
