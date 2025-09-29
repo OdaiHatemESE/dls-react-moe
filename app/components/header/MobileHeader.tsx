@@ -2,6 +2,7 @@ import LogoGroup from "./LogoGroup";
 import SearchForm from "./SearchForm";
 import menuData from "@/app/data/menu.json";
 import { MenuItem, slugify } from "./menuUtils";
+import AuthButtons from "@/app/components/AuthButtons";
 
 const MobileHeader = () => {
   return (
@@ -38,6 +39,7 @@ const MobileHeader = () => {
         <div className="w-full">
           <div className="w-full max-lg:px-4 flex items-center justify-between gap-4 mb-4">
             <a href="#">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="https://designsystem.gov.ae/img/logo-ministry.svg" alt="logo" width={150} />
             </a>
             <div className="flex items-center gap-4">
@@ -121,14 +123,7 @@ const MobileHeader = () => {
               <div>
                 <ul className="header-common-links">
                   <li>
-                    <a href="#">
-                      <svg className="flex-shrink-0 w-5 h-5 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
-                        <rect width="256" height="256" fill="none" />
-                        <circle cx="128" cy="96" r="64" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="16" />
-                        <path d="M32,216c19.37-33.47,54.55-56,96-56s76.63,22.53,96,56" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="16" />
-                      </svg>
-                      <span>Login</span>
-                    </a>
+                    <AuthButtons />
                   </li>
                   <li>
                     <a href="#">

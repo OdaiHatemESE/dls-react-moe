@@ -2,6 +2,7 @@ import LogoGroup from "./LogoGroup";
 import SearchForm from "./SearchForm";
 import menuData from "@/app/data/menu.json";
 import { MenuItem, isMegaMenu, slugify } from "./menuUtils";
+import AuthButtons from "@/app/components/AuthButtons";
 
 const DesktopHeader = () => {
   return (
@@ -106,18 +107,7 @@ const DesktopHeader = () => {
             <div className="header-navs-right">
               <ul className="flex items-center">
                 <li>
-                  <a href="#" data-tooltip-placement="bottom" data-tooltip-target="tooltip-login" className="lg:h-12 xl:h-14 lg:px-2 xl:px-3 flex items-center justify-center flex-shrink-0">
-                    <svg className="flex-shrink-0 w-6 h-6 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
-                      <rect width="256" height="256" fill="none" />
-                      <circle cx="128" cy="96" r="64" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="16" />
-                      <path d="M32,216c19.37-33.47,54.55-56,96-56s76.63,22.53,96,56" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="16" />
-                    </svg>
-                    <span className="sr-only">Login</span>
-                  </a>
-                  <div id="tooltip-login" role="tooltip" className="z-50 aegov-tooltip">
-                    Login
-                    <div className="tooltip-arrow" data-popper-arrow=""></div>
-                  </div>
+                  <AuthButtons />
                 </li>
                 <li>
                   <a href="#" data-tooltip-placement="bottom" data-tooltip-target="tooltip-accessibility" className="lg:h-12 xl:h-14 lg:px-2 xl:px-3 flex items-center justify-center flex-shrink-0">

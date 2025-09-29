@@ -24,12 +24,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col bg-white dark:bg-black text-gray-900 dark:text-gray-100`}>        
-  {/* Global Header */}
-  {/** Using direct import for Header component */}
-        <SiteHeader />
-        <main className="flex-1">{children}</main>
-        <SiteFooter />
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col bg-white dark:bg-black text-gray-900 dark:text-gray-100`}>
+        <AuthProvider>
+          {/* Global Header */}
+          <SiteHeader />
+          <main className="flex-1">{children}</main>
+          <SiteFooter />
+        </AuthProvider>
       </body>
     </html>
   );
@@ -38,6 +39,7 @@ export default function RootLayout({
 // Local imports placed after component to avoid hoist issues in app dir
 import Header from "./components/Header";
 import Footer from "./components/Footer";
+import AuthProvider from "./components/AuthProvider";
 
 function SiteHeader() {
   return <Header />;
