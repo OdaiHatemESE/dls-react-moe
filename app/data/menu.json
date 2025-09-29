@@ -1,126 +1,50 @@
 {
   "items": [
-    { "label": "Home", "href": "/", "icon": "home" },
-    {
-      "label": "Services",
-      "children": [
-        {
-          "title": "Service category",
-          "links": [
-            { "label": "Service item number #1", "href": "#" },
-            { "label": "Service item number #2", "href": "#" },
-            { "label": "Service item number #3", "href": "#" },
-            { "label": "Service item number #4", "href": "#" },
-            { "label": "Service item number #5", "href": "#" },
-            { "label": "Service item number #6", "href": "#" },
-            { "label": "Service item number #7", "href": "#" },
-            { "label": "Service item number #8", "href": "#" },
-            { "label": "Service item number #9", "href": "#" },
-            { "label": "View all 40 services", "href": "#" }
-          ]
-        },
-        {
-          "title": "Service category",
-          "links": [
-            { "label": "Service item number #1", "href": "#" },
-            { "label": "Service item number #2", "href": "#" },
-            { "label": "Service item number #3", "href": "#" },
-            { "label": "Service item number #4", "href": "#" },
-            { "label": "Service item number #5", "href": "#" },
-            { "label": "Service item number #6", "href": "#" },
-            { "label": "Service item number #7", "href": "#" },
-            { "label": "View all 40 services", "href": "#" }
-          ]
-        },
-        {
-          "title": "Service category",
-          "links": [
-            { "label": "Service item number #1", "href": "#" },
-            { "label": "Service item number #2", "href": "#" },
-            { "label": "Service item number #3", "href": "#" },
-            { "label": "Service item number #4", "href": "#" },
-            { "label": "Service item number #5", "href": "#" },
-            { "label": "Service item number #6", "href": "#" },
-            { "label": "Service item number #7", "href": "#" },
-            { "label": "View all 20 services", "href": "#" }
-          ]
-        },
-        {
-          "title": "Service category",
-          "links": [
-            { "label": "Service item number #1", "href": "#" },
-            { "label": "Service item number #2", "href": "#" },
-            { "label": "Service item number #3", "href": "#" },
-            { "label": "Service item number #4", "href": "#" },
-            { "label": "Service item number #5", "href": "#" },
-            { "label": "View all 10 services", "href": "#" }
-          ]
-        }
-      ]
-    },
-    { "label": "A custom link", "href": "#" },
-    {
-      "label": "Digital participation",
-      "children": [
-        {
-          "title": "Participate",
-          "links": [
-            { "label": "Events", "href": "#" },
-            { "label": "Social media channels", "href": "#" },
-            { "label": "Survey and polls", "href": "#" }
-          ]
-        },
-        {
-          "title": "Media",
-          "links": [
-            { "label": "News and press releases", "href": "#" },
-            { "label": "Video archives", "href": "#" },
-            { "label": "Media gallery", "href": "#" },
-            { "label": "Insights and blogs", "href": "#" },
-            { "label": "Publications", "href": "#" }
-          ]
-        },
-        {
-          "title": "Policies",
-          "links": [
-            { "label": "Digital participation policy", "href": "#" },
-            { "label": "Social media content policy", "href": "#" },
-            { "label": "National relationship management", "href": "#" }
-          ]
-        }
-      ]
-    },
-    { "label": "Open data", "href": "#" },
-    {
-      "label": "About",
-      "children": [
-        {
-          "title": null,
-          "links": [
-            { "label": "About the Ministry", "href": "#" },
-            { "label": "The Minister", "href": "#" },
-            { "label": "Minister of State for\n                                Financial Affairs", "href": "#" },
-            { "label": "Organization chart", "href": "#" },
-            { "label": "Strategy", "href": "#" },
-            { "label": "Awards", "href": "#" },
-            { "label": "Contact", "href": "#" }
-          ]
-        }
-      ]
-    },
-    {
-      "label": "More",
-      "children": [
-        {
-          "title": null,
-          "links": [
-            { "label": "Publications", "href": "#" },
-            { "label": "Press contact and media kit", "href": "#" },
-            { "label": "Federal debt management office", "href": "#" },
-            { "label": "Digital procurement", "href": "#" }
-          ]
-        }
-      ]
-    }
-  ]
+    { "label": "Home", "href": "/", "icon": "home" }
+  ],
+  "footer": {
+    "groups": [
+      {
+        "title": "The Ministry",
+        "links": [
+          { "label": "About the ministry", "href": "/about-ministry" },
+          { "label": "About the minister", "href": "/about-minister" },
+          { "label": "The UAE charter for Future Services", "href": "/uae-charter-future-services" },
+          { "label": "Customer happiness charter", "href": "/customer-happiness-charter" },
+          { "label": "Awards", "href": "/awards" },
+          { "label": "Careers", "href": "/careers" },
+          { "label": "Procurement", "href": "/procurement" }
+        ]
+      },
+      {
+        "title": "Using the website",
+        "links": [
+          { "label": "Sitemap", "href": "/sitemap" },
+          { "label": "Disclaimer", "href": "/disclaimer" },
+          { "label": "Privacy policy", "href": "/privacy-policy" },
+          { "label": "Terms and conditions", "href": "/terms" },
+          { "label": "Accessibility", "href": "/accessibility" },
+          { "label": "Digital participation policy", "href": "/digital-participation-policy" }
+        ]
+      },
+      {
+        "title": "Information and support",
+        "links": [
+          { "label": "Services catalogue", "href": "/services-catalogue" },
+          { "label": "Media centre", "href": "/media-centre" },
+          { "label": "Contact us", "href": "/contact" },
+          { "label": "FAQ’s", "href": "/faqs" },
+          { "label": "Feedback and complaints", "href": "/feedback-complaints" }
+        ]
+      },
+      {
+        "title": "References",
+        "links": [
+          { "label": "Regulations", "href": "/regulations" },
+          { "label": "Media kit", "href": "/media-kit" },
+          { "label": "Abbreviations and glossary", "href": "/abbreviations-glossary" }
+        ]
+      }
+    ]
+  }
 }
