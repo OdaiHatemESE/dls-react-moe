@@ -109,7 +109,11 @@ export async function getStudentsBasic(ids: string[]): Promise<StudentBasic[]> {
 
   for (const id of ids) {
     try {
-      const data = await orFetch<any>(`/v1p1/persons/${encodeURIComponent(id)}`, "read");
+      
+      const data = await orFetch<any>(`/v1p1/persons?filter=person=${encodeURIComponent(id)}`, "read");
+      if (!data) continue;
+
+      
 
       // Normalize to an array of records
       const arr = Array.isArray(data) ? data : [data];
@@ -159,7 +163,7 @@ export async function getStudentsFull(ids: string[]): Promise<any[]> {
 
   for (const id of ids) {
     try {
-      const data = await orFetch<any>(`/v1p1/persons/${encodeURIComponent(id)}`, "read");
+      const data = await orFetch<any>(`/v1p1/persons?filter=person=${encodeURIComponent(id)}`, "read");
       // Some vendors return a single object; yours returns an ARRAY like [{ persons: {...} }]
       if (Array.isArray(data)) {
         all.push(...data);

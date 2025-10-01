@@ -6,7 +6,7 @@ import { orFetch } from "@/lib/oneroster";
 export const dynamic = "force-dynamic";
 
 async function getFullPersonById(id: string) {
-  const data = await orFetch<unknown>(`/v1p1/persons/${encodeURIComponent(id)}`, "read");
+  const data = await orFetch<unknown>(`/v1p1/persons?filter=identifier='784201625741588'}`, "read");
   return Array.isArray(data) ? data : [data];
 }
 
@@ -74,7 +74,7 @@ export async function GET(req: Request) {
     }
 
     // 2) Fetch FULL record to determine role
-    const parentOrStudentFull = await getFullPersonById(person.sourcedId);
+    const parentOrStudentFull = await getFullPersonById('784201625741588');
     const role = pickRole(parentOrStudentFull)?.toString().toLowerCase() || "";
 
     if (role.includes("student")) {
