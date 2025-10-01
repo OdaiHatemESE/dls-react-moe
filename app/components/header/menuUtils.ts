@@ -2,6 +2,7 @@ export interface MenuLink {
   label: string;
   href: string;
   icon?: string;
+  key?: string;
 }
 
 export interface MenuGroup {
@@ -13,6 +14,7 @@ export interface MenuItem {
   label: string;
   href?: string;
   icon?: string;
+  key?: string;
   children?: MenuGroup[];
 }
 
@@ -28,4 +30,4 @@ export const slugify = (s: string) =>
     .replace(/--+/g, "-")
     .replace(/^-+|-+$/g, "");
 
-export const isMegaMenu = (label: string) => slugify(label) === "services";
+export const isMegaMenu = (item: MenuItem) => (item.key === "services") || slugify(item.label) === "services";

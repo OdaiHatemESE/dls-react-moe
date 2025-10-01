@@ -1,5 +1,6 @@
 import defaultTheme from 'tailwindcss/defaultTheme'
 import animate from 'tailwindcss-animate'
+import plugin from 'tailwindcss/plugin'
 
 /** @type {import('tailwindcss').Config} */
 const config = {
@@ -89,6 +90,34 @@ const config = {
         '.direction-ltr': { direction: 'ltr' },
       })
     },
+		plugin(function ({ matchUtilities, theme }) {
+			// Logical margins: margin-inline-start/end (ms-*, me-*)
+			matchUtilities(
+				{
+					ms: (value) => ({ marginInlineStart: value }),
+					me: (value) => ({ marginInlineEnd: value }),
+				},
+				{ values: theme('margin'), supportsNegativeValues: true }
+			)
+
+			// Logical paddings: padding-inline-start/end (ps-*, pe-*)
+			matchUtilities(
+				{
+					ps: (value) => ({ paddingInlineStart: value }),
+					pe: (value) => ({ paddingInlineEnd: value }),
+				},
+				{ values: theme('spacing') }
+			)
+
+			// Logical inset for positioning badges, etc. (is-*, ie-*)
+			matchUtilities(
+				{
+					is: (value) => ({ insetInlineStart: value }),
+					ie: (value) => ({ insetInlineEnd: value }),
+				},
+				{ values: theme('inset'), supportsNegativeValues: true }
+			)
+		}),
 			animate
 ],
 }

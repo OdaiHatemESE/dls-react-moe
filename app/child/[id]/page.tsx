@@ -22,8 +22,11 @@ import {
   mockGrades, 
   mockAssignments 
 } from '../../data/mockData';
+import { useI18n } from '@/app/i18n/I18nProvider';
+import clsx from 'clsx';
 
 export default function ChildDetailPage() {
+  const { t, locale } = useI18n();
   const params = useParams();
   const childId = params.id as string;
   const router = useRouter();
@@ -34,13 +37,13 @@ export default function ChildDetailPage() {
 
   if (!child) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className={clsx('max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8', locale === 'ar' && 'direction-rtl')}>
         <EmptyState
-          title="Child Not Found"
-          description="The child you're looking for doesn't exist or you don't have access to view their information."
+          title={t.child.notFoundTitle}
+          description={t.child.notFoundDesc}
           action={{
-            label: 'Go to Dashboard',
-            onClick: () => window.location.href = '/dashboard'
+            label: t.child.goToDashboard,
+            onClick: () => (window.location.href = '/dashboard'),
           }}
         />
       </div>
@@ -71,11 +74,11 @@ export default function ChildDetailPage() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className={clsx('max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8', locale === 'ar' && 'direction-rtl')}>
       {/* Breadcrumb */}
       <Breadcrumb
         items={[
-          { label: 'Children', href: '/dashboard' },
+          { label: t.child.breadcrumbChildren, href: '/dashboard' },
           { label: child.name }
         ]}
         className="mb-6"
@@ -84,7 +87,7 @@ export default function ChildDetailPage() {
       {/* Mobile child switcher */}
       <div className="lg:hidden mb-6">
         <label htmlFor="child-switcher" className="block text-sm font-medium text-gray-700 mb-1">
-          Select child
+          {t.child.selectChild}
         </label>
         <select
           id="child-switcher"
@@ -103,7 +106,7 @@ export default function ChildDetailPage() {
         <aside className="hidden lg:block lg:col-span-3">
           <Card>
             <CardHeader>
-              <CardTitle>Your Children</CardTitle>
+              <CardTitle>{t.child.yourChildren}</CardTitle>
             </CardHeader>
             <CardContent>
               <nav className="space-y-2" aria-label="Children list">
@@ -153,7 +156,7 @@ export default function ChildDetailPage() {
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-sm text-gray-600">Attendance Rate</p>
+                <p className="text-sm text-gray-600">{t.child.attendanceRate}</p>
                 <p className="text-2xl font-bold text-green-600">{child.attendanceRate}%</p>
               </div>
             </div>
@@ -161,7 +164,7 @@ export default function ChildDetailPage() {
 
           {/* Tabs */}
           <div className="border-b border-gray-200 mb-8">
-            <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+            <nav className={clsx('-mb-px flex gap-8')} aria-label="Tabs">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.id;
@@ -170,7 +173,7 @@ export default function ChildDetailPage() {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`flex items-center space-x-2 py-2 px-1 border-b-2 font-medium text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-white rounded-t-md ${
+                    className={`flex items-center gap-2 py-2 px-1 border-b-2 font-medium text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-white rounded-t-md ${
                       isActive
                         ? 'border-blue-500 text-blue-600'
                         : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -178,7 +181,7 @@ export default function ChildDetailPage() {
                     aria-current={isActive ? 'page' : undefined}
                   >
                     <Icon className="w-4 h-4" />
-                    <span>{tab.label}</span>
+                    <span>{t.child.tabs[tab.id as keyof typeof t.child.tabs]}</span>
                   </button>
                 );
               })}
@@ -192,29 +195,29 @@ export default function ChildDetailPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
-                <AttendanceIcon className="w-5 h-5 mr-2 text-green-600" />
-                Attendance Summary
+                <AttendanceIcon className="w-5 h-5 me-2 text-green-600" />
+                {t.child.attendanceSummary}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Present</span>
-                  <div className="flex items-center space-x-2">
+                  <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">{t.child.present}</span>
+                    <div className="flex items-center gap-2">
                     <span className="text-sm font-medium">{attendanceStats.present}</span>
                     <AttendanceBadge status="present" />
                   </div>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Late</span>
-                  <div className="flex items-center space-x-2">
+                  <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">{t.child.late}</span>
+                    <div className="flex items-center gap-2">
                     <span className="text-sm font-medium">{attendanceStats.late}</span>
                     <AttendanceBadge status="late" />
                   </div>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Absent</span>
-                  <div className="flex items-center space-x-2">
+                  <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">{t.child.absent}</span>
+                    <div className="flex items-center gap-2">
                     <span className="text-sm font-medium">{attendanceStats.absent}</span>
                     <AttendanceBadge status="absent" />
                   </div>
@@ -227,8 +230,8 @@ export default function ChildDetailPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
-                <GradesIcon className="w-5 h-5 mr-2 text-blue-600" />
-                Latest Grades
+                <GradesIcon className="w-5 h-5 me-2 text-blue-600" />
+                {t.child.latestGrades}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -244,7 +247,7 @@ export default function ChildDetailPage() {
                         {grade.grade}/{grade.maxGrade}
                       </p>
                       <p className="text-xs text-gray-500">
-                        {new Date(grade.date).toLocaleDateString()}
+                        {new Date(grade.date).toLocaleDateString(locale)}
                       </p>
                     </div>
                   </div>
@@ -258,7 +261,7 @@ export default function ChildDetailPage() {
             <CardHeader>
               <CardTitle className="flex items-center">
                 <AssignmentsIcon className="w-5 h-5 mr-2 text-purple-600" />
-                Upcoming Assignments
+                {t.child.upcomingAssignments}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -270,10 +273,10 @@ export default function ChildDetailPage() {
                         <p className="text-sm font-medium text-gray-900">{assignment.title}</p>
                         <p className="text-xs text-gray-500">{assignment.subject}</p>
                       </div>
-                      <div className="text-right ml-4">
+                      <div className="text-right ms-4">
                         <AssignmentStatusBadge status={assignment.status} />
                         <p className="text-xs text-gray-500 mt-1">
-                          Due: {new Date(assignment.dueDate).toLocaleDateString()}
+                          {t.child.due} {new Date(assignment.dueDate).toLocaleDateString(locale)}
                         </p>
                       </div>
                     </div>
@@ -288,23 +291,23 @@ export default function ChildDetailPage() {
           {activeTab === 'attendance' && (
             <Card>
           <CardHeader>
-            <CardTitle>Attendance Calendar</CardTitle>
-            <p className="text-sm text-gray-600">Monthly view of attendance records</p>
+            <CardTitle>{t.child.attendanceCalendar}</CardTitle>
+            <p className="text-sm text-gray-600">{t.child.attendanceCalendarSubtitle}</p>
           </CardHeader>
           <CardContent>
             {/* Attendance Legend */}
-            <div className="flex items-center space-x-4 mb-6 p-4 bg-gray-50 rounded-lg">
-              <div className="flex items-center space-x-2">
+            <div className="flex items-center gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
+              <div className="flex items-center gap-2">
                 <div className="w-4 h-4 bg-green-500 rounded-full"></div>
-                <span className="text-sm text-gray-700">Present</span>
+                <span className="text-sm text-gray-700">{t.child.attendanceLegend.present}</span>
               </div>
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center gap-2">
                 <div className="w-4 h-4 bg-yellow-500 rounded-full"></div>
-                <span className="text-sm text-gray-700">Late</span>
+                <span className="text-sm text-gray-700">{t.child.attendanceLegend.late}</span>
               </div>
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center gap-2">
                 <div className="w-4 h-4 bg-red-500 rounded-full"></div>
-                <span className="text-sm text-gray-700">Absent</span>
+                <span className="text-sm text-gray-700">{t.child.attendanceLegend.absent}</span>
               </div>
             </div>
 
@@ -318,7 +321,7 @@ export default function ChildDetailPage() {
                       record.status === 'late' ? 'bg-yellow-500' : 'bg-red-500'
                     }`}></div>
                     <span className="text-sm font-medium">
-                      {new Date(record.date).toLocaleDateString('en-US', { 
+                      {new Date(record.date).toLocaleDateString(locale, { 
                         weekday: 'long', 
                         year: 'numeric', 
                         month: 'long', 
@@ -344,22 +347,22 @@ export default function ChildDetailPage() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle>Grades & Tests</CardTitle>
-                <p className="text-sm text-gray-600">Recent test scores and assignments</p>
+                <CardTitle>{t.child.gradesAndTests}</CardTitle>
+                <p className="text-sm text-gray-600">{t.child.gradesAndTestsSubtitle}</p>
               </div>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleDownloadReport}
                 disabled={isLoading}
-                className="flex items-center space-x-2"
+                className={clsx('flex items-center gap-2')}
               >
                 {isLoading ? (
-                  <LoadingIcon className="w-4 h-4 mr-2" />
+                  <LoadingIcon className="w-4 h-4" />
                 ) : (
                   <DownloadIcon className="w-4 h-4" />
                 )}
-                <span>{isLoading ? 'Downloading...' : 'Download Report Card'}</span>
+                <span>{isLoading ? t.child.downloading : t.child.downloadReportCard}</span>
               </Button>
             </div>
           </CardHeader>
@@ -369,19 +372,19 @@ export default function ChildDetailPage() {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Subject
+                      {t.child.table.subject}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Assignment
+                      {t.child.table.assignment}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Grade
+                      {t.child.table.grade}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Date
+                      {t.child.table.date}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Teacher
+                      {t.child.table.teacher}
                     </th>
                   </tr>
                 </thead>
@@ -398,12 +401,12 @@ export default function ChildDetailPage() {
                         <span className="text-lg font-semibold text-gray-900">
                           {grade.grade}/{grade.maxGrade}
                         </span>
-                        <span className="ml-2 text-sm text-gray-500">
+                        <span className="ms-2 text-sm text-gray-500">
                           ({Math.round((parseInt(grade.grade) / parseInt(grade.maxGrade)) * 100)}%)
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(grade.date).toLocaleDateString()}
+                        {new Date(grade.date).toLocaleDateString(locale)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {grade.teacher}
@@ -420,8 +423,8 @@ export default function ChildDetailPage() {
           {activeTab === 'assignments' && (
             <Card>
           <CardHeader>
-            <CardTitle>Assignments</CardTitle>
-            <p className="text-sm text-gray-600">All assignments with due dates and status</p>
+            <CardTitle>{t.child.assignmentsTitle}</CardTitle>
+            <p className="text-sm text-gray-600">{t.child.assignmentsSubtitle}</p>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -440,7 +443,7 @@ export default function ChildDetailPage() {
                         <div className="flex items-center space-x-1">
                           <CalendarIcon className="w-4 h-4 text-gray-400" />
                           <span className="text-sm text-gray-600">
-                            Due: {new Date(assignment.dueDate).toLocaleDateString()}
+                            {t.common.due} {new Date(assignment.dueDate).toLocaleDateString(locale)}
                           </span>
                         </div>
                         <AssignmentStatusBadge status={assignment.status} />

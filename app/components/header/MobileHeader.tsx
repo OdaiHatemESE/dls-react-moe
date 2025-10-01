@@ -74,7 +74,9 @@ const MobileHeader = () => {
               <div className="menu-main-menu-container">
                 <ul id="responsive-header-collapse" data-accordion="collapse" className="menu nav-menu">
                   {menuData.items.map((item: MenuItem) => {
-                    const id = slugify(item.label);
+                    const navMap = t.nav as unknown as Record<string, string>;
+                    const label = item.key ? (navMap[item.key] ?? item.label) : item.label;
+                    const id = slugify(label);
                     const hasChildren = !!item.children?.length;
                     return (
                       <li key={id} className={`menu-item relative ${hasChildren ? "menu-item-has-children" : ""} ${item.icon ? "has-link-icon" : ""}`}>
@@ -85,13 +87,13 @@ const MobileHeader = () => {
                               <path d="M152,208V160a8,8,0,0,0-8-8H112a8,8,0,0,0-8,8v48a8,8,0,0,1-8,8H48a8,8,0,0,1-8-8V115.54a8,8,0,0,1,2.62-5.92l80-75.54a8,8,0,0,1,10.77,0l80,75.54a8,8,0,0,1,2.62,5.92V208a8,8,0,0,1-8,8H160A8,8,0,0,1,152,208Z" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="16" />
                             </svg>
                           )}
-                          <span>{item.label}</span>
+                          <span>{label}</span>
                         </a>
                         {hasChildren && (
                           <>
                             <button className="submenu-btn flex-shrink-0" id={`accordion-${id}`} data-accordion-target={`#accordion-collapse-${id}`} aria-controls={`accordion-collapse-${id}`}>
                               <span>
-                                <span className="sr-only">show submenu for {item.label}</span>
+                                <span className="sr-only">show submenu for {label}</span>
                               </span>
                               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
                                 <rect width="256" height="256" fill="none" />
@@ -104,11 +106,14 @@ const MobileHeader = () => {
                                   <div key={`${id}-g-${gi}`}>
                                     {group.title && <h2 className="submenu-title max-lg:text-sm">{group.title}</h2>}
                                     <ul>
-                                      {group.links.map((l, li) => (
-                                        <li className="menu-item" key={`${id}-l-${gi}-${li}`}>
-                                          <a href={l.href}>{l.label}</a>
-                                        </li>
-                                      ))}
+                                       {group.links.map((l, li) => {
+                                         const linkLabel = l.key ? (navMap[l.key] ?? l.label) : l.label;
+                                         return (
+                                           <li className="menu-item" key={`${id}-l-${gi}-${li}`}>
+                                             <a href={l.href}>{linkLabel}</a>
+                                           </li>
+                                         );
+                                       })}
                                     </ul>
                                   </div>
                                 ))}

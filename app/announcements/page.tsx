@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
@@ -13,8 +13,11 @@ import {
   SearchIcon 
 } from '../components/icons';
 import { mockAnnouncements } from '../data/mockData';
+import { useI18n } from "@/app/i18n/I18nProvider";
+import clsx from "clsx";
 
 export default function AnnouncementsPage() {
+  const { t, locale } = useI18n();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedTag, setSelectedTag] = useState<string>('all');
@@ -34,12 +37,10 @@ export default function AnnouncementsPage() {
   });
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className={clsx("max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8", locale === 'ar' && 'direction-rtl')}>
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Announcements</h1>
-        <p className="mt-1 text-sm text-gray-600">
-          Stay updated with school and class announcements
-        </p>
+        <h1 className="text-2xl font-bold text-gray-900">{t.announcements.title}</h1>
+        <p className="mt-1 text-sm text-gray-600">{t.announcements.subtitle}</p>
       </div>
 
       {/* Filters */}
@@ -48,26 +49,26 @@ export default function AnnouncementsPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Search */}
             <div className="relative">
-              <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <SearchIcon className={clsx("absolute top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 is-3")} />
               <Input
-                placeholder="Search announcements..."
+                placeholder={t.announcements.searchPlaceholder}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
+                className={clsx('ps-10')}
               />
             </div>
 
             {/* Category Filter */}
             <div className="relative">
-              <FilterIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <FilterIcon className={clsx("absolute top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 is-3")} />
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger className="pl-10">
+                <SelectTrigger className={clsx('ps-10')}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   {categories.map((category) => (
                     <SelectItem key={category} value={category}>
-                      {category === 'all' ? 'All Categories' : category.charAt(0).toUpperCase() + category.slice(1)}
+                      {category === 'all' ? t.announcements.allCategories : t.announcements.categories[category as keyof typeof t.announcements.categories]}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -77,10 +78,10 @@ export default function AnnouncementsPage() {
             {/* Tag Filter */}
             <Select value={selectedTag} onValueChange={setSelectedTag}>
               <SelectTrigger>
-                <SelectValue placeholder="All Tags" />
+                <SelectValue placeholder={t.announcements.allTags} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Tags</SelectItem>
+                <SelectItem value="all">{t.announcements.allTags}</SelectItem>
                 {allTags.map((tag) => (
                   <SelectItem key={tag} value={tag}>
                     {tag.charAt(0).toUpperCase() + tag.slice(1)}
@@ -95,7 +96,7 @@ export default function AnnouncementsPage() {
       {/* Results Summary */}
       <div className="mb-6">
         <p className="text-sm text-gray-600">
-          Showing {filteredAnnouncements.length} of {mockAnnouncements.length} announcements
+          {t.announcements.showing} {filteredAnnouncements.length} {t.announcements.of} {mockAnnouncements.length} {t.announcements.announcementsLower}
         </p>
       </div>
 
@@ -106,7 +107,7 @@ export default function AnnouncementsPage() {
             <CardContent className="p-6">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
-                  <div className="flex items-center space-x-2 mb-2">
+                  <div className={clsx("flex items-center gap-2 mb-2")}>
                     <Badge 
                       variant={
                         announcement.category === 'urgent' ? 'destructive' :
@@ -117,7 +118,7 @@ export default function AnnouncementsPage() {
                       {announcement.category}
                     </Badge>
                     <span className="text-sm text-gray-500">
-                      {new Date(announcement.date).toLocaleDateString()}
+                      {new Date(announcement.date).toLocaleDateString(locale)}
                     </span>
                   </div>
                   <h2 className="text-xl font-semibold text-gray-900 mb-2">
@@ -140,13 +141,13 @@ export default function AnnouncementsPage() {
 
                   {/* Author */}
                   <div className="flex items-center text-sm text-gray-600">
-                    <span>Posted by {announcement.author}</span>
+                    <span>{t.common.postedBy} {announcement.author}</span>
                   </div>
                 </div>
 
                 {/* Priority Indicator */}
                 {announcement.category === 'urgent' && (
-                  <div className="ml-4">
+                  <div className={clsx('ms-4')}>
                     <div className="flex items-center justify-center w-12 h-12 bg-red-100 rounded-full">
                       <AnnouncementsIcon className="w-6 h-6 text-red-600" />
                     </div>
@@ -160,15 +161,15 @@ export default function AnnouncementsPage() {
         {filteredAnnouncements.length === 0 && (
           <EmptyState
             icon={AnnouncementsIcon}
-            title="No announcements found"
+            title={t.announcements.noResultsTitle}
             description={
               searchQuery || selectedCategory !== 'all' || selectedTag !== 'all'
-                ? "Try adjusting your filters to see more announcements"
-                : "There are no announcements at this time"
+                ? t.announcements.noResultsFilters
+                : t.announcements.noResultsNone
             }
             action={
               (searchQuery || selectedCategory !== 'all' || selectedTag !== 'all') ? {
-                label: 'Clear Filters',
+                label: t.announcements.clearFilters,
                 onClick: () => {
                   setSearchQuery('');
                   setSelectedCategory('all');
@@ -183,7 +184,7 @@ export default function AnnouncementsPage() {
       {/* Load More (Pagination Placeholder) */}
       {filteredAnnouncements.length > 10 && (
         <div className="mt-8 text-center">
-          <Button variant="outline">Load More Announcements</Button>
+          <Button variant="outline">{t.announcements.loadMore}</Button>
         </div>
       )}
     </div>

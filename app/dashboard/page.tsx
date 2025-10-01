@@ -14,6 +14,7 @@ import {
 } from '../components/icons';
 import { mockChildren, mockAnnouncements, mockCalendarEvents } from '../data/mockData';
 import { useI18n } from "@/app/i18n/I18nProvider";
+import clsx from "clsx";
 
 export default function DashboardPage() {
   const { t, locale } = useI18n();
@@ -21,7 +22,7 @@ export default function DashboardPage() {
   const upcomingEvents = mockCalendarEvents.slice(0, 3);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className={clsx("max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8", locale === 'ar' && 'direction-rtl')}>
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">{t.dashboard.title}</h1>
         <p className="mt-1 text-sm text-gray-600">{t.dashboard.welcome}</p>
@@ -91,7 +92,7 @@ export default function DashboardPage() {
                   <div className="flex items-center justify-center mb-2">
                     <CalendarIcon className="w-5 h-5 text-purple-600" />
                   </div>
-                  <div className="flex items-center justify-center gap-2">
+                  <div className={clsx("flex items-center justify-center gap-2", locale === 'ar' && 'flex-row-reverse')}>
                     <span className="inline-block h-2 w-2 rounded-full bg-purple-500" aria-hidden="true" />
                     <p className="text-sm font-medium text-gray-900 leading-tight truncate max-w-[12rem]">
                       {child.nextEvent}
@@ -111,7 +112,7 @@ export default function DashboardPage() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center">
-                <AnnouncementsIcon className="w-5 h-5 mr-2 text-orange-600" />
+                <AnnouncementsIcon className="w-5 h-5 me-2 text-orange-600" />
                 {t.dashboard.recentAnnouncements}
               </CardTitle>
               <Link
@@ -134,7 +135,7 @@ export default function DashboardPage() {
                       <p className="text-sm text-gray-600 mb-2 line-clamp-2">
                         {announcement.content}
                       </p>
-                      <div className="flex items-center space-x-2">
+                      <div className={clsx("flex items-center gap-2")}> 
                         <Badge 
                           variant={
                             announcement.category === 'urgent' ? 'destructive' :
@@ -166,7 +167,7 @@ export default function DashboardPage() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center">
-                <CalendarIcon className="w-5 h-5 mr-2 text-purple-600" />
+                <CalendarIcon className="w-5 h-5 me-2 text-purple-600" />
                 {t.dashboard.upcomingEvents}
               </CardTitle>
               <Link
@@ -185,7 +186,7 @@ export default function DashboardPage() {
                     <h4 className="text-sm font-medium text-gray-900 mb-1">
                       {event.title}
                     </h4>
-                    <div className="flex items-center gap-2">
+                    <div className={clsx("flex items-center gap-2", locale === 'ar' && 'flex-row-reverse')}>
                       <span className="text-sm text-gray-600">
                         {new Date(event.date).toLocaleDateString(locale)}
                       </span>

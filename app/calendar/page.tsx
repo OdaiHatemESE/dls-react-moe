@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,8 +12,11 @@ import {
   ChevronDownIcon 
 } from '../components/icons';
 import { mockCalendarEvents } from '../data/mockData';
+import { useI18n } from "@/app/i18n/I18nProvider";
+import clsx from "clsx";
 
 export default function CalendarPage() {
+  const { t, locale } = useI18n();
   const [viewMode, setViewMode] = useState<'month' | 'list'>('month');
   const [selectedMonth, setSelectedMonth] = useState(new Date());
 
@@ -69,35 +72,33 @@ export default function CalendarPage() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className={clsx("max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8", locale === 'ar' && 'direction-rtl')}>
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Calendar</h1>
-          <p className="mt-1 text-sm text-gray-600">
-            View upcoming events, exams, and important dates
-          </p>
+          <h1 className="text-2xl font-bold text-gray-900">{t.calendar.title}</h1>
+          <p className="mt-1 text-sm text-gray-600">{t.calendar.subtitle}</p>
         </div>
-        <div className="flex items-center space-x-3">
+  <div className={clsx("flex items-center gap-3")}>
           <div className="flex bg-gray-100 rounded-lg p-1">
             <Button
               variant={viewMode === 'month' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setViewMode('month')}
             >
-              Month
+              {t.calendar.month}
             </Button>
             <Button
               variant={viewMode === 'list' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setViewMode('list')}
             >
-              List
+              {t.calendar.list}
             </Button>
           </div>
           <div className="relative">
-            <Button variant="outline" size="sm" className="flex items-center space-x-2">
+            <Button variant="outline" size="sm" className="flex items-center gap-2">
               <ExportIcon className="w-4 h-4" />
-              <span>Export</span>
+              <span>{t.calendar.export}</span>
               <ChevronDownIcon className="w-4 h-4" />
             </Button>
             {/* Export dropdown would be implemented here */}
@@ -110,20 +111,20 @@ export default function CalendarPage() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="text-xl">
-                {selectedMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                {selectedMonth.toLocaleDateString(locale, { month: 'long', year: 'numeric' })}
               </CardTitle>
-              <div className="flex items-center space-x-2">
+              <div className={clsx("flex items-center gap-2")}>
                 <Button variant="ghost" size="icon" onClick={() => navigateMonth('prev')} aria-label="Previous month">
-                  <ChevronRightIcon className="w-4 h-4 transform rotate-180" />
+                  <ChevronRightIcon className={clsx("w-4 h-4", locale === 'ar' ? '' : 'transform rotate-180')} />
                 </Button>
                 <button
                   onClick={() => setSelectedMonth(new Date())}
                   className="px-3 py-1 text-sm font-medium text-gray-600 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-md"
                 >
-                  Today
+                  {t.common.today}
                 </button>
                 <Button variant="ghost" size="icon" onClick={() => navigateMonth('next')} aria-label="Next month">
-                  <ChevronRightIcon className="w-4 h-4" />
+                  <ChevronRightIcon className={clsx("w-4 h-4", locale === 'ar' ? 'transform rotate-180' : '')} />
                 </Button>
               </div>
             </div>
@@ -132,7 +133,7 @@ export default function CalendarPage() {
             {/* Calendar Grid */}
             <div className="grid grid-cols-7 gap-px bg-gray-200 rounded-lg overflow-hidden">
               {/* Day headers */}
-              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+              {(t.calendar.daysShort as string[]).map(day => (
                 <div key={day} className="bg-gray-50 p-2 text-center">
                   <span className="text-xs font-medium text-gray-500">{day}</span>
                 </div>
@@ -177,7 +178,7 @@ export default function CalendarPage() {
                           ))}
                           {eventsByDate[day].length > 2 && (
                             <div className="text-xs text-gray-500 truncate">
-                              +{eventsByDate[day].length - 2} more
+                              +{eventsByDate[day].length - 2} {t.calendar.more}
                             </div>
                           )}
                         </div>
@@ -190,21 +191,21 @@ export default function CalendarPage() {
 
             {/* Legend */}
             <div className="mt-6 flex flex-wrap items-center justify-center gap-4 p-4 bg-gray-50 rounded-lg">
-              <div className="flex items-center space-x-2">
+              <div className={clsx("flex items-center gap-2")}>
                 <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                <span className="text-sm text-gray-700">Event</span>
+                <span className="text-sm text-gray-700">{t.calendar.legend.event}</span>
               </div>
-              <div className="flex items-center space-x-2">
+              <div className={clsx("flex items-center gap-2")}>
                 <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                <span className="text-sm text-gray-700">Exam</span>
+                <span className="text-sm text-gray-700">{t.calendar.legend.exam}</span>
               </div>
-              <div className="flex items-center space-x-2">
+              <div className={clsx("flex items-center gap-2")}>
                 <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                <span className="text-sm text-gray-700">Holiday</span>
+                <span className="text-sm text-gray-700">{t.calendar.legend.holiday}</span>
               </div>
-              <div className="flex items-center space-x-2">
+              <div className={clsx("flex items-center gap-2")}>
                 <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
-                <span className="text-sm text-gray-700">Meeting</span>
+                <span className="text-sm text-gray-700">{t.calendar.legend.meeting}</span>
               </div>
             </div>
           </CardContent>
@@ -213,8 +214,8 @@ export default function CalendarPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
-              <CalendarIcon className="w-5 h-5 mr-2" />
-              Upcoming Events
+              <CalendarIcon className="w-5 h-5 me-2" />
+              {t.calendar.upcomingEvents}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -229,9 +230,9 @@ export default function CalendarPage() {
                       {event.description && (
                         <p className="text-sm text-gray-600 mb-2">{event.description}</p>
                       )}
-                      <div className="flex items-center space-x-4 text-sm text-gray-500">
+                      <div className={clsx("flex items-center gap-4 text-sm text-gray-500")}>
                         <span>
-                          {new Date(event.date).toLocaleDateString('en-US', {
+                          {new Date(event.date).toLocaleDateString(locale, {
                             weekday: 'long',
                             year: 'numeric',
                             month: 'long',
@@ -241,7 +242,7 @@ export default function CalendarPage() {
                         {event.time && <span>• {event.time}</span>}
                       </div>
                     </div>
-                    <div className="ml-4">
+                    <div className="ms-4">
                       <Badge
                         variant={
                           event.type === 'exam' ? 'secondary' :
@@ -267,21 +268,21 @@ export default function CalendarPage() {
       )}
 
       {/* Quick Export Actions */}
-      <div className="mt-6 flex justify-center space-x-4">
+      <div className={clsx("mt-6 flex justify-center gap-4")}>
         <Button
           onClick={() => handleExport('google')}
-          className="flex items-center space-x-2"
+          className={clsx("flex items-center gap-2")}
         >
           <ExportIcon className="w-4 h-4" />
-          <span>Export to Google Calendar</span>
+          <span>{t.calendar.exportGoogle}</span>
         </Button>
         <Button
           onClick={() => handleExport('outlook')}
           variant="secondary"
-          className="flex items-center space-x-2"
+          className={clsx("flex items-center gap-2")}
         >
           <ExportIcon className="w-4 h-4" />
-          <span>Export to Outlook</span>
+          <span>{t.calendar.exportOutlook}</span>
         </Button>
       </div>
     </div>
