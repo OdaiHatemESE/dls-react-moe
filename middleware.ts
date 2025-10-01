@@ -23,9 +23,10 @@ export async function middleware(req: NextRequest) {
   if (token) return NextResponse.next();
 
   // Otherwise, redirect to a custom login page with callback to the current URL
-  const loginUrl = new URL("/login", req.url);
-  loginUrl.searchParams.set("callbackUrl", req.nextUrl.href);
-  return NextResponse.redirect(loginUrl);
+  // Redirect directly to the OIDC provider via NextAuth sign-in endpoint
+  const signinUrl = new URL("/api/auth/signin/oidc", req.url);
+  signinUrl.searchParams.set("callbackUrl", req.nextUrl.href);
+  return NextResponse.redirect(signinUrl);
 }
 
 // Protect everything except Next internals, images, and all API routes (including NextAuth routes)

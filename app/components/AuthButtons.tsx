@@ -1,10 +1,8 @@
 "use client";
-import { signOut, useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { signIn, signOut, useSession } from "next-auth/react";
 
 export default function AuthButtons() {
   const { data: session, status } = useSession();
-  const router = useRouter();
 
   if (status === "loading") return null;
 
@@ -24,7 +22,8 @@ export default function AuthButtons() {
     <button
       onClick={() => {
         const callbackUrl = typeof window !== "undefined" ? window.location.href : "/";
-        router.push(`/login?callbackUrl=${encodeURIComponent(callbackUrl)}`);
+        // Redirect directly to OIDC issuer via NextAuth
+        signIn("oidc", { callbackUrl });
       }}
       className="lg:h-12 xl:h-14 lg:px-2 xl:px-3 flex items-center justify-center flex-shrink-0"
     >
