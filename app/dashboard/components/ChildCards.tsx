@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useChildren } from "@/lib/hooks/useChildren";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -15,138 +16,20 @@ import { useI18n } from "@/app/i18n/I18nProvider";
 import clsx from "clsx";
 import { useSession } from "next-auth/react";
 
-type StudentCard = {
-  id: string;
-  name: string;
-  grade?: string;
-  classroom?: string;
-  teacher?: string;
-  avatar?: string;
-  attendanceRate?: number; // optional; show placeholder when absent
-  latestGrade?: string;
-  nextEvent?: string;
-};
 
 export default function ChildCards() {
   const { t, locale } = useI18n();
   const { data: session, status } = useSession();
-  const [children, setChildren] = React.useState<StudentCard[] | null>(null);
-  const [error, setError] = React.useState<string | null>(null);
-  const [loading, setLoading] = React.useState<boolean>(false);
 
-  // Safe getters
-  const asRecord = (x: unknown): Record<string, unknown> =>
-    typeof x === "object" && x !== null ? (x as Record<string, unknown>) : {};
-  const getProp = <T extends string | undefined = string | undefined>(
-    obj: Record<string, unknown>,
-    key: string
-  ): T | undefined => obj[key] as T | undefined;
+  // normalization is handled by useChildren
 
-  // Normalize vendor child object into StudentCard
-  const toStudentCard = React.useCallback(
-    (item: unknown): StudentCard | null => {
-      const base = asRecord(item);
-      const maybePersons = (base as { persons?: unknown }).persons;
-      const p = asRecord(maybePersons ?? base);
-      const sourcedId =
-        getProp<string>(p, "sourcedId") ||
-        getProp<string>(p, "identifier") ||
-        getProp<string>(p, "id");
-      if (!sourcedId) return null;
-
-      const given =
-        getProp<string>(p, "givenName") ||
-        getProp<string>(p, "englishFirstName") ||
-        getProp<string>(p, "firstName") ||
-        "";
-      const family =
-        getProp<string>(p, "familyName") ||
-        getProp<string>(p, "englishFamilyName") ||
-        getProp<string>(p, "lastName") ||
-        "";
-      const name =
-        `${given} ${family}`.trim() ||
-        getProp<string>(p, "name") ||
-        getProp<string>(p, "displayName") ||
-        sourcedId;
-      const grade = getProp<string>(p, "grades") || getProp<string>(p, "grade");
-
-      return {
-        id: String(sourcedId),
-        name,
-        grade: typeof grade === "string" ? grade : undefined,
-        classroom:
-          getProp<string>(p, "classroom") ||
-          getProp<string>(p, "class") ||
-          getProp<string>(p, "section") ||
-          undefined,
-        teacher:
-          getProp<string>(p, "teacher") ||
-          getProp<string>(p, "homeroomTeacher") ||
-          undefined,
-        avatar:
-          getProp<string>(p, "photoUrl") ||
-          getProp<string>(p, "avatarUrl") ||
-          undefined,
-        // The remaining fields aren't available from OneRoster by default; placeholders
-        attendanceRate: undefined,
-        latestGrade: undefined,
-        nextEvent: undefined,
-      };
-    },
-    []
-  );
-
-  React.useEffect(() => {
-    // Wait until session is loaded
-    if (status !== "authenticated") return;
-    const eidOpt = session?.user?.emiratesId || "784198791735438";
-    console.log(session);
-    if (!eidOpt) return;
-    const eid: string = eidOpt;
-
-    let cancelled = false;
-    async function load() {
-      try {
-        setLoading(true);
-        setError(null);
-        // NOTE: Endpoint requested by user; ensure CORS is allowed when running in browser
-        const url = `/api/oneroster/basic-info-full?eid=${encodeURIComponent(
-          eid
-        )}`;
-        const res = await fetch(url, { cache: "no-store" });
-        if (!res.ok) {
-          const text = await res.text().catch(() => "");
-          throw new Error(
-            `${res.status} ${res.statusText}${text ? ` - ${text}` : ""}`
-          );
-        }
-        const data: unknown = await res.json();
-        const d = data as { children?: unknown[] };
-        const rawChildren: unknown[] = Array.isArray(d.children)
-          ? d.children
-          : [];
-        const mapped: StudentCard[] = rawChildren
-          .map((c) => toStudentCard(c))
-          .filter((x): x is StudentCard => !!x);
-        if (!cancelled) setChildren(mapped);
-      } catch (e: unknown) {
-        const message =
-          e instanceof Error ? e.message : "Failed to load children";
-        if (!cancelled) setError(message);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, [session, session?.user?.emiratesId, status, toStudentCard]);
+  const eid = status === "authenticated" ? (session?.user?.emiratesId || "784198791735438") : undefined;
+  const { children, error, isLoading } = useChildren(eid);
+  const isBusy = status === "loading" || (status === "authenticated" && isLoading);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-      {loading && (
+      {isBusy && (
         <div className="col-span-full text-center text-sm text-gray-500">
           {"Loading..."}
         </div>
@@ -156,7 +39,7 @@ export default function ChildCards() {
           className="col-span-full text-center text-sm text-red-600"
           role="alert"
         >
-          {error}
+          {error instanceof Error ? error.message : String(error)}
         </div>
       )}
       {(children ?? []).map((child) => (
@@ -278,7 +161,7 @@ export default function ChildCards() {
         </Card>
       ))}
       {/* If no children fetched and not loading/error, optionally show nothing or a helpful hint */}
-      {!loading && !error && (!children || children.length === 0) && (
+      {status === "authenticated" && !isBusy && !error && (!children || children.length === 0) && (
         <div className="col-span-full text-center text-sm text-gray-500">
           {"No linked students found for your account."}
         </div>

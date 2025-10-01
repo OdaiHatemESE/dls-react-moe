@@ -28,10 +28,12 @@ export default function RootLayout({
         <AuthProvider>
           <IconProvider>
             <I18nProvider>
-              {/* Global Header */}
-              <SiteHeader />
-              <main className="flex-1">{children}</main>
-              <SiteFooter />
+              <SWRProvider>
+                {/* Global Header */}
+                <SiteHeader />
+                <main className="flex-1">{children}</main>
+                <SiteFooter />
+              </SWRProvider>
             </I18nProvider>
           </IconProvider>
         </AuthProvider>
@@ -46,6 +48,7 @@ import Footer from "./components/Footer";
 import AuthProvider from "./components/AuthProvider";
 import IconProvider from "./components/icons/IconProvider";
 import { I18nProvider } from "./i18n/I18nProvider";
+import SWRProvider from "@/app/components/SWRProvider";
 
 function SiteHeader() {
   return <Header />;
