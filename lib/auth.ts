@@ -16,6 +16,7 @@ const oidcProvider = Auth0Provider({
   clientSecret: OIDC_CLIENT_SECRET,
   authorization: {
     params: {
+      // Request standard OIDC scopes. Include email to receive email claim via userinfo/id_token
       scope: "openid profile",
     },
   },
@@ -51,6 +52,21 @@ function decodeJwtPayload(token: string): MobileClaims | null {
   } catch {
     return null;
   }
+}
+
+// Try to pull emiratesId/EID from a JWT claims object regardless of naming/namespace
+function extractEmiratesId(claims?: Record<string, unknown>): string | undefined {
+  if (!claims) return undefined;
+  const direct = (claims.emiratesId || claims.EID) as string | undefined;
+  if (direct) return direct;
+  // Search namespaced/custom claim keys, case-insensitive match for emiratesId/EID
+  for (const [k, v] of Object.entries(claims)) {
+    const key = k.toLowerCase();
+    if ((key.endsWith("/emiratesid") || key === "emiratesid" || key === "eid") && typeof v === "string") {
+      return v;
+    }
+  }
+  return undefined;
 }
 
 export const authOptions: NextAuthOptions = {
@@ -96,7 +112,25 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, account, user }): Promise<JWT> {
       // From OIDC flow
       if (account?.access_token) {
-        (token as JWT & { accessToken?: string }).accessToken = account.access_token;
+        const t = token as JWT & { accessToken?: string; idToken?: string; emiratesId?: string };
+        t.accessToken = account.access_token;
+        // Persist id_token if available and extract claims we care about
+        if (account.id_token) {
+          t.idToken = account.id_token;
+          const idClaims = decodeJwtPayload(account.id_token) || {};
+          const maybeEmiratesId = extractEmiratesId(idClaims as Record<string, unknown>);
+          if (maybeEmiratesId) t.emiratesId = maybeEmiratesId;
+          // If token doesn't have sub/name/email yet, hydrate from id_token claims
+          token.sub = token.sub || (idClaims.sub as string | undefined);
+          if (!t.name && typeof idClaims.name === "string") t.name = idClaims.name as string;
+          if (!t.email && typeof idClaims.email === "string") t.email = idClaims.email as string;
+        }
+        // Some IdPs include custom claims in access_token instead; try as a fallback
+        if (!t.emiratesId) {
+          const atClaims = decodeJwtPayload(account.access_token) || {};
+          const maybeEmiratesId = extractEmiratesId(atClaims as Record<string, unknown>);
+          if (maybeEmiratesId) t.emiratesId = maybeEmiratesId;
+        }
       }
       // From mobile-token (credentials) flow
       if (user) {
@@ -109,14 +143,15 @@ export const authOptions: NextAuthOptions = {
     },
 
     async session({ session, token }): Promise<Session> {
-  const t = token as JWT & { accessToken?: string; emiratesId?: string; sub?: string };
-  // Attach custom fields to session
-  (session as Session & { accessToken?: string }).accessToken = t.accessToken;
-  const u = (session.user ?? {}) as User & { id?: string; emiratesId?: string };
-  if (t.sub) u.id = t.sub;
-  if (t.emiratesId) u.emiratesId = t.emiratesId;
-  session.user = u;
-  return session;
+      const t = token as JWT & { accessToken?: string; idToken?: string; emiratesId?: string; sub?: string };
+      // Attach custom fields to session for client-side access
+      (session as Session & { accessToken?: string; idToken?: string }).accessToken = t.accessToken;
+      (session as Session & { accessToken?: string; idToken?: string }).idToken = t.idToken;
+      const u = (session.user ?? {}) as User & { id?: string; emiratesId?: string };
+      if (t.sub) u.id = t.sub;
+      if (t.emiratesId) u.emiratesId = t.emiratesId;
+      session.user = u;
+      return session;
     },
 
     async redirect({ url, baseUrl }) {
