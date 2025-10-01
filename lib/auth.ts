@@ -28,6 +28,20 @@ const oidcProvider = Auth0Provider({
           token_endpoint_auth_method: "none" as const,
         },
       }),
+  // Map userinfo profile to NextAuth user and try to surface emiratesId if present
+  profile(profile) {
+    const claims = profile as Record<string, unknown>;
+    const emiratesId = extractEmiratesId(claims);
+    // Return object compatible with NextAuth User/AdapterUser
+    const mapped: Partial<User> & { id: string; emiratesId?: string } = {
+      id: (claims.sub as string) || "",
+      name: (claims.name as string) || undefined,
+      email: (claims.email as string) || undefined,
+      image: (claims.picture as string) || undefined,
+      emiratesId,
+    };
+    return mapped as User;
+  },
 });
 
 type MobileClaims = {
@@ -54,16 +68,38 @@ function decodeJwtPayload(token: string): MobileClaims | null {
   }
 }
 
+// Normalize Emirates ID by removing dashes and spaces
+function normalizeEmiratesId(value: unknown): string | undefined {
+  const s = typeof value === "string" ? value : typeof value === "number" ? String(value) : undefined;
+  if (!s) return undefined;
+  return s.replace(/[-\s]/g, "").trim();
+}
+
 // Try to pull emiratesId/EID from a JWT claims object regardless of naming/namespace
 function extractEmiratesId(claims?: Record<string, unknown>): string | undefined {
   if (!claims) return undefined;
-  const direct = (claims.emiratesId || claims.EID) as string | undefined;
+  const rec = claims as Record<string, unknown>;
+  const direct = normalizeEmiratesId(rec["emiratesId"]) || normalizeEmiratesId(rec["EID"]);
   if (direct) return direct;
   // Search namespaced/custom claim keys, case-insensitive match for emiratesId/EID
   for (const [k, v] of Object.entries(claims)) {
     const key = k.toLowerCase();
-    if ((key.endsWith("/emiratesid") || key === "emiratesid" || key === "eid") && typeof v === "string") {
-      return v;
+    const val = normalizeEmiratesId(v);
+    if (!val) continue;
+    // Allow keys that end with emiratesid or eid regardless of separator
+    if (
+      key === "emiratesid" ||
+      key === "eid" ||
+      key.endsWith("/emiratesid") ||
+      key.endsWith(":emiratesid") ||
+      key.endsWith(".emiratesid") ||
+      key.endsWith("emiratesid") ||
+      key.endsWith("/eid") ||
+      key.endsWith(":eid") ||
+      key.endsWith(".eid") ||
+      key.endsWith("eid")
+    ) {
+      return val;
     }
   }
   return undefined;
@@ -91,7 +127,7 @@ export const authOptions: NextAuthOptions = {
         const sub = claims.sub || "unknown";
         const name = claims.name || "Mobile User";
         const email = claims.email as string | undefined;
-        const emiratesId = claims.emiratesId || claims.EID;
+  const emiratesId = normalizeEmiratesId(claims.emiratesId || claims.EID);
 
         return {
           id: sub,
@@ -119,7 +155,7 @@ export const authOptions: NextAuthOptions = {
           t.idToken = account.id_token;
           const idClaims = decodeJwtPayload(account.id_token) || {};
           const maybeEmiratesId = extractEmiratesId(idClaims as Record<string, unknown>);
-          if (maybeEmiratesId) t.emiratesId = maybeEmiratesId;
+          if (maybeEmiratesId) t.emiratesId = normalizeEmiratesId(maybeEmiratesId);
           // If token doesn't have sub/name/email yet, hydrate from id_token claims
           token.sub = token.sub || (idClaims.sub as string | undefined);
           if (!t.name && typeof idClaims.name === "string") t.name = idClaims.name as string;
@@ -129,7 +165,7 @@ export const authOptions: NextAuthOptions = {
         if (!t.emiratesId) {
           const atClaims = decodeJwtPayload(account.access_token) || {};
           const maybeEmiratesId = extractEmiratesId(atClaims as Record<string, unknown>);
-          if (maybeEmiratesId) t.emiratesId = maybeEmiratesId;
+          if (maybeEmiratesId) t.emiratesId = normalizeEmiratesId(maybeEmiratesId);
         }
       }
       // From mobile-token (credentials) flow
@@ -137,7 +173,7 @@ export const authOptions: NextAuthOptions = {
         const u = user as User & { accessToken?: string; emiratesId?: string };
         const t = token as JWT & { accessToken?: string; emiratesId?: string };
         t.accessToken = u.accessToken || t.accessToken;
-        t.emiratesId = u.emiratesId || t.emiratesId;
+        t.emiratesId = normalizeEmiratesId(u.emiratesId) || t.emiratesId;
       }
       return token;
     },
@@ -149,7 +185,7 @@ export const authOptions: NextAuthOptions = {
       (session as Session & { accessToken?: string; idToken?: string }).idToken = t.idToken;
       const u = (session.user ?? {}) as User & { id?: string; emiratesId?: string };
       if (t.sub) u.id = t.sub;
-      if (t.emiratesId) u.emiratesId = t.emiratesId;
+      if (t.emiratesId) u.emiratesId = normalizeEmiratesId(t.emiratesId);
       session.user = u;
       return session;
     },
