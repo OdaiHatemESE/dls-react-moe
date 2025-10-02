@@ -13,15 +13,32 @@ import {
   CheckIcon,
   LoadingIcon
 } from '../components/icons';
-import { mockParent, mockPerson } from '../data/mockData';
+import useSWR from 'swr';
+import { useSession } from 'next-auth/react';
 import type { Person } from '@/types';
 import { useI18n } from '@/app/i18n/I18nProvider';
 import clsx from 'clsx';
 
 export default function ProfilePage() {
   const { t, locale } = useI18n();
-  // Use OneRoster Person payload for core identity/contact fields
-  const person: Person = mockPerson;
+
+  // Get session to extract EID (external identifier)
+  const { data: session } = useSession();
+  // You may need to adjust this depending on your session shape
+  // Use emiratesId or id from session.user for EID
+  const eid = session?.user?.emiratesId || session?.user?.id || session?.user?.email;
+
+  // SWR fetcher for API
+  const fetcher = (url: string) => fetch(url).then(res => res.json());
+  // Fetch parent and children info from API
+  const { data, error, isLoading } = useSWR(
+    eid ? `/api/oneroster/basic-info-full?eid=${encodeURIComponent(eid)}` : null,
+    fetcher
+  );
+
+  // Extract parent and children from API response
+  const person: Person | undefined = Array.isArray(data?.parent) ? data?.parent[0] : undefined;
+  const children: any[] = data?.children || [];
 
   const getPrimaryEmail = (p: Person): string => {
     if (p.email && p.email.length) return p.email;
@@ -108,37 +125,64 @@ export default function ProfilePage() {
 
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [profileData, setProfileData] = useState(mockParent);
+  // Preferences and children state (initialize from API if available)
+  const [profileData, setProfileData] = useState<any>({
+    preferences: {
+      emailNotifications: true,
+      smsNotifications: false,
+      pushNotifications: false,
+    },
+    children: [],
+    avatar: '/file.svg',
+  });
 
-  const primaryAddress = person.metadata?.addresses?.[0];
-  const initialForm: ProfileForm = {
-    name: getDisplayName(person, locale),
-    email: getPrimaryEmail(person),
-    phone: getPrimaryPhone(person),
-    arabicGivenName: person.givenName ?? '',
-    arabicMiddleName: person.middleName ?? '',
-    arabicFamilyName: person.familyName ?? '',
-    englishFirstName: person.metadata?.englishFirstName ?? '',
-    englishSecondName: person.metadata?.englishSecondName ?? '',
-    englishThirdName: person.metadata?.englishThirdName ?? '',
-    englishFourthName: person.metadata?.englishFourthName ?? '',
-    englishFamilyName: person.metadata?.englishFamilyName ?? '',
-    identifier: person.identifier ?? '',
-    username: person.username ?? '',
-    role: person.role ?? '',
-    status: person.status ?? '',
-    type: person.type ?? '',
-    enabledUser: typeof person.enabledUser === 'boolean' ? String(person.enabledUser) : (person.enabledUser ?? ''),
-    gender: person.metadata?.gender ?? '',
-    birthDate: person.metadata?.birthDate ?? '',
-    maritalStatus: person.metadata?.maritalStatus ?? '',
-    religion: person.metadata?.religion ?? '',
-    nationality: person.metadata?.nationality ?? '',
-    nationalityArabic: person.metadata?.nationalityArabic ?? '',
-    birthCountry: person.metadata?.birthCountry ?? '',
-    birthCountryArabic: person.metadata?.birthCountryArabic ?? '',
-    birthCity: person.metadata?.birthCity ?? '',
-    englishBirthCity: person.metadata?.englishBirthCity ?? '',
+  React.useEffect(() => {
+    if (person) {
+      setProfileData((prev: any) => ({
+        ...prev,
+        avatar: person?.metadata?.avatar || '/file.svg',
+        children: children.map((child: any) => ({
+          id: child.sourcedId,
+          name: [child.metadata?.englishFirstName, child.metadata?.englishFamilyName].filter(Boolean).join(' '),
+          avatar: child.metadata?.avatar || '/file.svg',
+          grade: child.grades || '-',
+          teacher: child.metadata?.homeroomTeacher || '-',
+        })),
+      }));
+    }
+  }, [person, children]);
+
+
+  // Compute initial form from API data
+  const primaryAddress = person?.metadata?.addresses?.[0];
+  const initialForm: ProfileForm = React.useMemo(() => ({
+    name: person ? getDisplayName(person, locale) : '',
+    email: person ? getPrimaryEmail(person) : '',
+    phone: person ? getPrimaryPhone(person) : '',
+    arabicGivenName: person?.givenName ?? '',
+    arabicMiddleName: person?.middleName ?? '',
+    arabicFamilyName: person?.familyName ?? '',
+    englishFirstName: person?.metadata?.englishFirstName ?? '',
+    englishSecondName: person?.metadata?.englishSecondName ?? '',
+    englishThirdName: person?.metadata?.englishThirdName ?? '',
+    englishFourthName: person?.metadata?.englishFourthName ?? '',
+    englishFamilyName: person?.metadata?.englishFamilyName ?? '',
+    identifier: person?.identifier ?? '',
+    username: person?.username ?? '',
+    role: person?.role ?? '',
+    status: person?.status ?? '',
+    type: person?.type ?? '',
+    enabledUser: typeof person?.enabledUser === 'boolean' ? String(person?.enabledUser) : (person?.enabledUser ?? ''),
+    gender: person?.metadata?.gender ?? '',
+    birthDate: person?.metadata?.birthDate ?? '',
+    maritalStatus: person?.metadata?.maritalStatus ?? '',
+    religion: person?.metadata?.religion ?? '',
+    nationality: person?.metadata?.nationality ?? '',
+    nationalityArabic: person?.metadata?.nationalityArabic ?? '',
+    birthCountry: person?.metadata?.birthCountry ?? '',
+    birthCountryArabic: person?.metadata?.birthCountryArabic ?? '',
+    birthCity: person?.metadata?.birthCity ?? '',
+    englishBirthCity: person?.metadata?.englishBirthCity ?? '',
     address_country: primaryAddress?.country ?? '',
     address_state: primaryAddress?.state ?? '',
     address_city: primaryAddress?.city ?? '',
@@ -152,9 +196,12 @@ export default function ProfilePage() {
     address_roadNumber: primaryAddress?.roadNumber ?? '',
     address_plotId: primaryAddress?.plotId ?? '',
     address_plotNumber: primaryAddress?.plotNumber ?? '',
-  };
+  }), [person, locale, primaryAddress]);
 
   const [formData, setFormData] = useState<ProfileForm>(initialForm);
+  React.useEffect(() => {
+    setFormData(initialForm);
+  }, [initialForm]);
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -189,14 +236,24 @@ export default function ProfilePage() {
   };
 
   const handlePreferenceChange = (key: keyof typeof profileData.preferences) => {
-    setProfileData(prev => ({
+    setProfileData((prev: any) => ({
       ...prev,
       preferences: {
         ...prev.preferences,
-        [key]: !prev.preferences[key]
-      }
+        [key]: !prev.preferences[key],
+      },
     }));
   };
+
+  if (isLoading) {
+    return <div className="text-center py-10">Loading...</div>;
+  }
+  if (error) {
+    return <div className="text-center py-10 text-red-600">Error loading profile data.</div>;
+  }
+  if (!person) {
+    return <div className="text-center py-10">No profile data found.</div>;
+  }
 
   return (
     <div className={clsx("max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8", locale === 'ar' && 'direction-rtl')}>
@@ -743,7 +800,7 @@ export default function ProfilePage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {profileData.children.map((child) => (
+                {profileData.children.map((child: any) => (
                   <div key={child.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
                     <div className={clsx("flex items-center space-x-3", locale === 'ar' && 'space-x-reverse')}>
                       <Image
