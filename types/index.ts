@@ -1,18 +1,7 @@
 // Centralized shared types for the app
 import type { ComponentType, SVGProps } from "react";
 
-// --- App domain types ---
-export interface Child {
-  id: string;
-  name: string;
-  grade: string;
-  classroom: string;
-  teacher: string;
-  avatar: string;
-  attendanceRate: number;
-  latestGrade: string;
-  nextEvent: string;
-}
+ 
 
 export interface Announcement {
   id: string;
@@ -61,15 +50,7 @@ export interface Attendance {
   notes?: string;
 }
 
-export interface Grade {
-  id: string;
-  subject: string;
-  assignment: string;
-  grade: string;
-  maxGrade: string;
-  date: string;
-  teacher: string;
-}
+ 
 
 export interface Assignment {
   id: string;
@@ -80,19 +61,7 @@ export interface Assignment {
   description?: string;
 }
 
-export interface Parent {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  avatar: string;
-  children: Child[];
-  preferences: {
-    emailNotifications: boolean;
-    smsNotifications: boolean;
-    pushNotifications: boolean;
-  };
-}
+ 
 
 export interface NavigationItem {
   id: string;

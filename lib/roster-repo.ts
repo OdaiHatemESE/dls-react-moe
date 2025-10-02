@@ -2,7 +2,6 @@
 import { orFetch } from "@/lib/oneroster";
 import type { Person, StudentBasic, SchoolEnrollment } from "@/types";
 
-
 /**
  * Escape a literal value used within OneRoster filter single quotes.
  * e.g., identifier='O''Connor' (single quote is doubled inside quotes)
@@ -25,8 +24,11 @@ function isPerson(x: unknown): x is Person {
 // Note: StudentBasic guard unused currently; add back if needed for stricter parsing.
 
 function isPersonsEnvelope(x: unknown): x is { persons: Person[] } {
-  return isRecord(x) && Array.isArray((x as { persons?: unknown }).persons) &&
-    ((x as { persons: unknown[] }).persons).every(isPerson);
+  return (
+    isRecord(x) &&
+    Array.isArray((x as { persons?: unknown }).persons) &&
+    (x as { persons: unknown[] }).persons.every(isPerson)
+  );
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -35,7 +37,10 @@ function isStudentsEnvelope(_x: unknown): _x is { students: StudentBasic[] } {
   return false;
 }
 
-function getProp(obj: Record<string, unknown> | undefined, key: string): unknown {
+function getProp(
+  obj: Record<string, unknown> | undefined,
+  key: string
+): unknown {
   if (!obj) return undefined;
   return (obj as Record<string, unknown>)[key];
 }
@@ -62,7 +67,9 @@ export async function getPersonByEid(eid: string): Promise<Person | null> {
 /**
  * 2) From person.sourcedId, get linked students
  */
- export async function getStudentIdsForPerson(personSourceId: string): Promise<string[]> {
+export async function getStudentIdsForPerson(
+  personSourceId: string
+): Promise<string[]> {
   // Endpoint returns an ARRAY, each item like:
   // { parent: {...}, student: { sourcedId: "..." }, ... }
   const filter = `parent='${personSourceId}'`;
@@ -81,12 +88,10 @@ export async function getPersonByEid(eid: string): Promise<Person | null> {
       const sid = getProp(student, "sourcedId");
       return typeof sid === "string" && sid.length > 0 ? sid : undefined;
     })
-    .filter((id: unknown): id is string => typeof id === "string" && id.length > 0);
+    .filter(
+      (id: unknown): id is string => typeof id === "string" && id.length > 0
+    );
 }
-
-
-
- 
 
 // Get FULL vendor payload for each student via /persons/{id}
 // Returns an array where each entry is exactly what the API returned for that id
@@ -99,7 +104,10 @@ export async function getStudentsFull(ids: string[]): Promise<Person[]> {
     console.debug("Fetching full student data for", id);
     try {
       const filter = `sourcedId='${escapeFilterLiteral(id)}'`;
-      const data = await orFetch<unknown>(`/v1p1/persons?filter=${encodeURIComponent(filter)}`, "read");
+      const data = await orFetch<unknown>(
+        `/v1p1/persons?filter=${encodeURIComponent(filter)}`,
+        "read"
+      );
       // Some vendors return a single object; yours returns an ARRAY like [{ persons: {...} }]
       if (Array.isArray(data)) {
         all.push(...data);
@@ -118,11 +126,11 @@ export async function getStudentsFull(ids: string[]): Promise<Person[]> {
  * Get school enrollments by student ID and optional school year
  */
 export async function getSchoolEnrollmentsByStudent(
-  studentId: string, 
+  studentId: string,
   schoolYear?: string
 ): Promise<SchoolEnrollment[]> {
   let filter = `student='${escapeFilterLiteral(studentId)}'`;
-  
+
   if (schoolYear) {
     filter += ` AND schoolYear='${escapeFilterLiteral(schoolYear)}'`;
   }
@@ -148,14 +156,18 @@ export async function getSchoolEnrollmentsByStudent(
 
     return parseEnrollments(data);
   } catch (err) {
-    console.error("Failed fetching school enrollments for student", studentId, err);
+    console.error(
+      "Failed fetching school enrollments for student",
+      studentId,
+      err
+    );
     return [];
   }
 }
 
 function parseEnrollments(data: unknown[]): SchoolEnrollment[] {
   const results: SchoolEnrollment[] = [];
-  
+
   for (const item of data) {
     if (!isRecord(item)) continue;
 
@@ -213,7 +225,7 @@ function parseEnrollments(data: unknown[]): SchoolEnrollment[] {
     const studentHref = getProp(student, "href");
     const studentSourcedId = getProp(student, "sourcedId");
     const studentType = getProp(student, "type");
-    
+
     if (
       typeof studentHref !== "string" ||
       typeof studentSourcedId !== "string" ||
@@ -227,7 +239,7 @@ function parseEnrollments(data: unknown[]): SchoolEnrollment[] {
     const sessionHref = getProp(session, "href");
     const sessionSourcedId = getProp(session, "sourcedId");
     const sessionType = getProp(session, "type");
-    
+
     if (
       typeof sessionHref !== "string" ||
       typeof sessionSourcedId !== "string" ||
@@ -241,7 +253,7 @@ function parseEnrollments(data: unknown[]): SchoolEnrollment[] {
     const communityHref = getProp(community, "href");
     const communitySourcedId = getProp(community, "sourcedId");
     const communityType = getProp(community, "type");
-    
+
     if (
       typeof communityHref !== "string" ||
       typeof communitySourcedId !== "string" ||
@@ -255,7 +267,7 @@ function parseEnrollments(data: unknown[]): SchoolEnrollment[] {
     const schoolHref = getProp(school, "href");
     const schoolSourcedId = getProp(school, "sourcedId");
     const schoolType = getProp(school, "type");
-    
+
     if (
       typeof schoolHref !== "string" ||
       typeof schoolSourcedId !== "string" ||
@@ -269,7 +281,7 @@ function parseEnrollments(data: unknown[]): SchoolEnrollment[] {
     const streamGradeHref = getProp(streamGrade, "href");
     const streamGradeSourcedId = getProp(streamGrade, "sourcedId");
     const streamGradeType = getProp(streamGrade, "type");
-    
+
     if (
       typeof streamGradeHref !== "string" ||
       typeof streamGradeSourcedId !== "string" ||
@@ -321,6 +333,6 @@ function parseEnrollments(data: unknown[]): SchoolEnrollment[] {
       createDate,
     });
   }
-  
+
   return results;
 }
