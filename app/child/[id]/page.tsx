@@ -22,7 +22,7 @@ interface BasicInfoResponse {
 
 
 export default function ChildDetailPage() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const params = useParams();
   const eid = params.id as string;
   const { data, error, isLoading } = useSWR<BasicInfoResponse>(
@@ -69,11 +69,19 @@ export default function ChildDetailPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div>
               <div className="text-xs text-gray-500 mb-1">{t.child.given_name}</div>
-              <div className="text-base text-gray-900 font-medium">{person.givenName || '-'}</div>
+              <div className="text-base text-gray-900 font-medium">
+                {locale === 'ar'
+                  ? (person.givenName || '-')
+                  : (person.metadata?.englishFirstName || '-')}
+              </div>
             </div>
             <div>
               <div className="text-xs text-gray-500 mb-1">{t.child.family_name}</div>
-              <div className="text-base text-gray-900 font-medium">{person.familyName || '-'}</div>
+              <div className="text-base text-gray-900 font-medium">
+                {locale === 'ar'
+                  ? (person.familyName || '-')
+                  : (person.metadata?.englishFamilyName || '-')}
+              </div>
             </div>
             <div>
               <div className="text-xs text-gray-500 mb-1">{t.child.username}</div>

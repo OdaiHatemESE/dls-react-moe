@@ -22,13 +22,7 @@ export default function DashboardPage() {
       {/* Children Cards */}
       <ChildCards />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Recent Announcements */}
-        <RecentAnnouncements />
-
-        {/* Upcoming Events */}
-        <UpcomingEvents />
-      </div>
+    
     </div>
   );
 }
