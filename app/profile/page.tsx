@@ -1,18 +1,17 @@
 "use client";
 
 import React, { useState } from 'react';
-import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { 
-  ProfileIcon, 
   EditIcon,
   SettingsIcon,
   CheckIcon,
   LoadingIcon
 } from '../components/icons';
+import { ProfileIcon } from '../components/icons';
 import useSWR from 'swr';
 import { useSession } from 'next-auth/react';
 import type { Person } from '@/types';
@@ -133,18 +132,18 @@ export default function ProfilePage() {
       pushNotifications: false,
     },
     children: [],
-    avatar: '/file.svg',
+    avatar: '/avatar.svg',
   });
 
   React.useEffect(() => {
     if (person) {
       setProfileData((prev: any) => ({
         ...prev,
-        avatar: person?.metadata?.avatar || '/file.svg',
+        avatar: person?.metadata?.avatar || '/avatar.svg',
         children: children.map((child: any) => ({
           id: child.sourcedId,
           name: [child.metadata?.englishFirstName, child.metadata?.englishFamilyName].filter(Boolean).join(' '),
-          avatar: child.metadata?.avatar || '/file.svg',
+          avatar: child.metadata?.avatar || '/avatar.svg',
           grade: child.grades || '-',
           teacher: child.metadata?.homeroomTeacher || '-',
         })),
@@ -256,560 +255,183 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className={clsx("max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8", locale === 'ar' && 'direction-rtl')}>
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">{t.profile.title}</h1>
-        <p className="mt-1 text-sm text-gray-600">{t.profile.subtitle}</p>
+    <div className={clsx("max-w-5xl mx-auto px-4 sm:px-8 py-10", locale === 'ar' && 'direction-rtl')}>
+      {/* Header */}
+      <div className="flex flex-col items-center mb-10">
+        <span className="w-24 h-24 rounded-full border-4 border-blue-100 shadow flex items-center justify-center bg-white">
+          <ProfileIcon className="w-20 h-20 text-blue-400" weight="duotone" />
+        </span>
+        <h1 className="mt-4 text-3xl font-bold text-gray-900">{formData.name}</h1>
+        <p className="text-gray-500 text-base">{t.profile.parentAccount}</p>
+        {!isEditing && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleEdit}
+            className="flex items-center gap-2 mt-3"
+          >
+            <EditIcon className="w-4 h-4" />
+            <span>{t.profile.edit}</span>
+          </Button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Profile Information */}
-        <div className="lg:col-span-2">
-          <Card>
+        {/* Main Info */}
+        <div className="lg:col-span-2 space-y-8">
+          {/* Contact & Identity */}
+          <Card className="bg-gray-50">
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center">
-                  <ProfileIcon className="w-5 h-5 me-2" />
-                  {t.profile.personalInfo}
-                </CardTitle>
-                {!isEditing && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleEdit}
-                    className={clsx("flex items-center gap-2")}
-                  >
-                    <EditIcon className="w-4 h-4" />
-                    <span>{t.profile.edit}</span>
-                  </Button>
-                )}
-              </div>
+              <CardTitle className="flex items-center gap-2">
+                <ProfileIcon className="w-5 h-5" />
+                {t.profile.personalInfo}
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              {isEditing ? (
-                <form onSubmit={handleSave} className="space-y-6">
-                  <div>
-                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                      {t.profile.fullName}
-                    </label>
-                    <Input id="name" name="name" value={formData.name} onChange={handleInputChange} required />
-                  </div>
-                  <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                      {t.profile.emailAddress}
-                    </label>
-                    <Input type="email" id="email" name="email" value={formData.email} onChange={handleInputChange} required />
-                  </div>
-                  <div>
-                    <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
-                      {t.profile.phoneNumber}
-                    </label>
-                    <Input type="tel" id="phone" name="phone" value={formData.phone} onChange={handleInputChange} required />
-                  </div>
-
-                  {/* Arabic Names */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">{t.profile.fullName} (AR) - First</label>
-                      <Input name="arabicGivenName" value={formData.arabicGivenName} onChange={handleInputChange} />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">{t.profile.fullName} (AR) - Middle</label>
-                      <Input name="arabicMiddleName" value={formData.arabicMiddleName} onChange={handleInputChange} />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">{t.profile.fullName} (AR) - Family</label>
-                      <Input name="arabicFamilyName" value={formData.arabicFamilyName} onChange={handleInputChange} />
-                    </div>
-                  </div>
-
-                  {/* English Names */}
-                  <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">First (EN)</label>
-                      <Input name="englishFirstName" value={formData.englishFirstName} onChange={handleInputChange} />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Second (EN)</label>
-                      <Input name="englishSecondName" value={formData.englishSecondName} onChange={handleInputChange} />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Third (EN)</label>
-                      <Input name="englishThirdName" value={formData.englishThirdName} onChange={handleInputChange} />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Fourth (EN)</label>
-                      <Input name="englishFourthName" value={formData.englishFourthName} onChange={handleInputChange} />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Family (EN)</label>
-                      <Input name="englishFamilyName" value={formData.englishFamilyName} onChange={handleInputChange} />
-                    </div>
-                  </div>
-
-                  {/* Identity & Demographics */}
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Identifier</label>
-                      <Input name="identifier" value={formData.identifier} onChange={handleInputChange} />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
-                      <Input name="username" value={formData.username} onChange={handleInputChange} />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
-                      <Input name="role" value={formData.role} onChange={handleInputChange} />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                      <Input name="status" value={formData.status} onChange={handleInputChange} />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
-                      <Input name="type" value={formData.type} onChange={handleInputChange} />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Enabled</label>
-                      <Input name="enabledUser" value={formData.enabledUser} onChange={handleInputChange} />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Gender</label>
-                      <Input name="gender" value={formData.gender} onChange={handleInputChange} />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Birth Date</label>
-                      <Input type="date" name="birthDate" value={formData.birthDate} onChange={handleInputChange} />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Marital Status</label>
-                      <Input name="maritalStatus" value={formData.maritalStatus} onChange={handleInputChange} />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Religion</label>
-                      <Input name="religion" value={formData.religion} onChange={handleInputChange} />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Nationality (EN)</label>
-                      <Input name="nationality" value={formData.nationality} onChange={handleInputChange} />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Nationality (AR)</label>
-                      <Input name="nationalityArabic" value={formData.nationalityArabic} onChange={handleInputChange} />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Birth Country (EN)</label>
-                      <Input name="birthCountry" value={formData.birthCountry} onChange={handleInputChange} />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Birth Country (AR)</label>
-                      <Input name="birthCountryArabic" value={formData.birthCountryArabic} onChange={handleInputChange} />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Birth City (AR)</label>
-                      <Input name="birthCity" value={formData.birthCity} onChange={handleInputChange} />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Birth City (EN)</label>
-                      <Input name="englishBirthCity" value={formData.englishBirthCity} onChange={handleInputChange} />
-                    </div>
-                  </div>
-
-                  {/* Address */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
-                      <Input name="address_country" value={formData.address_country} onChange={handleInputChange} />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
-                      <Input name="address_state" value={formData.address_state} onChange={handleInputChange} />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
-                      <Input name="address_city" value={formData.address_city} onChange={handleInputChange} />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Address Line 1</label>
-                      <Input name="address_addressLine1" value={formData.address_addressLine1} onChange={handleInputChange} />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Address Line 2</label>
-                      <Input name="address_addressLine2" value={formData.address_addressLine2} onChange={handleInputChange} />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Address Line 3</label>
-                      <Input name="address_addressLine3" value={formData.address_addressLine3} onChange={handleInputChange} />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">ZIP Code</label>
-                      <Input name="address_zipCode" value={formData.address_zipCode} onChange={handleInputChange} />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">PO Box</label>
-                      <Input name="address_poBox" value={formData.address_poBox} onChange={handleInputChange} />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Region</label>
-                      <Input name="address_region" value={formData.address_region} onChange={handleInputChange} />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Sector</label>
-                      <Input name="address_sector" value={formData.address_sector} onChange={handleInputChange} />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Road Number</label>
-                      <Input name="address_roadNumber" value={formData.address_roadNumber} onChange={handleInputChange} />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Plot Id</label>
-                      <Input name="address_plotId" value={formData.address_plotId} onChange={handleInputChange} />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Plot Number</label>
-                      <Input name="address_plotNumber" value={formData.address_plotNumber} onChange={handleInputChange} />
-                    </div>
-                  </div>
-                  <div className={clsx("flex gap-3")}> 
-                    <Button
-                      type="submit"
-                      disabled={isSaving}
-                      className={clsx("flex items-center space-x-2", locale === 'ar' && 'space-x-reverse')}
-                    >
-                      {isSaving ? (
-                        <LoadingIcon className="w-4 h-4" />
-                      ) : (
-                        <CheckIcon className="w-4 h-4" />
-                      )}
-                      <span>{isSaving ? t.common.saving : t.profile.saveChanges}</span>
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={handleCancel}
-                      disabled={isSaving}
-                    >
-                      {t.profile.cancel}
-                    </Button>
-                  </div>
-                </form>
-              ) : (
-                <div className="space-y-6">
-                  <div className="flex items-center gap-4">
-                    <Image
-                      className="w-16 h-16 rounded-full"
-                      src={profileData.avatar}
-                      alt={`${formData.name} avatar`}
-                      width={64}
-                      height={64}
-                    />
-                    <div>
-                      <h3 className="text-lg font-medium text-gray-900">{formData.name}</h3>
-                      <p className="text-sm text-gray-600">{t.profile.parentAccount}</p>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        {t.profile.emailAddress}
-                      </label>
-                      <p className="text-sm text-gray-900">{formData.email}</p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        {t.profile.phoneNumber}
-                      </label>
-                      <p className="text-sm text-gray-900">{formData.phone}</p>
-                    </div>
-                  </div>
-
-                  {/* Identity */}
-                  <div className="pt-2">
-                    <h4 className="text-sm font-semibold text-gray-900 mb-3">Identity</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div>
-                        <p className="text-xs text-gray-500">Identifier</p>
-                        <p className="text-sm text-gray-900 break-all">{person.identifier || '-'}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-500">Username</p>
-                        <p className="text-sm text-gray-900 break-all">{person.username || '-'}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-500">Sourced ID</p>
-                        <p className="text-sm text-gray-900 break-all">{person.sourcedId}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-500">Role</p>
-                        <p className="text-sm text-gray-900">{person.role || '-'}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-500">Status</p>
-                        <p className="text-sm text-gray-900">{person.status || '-'}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-500">Type</p>
-                        <p className="text-sm text-gray-900">{person.type || '-'}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-500">Enabled</p>
-                        <p className="text-sm text-gray-900">{typeof person.enabledUser === 'boolean' ? String(person.enabledUser) : (person.enabledUser || '-')}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-500">Last Modified</p>
-                        <p className="text-sm text-gray-900">{person.dateLastModified ? new Date(person.dateLastModified).toLocaleString(locale) : '-'}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-500">User IDs</p>
-                        <p className="text-sm text-gray-900">{person.userIds || '-'}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-500">SMS</p>
-                        <p className="text-sm text-gray-900">{person.sms || '-'}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-500">Agents</p>
-                        <p className="text-sm text-gray-900">{person.agents || '-'}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-500">Grades</p>
-                        <p className="text-sm text-gray-900">{person.grades || '-'}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Names */}
-                  <div className="pt-2">
-                    <h4 className="text-sm font-semibold text-gray-900 mb-3">Names</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div>
-                        <p className="text-xs text-gray-500">Arabic Given</p>
-                        <p className="text-sm text-gray-900">{person.givenName || '-'}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-500">Arabic Middle</p>
-                        <p className="text-sm text-gray-900">{person.middleName || '-'}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-500">Arabic Family</p>
-                        <p className="text-sm text-gray-900">{person.familyName || '-'}</p>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mt-3">
-                      <div>
-                        <p className="text-xs text-gray-500">English First</p>
-                        <p className="text-sm text-gray-900">{person.metadata?.englishFirstName || '-'}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-500">Birth Name</p>
-                        <p className="text-sm text-gray-900">{person.metadata?.birthName || '-'}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-500">English Second</p>
-                        <p className="text-sm text-gray-900">{person.metadata?.englishSecondName || '-'}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-500">English Third</p>
-                        <p className="text-sm text-gray-900">{person.metadata?.englishThirdName || '-'}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-500">English Fourth</p>
-                        <p className="text-sm text-gray-900">{person.metadata?.englishFourthName || '-'}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-500">English Family</p>
-                        <p className="text-sm text-gray-900">{person.metadata?.englishFamilyName || '-'}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Lists */}
-                  <div className="pt-2">
-                    <h4 className="text-sm font-semibold text-gray-900 mb-3">Lists</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <p className="text-xs text-gray-500">Role List</p>
-                        <p className="text-sm text-gray-900">{person.metadata?.roleList || '-'}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-500">Active Role List</p>
-                        <p className="text-sm text-gray-900">{person.metadata?.activeRoleList || '-'}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Demographics */}
-                  <div className="pt-2">
-                    <h4 className="text-sm font-semibold text-gray-900 mb-3">Demographics</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                      <div>
-                        <p className="text-xs text-gray-500">Gender</p>
-                        <p className="text-sm text-gray-900">{person.metadata?.gender || '-'}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-500">Birth Date</p>
-                        <p className="text-sm text-gray-900">{person.metadata?.birthDate || '-'}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-500">Marital Status</p>
-                        <p className="text-sm text-gray-900">{person.metadata?.maritalStatus || '-'}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-500">Religion</p>
-                        <p className="text-sm text-gray-900">{person.metadata?.religion || '-'}</p>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-3">
-                      <div>
-                        <p className="text-xs text-gray-500">Nationality (EN)</p>
-                        <p className="text-sm text-gray-900">{person.metadata?.nationality || '-'}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-500">Nationality (AR)</p>
-                        <p className="text-sm text-gray-900">{person.metadata?.nationalityArabic || '-'}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-500">Birth Country (EN)</p>
-                        <p className="text-sm text-gray-900">{person.metadata?.birthCountry || '-'}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-500">Birth Country (AR)</p>
-                        <p className="text-sm text-gray-900">{person.metadata?.birthCountryArabic || '-'}</p>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
-                      <div>
-                        <p className="text-xs text-gray-500">Birth City (AR)</p>
-                        <p className="text-sm text-gray-900">{person.metadata?.birthCity || '-'}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-500">Birth City (EN)</p>
-                        <p className="text-sm text-gray-900">{person.metadata?.englishBirthCity || '-'}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Contacts */}
-                  <div className="pt-2">
-                    <h4 className="text-sm font-semibold text-gray-900 mb-3">Contacts</h4>
-                    {person.metadata?.contacts?.length ? (
-                      <ul className="divide-y divide-gray-200 rounded-md border border-gray-200">
-                        {person.metadata.contacts.map((c, idx) => (
-                          <li key={idx} className="p-3 flex items-center justify-between">
-                            <div>
-                              <p className="text-sm text-gray-900">{c.value || '-'}</p>
-                              <p className="text-xs text-gray-500">{c.contactType || 'Contact'}</p>
-                            </div>
-                            {c.isPrivate !== undefined && (
-                              <span className={clsx('text-xs px-2 py-0.5 rounded-full', c.isPrivate ? 'bg-gray-100 text-gray-700' : 'bg-green-100 text-green-700')}>
-                                {c.isPrivate ? 'Private' : 'Shared'}
-                              </span>
-                            )}
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p className="text-sm text-gray-500">No contacts available</p>
-                    )}
-                  </div>
-
-                  {/* Address */}
-                  <div className="pt-2">
-                    <h4 className="text-sm font-semibold text-gray-900 mb-3">Primary Address</h4>
-                    {person.metadata?.addresses?.length ? (
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                          <p className="text-xs text-gray-500">Country</p>
-                          <p className="text-sm text-gray-900">{primaryAddress?.country || '-'}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-gray-500">State</p>
-                          <p className="text-sm text-gray-900">{primaryAddress?.state || '-'}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-gray-500">City</p>
-                          <p className="text-sm text-gray-900">{primaryAddress?.city || '-'}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-gray-500">ZIP Code</p>
-                          <p className="text-sm text-gray-900">{primaryAddress?.zipCode || '-'}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-gray-500">PO Box</p>
-                          <p className="text-sm text-gray-900">{primaryAddress?.poBox || '-'}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-gray-500">Region</p>
-                          <p className="text-sm text-gray-900">{primaryAddress?.region || '-'}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-gray-500">Sector</p>
-                          <p className="text-sm text-gray-900">{primaryAddress?.sector || '-'}</p>
-                        </div>
-                        <div className="md:col-span-3">
-                          <p className="text-xs text-gray-500">Address Lines</p>
-                          <p className="text-sm text-gray-900">{[primaryAddress?.addressLine1, primaryAddress?.addressLine2, primaryAddress?.addressLine3].filter(Boolean).join(', ') || '-'}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-gray-500">Road Number</p>
-                          <p className="text-sm text-gray-900">{primaryAddress?.roadNumber || '-'}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-gray-500">Plot Id</p>
-                          <p className="text-sm text-gray-900">{primaryAddress?.plotId || '-'}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-gray-500">Plot Number</p>
-                          <p className="text-sm text-gray-900">{primaryAddress?.plotNumber || '-'}</p>
-                        </div>
-                      </div>
-                    ) : (
-                      <p className="text-sm text-gray-500">No address available</p>
-                    )}
-                  </div>
-
-                  {/* Raw JSON (debug) */}
-                  <details className="mt-4">
-                    <summary className="cursor-pointer text-sm text-gray-700">Raw JSON</summary>
-                    <pre className="mt-2 bg-gray-50 p-3 rounded text-xs overflow-auto">
-{JSON.stringify(person, null, 2)}
-                    </pre>
-                  </details>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div>
+                  <div className="text-xs text-gray-500 mb-1">{t.profile.emailAddress}</div>
+                  <div className="text-base text-gray-900 font-medium">{formData.email}</div>
                 </div>
+                <div>
+                  <div className="text-xs text-gray-500 mb-1">{t.profile.phoneNumber}</div>
+                  <div className="text-base text-gray-900 font-medium">{formData.phone}</div>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <div className="text-xs text-gray-500 mb-1">Identifier</div>
+                  <div className="text-base text-gray-900">{person.identifier || '-'}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500 mb-1">Username</div>
+                  <div className="text-base text-gray-900">{person.username || '-'}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500 mb-1">Role</div>
+                  <div className="text-base text-gray-900">{person.role || '-'}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500 mb-1">Status</div>
+                  <div className="text-base text-gray-900">{person.status || '-'}</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Demographics & Names */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Demographics & Names</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div>
+                  <div className="text-xs text-gray-500 mb-1">Gender</div>
+                  <div className="text-base text-gray-900">{person.metadata?.gender || '-'}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500 mb-1">Birth Date</div>
+                  <div className="text-base text-gray-900">{person.metadata?.birthDate || '-'}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500 mb-1">Nationality (EN)</div>
+                  <div className="text-base text-gray-900">{person.metadata?.nationality || '-'}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500 mb-1">Nationality (AR)</div>
+                  <div className="text-base text-gray-900">{person.metadata?.nationalityArabic || '-'}</div>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <div className="text-xs text-gray-500 mb-1">Arabic Name</div>
+                  <div className="text-base text-gray-900">{[person.givenName, person.middleName, person.familyName].filter(Boolean).join(' ') || '-'}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500 mb-1">English Name</div>
+                  <div className="text-base text-gray-900">{[person.metadata?.englishFirstName, person.metadata?.englishSecondName, person.metadata?.englishThirdName, person.metadata?.englishFourthName, person.metadata?.englishFamilyName].filter(Boolean).join(' ') || '-'}</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Address */}
+          <Card className="bg-gray-50">
+            <CardHeader>
+              <CardTitle>Primary Address</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {primaryAddress ? (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <div className="text-xs text-gray-500 mb-1">Country</div>
+                    <div className="text-base text-gray-900">{primaryAddress.country || '-'}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-500 mb-1">State</div>
+                    <div className="text-base text-gray-900">{primaryAddress.state || '-'}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-500 mb-1">City</div>
+                    <div className="text-base text-gray-900">{primaryAddress.city || '-'}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-500 mb-1">ZIP Code</div>
+                    <div className="text-base text-gray-900">{primaryAddress.zipCode || '-'}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-500 mb-1">PO Box</div>
+                    <div className="text-base text-gray-900">{primaryAddress.poBox || '-'}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-500 mb-1">Region</div>
+                    <div className="text-base text-gray-900">{primaryAddress.region || '-'}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-500 mb-1">Sector</div>
+                    <div className="text-base text-gray-900">{primaryAddress.sector || '-'}</div>
+                  </div>
+                  <div className="md:col-span-3">
+                    <div className="text-xs text-gray-500 mb-1">Address Lines</div>
+                    <div className="text-base text-gray-900">{[primaryAddress.addressLine1, primaryAddress.addressLine2, primaryAddress.addressLine3].filter(Boolean).join(', ') || '-'}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-500 mb-1">Road Number</div>
+                    <div className="text-base text-gray-900">{primaryAddress.roadNumber || '-'}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-500 mb-1">Plot Id</div>
+                    <div className="text-base text-gray-900">{primaryAddress.plotId || '-'}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-500 mb-1">Plot Number</div>
+                    <div className="text-base text-gray-900">{primaryAddress.plotNumber || '-'}</div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-gray-500">No address available</div>
               )}
             </CardContent>
           </Card>
 
-          {/* Children Information */}
-          <Card className="mt-6">
+          {/* Children */}
+          <Card>
             <CardHeader>
               <CardTitle>{t.profile.linkedChildren}</CardTitle>
               <p className="text-sm text-gray-600">{t.profile.linkedChildrenSubtitle}</p>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
+                {profileData.children.length === 0 && (
+                  <div className="text-gray-500">No linked children</div>
+                )}
                 {profileData.children.map((child: any) => (
-                  <div key={child.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                  <div key={child.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg bg-gray-50">
                     <div className={clsx("flex items-center space-x-3", locale === 'ar' && 'space-x-reverse')}>
-                      <Image
-                        className="w-10 h-10 rounded-full"
-                        src={child.avatar}
-                        alt={`${child.name} avatar`}
-                        width={40}
-                        height={40}
-                      />
+                      <span className="w-10 h-10 rounded-full flex items-center justify-center bg-blue-50">
+                        <ProfileIcon className="w-7 h-7 text-blue-400" weight="duotone" />
+                      </span>
                       <div>
                         <p className="text-sm font-medium text-gray-900">{child.name}</p>
                         <p className="text-xs text-gray-500">{child.grade} • {child.teacher}</p>
@@ -825,8 +447,8 @@ export default function ProfilePage() {
           </Card>
         </div>
 
-        {/* Settings & Preferences */}
-        <div>
+        {/* Preferences & Actions */}
+        <div className="space-y-8">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
@@ -856,7 +478,6 @@ export default function ProfilePage() {
                     />
                   </button>
                 </div>
-
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-gray-900">{t.profile.smsNotifications}</p>
@@ -877,7 +498,6 @@ export default function ProfilePage() {
                     />
                   </button>
                 </div>
-
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-gray-900">{t.profile.pushNotifications}</p>
@@ -901,9 +521,7 @@ export default function ProfilePage() {
               </div>
             </CardContent>
           </Card>
-
-          {/* Account Actions */}
-          <Card className="mt-6">
+          <Card>
             <CardHeader>
               <CardTitle>{t.profile.accountActions}</CardTitle>
             </CardHeader>
