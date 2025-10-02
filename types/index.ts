@@ -128,12 +128,90 @@ export interface MenuData {
 }
 
 // --- OneRoster derived types used in lib/roster-repo ---
-export type Person = {
+// --- OneRoster person details (parent) ---
+export interface PersonContact {
+  note?: string;
+  contactType?: string;
+  isPrivate?: boolean;
+  value?: string;
+}
+
+export interface PersonAddress {
+  country?: string;
+  zipCode?: string;
+  city?: string;
+  isVerified?: boolean;
+  latitude?: string;
+  poBox?: string;
+  roadNumber?: string;
+  plotId?: string;
+  addressLine1?: string;
+  plotNumber?: string;
+  addressLine2?: string;
+  addressLine3?: string;
+  state?: string;
+  region?: string;
+  sector?: string;
+  longitude?: string;
+}
+
+export interface PersonMetadata {
+  englishSecondName?: string;
+  birthName?: string;
+  birthDate?: string;
+  maritalStatus?: string;
+  birthCountry?: string;
+  birthCity?: string;
+  nationalityArabic?: string;
+  englishThirdName?: string;
+  gender?: string;
+  englishFirstName?: string;
+  religion?: string;
+  englishBirthCity?: string;
+  birthCountryArabic?: string;
+  englishFamilyName?: string;
+  roleList?: string;
+  nationality?: string;
+  englishFourthName?: string;
+  activeRoleList?: string;
+  contacts?: PersonContact[];
+  addresses?: PersonAddress[];
+  // Allow vendor-specific extras
+  [key: string]: unknown;
+}
+
+export interface Person {
+  // Required by repository code
   sourcedId: string;
-  givenName?: string;
-  familyName?: string;
+
+  // Role and identity
+  role?: string; // e.g., "parent"
+  type?: string; // e.g., "Real User"
+  status?: string; // e.g., "active"
+  enabledUser?: boolean | string; // some vendors send "true" as string
+  identifier?: string; // national id
+  username?: string;
+  userIds?: string;
+
+  // Names
+  givenName?: string; // Arabic given name in sample
+  middleName?: string;
+  familyName?: string; // Arabic family name in sample
+
+  // Contact info
   email?: string;
-};
+  phone?: string;
+  sms?: string;
+
+  // Additional attributes from sample
+  agents?: string;
+  grades?: string;
+  password?: string;
+  dateLastModified?: string; // ISO string
+
+  // Rich metadata block
+  metadata?: PersonMetadata;
+}
 
 export type StudentBasic = {
   sourcedId: string;

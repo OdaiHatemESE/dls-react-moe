@@ -1,4 +1,4 @@
-import { Child, Announcement, MessageThread, Message, CalendarEvent, Attendance, Grade, Assignment, Parent } from '@/types';
+import { Child, Announcement, MessageThread, Message, CalendarEvent, Attendance, Grade, Assignment, Parent, Person } from '@/types';
 
 export const mockChildren: Child[] = [
   {
@@ -219,4 +219,70 @@ export const mockParent: Parent = {
     smsNotifications: false,
     pushNotifications: true
   }
+};
+
+// Mock OneRoster Person payload (parent)
+export const mockPerson: Person = {
+  role: "parent",
+  metadata: {
+    englishSecondName: "",
+    birthName: "",
+    birthDate: "1987-01-24",
+    maritalStatus: "Married",
+    birthCountry: "Jordan",
+    birthCity: "عمان",
+    nationalityArabic: "الأردن",
+    englishThirdName: "",
+    gender: "Male",
+    englishFirstName: "UDAI",
+    religion: "Muslim",
+    englishBirthCity: "AMMAN",
+    birthCountryArabic: "الأردن",
+    englishFamilyName: "HATEM ALI",
+    roleList: "parent",
+    nationality: "Jordan",
+    contacts: [
+      { note: "", contactType: "Mobile", isPrivate: false, value: "0501181502" },
+      { note: "", contactType: "EMail", isPrivate: false, value: "odaihatem@gmail.com" }
+    ],
+    englishFourthName: "",
+    activeRoleList: "",
+    addresses: [
+      {
+        country: "United Arab Emirates",
+        zipCode: "",
+        city: "عجمان",
+        isVerified: false,
+        latitude: "",
+        poBox: "",
+        roadNumber: "",
+        plotId: "",
+        addressLine1: "",
+        plotNumber: "",
+        addressLine2: "",
+        addressLine3: "",
+        state: "AJMAN",
+        region: "",
+        sector: "",
+        longitude: ""
+      }
+    ]
+  },
+  grades: "",
+  type: "Real User",
+  password: "Y+JpyFqzS0gm+Ox09BtYi5Sbg/+07AfpaiLz71QGqAIdaboyYNLb4ocGvXaB8ZwFihn3HveH893x6KQfbv0T+h+dTOiieXC87m8J1v4g0lg=",
+  dateLastModified: "2021-09-01T05:13:09.638Z",
+  familyName: "حاتم على",
+  userIds: "2766984",
+  sms: "0501181502",
+  email: "odaihatem@gmail.com",
+  sourcedId: "SST-1-1-Pers-2766984",
+  identifier: "784198791735438",
+  enabledUser: "true",
+  givenName: "عدى",
+  agents: "",
+  phone: "0501181502",
+  middleName: "",
+  status: "active",
+  username: "odaihatem@gmail.com"
 };
