@@ -57,9 +57,9 @@ const formatDate = (dateString: string, locale: string): string => {
 
 // Helper components for minimalism
 const InfoRow = ({ label, value, colSpan }: { label: string; value: string; colSpan?: number }) => (
-  <div className={`flex flex-col${colSpan === 2 ? ' col-span-2' : ''}`}>
+  <div className={`flex flex-col p-3 bg-gray-50 rounded-lg${colSpan === 2 ? ' col-span-2' : ''}`}>
     <span className="text-gray-500 text-xs font-medium mb-1">{label}</span>
-    <span className="text-gray-900 font-medium">{value}</span>
+    <span className="text-gray-900 font-semibold">{value}</span>
   </div>
 );
 
@@ -121,33 +121,43 @@ export default function ChildCards() {
         return (
           <Card
             key={child.sourcedId}
-            className={`group relative hover:shadow-lg transition-all border border-gray-200 hover:border-blue-300 bg-white ${locale === 'ar' ? 'direction-rtl' : 'direction-ltr'}`}
+            className={`group relative hover:shadow-xl transition-all duration-300 border-0 bg-white hover:bg-gray-50 rounded-xl overflow-hidden ${locale === 'ar' ? 'direction-rtl' : 'direction-ltr'}`}
+            style={{ boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)' }}
           >
-            <CardHeader className="pb-4">
+            {/* Header with subtle background */}
+            <div className="bg-gray-50 p-6 border-b border-gray-100">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
-                  <CardTitle className="text-xl font-bold text-gray-900 mb-2 leading-tight">
-                    {displayName}
-                  </CardTitle>
-                  <div className="flex items-center gap-2 mb-3">
-                    <Badge variant="outline" className="text-xs px-2 py-1">
-                      {t.student?.studentId || (locale === 'ar' ? 'رقم الطالب' : 'Student ID')}: {child.sourcedId}
-                    </Badge>
+                  {/* Student Avatar/Initial */}
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                      <span className="text-lg font-bold text-blue-600">
+                        {displayName.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                    <div>
+                      <CardTitle className="text-xl font-bold text-gray-900 leading-tight">
+                        {displayName}
+                      </CardTitle>
+                      <Badge variant="outline" className="text-xs px-2 py-1 mt-1 bg-white">
+                        ID: {child.sourcedId}
+                      </Badge>
+                    </div>
                   </div>
                 </div>
                 <Link
                   href={`/child/${child.identifier}`}
-                  className="flex-shrink-0 text-blue-600 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-md p-2 transition-colors"
+                  className="flex-shrink-0 p-2 text-gray-400 hover:text-gray-600 hover:bg-white rounded-lg transition-all duration-200"
                   aria-label={`${t.student?.viewDetails || (locale === 'ar' ? 'عرض التفاصيل' : 'View Details')} ${displayName}`}
                   title={t.student?.viewDetails || (locale === 'ar' ? 'عرض التفاصيل' : 'View Details')}
                 >
                   <ChevronRightIcon className="w-5 h-5" />
                 </Link>
               </div>
-            </CardHeader>
-            <CardContent className="pt-0 pb-4">
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-3 text-sm">
+            </div>
+            <CardContent className="p-6">
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4 text-sm">
                   <InfoRow label={t.student?.gender || (locale === 'ar' ? 'الجنس' : 'Gender')} value={genderLabel} />
                   {(age > 0 || formattedBirthDate) && (
                     <InfoRow
@@ -178,10 +188,10 @@ export default function ChildCards() {
                 )}
               </div>
             </CardContent>
-            <CardFooter className="pt-0">
+            <CardFooter className="px-6 pb-6">
               <Link
                 href={`/child/${child.sourcedId}`}
-                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-200 hover:border-blue-300 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium text-white bg-gray-900 hover:bg-gray-800 rounded-lg transition-all duration-200 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
               >
                 {t.student?.viewDetails || (locale === 'ar' ? 'عرض التفاصيل' : 'View Details')}
                 <ChevronRightIcon className="w-4 h-4" />

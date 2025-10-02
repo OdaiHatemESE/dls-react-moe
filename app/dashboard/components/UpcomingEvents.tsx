@@ -14,58 +14,60 @@ export default function UpcomingEvents() {
   const upcomingEvents = mockCalendarEvents.slice(0, 3);
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className="border-0 shadow-sm hover:shadow-md transition-shadow duration-200">
+      <CardHeader className="bg-purple-50 border-b border-purple-100">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center">
-            <CalendarIcon className="w-5 h-5 me-2 text-purple-600" />
-            {t.dashboard.upcomingEvents}
+            <div className="p-2 bg-purple-100 rounded-lg mr-3">
+              <CalendarIcon className="w-5 h-5 text-purple-600" />
+            </div>
+            <span className="text-gray-900">{t.dashboard.upcomingEvents}</span>
           </CardTitle>
           <Link
             href="/calendar"
-            className="text-sm text-blue-600 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-md px-2 py-1"
+            className="text-sm text-purple-600 hover:text-purple-700 font-medium hover:bg-purple-100 px-3 py-1 rounded-lg transition-colors"
           >
             {t.dashboard.viewCalendar}
           </Link>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-6">
         <div className="space-y-4">
           {upcomingEvents.map((event) => (
             <div
               key={event.id}
-              className="flex items-center justify-between border-b border-gray-200 last:border-b-0 pb-4 last:pb-0"
+              className="p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
             >
-              <div className="flex-1">
-                <h4 className="text-sm font-medium text-gray-900 mb-1">
-                  {event.title}
-                </h4>
-                <div
-                  className={clsx(
-                    "flex items-center gap-2",
-                    locale === "ar" && "flex-row-reverse"
-                  )}
-                >
-                  <span className="text-sm text-gray-600">
-                    {new Date(event.date).toLocaleDateString(locale)}
-                  </span>
-                  {event.time && (
-                    <span className="text-sm text-gray-600">• {event.time}</span>
-                  )}
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <h4 className="text-sm font-semibold text-gray-900 mb-2">
+                    {event.title}
+                  </h4>
+                  <div className={clsx("flex items-center gap-3", locale === "ar" && "flex-row-reverse")}>
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                      <span className="text-sm text-gray-600 font-medium">
+                        {new Date(event.date).toLocaleDateString(locale)}
+                      </span>
+                      {event.time && (
+                        <span className="text-sm text-gray-600">• {event.time}</span>
+                      )}
+                    </div>
+                  </div>
                 </div>
+                <Badge
+                  variant={
+                    event.type === "exam"
+                      ? "secondary"
+                      : event.type === "holiday"
+                      ? "default"
+                      : "outline"
+                  }
+                  className="text-xs"
+                >
+                  {event.type}
+                </Badge>
               </div>
-              <Badge
-                variant={
-                  event.type === "exam"
-                    ? "secondary"
-                    : event.type === "holiday"
-                    ? "default"
-                    : "outline"
-                }
-                className="text-xs"
-              >
-                {event.type}
-              </Badge>
             </div>
           ))}
           {upcomingEvents.length === 0 && (
