@@ -2,6 +2,7 @@
 
 import React from "react";
 import { useChildren } from "@/lib/hooks/useChildren";
+import type { Person } from "@/types";
 import Link from "next/link";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -14,23 +15,23 @@ import { useSession } from "next-auth/react";
 // Helper function to calculate age from birth date
 const calculateAge = (birthDate: string): number => {
   if (!birthDate) return 0;
-  
+
   try {
     const today = new Date();
     const birth = new Date(birthDate);
-    
+
     // Check if birth date is valid
     if (isNaN(birth.getTime()) || birth > today) {
       return 0;
     }
-    
+
     let age = today.getFullYear() - birth.getFullYear();
     const monthDiff = today.getMonth() - birth.getMonth();
-    
+
     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
       age--;
     }
-    
+
     // Return 0 for negative ages (shouldn't happen with valid data)
     return Math.max(0, age);
   } catch {
@@ -41,7 +42,7 @@ const calculateAge = (birthDate: string): number => {
 // Helper function to format date based on locale
 const formatDate = (dateString: string, locale: string): string => {
   if (!dateString) return "";
-  
+
   try {
     const date = new Date(dateString);
     return new Intl.DateTimeFormat(locale === 'ar' ? 'ar-AE' : 'en-US', {
@@ -79,23 +80,26 @@ export default function ChildCards() {
           {error instanceof Error ? error.message : String(error)}
         </div>
       )}
-      {(children ?? []).map((child) => {
-        console.log("odai child :", child);
-        console.log("odai child gender:", child.gender, "birthDate:", child.birthDate);
-        const displayName = locale === 'ar' ? child.arabicName : 
-          [child.englishFirstName, child.englishSecondName, child.englishThirdName, child.englishFamilyName]
-            .filter(Boolean).join(' ') || 'odao';
-        
-        const displayNationality = locale === 'ar' ? child.nationalityArabic : child.nationalityEnglish;
-        const age = calculateAge(child.birthDate);
-        const formattedBirthDate = formatDate(child.birthDate, locale);
+      {(children ?? []).map((child: Person) => {
+        // Compose display name and nationality from Person fields
+        const displayName = locale === 'ar'
+          ? [child.givenName, child.middleName, child.familyName].filter(Boolean).join(' ')
+          : [child.metadata?.englishFirstName, child.metadata?.englishSecondName, child.metadata?.englishThirdName, child.metadata?.englishFamilyName].filter(Boolean).join(' ');
+
+        const displayNationality = locale === 'ar'
+          ? child.metadata?.nationalityArabic || child.metadata?.nationality || ''
+          : child.metadata?.nationality || '';
+
+        const gender = child.metadata?.gender || '';
+        const birthDate = child.metadata?.birthDate || '';
+        const age = calculateAge(birthDate);
+        const formattedBirthDate = formatDate(birthDate, locale);
 
         return (
           <Card
-            key={child.id}
-            className={`group relative hover:shadow-lg transition-all border border-gray-200 hover:border-blue-300 bg-white ${
-              locale === 'ar' ? 'direction-rtl' : 'direction-ltr'
-            }`}
+            key={child.sourcedId}
+            className={`group relative hover:shadow-lg transition-all border border-gray-200 hover:border-blue-300 bg-white ${locale === 'ar' ? 'direction-rtl' : 'direction-ltr'
+              }`}
           >
             <CardHeader className="pb-4">
               <div className="flex items-start justify-between gap-3">
@@ -103,17 +107,17 @@ export default function ChildCards() {
                   <CardTitle className="text-xl font-bold text-gray-900 mb-2 leading-tight">
                     {displayName}
                   </CardTitle>
-                  
+
                   {/* Student ID Badge */}
                   <div className="flex items-center gap-2 mb-3">
                     <Badge variant="outline" className="text-xs px-2 py-1">
-                      {t.student?.studentId || (locale === 'ar' ? 'رقم الطالب' : 'Student ID')}: {child.id}
+                      {t.student?.studentId || (locale === 'ar' ? 'رقم الطالب' : 'Student ID')}: {child.sourcedId}
                     </Badge>
                   </div>
                 </div>
-                
+
                 <Link
-                  href={`/child/${child.id}`}
+                  href={`/child/${child.identifier}`}
                   className="flex-shrink-0 text-blue-600 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-md p-2 transition-colors"
                   aria-label={`${t.student?.viewDetails || (locale === 'ar' ? 'عرض التفاصيل' : 'View Details')} ${displayName}`}
                   title={t.student?.viewDetails || (locale === 'ar' ? 'عرض التفاصيل' : 'View Details')}
@@ -134,15 +138,15 @@ export default function ChildCards() {
                     </span>
                     <span className="text-gray-900 font-medium">
                       {(() => {
-                        const gender = child.gender?.toLowerCase();
-                        if (gender === 'm' || gender === 'male' || gender === 'ذكر') {
+                        const g = gender?.toLowerCase();
+                        if (g === 'm' || g === 'male' || g === 'ذكر') {
                           return t.student?.male || (locale === 'ar' ? 'ذكر' : 'Male');
-                        } else if (gender === 'f' || gender === 'female' || gender === 'أنثى') {
+                        } else if (g === 'f' || g === 'female' || g === 'أنثى') {
                           return t.student?.female || (locale === 'ar' ? 'أنثى' : 'Female');
                         } else {
-                          return child.gender || "—";
+                          return gender || "—";
                         }
-                      })()} 
+                      })()}
                     </span>
                   </div>
 
@@ -150,13 +154,13 @@ export default function ChildCards() {
                   {(age > 0 || formattedBirthDate) && (
                     <div className="flex flex-col">
                       <span className="text-gray-500 text-xs font-medium mb-1">
-                        {age > 0 ? 
+                        {age > 0 ?
                           (t.student?.age || (locale === 'ar' ? 'العمر' : 'Age')) :
                           (t.student?.birthDate || (locale === 'ar' ? 'تاريخ الميلاد' : 'Birth Date'))
                         }
                       </span>
                       <span className="text-gray-900 font-medium">
-                        {age > 0 ? 
+                        {age > 0 ?
                           `${age} ${t.student?.years || (locale === 'ar' ? 'سنة' : 'years')}` :
                           formattedBirthDate
                         }
@@ -190,25 +194,25 @@ export default function ChildCards() {
                 </div>
 
                 {/* Alternative Names Section (if viewing in one language, show the other) */}
-                {locale === 'ar' && [child.englishFirstName, child.englishSecondName, child.englishThirdName, child.englishFamilyName].some(Boolean) && (
+                {locale === 'ar' && [child.metadata?.englishFirstName, child.metadata?.englishSecondName, child.metadata?.englishThirdName, child.metadata?.englishFamilyName].some(Boolean) && (
                   <div className="pt-3 border-t border-gray-100">
                     <span className="text-gray-500 text-xs font-medium mb-1 block">
                       English Name
                     </span>
                     <span className="text-gray-700 text-sm">
-                      {[child.englishFirstName, child.englishSecondName, child.englishThirdName, child.englishFamilyName]
+                      {[child.metadata?.englishFirstName, child.metadata?.englishSecondName, child.metadata?.englishThirdName, child.metadata?.englishFamilyName]
                         .filter(Boolean).join(' ')}
                     </span>
                   </div>
                 )}
 
-                {locale === 'en' && child.arabicName && (
+                {locale === 'en' && child.givenName && (
                   <div className="pt-3 border-t border-gray-100">
                     <span className="text-gray-500 text-xs font-medium mb-1 block">
                       الاسم بالعربية
                     </span>
                     <span className="text-gray-700 text-sm" dir="rtl">
-                      {[child.arabicName, child.arabicSecondName, child.arabicThirdName, child.arabicFamilyName]
+                      {[child.givenName, child.middleName, child.familyName]
                         .filter(Boolean).join(' ')}
                     </span>
                   </div>
@@ -218,7 +222,7 @@ export default function ChildCards() {
 
             <CardFooter className="pt-0">
               <Link
-                href={`/child/${child.id}`}
+                href={`/child/${child.sourcedId}`}
                 className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-200 hover:border-blue-300 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
               >
                 {t.student?.viewDetails || (locale === 'ar' ? 'عرض التفاصيل' : 'View Details')}
@@ -228,7 +232,7 @@ export default function ChildCards() {
           </Card>
         );
       })}
-      
+
       {/* If no children fetched and not loading/error, show helpful message */}
       {status === "authenticated" && !isBusy && !error && (!children || children.length === 0) && (
         <div className="col-span-full text-center py-12">
