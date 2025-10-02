@@ -102,7 +102,7 @@ export default function DashboardPage() {
           const IconComponent = stat.icon;
           return (
             <Link key={index} href={stat.href} className="group">
-              <Card className="transition-all duration-200 hover:shadow-md border-l-4 border-l-gray-200 hover:border-l-gray-400">
+              <Card className="transition-all duration-200 border-l-4 border-l-gray-200 hover:border-l-gray-400">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3 rtl:space-x-reverse">

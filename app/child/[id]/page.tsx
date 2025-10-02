@@ -77,10 +77,10 @@ export default function ChildDetailPage() {
       </div>
 
       {/* Header Card */}
-      <Card className="mb-8 border-0 shadow-lg overflow-hidden">
+      <Card className="mb-8 border border-gray-200 overflow-hidden">
         <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-8 py-12">
           <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
-            <div className="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center shadow-lg">
+            <div className="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center">
               <span className="text-3xl font-bold text-blue-600">
                 {displayName.charAt(0).toUpperCase()}
               </span>
@@ -108,7 +108,7 @@ export default function ChildDetailPage() {
 
       <div className="space-y-8">
         {/* Contact & Identity */}
-        <Card className="border-0 shadow-sm hover:shadow-md transition-shadow duration-200">
+        <Card className="border border-gray-200">
           <CardHeader className="bg-blue-50 border-b border-blue-100">
             <CardTitle className="flex items-center">
               <div className="p-2 bg-blue-100 rounded-lg mr-3">
@@ -148,7 +148,7 @@ export default function ChildDetailPage() {
         </Card>
 
         {/* Demographics & Names */}
-        <Card className="border-0 shadow-sm hover:shadow-md transition-shadow duration-200">
+        <Card className="border border-gray-200">
           <CardHeader className="bg-green-50 border-b border-green-100">
             <CardTitle className="flex items-center">
               <div className="p-2 bg-green-100 rounded-lg mr-3">
@@ -194,7 +194,7 @@ export default function ChildDetailPage() {
         </Card>
 
         {/* Address */}
-        <Card className="border-0 shadow-sm hover:shadow-md transition-shadow duration-200">
+        <Card className="border border-gray-200">
           <CardHeader className="bg-purple-50 border-b border-purple-100">
             <CardTitle className="flex items-center">
               <div className="p-2 bg-purple-100 rounded-lg mr-3">
@@ -241,7 +241,7 @@ export default function ChildDetailPage() {
         </Card>
 
         {/* Quick Actions Card */}
-        <Card className="border-0 shadow-sm hover:shadow-md transition-shadow duration-200">
+        <Card className="border border-gray-200">
           <CardHeader className="bg-gray-50 border-b border-gray-100">
             <CardTitle className="flex items-center">
               <div className="p-2 bg-gray-100 rounded-lg mr-3">

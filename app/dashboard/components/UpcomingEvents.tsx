@@ -14,7 +14,7 @@ export default function UpcomingEvents() {
   const upcomingEvents = mockCalendarEvents.slice(0, 3);
 
   return (
-    <Card className="border-0 shadow-sm hover:shadow-md transition-shadow duration-200">
+    <Card className="border border-gray-200">
       <CardHeader className="bg-purple-50 border-b border-purple-100">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center">

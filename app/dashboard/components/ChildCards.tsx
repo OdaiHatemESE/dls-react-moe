@@ -121,8 +121,7 @@ export default function ChildCards() {
         return (
           <Card
             key={child.sourcedId}
-            className={`group relative hover:shadow-xl transition-all duration-300 border-0 bg-white hover:bg-gray-50 rounded-xl overflow-hidden ${locale === 'ar' ? 'direction-rtl' : 'direction-ltr'}`}
-            style={{ boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)' }}
+            className={`group relative transition-all duration-300 border border-gray-200 bg-white hover:bg-gray-50 rounded-xl overflow-hidden ${locale === 'ar' ? 'direction-rtl' : 'direction-ltr'}`}
           >
             {/* Header with subtle background */}
             <div className="bg-gray-50 p-6 border-b border-gray-100">
@@ -191,7 +190,7 @@ export default function ChildCards() {
             <CardFooter className="px-6 pb-6">
               <Link
                 href={`/child/${child.sourcedId}`}
-                className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium text-white bg-gray-900 hover:bg-gray-800 rounded-lg transition-all duration-200 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium text-white bg-gray-900 hover:bg-gray-800 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
               >
                 {t.student?.viewDetails || (locale === 'ar' ? 'عرض التفاصيل' : 'View Details')}
                 <ChevronRightIcon className="w-4 h-4" />
