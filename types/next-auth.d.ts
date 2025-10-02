@@ -5,6 +5,7 @@ declare module "next-auth" {
   interface Session {
     accessToken?: string;
     idToken?: string;
+    identityProfile?: Record<string, unknown>;
     user: (DefaultSession["user"] & { id?: string; emiratesId?: string }) | null;
   }
 
@@ -21,5 +22,6 @@ declare module "next-auth/jwt" {
     emiratesId?: string;
     name?: string;
     email?: string;
+    identityProfile?: Record<string, unknown>;
   }
 }

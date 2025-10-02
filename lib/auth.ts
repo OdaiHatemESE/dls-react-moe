@@ -17,7 +17,7 @@ const oidcProvider = Auth0Provider({
   authorization: {
     params: {
       // Request standard OIDC scopes. Include email to receive email claim via userinfo/id_token
-      scope: "openid profile",
+      scope: "openid profile  IdentityServerApi",
     },
   },
   // If no client secret is provided, configure as a public client using PKCE
@@ -105,6 +105,41 @@ function extractEmiratesId(claims?: Record<string, unknown>): string | undefined
   return undefined;
 }
 
+// Identity profile endpoint (can be overridden via env); requires Bearer access token from IdP
+const IDENTITY_PROFILE_URL =
+  process.env.IDENTITY_PROFILE_URL?.trim() || "https://stg-login.moe.gov.ae/en/api/users/profile";
+
+async function fetchIdentityProfile(
+  accessToken?: string
+): Promise<Record<string, unknown> | null> {
+  if (!accessToken) return null;
+  try {
+    const res = await fetch(IDENTITY_PROFILE_URL, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        Accept: "application/json",
+      },
+      // Never cache identity profile calls
+      cache: "no-store",
+    });
+    const text = await res.text();
+    if (!res.ok) {
+      // Non-fatal: just skip attaching identity profile on failure
+      return null;
+    }
+    if (!text) return {};
+    try {
+      return JSON.parse(text) as Record<string, unknown>;
+    } catch {
+      // If the endpoint returns non-JSON, expose raw text for debugging
+      return { raw: text } as unknown as Record<string, unknown>;
+    }
+  } catch {
+    return null;
+  }
+}
+
 export const authOptions: NextAuthOptions = {
   session: { strategy: "jwt" },
   secret: process.env.NEXTAUTH_SECRET,
@@ -148,7 +183,7 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, account, user }): Promise<JWT> {
       // From OIDC flow
       if (account?.access_token) {
-        const t = token as JWT & { accessToken?: string; idToken?: string; emiratesId?: string };
+        const t = token as JWT & { accessToken?: string; idToken?: string; emiratesId?: string; identityProfile?: Record<string, unknown> };
         t.accessToken = account.access_token;
         // Persist id_token if available and extract claims we care about
         if (account.id_token) {
@@ -167,22 +202,34 @@ export const authOptions: NextAuthOptions = {
           const maybeEmiratesId = extractEmiratesId(atClaims as Record<string, unknown>);
           if (maybeEmiratesId) t.emiratesId = normalizeEmiratesId(maybeEmiratesId);
         }
+
+        // Fetch identity profile once per login (avoid re-fetch if already present on token)
+        if (!t.identityProfile) {
+          t.identityProfile = await fetchIdentityProfile(t.accessToken) || undefined;
+        }
       }
       // From mobile-token (credentials) flow
       if (user) {
         const u = user as User & { accessToken?: string; emiratesId?: string };
-        const t = token as JWT & { accessToken?: string; emiratesId?: string };
+        const t = token as JWT & { accessToken?: string; emiratesId?: string; identityProfile?: Record<string, unknown> };
         t.accessToken = u.accessToken || t.accessToken;
         t.emiratesId = normalizeEmiratesId(u.emiratesId) || t.emiratesId;
+
+        // If we have an access token from mobile, try to fetch identity profile once
+        if (t.accessToken && !t.identityProfile) {
+          t.identityProfile = await fetchIdentityProfile(t.accessToken) || undefined;
+        }
       }
       return token;
     },
 
     async session({ session, token }): Promise<Session> {
-      const t = token as JWT & { accessToken?: string; idToken?: string; emiratesId?: string; sub?: string };
+      const t = token as JWT & { accessToken?: string; idToken?: string; emiratesId?: string; sub?: string; identityProfile?: Record<string, unknown> };
       // Attach custom fields to session for client-side access
       (session as Session & { accessToken?: string; idToken?: string }).accessToken = t.accessToken;
       (session as Session & { accessToken?: string; idToken?: string }).idToken = t.idToken;
+      // Expose identity profile on the session
+      (session as Session & { identityProfile?: Record<string, unknown> }).identityProfile = t.identityProfile;
       const u = (session.user ?? {}) as User & { id?: string; emiratesId?: string };
       if (t.sub) u.id = t.sub;
       if (t.emiratesId) u.emiratesId = normalizeEmiratesId(t.emiratesId);
