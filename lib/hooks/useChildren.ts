@@ -1,6 +1,5 @@
 "use client";
 
-import { get } from "http";
 import React from "react";
 import useSWR from "swr";
 
@@ -40,22 +39,27 @@ const toStudentCard = (item: unknown): StudentCard | null => {
 
   const p = asRecord(maybePersons ?? base);
   console.log("odai persons :", p);
+  
+  // Extract metadata for English fields
+  const metadata = asRecord(getProp(p, "metadata"));
+  console.log("odai metadata :", metadata);
+  
    return {
     id: getProp<string>(p, "sourcedId") ?? "",
-    englishFirstName: getProp<string>(p, "englishFirstName") ?? "",
-    englishSecondName: getProp<string>(p, "englishSecondName") ?? "",
-    englishThirdName: getProp<string>(p, "englishThirdName") ?? "",
-    englishFamilyName: getProp<string>(p, "englishFamilyName") ?? "",
+    englishFirstName: getProp<string>(metadata, "englishFirstName") ?? "",
+    englishSecondName: getProp<string>(metadata, "englishSecondName") ?? "",
+    englishThirdName: getProp<string>(metadata, "englishThirdName") ?? "",
+    englishFamilyName: getProp<string>(metadata, "englishFamilyName") ?? "",
 
     arabicName: getProp<string>(p, "givenName") ?? "",
     arabicSecondName: getProp<string>(p, "middleName")?.split(" ")[0] || "",
     arabicThirdName: getProp<string>(p, "middleName")?.split(" ")[1] || "",
     arabicFamilyName: getProp<string>(p, "familyName") || "",
 
-    nationalityEnglish: getProp<string>(p, "nationality") ?? "",
+    nationalityEnglish: getProp<string>(metadata, "nationality") ?? getProp<string>(p, "nationality") ?? "",
     nationalityArabic: getProp<string>(p, "nationalityArabic") ?? "",
-    gender: getProp<string>(p, "gender") ?? "",
-    birthDate: getProp<string>(p, "birthDate") ?? "",
+    gender: getProp<string>(metadata, "gender") ?? getProp<string>(p, "gender") ?? getProp<string>(p, "sex") ?? "",
+    birthDate: getProp<string>(metadata, "birthDate") ?? getProp<string>(p, "birthDate") ?? getProp<string>(p, "dateOfBirth") ?? "",
   };
 
   
