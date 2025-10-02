@@ -16,7 +16,8 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: `No person found for EID ${eid}` }, { status: 404 });
     }
     return NextResponse.json(person);
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message ?? "Server error" }, { status: 500 });
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : "Server error";
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
