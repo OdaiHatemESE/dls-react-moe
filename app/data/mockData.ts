@@ -1,4 +1,4 @@
-import { Child, Announcement, MessageThread, Message, CalendarEvent, Attendance, Grade, Assignment, Parent } from '../types';
+import { Child, Announcement, MessageThread, Message, CalendarEvent, Attendance, Grade, Assignment, Parent } from '@/types';
 
 export const mockChildren: Child[] = [
   {

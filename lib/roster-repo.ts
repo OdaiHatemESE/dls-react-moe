@@ -1,62 +1,7 @@
 // lib/roster-repo.ts
 import { orFetch } from "@/lib/oneroster";
+import type { Person, StudentBasic, SchoolEnrollment } from "@/types";
 
-export type Person = {
-  sourcedId: string;
-  givenName?: string;
-  familyName?: string;
-  email?: string;
-};
-
-export type StudentBasic = {
-  sourcedId: string;
-  givenName?: string;
-  familyName?: string;
-  grade?: string;
-  username?: string;
-};
-
-export type SchoolEnrollment = {
-  sourcedId: string;
-  entryType: string;
-  exitType: string;
-  note: string;
-  exitReason: string;
-  entryDate: string;
-  student: {
-    href: string;
-    sourcedId: string;
-    type: string;
-  };
-  session: {
-    href: string;
-    sourcedId: string;
-    type: string;
-  };
-  community: {
-    href: string;
-    sourcedId: string;
-    type: string;
-  };
-  dateLastModified: string;
-  isSpecialNeed: boolean;
-  school: {
-    href: string;
-    sourcedId: string;
-    type: string;
-  };
-  schoolYear: number;
-  streamGrade: {
-    href: string;
-    sourcedId: string;
-    type: string;
-  };
-  enrollmentType: string;
-  exitDate: string;
-  status: string;
-  isMandatoryEducation: string;
-  createDate: string;
-};
 
 /**
  * Escape a literal value used within OneRoster filter single quotes.

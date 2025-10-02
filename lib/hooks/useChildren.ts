@@ -2,23 +2,7 @@
 
 import React from "react";
 import useSWR from "swr";
-
-export type StudentCard = {
-  id: string;
-  englishFirstName: string;
-  englishSecondName: string;
-  englishThirdName: string;
-  englishFamilyName: string;
-
-  arabicName: string;
-  arabicSecondName: string;
-  arabicThirdName: string;
-  arabicFamilyName: string;
-  nationalityEnglish: string;
-  nationalityArabic: string;
-  gender: string;
-  birthDate: string;
-};
+import type { StudentCard } from "@/types";
 
 function asRecord(x: unknown): Record<string, unknown> {
   return typeof x === "object" && x !== null

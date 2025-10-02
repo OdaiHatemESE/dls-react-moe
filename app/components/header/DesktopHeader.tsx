@@ -3,7 +3,8 @@
 import LogoGroup from "./LogoGroup";
 import SearchForm from "./SearchForm";
 import menuData from "@/app/data/menu.json";
-import { MenuItem, isMegaMenu, slugify } from "./menuUtils";
+import { isMegaMenu, slugify } from "./menuUtils";
+import type { MenuItem } from "@/types";
 import AuthButtons from "@/app/components/AuthButtons";
 import { useI18n } from "@/app/i18n/I18nProvider";
 
