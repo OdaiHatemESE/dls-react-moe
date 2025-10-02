@@ -35,20 +35,20 @@ export default function ChildDetailPage() {
 
   const child = mockChildren.find(c => c.id === childId);
 
-  if (!child) {
-    return (
-      <div className={clsx('max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8', locale === 'ar' && 'direction-rtl')}>
-        <EmptyState
-          title={t.child.notFoundTitle}
-          description={t.child.notFoundDesc}
-          action={{
-            label: t.child.goToDashboard,
-            onClick: () => (window.location.href = '/dashboard'),
-          }}
-        />
-      </div>
-    );
-  }
+  // if (!child) {
+  //   return (
+  //     <div className={clsx('max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8', locale === 'ar' && 'direction-rtl')}>
+  //       <EmptyState
+  //         title={t.child.notFoundTitle}
+  //         description={t.child.notFoundDesc}
+  //         action={{
+  //           label: t.child.goToDashboard,
+  //           onClick: () => (window.location.href = '/dashboard'),
+  //         }}
+  //       />
+  //     </div>
+  //   );
+  // }
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: AttendanceIcon },

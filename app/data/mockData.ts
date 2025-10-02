@@ -2,7 +2,7 @@ import { Child, Announcement, MessageThread, Message, CalendarEvent, Attendance,
 
 export const mockChildren: Child[] = [
   {
-    id: 'child-1',
+    id: 'SST-1-1-Pers-1687158',
     name: 'Sarah Johnson',
     grade: '5th Grade',
     classroom: 'Room 201',
