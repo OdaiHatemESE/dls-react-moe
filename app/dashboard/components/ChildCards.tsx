@@ -39,10 +39,10 @@ const calculateAge = (birthDate: string): number => {
   }
 };
 
+
 // Helper function to format date based on locale
 const formatDate = (dateString: string, locale: string): string => {
   if (!dateString) return "";
-
   try {
     const date = new Date(dateString);
     return new Intl.DateTimeFormat(locale === 'ar' ? 'ar-AE' : 'en-US', {
@@ -54,6 +54,21 @@ const formatDate = (dateString: string, locale: string): string => {
     return dateString;
   }
 };
+
+// Helper components for minimalism
+const InfoRow = ({ label, value, colSpan }: { label: string; value: string; colSpan?: number }) => (
+  <div className={`flex flex-col${colSpan === 2 ? ' col-span-2' : ''}`}>
+    <span className="text-gray-500 text-xs font-medium mb-1">{label}</span>
+    <span className="text-gray-900 font-medium">{value}</span>
+  </div>
+);
+
+const AltName = ({ label, value, rtl }: { label: string; value: string; rtl?: boolean }) => (
+  <div className="pt-3 border-t border-gray-100">
+    <span className="text-gray-500 text-xs font-medium mb-1 block">{label}</span>
+    <span className="text-gray-700 text-sm" {...(rtl ? { dir: 'rtl' } : {})}>{value}</span>
+  </div>
+);
 
 export default function ChildCards() {
   const { t, locale } = useI18n();
@@ -81,25 +96,32 @@ export default function ChildCards() {
         </div>
       )}
       {(children ?? []).map((child: Person) => {
-        // Compose display name and nationality from Person fields
         const displayName = locale === 'ar'
           ? [child.givenName, child.middleName, child.familyName].filter(Boolean).join(' ')
           : [child.metadata?.englishFirstName, child.metadata?.englishSecondName, child.metadata?.englishThirdName, child.metadata?.englishFamilyName].filter(Boolean).join(' ');
-
         const displayNationality = locale === 'ar'
           ? child.metadata?.nationalityArabic || child.metadata?.nationality || ''
           : child.metadata?.nationality || '';
-
         const gender = child.metadata?.gender || '';
         const birthDate = child.metadata?.birthDate || '';
         const age = calculateAge(birthDate);
         const formattedBirthDate = formatDate(birthDate, locale);
 
+        const genderLabel = (() => {
+          const g = gender?.toLowerCase();
+          if (g === 'm' || g === 'male' || g === 'ذكر') {
+            return t.student?.male || (locale === 'ar' ? 'ذكر' : 'Male');
+          } else if (g === 'f' || g === 'female' || g === 'أنثى') {
+            return t.student?.female || (locale === 'ar' ? 'أنثى' : 'Female');
+          } else {
+            return gender || "—";
+          }
+        })();
+
         return (
           <Card
             key={child.sourcedId}
-            className={`group relative hover:shadow-lg transition-all border border-gray-200 hover:border-blue-300 bg-white ${locale === 'ar' ? 'direction-rtl' : 'direction-ltr'
-              }`}
+            className={`group relative hover:shadow-lg transition-all border border-gray-200 hover:border-blue-300 bg-white ${locale === 'ar' ? 'direction-rtl' : 'direction-ltr'}`}
           >
             <CardHeader className="pb-4">
               <div className="flex items-start justify-between gap-3">
@@ -107,15 +129,12 @@ export default function ChildCards() {
                   <CardTitle className="text-xl font-bold text-gray-900 mb-2 leading-tight">
                     {displayName}
                   </CardTitle>
-
-                  {/* Student ID Badge */}
                   <div className="flex items-center gap-2 mb-3">
                     <Badge variant="outline" className="text-xs px-2 py-1">
                       {t.student?.studentId || (locale === 'ar' ? 'رقم الطالب' : 'Student ID')}: {child.sourcedId}
                     </Badge>
                   </div>
                 </div>
-
                 <Link
                   href={`/child/${child.identifier}`}
                   className="flex-shrink-0 text-blue-600 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-md p-2 transition-colors"
@@ -126,100 +145,39 @@ export default function ChildCards() {
                 </Link>
               </div>
             </CardHeader>
-
             <CardContent className="pt-0 pb-4">
-              {/* Personal Information Section */}
               <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-3 text-sm">
-                  {/* Gender */}
-                  <div className="flex flex-col">
-                    <span className="text-gray-500 text-xs font-medium mb-1">
-                      {t.student?.gender || (locale === 'ar' ? 'الجنس' : 'Gender')}
-                    </span>
-                    <span className="text-gray-900 font-medium">
-                      {(() => {
-                        const g = gender?.toLowerCase();
-                        if (g === 'm' || g === 'male' || g === 'ذكر') {
-                          return t.student?.male || (locale === 'ar' ? 'ذكر' : 'Male');
-                        } else if (g === 'f' || g === 'female' || g === 'أنثى') {
-                          return t.student?.female || (locale === 'ar' ? 'أنثى' : 'Female');
-                        } else {
-                          return gender || "—";
-                        }
-                      })()}
-                    </span>
-                  </div>
-
-                  {/* Age or Birth Date */}
+                  <InfoRow label={t.student?.gender || (locale === 'ar' ? 'الجنس' : 'Gender')} value={genderLabel} />
                   {(age > 0 || formattedBirthDate) && (
-                    <div className="flex flex-col">
-                      <span className="text-gray-500 text-xs font-medium mb-1">
-                        {age > 0 ?
-                          (t.student?.age || (locale === 'ar' ? 'العمر' : 'Age')) :
-                          (t.student?.birthDate || (locale === 'ar' ? 'تاريخ الميلاد' : 'Birth Date'))
-                        }
-                      </span>
-                      <span className="text-gray-900 font-medium">
-                        {age > 0 ?
-                          `${age} ${t.student?.years || (locale === 'ar' ? 'سنة' : 'years')}` :
-                          formattedBirthDate
-                        }
-                      </span>
-                    </div>
+                    <InfoRow
+                      label={age > 0 ? (t.student?.age || (locale === 'ar' ? 'العمر' : 'Age')) : (t.student?.birthDate || (locale === 'ar' ? 'تاريخ الميلاد' : 'Birth Date'))}
+                      value={age > 0 ? `${age} ${t.student?.years || (locale === 'ar' ? 'سنة' : 'years')}` : formattedBirthDate}
+                    />
                   )}
-
-                  {/* Nationality */}
                   {displayNationality && (
-                    <div className="flex flex-col col-span-2">
-                      <span className="text-gray-500 text-xs font-medium mb-1">
-                        {t.student?.nationality || (locale === 'ar' ? 'الجنسية' : 'Nationality')}
-                      </span>
-                      <span className="text-gray-900 font-medium">
-                        {displayNationality}
-                      </span>
-                    </div>
+                    <InfoRow
+                      label={t.student?.nationality || (locale === 'ar' ? 'الجنسية' : 'Nationality')}
+                      value={displayNationality}
+                      colSpan={2}
+                    />
                   )}
-
-                  {/* Birth Date */}
                   {formattedBirthDate && (
-                    <div className="flex flex-col col-span-2">
-                      <span className="text-gray-500 text-xs font-medium mb-1">
-                        {t.student?.birthDate || (locale === 'ar' ? 'تاريخ الميلاد' : 'Birth Date')}
-                      </span>
-                      <span className="text-gray-900 font-medium">
-                        {formattedBirthDate}
-                      </span>
-                    </div>
+                    <InfoRow
+                      label={t.student?.birthDate || (locale === 'ar' ? 'تاريخ الميلاد' : 'Birth Date')}
+                      value={formattedBirthDate}
+                      colSpan={2}
+                    />
                   )}
                 </div>
-
-                {/* Alternative Names Section (if viewing in one language, show the other) */}
                 {locale === 'ar' && [child.metadata?.englishFirstName, child.metadata?.englishSecondName, child.metadata?.englishThirdName, child.metadata?.englishFamilyName].some(Boolean) && (
-                  <div className="pt-3 border-t border-gray-100">
-                    <span className="text-gray-500 text-xs font-medium mb-1 block">
-                      English Name
-                    </span>
-                    <span className="text-gray-700 text-sm">
-                      {[child.metadata?.englishFirstName, child.metadata?.englishSecondName, child.metadata?.englishThirdName, child.metadata?.englishFamilyName]
-                        .filter(Boolean).join(' ')}
-                    </span>
-                  </div>
+                  <AltName label="English Name" value={[child.metadata?.englishFirstName, child.metadata?.englishSecondName, child.metadata?.englishThirdName, child.metadata?.englishFamilyName].filter(Boolean).join(' ')} />
                 )}
-
                 {locale === 'en' && child.givenName && (
-                  <div className="pt-3 border-t border-gray-100">
-                    <span className="text-gray-500 text-xs font-medium mb-1 block">
-                      الاسم بالعربية
-                    </span>
-                    <span className="text-gray-700 text-sm" dir="rtl">
-                      {[child.givenName, child.middleName, child.familyName]
-                        .filter(Boolean).join(' ')}
-                    </span>
-                  </div>
+                  <AltName label="الاسم بالعربية" value={[child.givenName, child.middleName, child.familyName].filter(Boolean).join(' ')} rtl />
                 )}
               </div>
             </CardContent>
-
             <CardFooter className="pt-0">
               <Link
                 href={`/child/${child.sourcedId}`}
@@ -232,6 +190,7 @@ export default function ChildCards() {
           </Card>
         );
       })}
+ 
 
       {/* If no children fetched and not loading/error, show helpful message */}
       {status === "authenticated" && !isBusy && !error && (!children || children.length === 0) && (
