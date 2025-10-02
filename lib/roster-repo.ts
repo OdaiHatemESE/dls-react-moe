@@ -86,100 +86,14 @@ export async function getPersonByEid(eid: string): Promise<Person | null> {
 
 
 
-/**
- * 3) Get basic info for student IDs
- */
- // 3) Given a list of student sourcedIds, fetch their basic info (one-by-one)
- // 3) Given a list of student link IDs, fetch student basic info via /students?filter=student='<id>'
-// 3) Given a list of student sourcedIds, fetch their info via /persons/{id}
- // 3) Given a list of student sourcedIds, fetch their info via /persons/{id}
-// Vendor returns an ARRAY, each item like: [{ persons: { ...fields... } }]
-export async function getStudentsBasic(ids: string[]): Promise<StudentBasic[]> {
-  if (!ids.length) return [];
-
-  const all: StudentBasic[] = [];
-
-  for (const id of ids) {
-    try {
-  const filter = `identifier='${escapeFilterLiteral(id)}'`;
-  const data = await orFetch<unknown>(`/v1p1/persons?filter=${encodeURIComponent(filter)}`, "read");
-      if (!data) continue;
-
-      
-
-      // Normalize to an array of records
-      const arr = Array.isArray(data) ? data : [data];
-
-      for (const item of arr) {
-        // Prefer nested "persons" shape, else item itself
-        let p: Record<string, unknown> | undefined;
-        if (isRecord(item)) {
-          const persons = getProp(item, "persons");
-          if (Array.isArray(persons)) {
-            p = isRecord(persons[0]) ? (persons[0] as Record<string, unknown>) : undefined;
-          } else if (isRecord(persons)) {
-            p = persons as Record<string, unknown>;
-          } else {
-            p = item as Record<string, unknown>;
-          }
-        }
-        if (!p) continue;
-
-        // Try to pick a primary email if top-level email is missing
-        let email: string | undefined = typeof getProp(p, "email") === "string" ? (getProp(p, "email") as string) : undefined;
-        if (!email) {
-          const metadata = getProp(p, "metadata");
-          if (isRecord(metadata)) {
-            const contacts = getProp(metadata, "contacts");
-            if (Array.isArray(contacts)) {
-              const emails = contacts
-                .map((c: unknown) => {
-                  if (!isRecord(c)) return undefined;
-                  const type = getProp(c, "contactType");
-                  const val = getProp(c, "value");
-                  if (typeof type === "string" && type.toLowerCase().includes("email") && typeof val === "string") {
-                    return val;
-                  }
-                  return undefined;
-                })
-                .filter((v: unknown): v is string => typeof v === "string" && v.includes("@"));
-              email = emails[0];
-            }
-          }
-        }
-
-        const sourcedId = getProp(p, "sourcedId");
-        const givenName = (getProp(p, "givenName") ?? getProp(p, "englishFirstName") ?? getProp(p, "firstName"));
-        const familyName = (getProp(p, "familyName") ?? getProp(p, "englishFamilyName") ?? getProp(p, "lastName"));
-        const grade = (getProp(p, "grades") ?? getProp(p, "grade"));
-        const username = (getProp(p, "username") ?? getProp(p, "userName") ?? getProp(p, "loginId"));
-
-        all.push({
-          sourcedId: typeof sourcedId === "string" ? sourcedId : id,
-          givenName: typeof givenName === "string" ? givenName : undefined,
-          familyName: typeof familyName === "string" ? familyName : undefined,
-          grade: typeof grade === "string" ? grade : undefined,
-          username: typeof username === "string" ? username : undefined,
-          // If you also want to include email in StudentBasic, add it to the type
-          // and surface it in your API response:
-          // email,
-        } satisfies StudentBasic);
-      }
-    } catch (err) {
-      console.error("Failed fetching student info for", id, err);
-    }
-  }
-
-  return all;
-}
-
+ 
 
 // Get FULL vendor payload for each student via /persons/{id}
 // Returns an array where each entry is exactly what the API returned for that id
-export async function getStudentsFull(ids: string[]): Promise<unknown[]> {
+export async function getStudentsFull(ids: string[]): Promise<Person[]> {
   if (!ids.length) return [];
 
-  const all: unknown[] = [];
+  const all: Person[] = [];
 
   for (const id of ids) {
     console.debug("Fetching full student data for", id);
@@ -189,7 +103,7 @@ export async function getStudentsFull(ids: string[]): Promise<unknown[]> {
       // Some vendors return a single object; yours returns an ARRAY like [{ persons: {...} }]
       if (Array.isArray(data)) {
         all.push(...data);
-      } else {
+      } else if (isPerson(data)) {
         all.push(data);
       }
     } catch (err) {

@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import { getPersonByEid, getStudentIdsForPerson, getStudentsFull } from "@/lib/roster-repo";
 import { orFetch } from "@/lib/oneroster";
+import { Person } from "@/types";
 
 // Ensure this API route is always dynamic (no ISR caching)
 export const dynamic = "force-dynamic";
 
 async function getFullPersonById(id: string) {
-  const data = await orFetch<unknown>(`/v1p1/persons?filter=identifier='${id}'`, "read");
+  const data = await orFetch<Person>(`/v1p1/persons?filter=identifier='${id}'`, "read");
   return Array.isArray(data) ? data : [data];
 }
 
