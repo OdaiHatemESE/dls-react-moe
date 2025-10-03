@@ -232,29 +232,9 @@ export type SchoolEnrollment = {
   createDate: string;
 };
 
-// --- UI hook types ---
-export type StudentCard = {
-  id: string;
-  englishFirstName: string;
-  englishSecondName: string;
-  englishThirdName: string;
-  englishFamilyName: string;
+ 
 
-  arabicName: string;
-  arabicSecondName: string;
-  arabicThirdName: string;
-  arabicFamilyName: string;
-  nationalityEnglish: string;
-  nationalityArabic: string;
-  gender: string;
-  birthDate: string;
-};
-
-
-export interface OrgEnvelope {
-  Org: Org;
-}
-
+ 
 export interface Org {
   sourcedId: string;
   metadata: OrgMetadata;

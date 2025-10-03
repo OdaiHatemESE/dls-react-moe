@@ -5,9 +5,7 @@ import useSWR from "swr";
 import type { Person } from "@/types";
 
  
-// ...existing code...
-
-// No longer needed: toStudentCard
+ 
 
 export function useChildren(eid?: string) {
   const key = eid
