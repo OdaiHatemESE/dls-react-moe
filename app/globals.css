@@ -144,7 +144,11 @@
       transition-duration: 0.01ms !important;
     }
   }
+
+  /* Removed custom shimmer/blink utilities (using animate-pulse from Tailwind) */
 }
+
+/* Removed custom shimmer/blink keyframes */
 
 
 
