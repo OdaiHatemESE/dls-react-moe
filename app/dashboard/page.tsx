@@ -97,7 +97,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+      {/* <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
         {quickStats.map((stat, index) => {
           const IconComponent = stat.icon;
           return (
@@ -126,7 +126,7 @@ export default function DashboardPage() {
             </Link>
           );
         })}
-      </div>
+      </div> */}
 
       {/* Main Content Grid */}
       <div className="space-y-8">
@@ -140,13 +140,13 @@ export default function DashboardPage() {
           <ChildCards />
         </div>
 
-        {/* Secondary Content */}
+        {/* Secondary Content 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Recent Announcements */}
+          {/* Recent Announcements  
           <div className="space-y-6">
             <RecentAnnouncements />
             
-            {/* Quick Actions Card */}
+            {/* Quick Actions Card  
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
@@ -178,11 +178,12 @@ export default function DashboardPage() {
             </Card>
           </div>
 
-          {/* Upcoming Events */}
+          {/* Upcoming Events  
           <div>
             <UpcomingEvents />
           </div>
         </div>
+        */}
       </div>
     </div>
   );
