@@ -249,3 +249,55 @@ export type StudentCard = {
   gender: string;
   birthDate: string;
 };
+
+
+export interface OrgEnvelope {
+  Org: Org;
+}
+
+export interface Org {
+  sourcedId: string;
+  metadata: OrgMetadata;
+  identifier?: string;
+  parent?: OrgRef[];
+  manager?: OrgRef;
+  type?: string;
+  dateLastModified?: string;
+  name?: string;
+}
+
+export interface OrgMetadata {
+  type: string;
+  note?: string;
+  shortName?: string;
+  contacts?: Record<string, any>[]; // adjust if you know structure
+  guid?: string;
+  addresses?: OrgAddress[];
+  englishName?: string;
+  status?: string;
+}
+
+export interface OrgAddress {
+  country?: string;
+  zipCode?: string;
+  city?: string;
+  isVerified?: boolean;
+  latitude?: string;
+  poBox?: string;
+  roadNumber?: string;
+  plotId?: string;
+  addressLine1?: string;
+  plotNumber?: string;
+  addressLine2?: string;
+  addressLine3?: string;
+  state?: string;
+  region?: string;
+  sector?: string;
+  longitude?: string;
+}
+
+export interface OrgRef {
+  href: string;
+  sourcedId: string;
+  type: string;
+}
