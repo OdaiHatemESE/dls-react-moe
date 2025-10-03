@@ -25,6 +25,7 @@ export default function ProfilePage() {
   const { data: session } = useSession();
   // You may need to adjust this depending on your session shape
   // Use emiratesId or id from session.user for EID
+
   const eid = session?.user?.emiratesId || session?.user?.id || session?.user?.email;
 
   // SWR fetcher for API
