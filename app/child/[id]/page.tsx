@@ -215,26 +215,34 @@ export default function ChildDetailPage() {
                 {displayName.charAt(0).toUpperCase()}
               </span>
             </div>
-            <div className="text-center sm:text-left">
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">{displayName}</h1>
-              <div className="flex flex-wrap items-center gap-3 justify-center sm:justify-start">
-                <Badge variant="outline" className="bg-white">
-                  ID: {person.sourcedId}
-                </Badge>
-                <Badge variant="outline" className="bg-white">
-                  {person.role || (locale === 'ar' ? 'طالب' : 'Student')}
-                </Badge>
-                {person.status && (
-                  <Badge variant={person.status === 'active' ? 'default' : 'secondary'} className="bg-white">
-                    {person.status}
-                  </Badge>
-                )}
+            <div className="text-center sm:text-left w-full">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between w-full">
+                <div className="flex-1">
+                  <h1 className="text-3xl font-bold text-gray-900 mb-2">{displayName}</h1>
+                  <div className="flex flex-wrap items-center gap-3 justify-center sm:justify-start">
+                    <Badge variant="outline" className="bg-white">
+                      ID: {person.sourcedId}
+                    </Badge>
+                    <Badge variant="outline" className="bg-white">
+                      {person.role || (locale === 'ar' ? 'طالب' : 'Student')}
+                    </Badge>
+                    {person.status && (
+                      <Badge variant={person.status === 'active' ? 'default' : 'secondary'} className="bg-white">
+                        {person.status}
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="text-gray-600 mt-3">{t.child.child_profile}</p>
+                </div>
+                <div className="mt-4 sm:mt-0 sm:ml-6 sm:self-start flex-shrink-0 flex justify-center sm:justify-end">
+                  <SignConductSection locale={locale} />
+                </div>
               </div>
-              <p className="text-gray-600 mt-3">{t.child.child_profile}</p>
             </div>
           </div>
         </div>
       </Card>
+
 
       {/* Tabs Section */}
       <Tabs defaultValue="info" className="w-full">
@@ -404,6 +412,43 @@ export default function ChildDetailPage() {
           </div>
         </TabsContent>
       </Tabs>
+    </div>
+  );
+}
+// SignConductSection component
+function SignConductSection({ locale }: { locale: string }) {
+  const [signed, setSigned] = React.useState(false);
+  // Simulate download (replace with real logic as needed)
+  const handleDownload = () => {
+    alert(locale === 'ar' ? 'تحميل الوثيقة...' : 'Downloading document...');
+  };
+  return (
+    <div className="mt-4 flex flex-col sm:flex-row items-center gap-3">
+      {!signed ? (
+        <>
+          <button
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+            onClick={() => setSigned(true)}
+          >
+            {locale === 'ar' ? 'توقيع السلوك' : 'Sign Conduct'}
+          </button>
+          <span className="text-sm text-yellow-600 font-semibold">
+            {locale === 'ar' ? 'غير موقع' : 'Not Signed'}
+          </span>
+        </>
+      ) : (
+        <>
+          <button
+            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition"
+            onClick={handleDownload}
+          >
+            {locale === 'ar' ? 'تحميل الوثيقة' : 'Download Document'}
+          </button>
+          <span className="text-sm text-green-700 font-semibold">
+            {locale === 'ar' ? 'تم التوقيع' : 'Signed'}
+          </span>
+        </>
+      )}
     </div>
   );
 }
