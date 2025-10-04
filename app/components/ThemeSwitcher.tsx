@@ -90,6 +90,7 @@ export default function ThemeSwitcher() {
   }, [isOpen]);
 
   const switchTheme = (theme: Theme) => {
+    console.log('Switching to theme:', theme);
     changeTheme(theme);
     setIsOpen(false);
   };

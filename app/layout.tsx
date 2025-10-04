@@ -21,26 +21,28 @@ import HtmlLangDirProvider from "@/app/components/HtmlLangDirProvider";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ar" dir="rtl">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col bg-white dark:bg-black text-gray-900 dark:text-gray-100`}>
-        <AuthProvider>
-       
-            <I18nProvider defaultLocale="ar">
-                 <IconProvider>
-              <SWRProvider>
-                {/* Global Header */}
-                <SiteHeader />
-                <Switcher /> 
-                <ThemeSwitcher />
-                <main className="flex-1">{children}</main>
-                <SiteFooter />
-                {/* Dynamically update lang/dir on client */}
-                <HtmlLangDirProvider />
-              </SWRProvider>
-                     </IconProvider>
-            </I18nProvider>
-   
-        </AuthProvider>
+    <html lang="ar" dir="rtl" suppressHydrationWarning>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col bg-background text-foreground`} suppressHydrationWarning>
+        <ThemeProvider>
+          <AuthProvider>
+         
+              <I18nProvider defaultLocale="ar">
+                   <IconProvider>
+                <SWRProvider>
+                  {/* Global Header */}
+                  <SiteHeader />
+                  <Switcher /> 
+                  <ThemeSwitcher />
+                  <main className="flex-1">{children}</main>
+                  <SiteFooter />
+                  {/* Dynamically update lang/dir on client */}
+                  <HtmlLangDirProvider />
+                </SWRProvider>
+                       </IconProvider>
+              </I18nProvider>
+     
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
@@ -56,6 +58,7 @@ import SWRProvider from "@/app/components/SWRProvider";
 
 import Switcher from "@/app/components/Switcher";
 import ThemeSwitcher from "@/app/components/ThemeSwitcher";
+import ThemeProvider from "@/app/components/ThemeProvider";
 
 function SiteHeader() {
   return <Header />;

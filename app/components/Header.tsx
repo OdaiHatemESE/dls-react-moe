@@ -106,7 +106,7 @@ export default function Header() {
               title={t.common.switchLanguage}
             >
               <div className="p-1 rounded-lg bg-primary hover:bg-primary/90 transition-all duration-300">
-                <svg className="w-4 h-4 text-primary-600" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" viewBox="0 0 256 256">
+                <svg className="w-4 h-4 text-white" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" viewBox="0 0 256 256">
                   <rect width="256" height="256" fill="none"></rect>
                   <circle cx="128" cy="128" r="96" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="16"></circle>
                   <path d="M168,128c0,64-40,96-40,96s-40-32-40-96,40-96,40-96S168,64,168,128Z" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="16"></path>

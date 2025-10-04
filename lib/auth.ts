@@ -141,8 +141,26 @@ async function fetchIdentityProfile(
 }
 
 export const authOptions: NextAuthOptions = {
-  session: { strategy: "jwt" },
+  session: { 
+    strategy: "jwt",
+    // Reduce session max age to encourage more frequent refreshes with smaller tokens
+    maxAge: 24 * 60 * 60, // 24 hours instead of default 30 days
+  },
   secret: process.env.NEXTAUTH_SECRET,
+  
+  // Configure cookies to handle chunking gracefully
+  cookies: {
+    sessionToken: {
+      name: `next-auth.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+        // Allow chunking when cookies exceed size limits
+      }
+    }
+  },
   providers: [
     oidcProvider,
     Credentials({
@@ -223,14 +241,31 @@ export const authOptions: NextAuthOptions = {
 
     async session({ session, token }): Promise<Session> {
       const t = token as JWT & { accessToken?: string; idToken?: string; emiratesId?: string; sub?: string; identityProfile?: Record<string, unknown> };
-      // Attach custom fields to session for client-side access
-      (session as Session & { accessToken?: string; idToken?: string }).accessToken = t.accessToken;
-      (session as Session & { accessToken?: string; idToken?: string }).idToken = t.idToken;
-      // Expose identity profile on the session
-      (session as Session & { identityProfile?: Record<string, unknown> }).identityProfile = t.identityProfile;
+      
+      // Only expose essential user information in the session to keep cookie size small
+      // Access tokens and large objects should be accessed via server-side API calls when needed
       const u = (session.user ?? {}) as User & { id?: string; emiratesId?: string };
       if (t.sub) u.id = t.sub;
       if (t.emiratesId) u.emiratesId = normalizeEmiratesId(t.emiratesId);
+      
+      // Only include basic profile info from identityProfile if it's small
+      if (t.identityProfile) {
+        const basicInfo: Record<string, unknown> = {};
+        
+        // Include only essential fields that are small
+        if (t.identityProfile.name && typeof t.identityProfile.name === 'string') {
+          basicInfo.name = t.identityProfile.name;
+        }
+        if (t.identityProfile.email && typeof t.identityProfile.email === 'string') {
+          basicInfo.email = t.identityProfile.email;
+        }
+        
+        // Only add if the stringified version is reasonably small
+        if (JSON.stringify(basicInfo).length < 500) {
+          Object.assign(u, basicInfo);
+        }
+      }
+      
       session.user = u;
       return session;
     },
