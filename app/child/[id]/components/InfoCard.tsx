@@ -8,13 +8,15 @@ const InfoCard = ({
   value, 
   mono = false, 
   icon,
-  highlight = false 
+  highlight = false,
+  locale 
 }: { 
   label: string; 
   value: string; 
   mono?: boolean;
   icon?: React.ReactNode;
   highlight?: boolean;
+  locale?: string;
 }) => (
   <div className={clsx(
     "group relative p-5 rounded-xl border transition-all duration-200 hover:shadow-md",
@@ -36,7 +38,7 @@ const InfoCard = ({
           </div>
         )}
         <div className={clsx(
-          "text-xs font-semibold uppercase tracking-wider",
+          `${locale === 'ar' ? 'text-xs font-medium' : 'text-xs font-semibold'} uppercase tracking-wider`,
           highlight ? "text-blue-700" : "text-gray-600"
         )}>
           {label}
@@ -44,7 +46,7 @@ const InfoCard = ({
       </div>
       
       <div className={clsx(
-        "text-sm font-bold break-words",
+        `${locale === 'ar' ? 'text-xs font-semibold' : 'text-sm font-bold'} break-words`,
         mono && "font-mono text-xs",
         highlight ? "text-blue-900" : "text-gray-900"
       )}>

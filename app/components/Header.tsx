@@ -66,7 +66,7 @@ export default function Header() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`group relative flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 hover:scale-105 ${
+                  className={`group relative flex items-center gap-3 px-4 py-3 rounded-xl ${locale === 'ar' ? 'text-xs font-medium' : 'text-sm font-semibold'} transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 hover:scale-105 ${
                     isActive
                       ? 'text-white bg-gradient-to-r from-blue-600 to-indigo-600 '
                       : 'text-gray-700 hover:text-blue-600 hover:bg-white/80 hover:shadow-md'
@@ -114,8 +114,8 @@ export default function Header() {
                   <line x1="37.46" y1="160" x2="218.54" y2="160" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="16"></line>
                 </svg>
               </div>
-              <span className="hidden sm:inline text-sm font-semibold">{t.common.switchLanguage}</span>
-              <span className="text-xs font-bold px-2 py-1 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md">{locale.toUpperCase()}</span>
+              <span className={`hidden sm:inline ${locale === 'ar' ? 'text-xs font-medium' : 'text-sm font-semibold'}`}>{t.common.switchLanguage}</span>
+              <span className={`${locale === 'ar' ? 'text-xs' : 'text-xs'} font-bold px-2 py-1 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md`}>{locale.toUpperCase()}</span>
             </button>
 
        
@@ -144,13 +144,13 @@ export default function Header() {
                   <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-400 to-indigo-400 rounded-xl blur opacity-0 group-hover/button:opacity-30 transition-opacity duration-300" />
                 </div>
                 <div className="hidden sm:block">
-                  <div className="font-semibold text-left">
+                  <div className={`text-left ${locale === 'ar' ? 'font-medium text-sm' : 'font-semibold'}`}>
                     {(() => {
                       const name = (session?.user?.name as string) || '';
                       return typeof name === 'string' && name ? name.split(' ')[0] : 'Profile';
                     })()}
                   </div>
-                  <div className="text-xs text-gray-500">
+                  <div className={`text-gray-500 ${locale === 'ar' ? 'text-xs' : 'text-xs'}`}>
                     {locale === 'ar' ? 'عرض الملف الشخصي' : 'View Profile'}
                   </div>
                 </div>
@@ -162,7 +162,7 @@ export default function Header() {
                 <div className="p-2">
                   <Link
                     href="/profile"
-                    className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-xl text-sm font-medium transition-all duration-200 group/item"
+                    className={`flex items-center gap-3 px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-xl ${locale === 'ar' ? 'text-xs font-normal' : 'text-sm font-medium'} transition-all duration-200 group/item`}
                   >
                     <div className="p-1 rounded-lg bg-gray-100 group-hover/item:bg-blue-100 transition-colors">
                       <ProfileIcon className="w-4 h-4" />
@@ -170,7 +170,7 @@ export default function Header() {
                     {t.nav.profile}
                   </Link>
                   <button
-                    className="w-full flex items-center gap-3 px-4 py-3 text-gray-700 hover:text-red-600 hover:bg-red-50 rounded-xl text-sm font-medium transition-all duration-200 group/item"
+                    className={`w-full flex items-center gap-3 px-4 py-3 text-gray-700 hover:text-red-600 hover:bg-red-50 rounded-xl ${locale === 'ar' ? 'text-xs font-normal' : 'text-sm font-medium'} transition-all duration-200 group/item`}
                     onClick={() => signOut({ callbackUrl: '/login' })}
                   >
                     <div className="p-1 rounded-lg bg-gray-100 group-hover/item:bg-red-100 transition-colors">
@@ -217,7 +217,7 @@ export default function Header() {
                     <Link
                       key={item.href}
                       href={item.href}
-                      className={`group flex items-center gap-4 px-4 py-4 rounded-2xl text-base font-semibold transition-all duration-300 border ${
+                      className={`group flex items-center gap-4 px-4 py-4 rounded-2xl ${locale === 'ar' ? 'text-sm font-medium' : 'text-base font-semibold'} transition-all duration-300 border ${
                         isActive
                           ? 'text-white bg-gradient-to-r from-blue-600 to-indigo-600 border-blue-500 '
                           : 'text-gray-700 hover:text-blue-600 bg-white/60 hover:bg-white/80 border-white/30 hover:border-blue-200 hover:shadow-md'
@@ -251,10 +251,10 @@ export default function Header() {
                       <ProfileIcon className="w-7 h-7 text-white" />
                     </div>
                     <div className="flex-1">
-                      <p className="text-base font-bold text-gray-900">
+                      <p className={`text-gray-900 ${locale === 'ar' ? 'text-sm font-semibold' : 'text-base font-bold'}`}>
                         {(session?.user?.name as string) || 'Profile'}
                       </p>
-                      <p className="text-sm text-gray-600">
+                      <p className={`text-gray-600 ${locale === 'ar' ? 'text-xs' : 'text-sm'}`}>
                         {(session?.user?.email as string) || ''}
                       </p>
                     </div>
@@ -263,7 +263,7 @@ export default function Header() {
                   <div className="mt-4 flex flex-col gap-2">
                     <Link
                       href="/profile"
-                      className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 text-sm font-medium rounded-xl transition-all duration-200 group/item"
+                      className={`flex items-center gap-3 px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 ${locale === 'ar' ? 'text-xs font-normal' : 'text-sm font-medium'} rounded-xl transition-all duration-200 group/item`}
                       onClick={() => setIsMenuOpen(false)}
                     >
                       <div className="p-1 rounded-lg bg-gray-100 group-hover/item:bg-blue-100 transition-colors">
@@ -272,7 +272,7 @@ export default function Header() {
                       {t.nav.profile}
                     </Link>
                     <button
-                      className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:text-red-600 hover:bg-red-50 text-sm font-medium rounded-xl transition-all duration-200 group/item"
+                      className={`flex items-center gap-3 px-4 py-3 text-gray-700 hover:text-red-600 hover:bg-red-50 ${locale === 'ar' ? 'text-xs font-normal' : 'text-sm font-medium'} rounded-xl transition-all duration-200 group/item`}
                       onClick={() => { setIsMenuOpen(false); signOut({ callbackUrl: '/login' }); }}
                     >
                       <div className="p-1 rounded-lg bg-gray-100 group-hover/item:bg-red-100 transition-colors">

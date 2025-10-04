@@ -84,26 +84,26 @@ export default function DashboardPage() {
             <CardContent className="relative p-8 sm:p-12">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between">
                 <div className="flex-1 mb-6 sm:mb-0">
-                  <h1 className="text-4xl sm:text-5xl font-bold text-white mb-4 drop-shadow-lg">
+                  <h1 className={`${locale === 'ar' ? 'text-3xl sm:text-4xl font-semibold' : 'text-4xl sm:text-5xl font-bold'} text-white mb-4 drop-shadow-lg`}>
                     {locale === 'ar' ? 'مرحباً' : 'Welcome'}{session?.user?.name ? `, ${session.user.name}` : ''}
                   </h1>
-                  <p className="text-xl text-blue-100 font-medium max-w-2xl">
+                  <p className={`${locale === 'ar' ? 'text-lg font-normal' : 'text-xl font-medium'} text-blue-100 max-w-2xl`}>
                     {t.dashboard.welcome || (locale === 'ar' ? 'نظرة عامة على أطفالك ونشاطاتهم المدرسية' : 'Overview of your children and their school activities')}
                   </p>
                 </div>
                 
                 <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
                   <div className="text-center">
-                    <div className="text-white/80 text-sm font-medium mb-1">
+                    <div className={`text-white/80 ${locale === 'ar' ? 'text-xs font-normal' : 'text-sm font-medium'} mb-1`}>
                       {new Date().toLocaleDateString(locale === 'ar' ? 'ar-AE' : 'en-US', { weekday: 'long' })}
                     </div>
-                    <div className="text-white text-lg font-bold">
+                    <div className={`text-white ${locale === 'ar' ? 'text-base font-semibold' : 'text-lg font-bold'}`}>
                       {new Date().toLocaleDateString(locale === 'ar' ? 'ar-AE' : 'en-US', { 
                         month: 'short', 
                         day: 'numeric' 
                       })}
                     </div>
-                    <div className="text-white/60 text-xs mt-1">
+                    <div className={`text-white/60 ${locale === 'ar' ? 'text-xs' : 'text-xs'} mt-1`}>
                       {new Date().getFullYear()}
                     </div>
                   </div>
@@ -160,16 +160,16 @@ export default function DashboardPage() {
                       </svg>
                     </div>
                     <div>
-                      <h2 className="text-2xl font-bold text-gray-900">
+                      <h2 className={`${locale === 'ar' ? 'text-xl font-semibold' : 'text-2xl font-bold'} text-gray-900`}>
                         {locale === 'ar' ? 'أطفالي' : 'My Children'}
                       </h2>
-                      <p className="text-gray-600 text-sm">
+                      <p className={`text-gray-600 ${locale === 'ar' ? 'text-xs' : 'text-sm'}`}>
                         {locale === 'ar' ? 'إدارة ومتابعة بيانات الأطفال' : 'Manage and track your children\'s information'}
                       </p>
                     </div>
                   </div>
-                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                    <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <Badge variant="outline" className={`bg-blue-50 text-blue-700 border-blue-200 ${locale === 'ar' ? 'text-xs font-normal' : ''}`}>
+                    <svg className={`w-3 h-3 ${locale === 'ar' ? 'ml-1' : 'mr-1'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     {locale === 'ar' ? 'نشط' : 'Active'}

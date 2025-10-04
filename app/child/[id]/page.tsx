@@ -90,7 +90,7 @@ export default function ChildDetailPage() {
           <div className="flex items-center space-x-2 rtl:space-x-reverse">
             <Link 
               href="/dashboard" 
-              className="inline-flex items-center text-sm font-medium text-gray-500 hover:text-blue-600 transition-all duration-200 hover:bg-blue-50 px-3 py-2 rounded-lg group"
+              className={`inline-flex items-center ${locale === 'ar' ? 'text-xs font-normal' : 'text-sm font-medium'} text-gray-500 hover:text-blue-600 transition-all duration-200 hover:bg-blue-50 px-3 py-2 rounded-lg group`}
             >
               <svg className="w-4 h-4 mr-2 rtl:mr-0 rtl:ml-2 rtl:rotate-180 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
@@ -101,7 +101,7 @@ export default function ChildDetailPage() {
             <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={locale === 'ar' ? "M15 19l-7-7 7-7" : "M9 5l7 7-7 7"} />
             </svg>
-            <span className="text-sm font-medium text-gray-900">
+            <span className={`${locale === 'ar' ? 'text-xs font-normal' : 'text-sm font-medium'} text-gray-900`}>
               {locale === 'ar' ? 'ملف الطالب' : 'Student Profile'}
             </span>
           </div>
@@ -132,8 +132,8 @@ export default function ChildDetailPage() {
                 <div className={clsx("flex flex-col sm:flex-row sm:items-start sm:justify-between w-full", locale === 'ar' && 'direction-rtl')}>
                   <div className="flex-1">
                     {/* Enhanced Name and Title */}
-                    <h1 className="text-4xl font-bold text-white mb-3 drop-shadow-lg">{displayName}</h1>
-                    <p className="text-blue-100 text-lg mb-6 font-medium">{t.child.child_profile}</p>
+                    <h1 className={`${locale === 'ar' ? 'text-3xl font-semibold' : 'text-4xl font-bold'} text-white mb-3 drop-shadow-lg`}>{displayName}</h1>
+                    <p className={`text-blue-100 ${locale === 'ar' ? 'text-base font-normal' : 'text-lg font-medium'} mb-6`}>{t.child.child_profile}</p>
                     
                     {/* Enhanced Badges */}
                     <div className="flex flex-wrap items-center gap-3 justify-center sm:justify-start">
@@ -189,8 +189,8 @@ export default function ChildDetailPage() {
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
-                <span className="hidden sm:inline">{locale === 'ar' ? 'المعلومات الأساسية' : 'Basic Info'}</span>
-                <span className="sm:hidden">{locale === 'ar' ? 'معلومات' : 'Info'}</span>
+                <span className={`hidden sm:inline ${locale === 'ar' ? 'text-xs' : ''}`}>{locale === 'ar' ? 'المعلومات الأساسية' : 'Basic Info'}</span>
+                <span className={`sm:hidden ${locale === 'ar' ? 'text-xs' : ''}`}>{locale === 'ar' ? 'معلومات' : 'Info'}</span>
               </TabsTrigger>
               <TabsTrigger 
                 value="grades"
@@ -199,8 +199,8 @@ export default function ChildDetailPage() {
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
-                <span className="hidden sm:inline">{locale === 'ar' ? 'المراحل الدراسية' : 'Grades'}</span>
-                <span className="sm:hidden">{locale === 'ar' ? 'درجات' : 'Grades'}</span>
+                <span className={`hidden sm:inline ${locale === 'ar' ? 'text-xs' : ''}`}>{locale === 'ar' ? 'المراحل الدراسية' : 'Grades'}</span>
+                <span className={`sm:hidden ${locale === 'ar' ? 'text-xs' : ''}`}>{locale === 'ar' ? 'درجات' : 'Grades'}</span>
               </TabsTrigger>
               <TabsTrigger 
                 value="attendance"
@@ -209,8 +209,8 @@ export default function ChildDetailPage() {
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <span className="hidden sm:inline">{locale === 'ar' ? 'الحضور' : 'Attendance'}</span>
-                <span className="sm:hidden">{locale === 'ar' ? 'حضور' : 'Attend'}</span>
+                <span className={`hidden sm:inline ${locale === 'ar' ? 'text-xs' : ''}`}>{locale === 'ar' ? 'الحضور' : 'Attendance'}</span>
+                <span className={`sm:hidden ${locale === 'ar' ? 'text-xs' : ''}`}>{locale === 'ar' ? 'حضور' : 'Attend'}</span>
               </TabsTrigger>
               <TabsTrigger 
                 value="assignments"
@@ -219,8 +219,8 @@ export default function ChildDetailPage() {
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
-                <span className="hidden sm:inline">{locale === 'ar' ? 'الواجبات' : 'Assignments'}</span>
-                <span className="sm:hidden">{locale === 'ar' ? 'واجبات' : 'Tasks'}</span>
+                <span className={`hidden sm:inline ${locale === 'ar' ? 'text-xs' : ''}`}>{locale === 'ar' ? 'الواجبات' : 'Assignments'}</span>
+                <span className={`sm:hidden ${locale === 'ar' ? 'text-xs' : ''}`}>{locale === 'ar' ? 'واجبات' : 'Tasks'}</span>
               </TabsTrigger>
               <TabsTrigger 
                 value="school"
@@ -229,8 +229,8 @@ export default function ChildDetailPage() {
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                 </svg>
-                <span className="hidden sm:inline">{locale === 'ar' ? 'معلومات المدرسة' : 'School Info'}</span>
-                <span className="sm:hidden">{locale === 'ar' ? 'مدرسة' : 'School'}</span>
+                <span className={`hidden sm:inline ${locale === 'ar' ? 'text-xs' : ''}`}>{locale === 'ar' ? 'معلومات المدرسة' : 'School Info'}</span>
+                <span className={`sm:hidden ${locale === 'ar' ? 'text-xs' : ''}`}>{locale === 'ar' ? 'مدرسة' : 'School'}</span>
               </TabsTrigger>
             </TabsList>
           </div>
@@ -271,10 +271,10 @@ export default function ChildDetailPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                <h3 className={`${locale === 'ar' ? 'text-lg font-medium' : 'text-xl font-semibold'} text-gray-900 mb-2`}>
                   {locale === 'ar' ? 'قريبًا' : 'Coming Soon'}
                 </h3>
-                <p className="text-gray-500 text-lg max-w-md mx-auto">
+                <p className={`text-gray-500 ${locale === 'ar' ? 'text-base' : 'text-lg'} max-w-md mx-auto`}>
                   {locale === 'ar' ? 'سيتم عرض معلومات الحضور والغياب هنا قريبًا.' : 'Attendance tracking and reports will be displayed here soon.'}
                 </p>
               </div>
@@ -290,10 +290,10 @@ export default function ChildDetailPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                <h3 className={`${locale === 'ar' ? 'text-lg font-medium' : 'text-xl font-semibold'} text-gray-900 mb-2`}>
                   {locale === 'ar' ? 'قريبًا' : 'Coming Soon'}
                 </h3>
-                <p className="text-gray-500 text-lg max-w-md mx-auto">
+                <p className={`text-gray-500 ${locale === 'ar' ? 'text-base' : 'text-lg'} max-w-md mx-auto`}>
                   {locale === 'ar' ? 'سيتم عرض الواجبات والمهام الدراسية هنا قريبًا.' : 'Assignments, homework, and academic tasks will be displayed here soon.'}
                 </p>
               </div>
@@ -313,10 +313,10 @@ export default function ChildDetailPage() {
                       </svg>
                     </div>
                     <div>
-                      <h3 className="font-semibold text-gray-900">
+                      <h3 className={`${locale === 'ar' ? 'font-medium text-base' : 'font-semibold'} text-gray-900`}>
                         {locale === 'ar' ? 'السنة الدراسية' : 'Academic Year'}
                       </h3>
-                      <p className="text-sm text-gray-600">
+                      <p className={`${locale === 'ar' ? 'text-xs' : 'text-sm'} text-gray-600`}>
                         {locale === 'ar' ? 'اختر السنة الدراسية لعرض المعلومات' : 'Select academic year to view information'}
                       </p>
                     </div>
@@ -362,7 +362,7 @@ export default function ChildDetailPage() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
                       </svg>
                     </div>
-                    <p className="text-gray-500 text-lg">{locale === 'ar' ? 'هوية الطالب غير متوفرة.' : 'Student ID not available.'}</p>
+                    <p className={`text-gray-500 ${locale === 'ar' ? 'text-base' : 'text-lg'}`}>{locale === 'ar' ? 'هوية الطالب غير متوفرة.' : 'Student ID not available.'}</p>
                   </div>
                 </Card>
               )}

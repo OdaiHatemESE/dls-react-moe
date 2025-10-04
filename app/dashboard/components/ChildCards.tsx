@@ -57,17 +57,17 @@ const formatDate = (dateString: string, locale: string): string => {
 };
 
 // Enhanced helper components for clean UI
-const InfoItem = ({ label, value, icon }: { label: string; value: string; icon?: React.ReactNode }) => (
-  <div className="flex items-center justify-between py-3 px-4 bg-white/60 backdrop-blur-sm rounded-xl border border-white/50 hover:bg-white/80 transition-all duration-200">
-    <div className="flex items-center gap-2">
+const InfoItem = ({ label, value, icon, locale }: { label: string; value: string; icon?: React.ReactNode; locale?: string }) => (
+  <div className={`flex items-center justify-between py-3 px-4 bg-white/60 backdrop-blur-sm rounded-xl border border-white/50 hover:bg-white/80 transition-all duration-200 ${locale === 'ar' ? 'flex-row-reverse' : ''}`}>
+    <div className={`flex items-center gap-2 ${locale === 'ar' ? 'flex-row-reverse' : ''}`}>
       {icon && (
         <div className="text-blue-600">
           {icon}
         </div>
       )}
-      <span className="text-gray-600 text-sm font-medium">{label}</span>
+      <span className={`text-gray-600 font-medium ${locale === 'ar' ? 'text-xs' : 'text-sm'}`}>{label}</span>
     </div>
-    <span className="text-gray-900 font-semibold text-sm">{value}</span>
+    <span className={`text-gray-900 font-semibold ${locale === 'ar' ? 'text-xs' : 'text-sm'}`}>{value}</span>
   </div>
 );
 
@@ -179,19 +179,19 @@ export default function ChildCards() {
                     </div>
                   </div>
                   <div>
-                    <CardTitle className="text-xl font-bold text-gray-900 leading-tight mb-1">
+                    <CardTitle className={`${locale === 'ar' ? 'text-base font-medium' : 'text-lg font-semibold'} text-gray-900 leading-relaxed mb-3`}>
                       {displayName}
                     </CardTitle>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="bg-white/80 backdrop-blur-sm border-blue-200 text-blue-700 text-xs font-medium">
-                        <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className={`flex items-center ${locale === 'ar' ? 'gap-3' : 'gap-2'}`}>
+                      <Badge variant="outline" className={`bg-white/80 backdrop-blur-sm border-blue-200 text-blue-700 ${locale === 'ar' ? 'text-xs font-normal px-2 py-1' : 'text-xs font-medium'}`}>
+                        <svg className={`w-3 h-3 ${locale === 'ar' ? 'ml-1' : 'mr-1'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                         </svg>
                         {genderLabel}
                       </Badge>
                       {age > 0 && (
-                        <Badge variant="outline" className="bg-white/80 backdrop-blur-sm border-green-200 text-green-700 text-xs font-medium">
-                          <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <Badge variant="outline" className={`bg-white/80 backdrop-blur-sm border-green-200 text-green-700 ${locale === 'ar' ? 'text-xs font-normal px-2 py-1' : 'text-xs font-medium'}`}>
+                          <svg className={`w-3 h-3 ${locale === 'ar' ? 'ml-1' : 'mr-1'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                           </svg>
                           {age} {t.student?.years || (locale === 'ar' ? 'سنة' : 'years')}
@@ -205,7 +205,7 @@ export default function ChildCards() {
                   className="p-3 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all duration-200 hover:scale-110 group/link"
                   aria-label={`${t.student?.viewDetails || (locale === 'ar' ? 'عرض التفاصيل' : 'View Details')} ${displayName}`}
                 >
-                  <ChevronRightIcon className="w-5 h-5 group-hover/link:translate-x-1 transition-transform" />
+                  <ChevronRightIcon className={`w-5 h-5 transition-transform ${locale === 'ar' ? 'rotate-180 group-hover/link:-translate-x-1' : 'group-hover/link:translate-x-1'}`} />
                 </Link>
               </div>
 
@@ -215,6 +215,7 @@ export default function ChildCards() {
                   <InfoItem 
                     label={t.student?.nationality || (locale === 'ar' ? 'الجنسية' : 'Nationality')} 
                     value={displayNationality}
+                    locale={locale}
                     icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
                   />
                 )}
@@ -222,6 +223,7 @@ export default function ChildCards() {
                   <InfoItem 
                     label={t.student?.birthDate || (locale === 'ar' ? 'تاريخ الميلاد' : 'Birth Date')} 
                     value={formattedBirthDate}
+                    locale={locale}
                     icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>}
                   />
                 )}
@@ -230,14 +232,14 @@ export default function ChildCards() {
               {/* Enhanced Action Button */}
               <Link
                 href={`/child/${child.sourcedId}`}
-                className="group/button w-full inline-flex items-center justify-center gap-3 px-6 py-4 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 hover:scale-[1.01]"
+                className={`group/button w-full inline-flex items-center justify-center gap-3 px-6 py-4 ${locale === 'ar' ? 'text-xs font-medium' : 'text-sm font-semibold'} text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 hover:scale-[1.01] ${locale === 'ar' ? 'flex-row-reverse' : ''}`}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                 </svg>
                 {t.student?.viewDetails || (locale === 'ar' ? 'عرض التفاصيل' : 'View Details')}
-                <ChevronRightIcon className="w-4 h-4 group-hover/button:translate-x-1 transition-transform" />
+                <ChevronRightIcon className={`w-4 h-4 transition-transform ${locale === 'ar' ? 'rotate-180 group-hover/button:-translate-x-1' : 'group-hover/button:translate-x-1'}`} />
               </Link>
             </CardContent>
           </Card>
@@ -256,13 +258,13 @@ export default function ChildCards() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
                   </svg>
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                <h3 className={`${locale === 'ar' ? 'text-xl font-semibold' : 'text-2xl font-bold'} text-gray-900 mb-4`}>
                   {locale === 'ar' ? 'لا توجد بيانات طلاب' : 'No Students Found'}
                 </h3>
-                <p className="text-lg text-gray-600 mb-6">
+                <p className={`${locale === 'ar' ? 'text-base' : 'text-lg'} text-gray-600 mb-6`}>
                   {t.dashboard?.noLinkedStudents || (locale === 'ar' ? 'لم يتم العثور على طلاب مرتبطين بحسابك.' : 'No linked students found for your account.')}
                 </p>
-                <div className="inline-flex items-center gap-2 px-6 py-3 text-sm font-medium text-blue-600 bg-white/80 backdrop-blur-sm rounded-xl shadow-sm hover:shadow-md transition-all duration-200">
+                <div className={`inline-flex items-center gap-2 px-6 py-3 ${locale === 'ar' ? 'text-xs font-normal' : 'text-sm font-medium'} text-blue-600 bg-white/80 backdrop-blur-sm rounded-xl shadow-sm hover:shadow-md transition-all duration-200`}>
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
