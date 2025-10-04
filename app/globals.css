@@ -26,7 +26,7 @@
   h5 { @apply text-sm font-semibold leading-tight; }
   h6 { @apply text-xs font-semibold leading-tight; }
   :root {
-    /* UAE Government Design System - Light Theme */
+    /* UAE Government Design System - Default Light Theme */
     --background: 0 0% 100%;
     --foreground: 240 10% 16%;
     --card: 0 0% 100%;
@@ -53,26 +53,110 @@
     --chart-5: 36 65% 76%; /* UAE Gold Light */
     --radius: 0.5rem;
   }
+
+  /* Theme 1: Blue Ocean */
+  .theme-blue {
+    --background: 0 0% 100%;
+    --foreground: 210 40% 16%;
+    --card: 0 0% 100%;
+    --card-foreground: 210 40% 16%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 210 40% 16%;
+    --primary: 210 98% 50%; /* Blue-500 */
+    --primary-foreground: 0 0% 98%;
+    --secondary: 197 71% 73%; /* Light Blue-300 */
+    --secondary-foreground: 210 40% 16%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 210 20% 46%;
+    --accent: 210 40% 85%; /* Blue-100 */
+    --accent-foreground: 210 98% 50%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 210 40% 90%;
+    --input: 210 40% 90%;
+    --ring: 210 98% 50%;
+    --chart-1: 210 98% 50%;
+    --chart-2: 197 71% 73%;
+    --chart-3: 0 72% 51%;
+    --chart-4: 210 20% 46%;
+    --chart-5: 210 40% 85%;
+  }
+
+  /* Theme 2: Green Nature */
+  .theme-green {
+    --background: 0 0% 100%;
+    --foreground: 120 27% 16%;
+    --card: 0 0% 100%;
+    --card-foreground: 120 27% 16%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 120 27% 16%;
+    --primary: 142 76% 36%; /* Green-600 */
+    --primary-foreground: 0 0% 98%;
+    --secondary: 142 52% 65%; /* Green-400 */
+    --secondary-foreground: 120 27% 16%;
+    --muted: 120 27% 96%;
+    --muted-foreground: 120 13% 46%;
+    --accent: 142 52% 85%; /* Green-200 */
+    --accent-foreground: 142 76% 36%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 120 27% 90%;
+    --input: 120 27% 90%;
+    --ring: 142 76% 36%;
+    --chart-1: 142 76% 36%;
+    --chart-2: 142 52% 65%;
+    --chart-3: 0 72% 51%;
+    --chart-4: 120 13% 46%;
+    --chart-5: 142 52% 85%;
+  }
+
+  /* Theme 3: Purple Royal */
+  .theme-purple {
+    --background: 0 0% 100%;
+    --foreground: 270 15% 16%;
+    --card: 0 0% 100%;
+    --card-foreground: 270 15% 16%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 270 15% 16%;
+    --primary: 262 83% 58%; /* Purple-500 */
+    --primary-foreground: 0 0% 98%;
+    --secondary: 270 95% 75%; /* Purple-400 */
+    --secondary-foreground: 270 15% 16%;
+    --muted: 270 15% 96%;
+    --muted-foreground: 270 8% 46%;
+    --accent: 270 95% 90%; /* Purple-200 */
+    --accent-foreground: 262 83% 58%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 270 15% 90%;
+    --input: 270 15% 90%;
+    --ring: 262 83% 58%;
+    --chart-1: 262 83% 58%;
+    --chart-2: 270 95% 75%;
+    --chart-3: 0 72% 51%;
+    --chart-4: 270 8% 46%;
+    --chart-5: 270 95% 90%;
+  }
   .dark {
-    /* UAE Government Design System - Dark Theme */
+    /* Dark Theme */
     --background: 240 10% 8%;
     --foreground: 0 0% 98%;
-    --card: 240 10% 8%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 10% 8%;
-    --popover-foreground: 0 0% 98%;
+    --card: 240 10% 12%;
+    --card-foreground: 0 0% 95%;
+    --popover: 240 10% 12%;
+    --popover-foreground: 0 0% 95%;
     --primary: 36 65% 76%; /* UAE Gold-300 for better contrast */
     --primary-foreground: 39 84% 10%;
     --secondary: 137 19% 47%; /* UAE Green-600 */
     --secondary-foreground: 0 0% 98%;
-    --muted: 240 10% 15%;
+    --muted: 240 10% 18%;
     --muted-foreground: 240 5% 65%;
-    --accent: 240 10% 15%;
+    --accent: 240 10% 18%;
     --accent-foreground: 36 65% 76%;
     --destructive: 0 72% 65%; /* UAE Red-400 for better contrast */
     --destructive-foreground: 0 0% 98%;
-    --border: 240 10% 15%;
-    --input: 240 10% 15%;
+    --border: 240 10% 20%;
+    --input: 240 10% 18%;
     --ring: 36 65% 76%;
     --chart-1: 36 65% 76%; /* UAE Gold Light */
     --chart-2: 137 19% 47%; /* UAE Green Dark */

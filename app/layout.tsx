@@ -31,6 +31,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 {/* Global Header */}
                 <SiteHeader />
                 <Switcher /> 
+                <ThemeSwitcher />
                 <main className="flex-1">{children}</main>
                 <SiteFooter />
                 {/* Dynamically update lang/dir on client */}
@@ -54,6 +55,7 @@ import { I18nProvider } from "./i18n/I18nProvider";
 import SWRProvider from "@/app/components/SWRProvider";
 
 import Switcher from "@/app/components/Switcher";
+import ThemeSwitcher from "@/app/components/ThemeSwitcher";
 
 function SiteHeader() {
   return <Header />;
