@@ -196,7 +196,9 @@ export default function StreamGrades({ studentId }: { studentId: string }) {
                 const namePrimary = locale === 'ar' ? r.sg?.metadata?.titleArabic || r.sg?.title || r.sg?.name : r.sg?.title || r.sg?.name || r.sg?.metadata?.titleArabic;
                 const nameSecondary = locale === 'ar' ? (r.sg?.title || r.sg?.name) : r.sg?.metadata?.titleArabic;
                 const org = r.schoolId ? orgById.get(r.schoolId) : undefined;
-                const schoolName = org?.name || org?.metadata?.englishName || org?.metadata?.shortName || '—';
+                const schoolName = locale === 'ar'
+                  ? (org?.name || org?.metadata?.shortName || org?.metadata?.englishName || '—')
+                  : (org?.metadata?.englishName || org?.name || org?.metadata?.shortName || '—');
                 return (
                   <div key={`${r.enrollmentId}`} className="grid grid-cols-12 px-6 py-4 items-center">
                     <div className="col-span-1 font-mono text-sm">{r.year}</div>
