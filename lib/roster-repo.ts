@@ -134,7 +134,7 @@ export async function getSchoolEnrollmentsByStudent(
   try {
     
     const data  = await orFetch<SchoolEnrollment[]>(
-      `/v1p1/schoolenrollments?filter=${encodeURIComponent(filter)}&fields=sourcedId,school`,
+      `/v1p1/schoolenrollments?filter=${encodeURIComponent(filter)}&fields=sourcedId,school,streamGrade`,
       "read"
     );
 
