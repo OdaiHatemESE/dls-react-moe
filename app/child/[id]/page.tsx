@@ -109,11 +109,35 @@ export default function ChildDetailPage() {
           </div>
         </nav>
 
-        {/* Parent Actions Button - Outside the Header Card */}
-        <div className={clsx("mb-6 flex", 
-          locale === 'ar' ? 'justify-end' : 'justify-start'
-        )}>
-          <SignConductSection locale={locale} studentId={person.sourcedId} />
+        {/* Parent Actions Section - Full Width with Intro Message */}
+        <div className="mb-6">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className={clsx("flex items-center justify-between", 
+              locale === 'ar' && 'direction-rtl'
+            )}>
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-blue-100 rounded-full">
+                  <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <div className={locale === 'ar' ? 'text-right' : 'text-left'}>
+                  <h3 className={`${locale === 'ar' ? 'font-medium text-base' : 'font-semibold text-lg'} text-gray-900 mb-1`}>
+                    {locale === 'ar' ? 'إجراءات ولي الأمر' : 'Parent Actions'}
+                  </h3>
+                  <p className={`${locale === 'ar' ? 'text-xs' : 'text-sm'} text-gray-600`}>
+                    {locale === 'ar' 
+                      ? 'انقر هنا للوصول إلى خيارات الطباعة والتوقيع والمزيد' 
+                      : 'Click here to access printing, signing options and more'
+                    }
+                  </p>
+                </div>
+              </div>
+              <div className="flex-shrink-0">
+                <SignConductSection locale={locale} studentId={person.sourcedId} />
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Enhanced Header Card */}

@@ -41,117 +41,175 @@ function SignConductSection({ locale, studentId }: { locale: string; studentId?:
             <Sheet open={isOpen} onOpenChange={setIsOpen}>
                 <SheetTrigger asChild>
                     <Button 
-                        className="px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl shadow-xl hover:shadow-2xl transition-all duration-300 flex items-center gap-3 text-lg font-semibold hover:scale-105 transform"
+                        className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 font-medium hover:scale-105 transform"
                     >
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4" />
+                        {locale === 'ar' ? 'ابدأ الآن' : 'Get Started'}
+                        <svg className={`w-5 h-5 ${locale === 'ar' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                         </svg>
-                        {locale === 'ar' ? 'إجراءات ولي الأمر' : 'Parent Actions'}
                     </Button>
                 </SheetTrigger>
                 
-                <SheetContent className={`sm:max-w-md ${locale === 'ar' ? 'direction-rtl' : ''}`}>
-                    <SheetHeader className="mb-6">
-                        <SheetTitle className={`${locale === 'ar' ? 'text-right font-medium text-lg' : 'text-left text-xl font-semibold'} text-gray-900`}>
-                            {locale === 'ar' ? 'إجراءات ولي الأمر' : 'Parent Actions'}
-                        </SheetTitle>
-                        <SheetDescription className={`${locale === 'ar' ? 'text-right text-sm' : 'text-left'} text-gray-600`}>
-                            {locale === 'ar' ? 'اختر الإجراء الذي تريد تنفيذه' : 'Choose the action you want to perform'}
+                <SheetContent className={`sm:max-w-lg ${locale === 'ar' ? 'direction-rtl' : ''} bg-white`}>
+                    <SheetHeader className="mb-8 pb-6 border-b border-gray-100">
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className="p-2 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg">
+                                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                            </div>
+                            <div>
+                                <SheetTitle className={`${locale === 'ar' ? 'text-right font-semibold text-xl' : 'text-left text-2xl font-bold'} text-gray-900`}>
+                                    {locale === 'ar' ? 'إجراءات ولي الأمر' : 'Parent Actions'}
+                                </SheetTitle>
+                            </div>
+                        </div>
+                        <SheetDescription className={`${locale === 'ar' ? 'text-right text-base' : 'text-left text-lg'} text-gray-600 leading-relaxed`}>
+                            {locale === 'ar' 
+                                ? 'اختر الإجراء المناسب من الخيارات المتاحة أدناه للمتابعة' 
+                                : 'Select the appropriate action from the available options below to continue'}
                         </SheetDescription>
                     </SheetHeader>
 
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                         {/* Print Certification Action */}
-                        <div className="p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50/50 transition-all duration-200">
+                        <div className="group relative overflow-hidden bg-white rounded-xl border border-gray-200 hover:border-green-300 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                            <div className="absolute inset-0 bg-gradient-to-r from-green-50 to-emerald-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                             <Button
                                 onClick={handlePrintCertification}
-                                className="w-full justify-start gap-3 h-auto p-4 bg-white hover:bg-blue-50 text-gray-900 border border-gray-200 hover:border-blue-300 shadow-sm"
-                                variant="outline"
+                                className="relative w-full justify-start gap-4 h-auto p-6 bg-transparent hover:bg-transparent text-gray-900 border-0 shadow-none"
+                                variant="ghost"
                             >
-                                <div className="p-2 bg-green-100 rounded-lg">
-                                    <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <div className="p-3 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110">
+                                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                                     </svg>
                                 </div>
                                 <div className={`flex-1 ${locale === 'ar' ? 'text-right' : 'text-left'}`}>
-                                    <div className={`${locale === 'ar' ? 'font-medium text-sm' : 'font-semibold'} text-gray-900`}>
+                                    <div className={`${locale === 'ar' ? 'font-semibold text-base' : 'font-bold text-lg'} text-gray-900 group-hover:text-green-700 transition-colors`}>
                                         {locale === 'ar' ? 'طباعة الشهادة' : 'Print Certification'}
                                     </div>
-                                    <div className={`${locale === 'ar' ? 'text-xs' : 'text-sm'} text-gray-600`}>
-                                        {locale === 'ar' ? 'طباعة شهادة السلوك المدرسي' : 'Print school conduct certification'}
+                                    <div className={`${locale === 'ar' ? 'text-sm' : 'text-base'} text-gray-600 group-hover:text-green-600 transition-colors mt-1`}>
+                                        {locale === 'ar' ? 'طباعة شهادة السلوك المدرسي بصيغة PDF' : 'Generate and print school conduct certification'}
                                     </div>
                                 </div>
-                                <svg className={`w-4 h-4 text-gray-400 ${locale === 'ar' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                </svg>
+                                <div className="flex items-center">
+                                    <div className="w-8 h-8 rounded-full bg-green-100 group-hover:bg-green-200 flex items-center justify-center transition-all duration-300">
+                                        <svg className={`w-4 h-4 text-green-600 group-hover:translate-x-1 transition-transform ${locale === 'ar' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                        </svg>
+                                    </div>
+                                </div>
                             </Button>
                         </div>
 
                         {/* Sign Conduct Action */}
-                        <div className="p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50/50 transition-all duration-200">
+                        <div className="group relative overflow-hidden bg-white rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                            <div className="absolute inset-0 bg-gradient-to-r from-blue-50 to-indigo-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                             <Button
                                 onClick={handleSignConduct}
-                                className="w-full justify-start gap-3 h-auto p-4 bg-white hover:bg-blue-50 text-gray-900 border border-gray-200 hover:border-blue-300 shadow-sm"
-                                variant="outline"
+                                className="relative w-full justify-start gap-4 h-auto p-6 bg-transparent hover:bg-transparent text-gray-900 border-0 shadow-none"
+                                variant="ghost"
                             >
-                                <div className="p-2 bg-blue-100 rounded-lg">
-                                    <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <div className="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110">
+                                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                     </svg>
                                 </div>
                                 <div className={`flex-1 ${locale === 'ar' ? 'text-right' : 'text-left'}`}>
-                                    <div className={`${locale === 'ar' ? 'font-medium text-sm' : 'font-semibold'} text-gray-900`}>
-                                        {locale === 'ar' ? 'توقيع ميثاق السلوك' : 'Sign Conduct'}
+                                    <div className={`${locale === 'ar' ? 'font-semibold text-base' : 'font-bold text-lg'} text-gray-900 group-hover:text-blue-700 transition-colors`}>
+                                        {locale === 'ar' ? 'توقيع ميثاق السلوك' : 'Sign Conduct Charter'}
                                     </div>
-                                    <div className={`${locale === 'ar' ? 'text-xs' : 'text-sm'} text-gray-600`}>
-                                        {locale === 'ar' ? 'توقيع ميثاق السلوك المدرسي' : 'Sign the school conduct charter'}
+                                    <div className={`${locale === 'ar' ? 'text-sm' : 'text-base'} text-gray-600 group-hover:text-blue-600 transition-colors mt-1`}>
+                                        {locale === 'ar' ? 'راجع ووقع على ميثاق السلوك المدرسي' : 'Review and digitally sign the school conduct charter'}
                                     </div>
                                 </div>
-                                <svg className={`w-4 h-4 text-gray-400 ${locale === 'ar' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                </svg>
+                                <div className="flex items-center">
+                                    <div className="w-8 h-8 rounded-full bg-blue-100 group-hover:bg-blue-200 flex items-center justify-center transition-all duration-300">
+                                        <svg className={`w-4 h-4 text-blue-600 group-hover:translate-x-1 transition-transform ${locale === 'ar' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                        </svg>
+                                    </div>
+                                </div>
                             </Button>
                         </div>
 
                         {/* Download Document Action (for signed documents) */}
                         {signed && (
-                            <div className="p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50/50 transition-all duration-200">
+                            <div className="group relative overflow-hidden bg-white rounded-xl border border-gray-200 hover:border-purple-300 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                                <div className="absolute inset-0 bg-gradient-to-r from-purple-50 to-violet-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                                 <Button
                                     onClick={handleDownloadDocument}
-                                    className="w-full justify-start gap-3 h-auto p-4 bg-white hover:bg-blue-50 text-gray-900 border border-gray-200 hover:border-blue-300 shadow-sm"
-                                    variant="outline"
+                                    className="relative w-full justify-start gap-4 h-auto p-6 bg-transparent hover:bg-transparent text-gray-900 border-0 shadow-none"
+                                    variant="ghost"
                                 >
-                                    <div className="p-2 bg-purple-100 rounded-lg">
-                                        <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <div className="p-3 bg-gradient-to-br from-purple-500 to-violet-600 rounded-xl shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110">
+                                        <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                         </svg>
                                     </div>
                                     <div className={`flex-1 ${locale === 'ar' ? 'text-right' : 'text-left'}`}>
-                                        <div className={`${locale === 'ar' ? 'font-medium text-sm' : 'font-semibold'} text-gray-900`}>
+                                        <div className={`${locale === 'ar' ? 'font-semibold text-base' : 'font-bold text-lg'} text-gray-900 group-hover:text-purple-700 transition-colors`}>
                                             {locale === 'ar' ? 'تحميل الوثيقة' : 'Download Document'}
                                         </div>
-                                        <div className={`${locale === 'ar' ? 'text-xs' : 'text-sm'} text-gray-600`}>
-                                            {locale === 'ar' ? 'تحميل الوثيقة الموقعة' : 'Download signed document'}
+                                        <div className={`${locale === 'ar' ? 'text-sm' : 'text-base'} text-gray-600 group-hover:text-purple-600 transition-colors mt-1`}>
+                                            {locale === 'ar' ? 'تحميل نسخة من الوثيقة الموقعة بصيغة PDF' : 'Download a copy of the signed document in PDF format'}
                                         </div>
                                     </div>
-                                    <svg className={`w-4 h-4 text-gray-400 ${locale === 'ar' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                    </svg>
+                                    <div className="flex items-center">
+                                        <div className="w-8 h-8 rounded-full bg-purple-100 group-hover:bg-purple-200 flex items-center justify-center transition-all duration-300">
+                                            <svg className={`w-4 h-4 text-purple-600 group-hover:translate-x-1 transition-transform ${locale === 'ar' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                            </svg>
+                                        </div>
+                                    </div>
                                 </Button>
                             </div>
                         )}
                     </div>
 
-                    {/* Status Badge */}
-                    <div className="mt-6 pt-4 border-t border-gray-200">
-                        <div className={`flex items-center gap-2 ${locale === 'ar' ? 'flex-row-reverse' : ''}`}>
-                            <div className={`w-2 h-2 rounded-full ${signed ? 'bg-green-500' : 'bg-yellow-500'}`}></div>
-                            <span className={`${locale === 'ar' ? 'text-xs font-normal' : 'text-sm font-medium'} ${signed ? 'text-green-700' : 'text-yellow-700'}`}>
-                                {signed 
-                                    ? (locale === 'ar' ? 'تم التوقيع' : 'Signed') 
-                                    : (locale === 'ar' ? 'غير موقع' : 'Not Signed')
+                    {/* Enhanced Status Section */}
+                    <div className="mt-8 pt-6 border-t border-gray-100">
+                        <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
+                            <div className={`flex items-center justify-between ${locale === 'ar' ? 'flex-row-reverse' : ''}`}>
+                                <div className={`flex items-center gap-3 ${locale === 'ar' ? 'flex-row-reverse' : ''}`}>
+                                    <div className={`w-3 h-3 rounded-full ${signed ? 'bg-green-500' : 'bg-amber-500'} animate-pulse`}></div>
+                                    <div>
+                                        <span className={`${locale === 'ar' ? 'text-sm font-medium' : 'text-base font-semibold'} ${signed ? 'text-green-700' : 'text-amber-700'}`}>
+                                            {signed 
+                                                ? (locale === 'ar' ? 'حالة الوثيقة: تم التوقيع' : 'Document Status: Signed') 
+                                                : (locale === 'ar' ? 'حالة الوثيقة: في انتظار التوقيع' : 'Document Status: Pending Signature')
+                                            }
+                                        </span>
+                                        <div className={`${locale === 'ar' ? 'text-xs' : 'text-sm'} text-gray-600 mt-1`}>
+                                            {signed 
+                                                ? (locale === 'ar' ? 'تم إكمال التوقيع بنجاح' : 'Successfully completed and signed') 
+                                                : (locale === 'ar' ? 'يتطلب توقيعك للمتابعة' : 'Requires your signature to proceed')
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                    signed 
+                                        ? 'bg-green-100 text-green-800 border border-green-200' 
+                                        : 'bg-amber-100 text-amber-800 border border-amber-200'
+                                }`}>
+                                    {signed 
+                                        ? (locale === 'ar' ? 'مكتمل' : 'Complete') 
+                                        : (locale === 'ar' ? 'معلق' : 'Pending')
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {/* Help Text */}
+                        <div className="mt-4 text-center">
+                            <p className={`${locale === 'ar' ? 'text-xs' : 'text-sm'} text-gray-500`}>
+                                {locale === 'ar' 
+                                    ? 'في حالة وجود أي استفسارات، يرجى التواصل مع إدارة المدرسة' 
+                                    : 'For any questions or assistance, please contact the school administration'
                                 }
-                            </span>
+                            </p>
                         </div>
                     </div>
                 </SheetContent>
