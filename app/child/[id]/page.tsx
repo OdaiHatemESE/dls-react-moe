@@ -140,8 +140,8 @@ export default function ChildDetailPage() {
                     <p className={`text-blue-100 ${locale === 'ar' ? 'text-base font-normal' : 'text-lg font-medium'} mb-6`}>{t.child.child_profile}</p>
                     
                     {/* Enhanced Badges */}
-                    <div className={clsx("flex flex-wrap items-center gap-3 justify-center",
-                      locale === 'ar' ? 'sm:justify-end' : 'sm:justify-start'
+                    <div className={clsx("flex flex-wrap items-center gap-3 justify-center sm:justify-start",
+                       
                     )}>
                       <Badge variant="outline" className="bg-white/90 backdrop-blur-sm border-white/30 text-gray-700 shadow-sm hover:bg-white transition-all">
                         <svg className="w-4 h-4 me-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
