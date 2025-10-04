@@ -30,6 +30,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <SWRProvider>
                 {/* Global Header */}
                 <SiteHeader />
+                <Switcher /> 
                 <main className="flex-1">{children}</main>
                 <SiteFooter />
                 {/* Dynamically update lang/dir on client */}
@@ -51,6 +52,8 @@ import AuthProvider from "./components/AuthProvider";
 import IconProvider from "./components/icons/IconProvider";
 import { I18nProvider } from "./i18n/I18nProvider";
 import SWRProvider from "@/app/components/SWRProvider";
+
+import Switcher from "@/app/components/Switcher";
 
 function SiteHeader() {
   return <Header />;

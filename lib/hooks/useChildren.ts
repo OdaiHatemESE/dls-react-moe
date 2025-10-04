@@ -8,9 +8,10 @@ import type { Person } from "@/types";
  
 
 export function useChildren(eid?: string) {
+  // If eid is provided, fetch for that eid, else fetch for current parent
   const key = eid
     ? `/api/oneroster/basic-info-full?eid=${encodeURIComponent(eid)}`
-    : null;
+    : "/api/oneroster/basic-info-full";
   const { data, error, isLoading } = useSWR(key);
   const children: Person[] = React.useMemo(() => {
     const d = (data ?? {}) as { children?: Person[] };
