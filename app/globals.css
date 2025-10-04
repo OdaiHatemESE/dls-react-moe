@@ -1,3 +1,5 @@
+@import "@fontsource/noto-kufi-arabic/400.css";
+@import "@fontsource/noto-kufi-arabic/700.css";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -159,4 +161,11 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Apply Noto Kufi Arabic font for Arabic content */
+[lang="ar"],
+.html-ar,
+body[dir="rtl"] {
+  font-family: "Noto Kufi Arabic", sans-serif;
 }

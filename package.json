@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@aegov/design-system": "^2.2.10",
+    "@fontsource/noto-kufi-arabic": "^5.2.9",
     "@phosphor-icons/react": "^2.0.0",
     "@radix-ui/react-avatar": "^1.1.10",
     "@radix-ui/react-dialog": "^1.1.15",
