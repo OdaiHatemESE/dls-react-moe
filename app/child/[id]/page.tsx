@@ -39,10 +39,11 @@ const InfoCard = ({ label, value, mono = false }: { label: string; value: string
 export default function ChildDetailPage() {
   const { t, locale } = useI18n();
   const params = useParams();
-  const eid = params.id as string;
- 
+  const sourcedId = params.id as string;
+
+  // Only send sourcedId, do not send eid (parent EID is taken from session on backend)
   const { data, error, isLoading } = useSWR<BasicInfoResponse>(
-    eid ? `/api/oneroster/basic-info-full?sourcedId=${encodeURIComponent(eid)}` : null,
+    sourcedId ? `/api/oneroster/basic-info-full?sourcedId=${encodeURIComponent(sourcedId)}` : null,
     jsonFetcher
   );
   const [year, setYear] = React.useState<string>(() => String(new Date().getFullYear()));
@@ -240,7 +241,7 @@ export default function ChildDetailPage() {
                   <p className="text-gray-600 mt-3">{t.child.child_profile}</p>
                 </div>
                 <div className="mt-4 sm:mt-0 sm:ml-6 sm:self-start flex-shrink-0 flex justify-center sm:justify-end">
-                  <SignConductSection locale={locale} studentId={person.sourcedId} eid={eid} />
+                  <SignConductSection locale={locale} studentId={person.sourcedId} />
                 </div>
               </div>
             </div>
@@ -461,7 +462,7 @@ export default function ChildDetailPage() {
   );
 }
 // SignConductSection component
-function SignConductSection({ locale, studentId, eid }: { locale: string; studentId?: string; eid?: string }) {
+function SignConductSection({ locale, studentId }: { locale: string; studentId?: string }) {
   const [signed, setSigned] = React.useState(false);
   // Simulate download (replace with real logic as needed)
   const handleDownload = () => {
@@ -472,7 +473,7 @@ function SignConductSection({ locale, studentId, eid }: { locale: string; studen
       {!signed ? (
         <>
           <Link
-            href={`/child/${encodeURIComponent(eid || '')}/parent-conduct${studentId ? `?studentId=${encodeURIComponent(studentId)}` : ''}`}
+            href={studentId ? `/child/${encodeURIComponent(studentId)}/parent-conduct?studentId=${encodeURIComponent(studentId)}` : '#'}
             className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
           >
             {locale === 'ar' ? 'ميثاق ولي الأمر' : 'Parent Conduct'}

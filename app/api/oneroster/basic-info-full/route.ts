@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getPersonByEid, getStudentIdsForPerson, getStudentsFull } from "@/lib/roster-repo";
 import { orFetch } from "@/lib/oneroster";
 import { Person } from "@/types";
+import { getSessionEid } from "./session";
 
 /**
  * OneRoster Basic Info (Full) API
@@ -104,9 +105,10 @@ function pickRole(fullPersonArr: unknown[]): string | undefined {
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const sourcedId = searchParams.get("sourcedId");
-  const eid = searchParams.get("eid");
+  // Get parent EID from session (not from query)
+  const eid = await getSessionEid();
   if (!eid && !sourcedId) {
-    return NextResponse.json({ error: "Missing ?eid or ?sourcedId" }, { status: 400 });
+    return NextResponse.json({ error: "Missing ?sourcedId or not authenticated" }, { status: 400 });
   }
 
   try {
@@ -115,12 +117,50 @@ export async function GET(req: Request) {
     let identifierType: string;
 
     if (typeof sourcedId === "string" && sourcedId) {
-      // If sourcedId is provided, use it directly (assume student, but check role after fetch)
+      // Student lookup: require eid from session and verify link
+      if (!eid) {
+        return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+      }
+      const foundParent = await getPersonByEid(eid);
+      if (!foundParent || !foundParent.sourcedId) {
+        return NextResponse.json({ error: `No parent found for EID ${eid}` }, { status: 404 });
+      }
+      // Get all student IDs linked to this parent
+      let linkedStudentIds: string[] = [];
+      try {
+        linkedStudentIds = await getStudentIdsForPerson(foundParent.sourcedId);
+      } catch {
+        linkedStudentIds = [];
+      }
+      // Check if requested sourcedId is linked to this parent
+      if (!linkedStudentIds.includes(sourcedId)) {
+        return NextResponse.json({ error: "Student not linked to this parent", forbidden: true }, { status: 403 });
+      }
+      // Proceed to fetch student info
       person = { sourcedId };
       personIdentifier = sourcedId;
       identifierType = "sourcedId";
-    } else if (typeof eid === "string" && eid) {
-      // Otherwise, look up by eid (assume parent, but check role after fetch)
+
+      // Fetch FULL record to determine role (should be student)
+      const parentOrStudentFull = await getFullPersonById(personIdentifier, true);
+      const role = pickRole(parentOrStudentFull)?.toString().toLowerCase() || "";
+
+      if (!role.includes("student")) {
+        return NextResponse.json({ error: "Not a student record" }, { status: 400 });
+      }
+
+      return NextResponse.json({
+        meta: {
+          sourcedId: person.sourcedId,
+          parentEid: eid,
+          role: "student",
+          studentCount: 0,
+        },
+        parent: parentOrStudentFull,
+        children: [],
+      });
+    } else if (eid) {
+      // Parent lookup: show all linked students
       const foundPerson = await getPersonByEid(eid);
       if (!foundPerson || !foundPerson.sourcedId) {
         return NextResponse.json({ error: `No person found for EID ${eid}` }, { status: 404 });
@@ -128,59 +168,50 @@ export async function GET(req: Request) {
       person = { sourcedId: foundPerson.sourcedId };
       personIdentifier = eid;
       identifierType = "eid";
-    } else {
-      // Should not reach here due to earlier check, but just in case
-      return NextResponse.json({ error: "Missing ?eid or ?sourcedId" }, { status: 400 });
-    }
 
-    // Fetch FULL record to determine role (preserve vendor-native shape)
-    // If using sourcedId, likely student; if using eid, likely parent
-    // But always check role after fetch
-    let parentOrStudentFull: unknown[];
-    let role: string;
-    if (identifierType === "sourcedId") {
-      parentOrStudentFull = await getFullPersonById(personIdentifier, true);
-      role = pickRole(parentOrStudentFull)?.toString().toLowerCase() || "";
-    } else {
-      parentOrStudentFull = await getFullPersonById(personIdentifier, false);
-      role = pickRole(parentOrStudentFull)?.toString().toLowerCase() || "";
-    }
+      // Fetch FULL record to determine role (should be parent)
+      const parentOrStudentFull = await getFullPersonById(personIdentifier, false);
+      const role = pickRole(parentOrStudentFull)?.toString().toLowerCase() || "";
 
-    // If the identifier is a student → no children, return student payload in `parent`
-    if (role.includes("student")) {
+      // If the identifier is a student → no children, return student payload in `parent`
+      if (role.includes("student")) {
+        return NextResponse.json({
+          meta: {
+            eid: personIdentifier,
+            personSourcedId: person.sourcedId,
+            role: "student",
+            studentCount: 0,
+          },
+          parent: parentOrStudentFull,
+          children: [],
+        });
+      }
+
+      // Otherwise assume parent/guardian → collect linked students
+      let studentIds: string[] = [];
+      try {
+        studentIds = await getStudentIdsForPerson(person.sourcedId);
+      } catch {
+        studentIds = [];
+      }
+
+      const childrenFull = await getStudentsFull(studentIds);
+
       return NextResponse.json({
         meta: {
-          sourcedId: person.sourcedId,
-          role: "student",
-          studentCount: 0,
+          eid: personIdentifier,
+          parentSourcedId: person.sourcedId,
+          personSourcedId: person.sourcedId,
+          role: role || "parent",
+          studentCount: studentIds.length,
         },
         parent: parentOrStudentFull,
-        children: [],
+        children: childrenFull,
       });
+    } else {
+      // Should not reach here due to earlier check, but just in case
+      return NextResponse.json({ error: "Missing ?sourcedId or not authenticated" }, { status: 400 });
     }
-
-    // Otherwise assume parent/guardian → collect linked students
-    let studentIds: string[] = [];
-    try {
-      studentIds = await getStudentIdsForPerson(person.sourcedId);
-    } catch {
-      studentIds = [];
-    }
-
-    const childrenFull = await getStudentsFull(studentIds);
-
-    return NextResponse.json({
-      meta: {
-        eid: identifierType === "eid" ? personIdentifier : undefined,
-        sourcedId: person.sourcedId,
-        parentSourcedId: person.sourcedId,
-        personSourcedId: person.sourcedId,
-        role: role || "parent",
-        studentCount: studentIds.length,
-      },
-      parent: parentOrStudentFull,
-      children: childrenFull,
-    });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Server error";
     return NextResponse.json({ error: message }, { status: 500 });
