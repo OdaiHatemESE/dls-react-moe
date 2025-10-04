@@ -23,11 +23,13 @@ export const dynamic = "force-dynamic";
 // ──────────────────────────────────────────────────────────────────────────────
 
 /**
- * Fetch a full OneRoster person payload by external identifier.
+ * Fetch a full OneRoster person payload by identifier or sourcedId.
+ * If isStudent is true, use sourcedId; otherwise, use identifier (EID).
  * Always returns an array to simplify downstream handling regardless of vendor shape.
  */
-async function getFullPersonById(id: string): Promise<unknown[]> {
-  const data = await orFetch<Person>(`/v1p1/persons?filter=identifier='${id}'`, "read");
+async function getFullPersonById(value: string, isStudent: boolean): Promise<unknown[]> {
+  const filterField = isStudent ? "sourcedId" : "identifier";
+  const data = await orFetch<Person>(`/v1p1/persons?filter=${filterField}='${value}'`, "read");
   return Array.isArray(data) ? data : [data];
 }
 
@@ -101,62 +103,85 @@ function pickRole(fullPersonArr: unknown[]): string | undefined {
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
+  const sourcedId = searchParams.get("sourcedId");
   const eid = searchParams.get("eid");
-  if (!eid) return NextResponse.json({ error: "Missing ?eid" }, { status: 400 });
+  if (!eid && !sourcedId) {
+    return NextResponse.json({ error: "Missing ?eid or ?sourcedId" }, { status: 400 });
+  }
 
   try {
-    // 1) Find the person by EID (light lookup to get sourcedId)
-    const person = await getPersonByEid(eid);
-    if (!person?.sourcedId) {
-      return NextResponse.json({ error: `No person found for EID ${eid}` }, { status: 404 });
+    let person: { sourcedId: string };
+    let personIdentifier: string;
+    let identifierType: string;
+
+    if (typeof sourcedId === "string" && sourcedId) {
+      // If sourcedId is provided, use it directly (assume student, but check role after fetch)
+      person = { sourcedId };
+      personIdentifier = sourcedId;
+      identifierType = "sourcedId";
+    } else if (typeof eid === "string" && eid) {
+      // Otherwise, look up by eid (assume parent, but check role after fetch)
+      const foundPerson = await getPersonByEid(eid);
+      if (!foundPerson || !foundPerson.sourcedId) {
+        return NextResponse.json({ error: `No person found for EID ${eid}` }, { status: 404 });
+      }
+      person = { sourcedId: foundPerson.sourcedId };
+      personIdentifier = eid;
+      identifierType = "eid";
+    } else {
+      // Should not reach here due to earlier check, but just in case
+      return NextResponse.json({ error: "Missing ?eid or ?sourcedId" }, { status: 400 });
     }
 
-    // 2) Fetch FULL record to determine role (preserve vendor-native shape)
-    const parentOrStudentFull = await getFullPersonById(eid);
-    const role = pickRole(parentOrStudentFull)?.toString().toLowerCase() || "";
+    // Fetch FULL record to determine role (preserve vendor-native shape)
+    // If using sourcedId, likely student; if using eid, likely parent
+    // But always check role after fetch
+    let parentOrStudentFull: unknown[];
+    let role: string;
+    if (identifierType === "sourcedId") {
+      parentOrStudentFull = await getFullPersonById(personIdentifier, true);
+      role = pickRole(parentOrStudentFull)?.toString().toLowerCase() || "";
+    } else {
+      parentOrStudentFull = await getFullPersonById(personIdentifier, false);
+      role = pickRole(parentOrStudentFull)?.toString().toLowerCase() || "";
+    }
 
-    // 3) If the EID is a student → no children, return student payload in `parent`
+    // If the identifier is a student → no children, return student payload in `parent`
     if (role.includes("student")) {
       return NextResponse.json({
         meta: {
-          eid,
-          personSourcedId: person.sourcedId,
+          sourcedId: person.sourcedId,
           role: "student",
           studentCount: 0,
         },
-        // This is actually the student's full record; kept in `parent` for response consistency
         parent: parentOrStudentFull,
         children: [],
       });
     }
 
-    // 4) Otherwise assume parent/guardian → collect linked students (tolerate vendors without links)
+    // Otherwise assume parent/guardian → collect linked students
     let studentIds: string[] = [];
     try {
       studentIds = await getStudentIdsForPerson(person.sourcedId);
     } catch {
-      // Some vendors may return 404 if there are no relationships; treat as empty
       studentIds = [];
     }
 
-    // Fetch full student records (vendor-native shapes)
     const childrenFull = await getStudentsFull(studentIds);
 
-    // 5) Return parent plus children payloads
     return NextResponse.json({
       meta: {
-        eid,
+        eid: identifierType === "eid" ? personIdentifier : undefined,
+        sourcedId: person.sourcedId,
         parentSourcedId: person.sourcedId,
-        // Non-breaking alias for consistency with the student path
         personSourcedId: person.sourcedId,
         role: role || "parent",
         studentCount: studentIds.length,
       },
-      parent: parentOrStudentFull, // full vendor shape
-      children: childrenFull, // full vendor shape
+      parent: parentOrStudentFull,
+      children: childrenFull,
     });
   } catch (err: unknown) {
-    // Fallback error response with safe message extraction
     const message = err instanceof Error ? err.message : "Server error";
     return NextResponse.json({ error: message }, { status: 500 });
   }

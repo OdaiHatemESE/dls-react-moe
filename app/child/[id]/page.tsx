@@ -40,8 +40,9 @@ export default function ChildDetailPage() {
   const { t, locale } = useI18n();
   const params = useParams();
   const eid = params.id as string;
+ 
   const { data, error, isLoading } = useSWR<BasicInfoResponse>(
-    eid ? `/api/oneroster/basic-info-full?eid=${encodeURIComponent(eid)}` : null,
+    eid ? `/api/oneroster/basic-info-full?sourcedId=${encodeURIComponent(eid)}` : null,
     jsonFetcher
   );
   const [year, setYear] = React.useState<string>(() => String(new Date().getFullYear()));
