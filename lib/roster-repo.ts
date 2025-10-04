@@ -130,10 +130,11 @@ export async function getSchoolEnrollmentsByStudent(
   if (schoolYear) {
     filter += ` AND schoolYear='${escapeFilterLiteral(schoolYear)}'`;
   }
-
+ 
   try {
+    
     const data  = await orFetch<SchoolEnrollment[]>(
-      `/v1p1/schoolenrollments?filter=${encodeURIComponent(filter)}`,
+      `/v1p1/schoolenrollments?filter=${encodeURIComponent(filter)}&fields=sourcedId,school`,
       "read"
     );
 
@@ -160,7 +161,7 @@ export async function getSchoolEnrollmentsByStudent(
  */
 export async function getOrgBySourcedId(id: string): Promise<Org | null> {
   try {
-    const data:Org = await orFetch<Org>(`/v1p1/orgs/${encodeURIComponent(id)}`, "read");
+    const data:Org = await orFetch<Org>(`/v1p1/orgs/${encodeURIComponent(id)}?fields=sourcedId,name,metadata.shortName,metadata.englishName,metadata.addresses`, "read");
     console.debug("Fetched org data for", id, typeof(data));
     return data as Org;
   } catch (err) {

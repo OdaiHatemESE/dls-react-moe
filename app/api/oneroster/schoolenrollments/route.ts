@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSchoolEnrollmentsByStudent, getOrgBySourcedId } from "@/lib/roster-repo";
+import { Org } from "@/app/types";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -19,15 +20,16 @@ export async function GET(req: Request) {
 
     // Try to fetch the org for the first enrollment's school as a convenience
     const schoolID = enrollments[0]?.school.sourcedId || null;
-    const org = schoolID ? await getOrgBySourcedId(schoolID) : null;
-  
+    const schoolInfo = schoolID ? await getOrgBySourcedId(schoolID) : [];
+ 
+
     return NextResponse.json({
       enrollments,
       count: enrollments.length,
       studentId,
       schoolYear: schoolYear || "all",
       schoolID,
-      schoolInfo: org
+      schoolInfo: Array.isArray(schoolInfo) && schoolInfo.length > 0 && "Org" in schoolInfo[0] ? schoolInfo[0].Org : null,
     });
   } catch (error: unknown) {
     console.error("Error fetching school enrollments:", error);
