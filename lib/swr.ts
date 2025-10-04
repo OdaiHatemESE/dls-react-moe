@@ -4,13 +4,14 @@
 export async function jsonFetcher<T = unknown>(input: string, init?: RequestInit): Promise<T> {
   const res = await fetch(input, init);
   if (!res.ok) {
-    let detail = "";
+    let errorObj: any = { status: res.status, statusText: res.statusText };
     try {
-      detail = await res.text();
+      const text = await res.text();
+      errorObj = JSON.parse(text);
     } catch {
-      // ignore
+      // fallback to status only
     }
-    throw new Error(`${res.status} ${res.statusText}${detail ? ` - ${detail}` : ""}`);
+    throw errorObj;
   }
   return (await res.json()) as T;
 }

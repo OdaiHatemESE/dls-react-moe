@@ -134,7 +134,11 @@ export async function GET(req: Request) {
       }
       // Check if requested sourcedId is linked to this parent
       if (!linkedStudentIds.includes(sourcedId)) {
-        return NextResponse.json({ error: "Student not linked to this parent", forbidden: true }, { status: 403 });
+        return NextResponse.json({ 
+          error: "Student not linked to this parent", 
+          forbidden: true, 
+          warning: "You do not have access to this student's information. Please check your access or contact support if you believe this is an error." 
+        }, { status: 403 });
       }
       // Proceed to fetch student info
       person = { sourcedId };

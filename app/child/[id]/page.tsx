@@ -180,7 +180,26 @@ export default function ChildDetailPage() {
     );
   }
   if (error) {
+    // If the error object contains a warning from the API, show it
+    if (error.warning) {
+      return (
+        <div className="text-center py-10">
+          <div className="mb-4 text-yellow-700 bg-yellow-100 border border-yellow-300 rounded p-4">
+            {error.warning}
+          </div>
+        </div>
+      );
+    }
     return <div className="text-center py-10 text-red-600">{t.child.error_loading_child_data}</div>;
+  }
+  if (data && (data as any).warning) {
+    return (
+      <div className="text-center py-10">
+        <div className="mb-4 text-yellow-700 bg-yellow-100 border border-yellow-300 rounded p-4">
+          {(data as any).warning}
+        </div>
+      </div>
+    );
   }
   if (!data) {
     return <div className="text-center py-10">{t.child.no_data_available_for_child}</div>;

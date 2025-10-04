@@ -186,7 +186,7 @@ export default function ChildCards() {
                   </div>
                 </div>
                 <Link
-                  href={`/child/${child.identifier}`}
+                  href={`/child/${child.sourcedId}`}
                   className="flex-shrink-0 p-2 text-gray-400 hover:text-gray-600 hover:bg-white rounded-lg transition-all duration-200"
                   aria-label={`${t.student?.viewDetails || (locale === 'ar' ? 'عرض التفاصيل' : 'View Details')} ${displayName}`}
                   title={t.student?.viewDetails || (locale === 'ar' ? 'عرض التفاصيل' : 'View Details')}
