@@ -12,6 +12,8 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import clsx from 'clsx';
 import { Skeleton } from '@/components/ui/skeleton';
+import SchoolInfo from './SchoolInfo';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface BasicInfoResponse {
   meta: {
@@ -41,6 +43,7 @@ export default function ChildDetailPage() {
     eid ? `/api/oneroster/basic-info-full?eid=${encodeURIComponent(eid)}` : null,
     jsonFetcher
   );
+  const [year, setYear] = React.useState<string>(() => String(new Date().getFullYear()));
 
   if (isLoading) {
     return (
@@ -251,6 +254,7 @@ export default function ChildDetailPage() {
           <TabsTrigger value="grades">{locale === 'ar' ? 'الدرجات' : 'Grades'}</TabsTrigger>
           <TabsTrigger value="attendance">{locale === 'ar' ? 'الحضور' : 'Attendance'}</TabsTrigger>
           <TabsTrigger value="assignments">{locale === 'ar' ? 'الواجبات' : 'Assignments'}</TabsTrigger>
+          <TabsTrigger value="school">{locale === 'ar' ? 'معلومات المدرسة' : 'School Info'}</TabsTrigger>
         </TabsList>
 
         {/* Tab 1: Info */}
@@ -410,6 +414,38 @@ export default function ChildDetailPage() {
           <div className="py-8 text-center text-gray-500">
             {locale === 'ar' ? 'سيتم عرض الواجبات هنا قريبًا.' : 'Assignments will be displayed here soon.'}
           </div>
+        </TabsContent>
+
+        {/* Tab 5: School Info */}
+        <TabsContent value="school">
+          <div className="mb-4 flex items-center gap-3">
+            <div className="text-sm text-gray-600">
+              {locale === 'ar' ? 'السنة الدراسية:' : 'School Year:'}
+            </div>
+            <Select value={year} onValueChange={setYear}>
+              <SelectTrigger className="w-40 bg-white">
+                <SelectValue placeholder={locale === 'ar' ? 'اختر السنة' : 'Select year'} />
+              </SelectTrigger>
+              <SelectContent>
+                {(() => {
+                  const current = new Date().getFullYear();
+                  const years: number[] = [];
+                  for (let y = current + 1; y >= 2017; y--) years.push(y);
+                  return years.map((y) => (
+                    <SelectItem key={y} value={String(y)}>
+                      {String(y)}
+                    </SelectItem>
+                  ));
+                })()}
+              </SelectContent>
+            </Select>
+          </div>
+          {/* Determine student sourcedId to pass */}
+          {person?.sourcedId ? (
+            <SchoolInfo studentId={person.sourcedId} year={year} />
+          ) : (
+            <div className="text-center py-8 text-gray-600">{locale === 'ar' ? 'هوية الطالب غير متوفرة.' : 'Student ID not available.'}</div>
+          )}
         </TabsContent>
       </Tabs>
     </div>

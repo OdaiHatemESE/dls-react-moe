@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSchoolEnrollmentsByStudent, getOrgBySourcedId } from "@/lib/roster-repo";
-import { Org } from "@/app/types";
+ 
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
