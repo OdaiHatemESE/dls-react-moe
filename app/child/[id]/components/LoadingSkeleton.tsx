@@ -5,29 +5,50 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import clsx from 'clsx';
 
 export const LoadingSkeleton = ({ locale }: { locale?: string }) => (
-    <div className={clsx("max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6", locale === 'ar' && 'direction-rtl')}>
-        {/* Back Navigation */}
-        <div className="mb-6">
-            <Skeleton className="h-5 w-40" />
-        </div>
+    <div className={clsx("min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30", locale === 'ar' && 'direction-rtl')}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            {/* Enhanced Back Navigation Skeleton */}
+            <nav className="mb-8">
+                <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                    <Skeleton className="h-10 w-32 rounded-lg" />
+                    <Skeleton className="h-4 w-4" />
+                    <Skeleton className="h-6 w-28" />
+                </div>
+            </nav>
 
-        {/* Header Card Skeleton */}
-        <Card className="mb-8 border border-gray-200 overflow-hidden">
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-8 py-12">
-                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
-                    <Skeleton className="w-24 h-24 rounded-full" />
-                    <div className="flex-1 w-full max-w-xl">
-                        <Skeleton className="h-8 w-2/3 mb-3" />
-                        <div className="flex flex-wrap items-center gap-3">
-                            <Skeleton className="h-6 w-24 rounded-full" />
-                            <Skeleton className="h-6 w-24 rounded-full" />
-                            <Skeleton className="h-6 w-24 rounded-full" />
+            {/* Enhanced Header Card Skeleton */}
+            <Card className="mb-8 border-0 shadow-xl bg-white overflow-hidden">
+                <div className="relative bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 px-8 py-16">
+                    <div className="relative flex flex-col sm:flex-row items-center sm:items-start gap-8">
+                        <div className="relative">
+                            <Skeleton className="w-32 h-32 rounded-2xl" />
                         </div>
-                        <Skeleton className="h-4 w-40 mt-4" />
+                        <div className="flex-1 w-full">
+                            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between w-full">
+                                <div className="flex-1">
+                                    <Skeleton className="h-10 w-2/3 mb-3 bg-white/20" />
+                                    <Skeleton className="h-6 w-48 mb-6 bg-white/10" />
+                                    <div className="flex flex-wrap items-center gap-3">
+                                        <Skeleton className="h-8 w-32 rounded-full bg-white/20" />
+                                        <Skeleton className="h-8 w-24 rounded-full bg-white/20" />
+                                        <Skeleton className="h-8 w-20 rounded-full bg-white/20" />
+                                    </div>
+                                </div>
+                                <Skeleton className="w-40 h-12 mt-6 sm:mt-0 bg-white/20 rounded-lg" />
+                            </div>
+                        </div>
                     </div>
                 </div>
+            </Card>
+
+            {/* Enhanced Tabs Skeleton */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-2 mb-8">
+                <div className="grid grid-cols-5 bg-gray-50 rounded-lg p-1 gap-1">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                        <Skeleton key={i} className="h-12 rounded-lg" />
+                    ))}
+                </div>
             </div>
-        </Card>
 
         <div className="space-y-8">
             {/* Basic Information Skeleton */}
@@ -130,6 +151,7 @@ export const LoadingSkeleton = ({ locale }: { locale?: string }) => (
                     </div>
                 </CardContent>
             </Card>
+        </div>
         </div>
     </div>
 );
