@@ -4,10 +4,7 @@ import React from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
+// ...existing code...
 
 export default function ParentConductPage() {
   const params = useParams();
@@ -15,9 +12,10 @@ export default function ParentConductPage() {
   const eid = params?.id as string | undefined; // page context id (existing child route id)
   const studentId = searchParams.get('studentId') || ''; // real student sourcedId if provided
 
-  const [agreed, setAgreed] = React.useState(false);
+
   const [currentStep, setCurrentStep] = React.useState(1);
-  const [formData, setFormData] = React.useState({
+  // Static data for display
+  const formData = {
     educationAuthority: 'الإدارة العامة للتعليم بمنطقة الرياض',
     schoolName: 'مدرسة الملك عبدالعزيز الابتدائية',
     grade: 'الخامس / أ',
@@ -27,13 +25,6 @@ export default function ParentConductPage() {
     parentId: '2987654321',
     phone: '0551234567',
     email: 'mohammed.ali@example.com'
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!agreed) return;
-    // Placeholder submit — wire to API later
-    alert(`تم الإرسال بنجاح\nStudentId: ${formData.studentId}\nRoute Id: ${eid || 'N/A'}`);
   };
 
   const handleNext = () => {
@@ -42,10 +33,6 @@ export default function ParentConductPage() {
 
   const handlePrevious = () => {
     if (currentStep > 1) setCurrentStep(currentStep - 1);
-  };
-
-  const handleInputChange = (field: keyof typeof formData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   const today = React.useMemo(() => {
@@ -298,315 +285,259 @@ export default function ParentConductPage() {
         </CardContent>
       </Card>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Step 1: School Information */}
-        {currentStep === 1 && (
-          <div className="space-y-6">
-            <Card className="border shadow-md">
-              <CardHeader className="bg-gradient-to-r from-secondary/10 to-secondary/20 border-b">
-                <CardTitle className="text-lg flex items-center text-secondary-foreground">
-                  <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-4m-5 0H3m2 0h3M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 8h1m-1-4h1" />
-                  </svg>
-                  الجزء الأول: معلومات المدرسة
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-foreground mb-2">الإدارة التعليمية</label>
-                    <Input 
-                      value={formData.educationAuthority}
-                      onChange={(e) => handleInputChange('educationAuthority', e.target.value)}
-                      className="focus:border-secondary focus:ring-secondary"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-foreground mb-2">اسم المدرسة</label>
-                    <Input 
-                      value={formData.schoolName}
-                      onChange={(e) => handleInputChange('schoolName', e.target.value)}
-                      className="focus:border-secondary focus:ring-secondary"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-foreground mb-2">الصف الدراسي والشعبة</label>
-                    <Input 
-                      value={formData.grade}
-                      onChange={(e) => handleInputChange('grade', e.target.value)}
-                      className="focus:border-secondary focus:ring-secondary"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-foreground mb-2">اسم الطالب/ـة</label>
-                    <Input 
-                      value={formData.studentName}
-                      onChange={(e) => handleInputChange('studentName', e.target.value)}
-                      className="focus:border-secondary focus:ring-secondary"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-foreground mb-2">السجل المدني للطالب</label>
-                    <Input 
-                      value={formData.studentId}
-                      onChange={(e) => handleInputChange('studentId', e.target.value)}
-                      className="font-mono focus:border-secondary focus:ring-secondary"
-                      inputMode="numeric"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-foreground mb-2">Route ID (من النظام)</label>
-                    <Input value={eid || ''} readOnly className="font-mono bg-muted" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {/* Step 2: Parent Information */}
-        {currentStep === 2 && (
-          <div className="space-y-6">
-            <Card className="border shadow-md">
-              <CardHeader className="bg-gradient-to-r from-primary/70 to-primary/80 border-b">
-                <CardTitle className="text-lg flex items-center text-primary-foreground">
-                  <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
-                  الجزء الثاني: معلومات ولي الأمر
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-foreground mb-2">اسم ولي الأمر</label>
-                    <Input 
-                      value={formData.parentName}
-                      onChange={(e) => handleInputChange('parentName', e.target.value)}
-                      className="focus:border-primary focus:ring-primary"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-foreground mb-2">رقم الهوية الوطنية</label>
-                    <Input 
-                      value={formData.parentId}
-                      onChange={(e) => handleInputChange('parentId', e.target.value)}
-                      className="font-mono focus:border-primary focus:ring-primary"
-                      inputMode="numeric"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-foreground mb-2">رقم التواصل</label>
-                    <Input 
-                      value={formData.phone}
-                      onChange={(e) => handleInputChange('phone', e.target.value)}
-                      className="focus:border-primary focus:ring-primary"
-                      inputMode="tel"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-foreground mb-2">البريد الإلكتروني</label>
-                    <Input 
-                      value={formData.email}
-                      onChange={(e) => handleInputChange('email', e.target.value)}
-                      className="focus:border-primary focus:ring-primary"
-                      type="email"
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {/* Step 3: Conduct Terms */}
-        {currentStep === 3 && (
-          <div className="space-y-6">
-            {/* Validity Period */}
-            <Card className="border border-primary/20 shadow-md bg-primary/5">
-              <CardContent className="pt-4">
-                <div className="flex items-center gap-3">
-                  <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <div>
-                    <h4 className="font-semibold text-foreground">مدة وصلاحية هذا الميثاق:</h4>
-                    <p className="text-muted-foreground">{conductTerms.validityPeriod}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* School Commitments */}
-            <Card className="border shadow-md">
-              <CardHeader className="bg-gradient-to-r from-secondary/10 to-secondary/20 border-b">
-                <CardTitle className="text-base flex items-center text-secondary-foreground">
-                  <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-4m-5 0H3m2 0h3M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 8h1m-1-4h1" />
-                  </svg>
-                  {conductTerms.schoolCommitments.title}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-4">
-                <div className="max-h-96 overflow-y-auto border rounded-lg p-4 bg-muted/50">
-                  {conductTerms.schoolCommitments.sections.map((section, sectionIndex) => (
-                    <div key={sectionIndex} className="mb-4 last:mb-0">
-                      <h4 className="text-sm font-medium text-foreground mb-2 flex items-center">
-                        <span className="w-5 h-5 bg-secondary/20 text-secondary-foreground rounded-full flex items-center justify-center text-xs font-bold ml-2">
-                          {sectionIndex + 1}
-                        </span>
-                        {section.title}
-                      </h4>
-                      <ul className="space-y-1 pr-7">
-                        {section.items.map((item, itemIndex) => (
-                          <li key={itemIndex} className="flex items-start text-muted-foreground text-xs leading-relaxed">
-                            <span className="flex-shrink-0 w-1.5 h-1.5 bg-secondary rounded-full mt-1.5 ml-2"></span>
-                            <span>{item}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Parent Commitments */}
-            <Card className="border shadow-md">
-              <CardHeader className="bg-gradient-to-r from-primary/60 to-primary/70 border-b">
-                <CardTitle className="text-base flex items-center text-primary-foreground">
-                  <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
-                  {conductTerms.parentCommitments.title}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-4">
-                <div className="max-h-96 overflow-y-auto border rounded-lg p-4 bg-muted/50">
-                  {conductTerms.parentCommitments.sections.map((section, sectionIndex) => (
-                    <div key={sectionIndex} className="mb-4 last:mb-0">
-                      <h4 className="text-sm font-medium text-foreground mb-2 flex items-center">
-                        <span className="w-5 h-5 bg-primary/20 text-primary-foreground rounded-full flex items-center justify-center text-xs font-bold ml-2">
-                          {sectionIndex + 1}
-                        </span>
-                        {section.title}
-                      </h4>
-                      <ul className="space-y-1 pr-7">
-                        {section.items.map((item, itemIndex) => (
-                          <li key={itemIndex} className="flex items-start text-muted-foreground text-xs leading-relaxed">
-                            <span className="flex-shrink-0 w-1.5 h-1.5 bg-primary rounded-full mt-1.5 ml-2"></span>
-                            <span>{item}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {/* Step 4: Signature */}
-        {currentStep === 4 && (
-          <div className="space-y-6">
-            <Card className="border shadow-md">
-              <CardHeader className="bg-gradient-to-r from-secondary/10 to-secondary/20 border-b">
-                <CardTitle className="text-lg flex items-center text-secondary-foreground">
-                  <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  التوقيع والاعتماد
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-6">
-                {/* Summary Information */}
-                <div className="bg-muted border rounded-lg p-3 mb-4">
-                  <h4 className="font-medium text-foreground mb-2 text-sm">ملخص البيانات</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-                    <div><span className="font-medium">المدرسة:</span> {formData.schoolName}</div>
-                    <div><span className="font-medium">الطالب:</span> {formData.studentName}</div>
-                    <div><span className="font-medium">ولي الأمر:</span> {formData.parentName}</div>
-                    <div><span className="font-medium">الصف:</span> {formData.grade}</div>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="flex items-start gap-3 p-4 bg-accent/20 border border-accent rounded-lg">
-                    <input
-                      id="agree"
-                      type="checkbox"
-                      className="h-5 w-5 border-border rounded mt-0.5 focus:ring-primary focus:border-primary"
-                      checked={agreed}
-                      onChange={(e) => setAgreed(e.target.checked)}
-                    />
-                    <label htmlFor="agree" className="text-xs text-muted-foreground leading-relaxed">
-                      <span className="font-medium text-foreground">إقرار ولي الأمر:</span><br />
-                      أقر بأنني اطلعت على جميع بنود ميثاق الشراكة بين المدرسة وولي الأمر، وفهمت محتواها بالكامل، 
-                      وأتعهد بالالتزام بجميع البنود والشروط المذكورة أعلاه، والتعاون مع المدرسة لضمان تحقيق المصلحة الفضلى لابني/ابنتي.
-                    </label>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 items-end gap-4 mt-4">
-                    <div className="md:col-span-2 flex flex-col items-center justify-center border-2 border-dashed border-secondary rounded-lg py-6 bg-secondary/10">
-                      <svg className="w-8 h-8 text-secondary mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <div className="text-secondary-foreground text-xs mb-1">ختم وزارة التربية والتعليم</div>
-                      <div className="text-lg font-bold text-secondary-foreground">معتمد</div>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-foreground mb-2">التاريخ</label>
-                      <Input value={today} readOnly className="bg-muted text-center font-medium text-sm" />
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {/* Navigation */}
-        <div className="flex items-center justify-between gap-4 pt-6 border-t">
-          <div className="flex gap-3">
-            {currentStep > 1 && (
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={handlePrevious}
-              >
-                السابق
-              </Button>
-            )}
-            <Link href={eid ? `/child/${encodeURIComponent(eid)}` : '/dashboard'}>
-              <Button variant="secondary" type="button">إلغاء</Button>
-            </Link>
-          </div>
-          
-          <div className="flex gap-3">
-            {currentStep < 4 ? (
-              <Button 
-                type="button" 
-                onClick={handleNext}
-                className="bg-primary hover:bg-primary/90 text-primary-foreground px-6"
-              >
-                التالي
-              </Button>
-            ) : (
-              <Button 
-                type="submit" 
-                disabled={!agreed} 
-                className={`px-8 ${!agreed ? 'opacity-60 cursor-not-allowed' : 'bg-secondary hover:bg-secondary/90 text-secondary-foreground'}`}
-              >
+      {/* Step 1: School Information */}
+      {currentStep === 1 && (
+        <div className="space-y-6">
+          <Card className="border shadow-md">
+            <CardHeader className="bg-gradient-to-r from-secondary/10 to-secondary/20 border-b">
+              <CardTitle className="text-lg flex items-center text-secondary-foreground">
                 <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-4m-5 0H3m2 0h3M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 8h1m-1-4h1" />
                 </svg>
-                إرسال الميثاق
-              </Button>
-            )}
-          </div>
+                الجزء الأول: معلومات المدرسة
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <div className="block text-sm font-medium text-foreground mb-2">الإدارة التعليمية</div>
+                  <div className="bg-muted rounded px-3 py-2 text-sm">{formData.educationAuthority}</div>
+                </div>
+                <div className="space-y-2">
+                  <div className="block text-sm font-medium text-foreground mb-2">اسم المدرسة</div>
+                  <div className="bg-muted rounded px-3 py-2 text-sm">{formData.schoolName}</div>
+                </div>
+                <div className="space-y-2">
+                  <div className="block text-sm font-medium text-foreground mb-2">الصف الدراسي والشعبة</div>
+                  <div className="bg-muted rounded px-3 py-2 text-sm">{formData.grade}</div>
+                </div>
+                <div className="space-y-2">
+                  <div className="block text-sm font-medium text-foreground mb-2">اسم الطالب/ـة</div>
+                  <div className="bg-muted rounded px-3 py-2 text-sm">{formData.studentName}</div>
+                </div>
+                <div className="space-y-2">
+                  <div className="block text-sm font-medium text-foreground mb-2">السجل المدني للطالب</div>
+                  <div className="bg-muted rounded px-3 py-2 text-sm font-mono">{formData.studentId}</div>
+                </div>
+                <div className="space-y-2">
+                  <div className="block text-sm font-medium text-foreground mb-2">Route ID (من النظام)</div>
+                  <div className="bg-muted rounded px-3 py-2 text-sm font-mono">{eid || ''}</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
-      </form>
+      )}
+
+      {/* Step 2: Parent Information */}
+      {currentStep === 2 && (
+        <div className="space-y-6">
+          <Card className="border shadow-md">
+            <CardHeader className="bg-gradient-to-r from-primary/70 to-primary/80 border-b">
+              <CardTitle className="text-lg flex items-center text-primary-foreground">
+                <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                الجزء الثاني: معلومات ولي الأمر
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <div className="block text-sm font-medium text-foreground mb-2">اسم ولي الأمر</div>
+                  <div className="bg-muted rounded px-3 py-2 text-sm">{formData.parentName}</div>
+                </div>
+                <div className="space-y-2">
+                  <div className="block text-sm font-medium text-foreground mb-2">رقم الهوية الوطنية</div>
+                  <div className="bg-muted rounded px-3 py-2 text-sm font-mono">{formData.parentId}</div>
+                </div>
+                <div className="space-y-2">
+                  <div className="block text-sm font-medium text-foreground mb-2">رقم التواصل</div>
+                  <div className="bg-muted rounded px-3 py-2 text-sm">{formData.phone}</div>
+                </div>
+                <div className="space-y-2">
+                  <div className="block text-sm font-medium text-foreground mb-2">البريد الإلكتروني</div>
+                  <div className="bg-muted rounded px-3 py-2 text-sm">{formData.email}</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Step 3: Conduct Terms */}
+      {currentStep === 3 && (
+        <div className="space-y-6">
+          {/* Validity Period */}
+          <Card className="border border-primary/20 shadow-md bg-primary/5">
+            <CardContent className="pt-4">
+              <div className="flex items-center gap-3">
+                <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div>
+                  <h4 className="font-semibold text-foreground">مدة وصلاحية هذا الميثاق:</h4>
+                  <p className="text-muted-foreground">{conductTerms.validityPeriod}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* School Commitments */}
+          <Card className="border shadow-md">
+            <CardHeader className="bg-gradient-to-r from-secondary/10 to-secondary/20 border-b">
+              <CardTitle className="text-base flex items-center text-secondary-foreground">
+                <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-4m-5 0H3m2 0h3M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 8h1m-1-4h1" />
+                </svg>
+                {conductTerms.schoolCommitments.title}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-4">
+              <div className="max-h-96 overflow-y-auto border rounded-lg p-4 bg-muted/50">
+                {conductTerms.schoolCommitments.sections.map((section, sectionIndex) => (
+                  <div key={sectionIndex} className="mb-4 last:mb-0">
+                    <h4 className="text-sm font-medium text-foreground mb-2 flex items-center">
+                      <span className="w-5 h-5 bg-secondary/20 text-secondary-foreground rounded-full flex items-center justify-center text-xs font-bold ml-2">
+                        {sectionIndex + 1}
+                      </span>
+                      {section.title}
+                    </h4>
+                    <ul className="space-y-1 pr-7">
+                      {section.items.map((item, itemIndex) => (
+                        <li key={itemIndex} className="flex items-start text-muted-foreground text-xs leading-relaxed">
+                          <span className="flex-shrink-0 w-1.5 h-1.5 bg-secondary rounded-full mt-1.5 ml-2"></span>
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Parent Commitments */}
+          <Card className="border shadow-md">
+            <CardHeader className="bg-gradient-to-r from-primary/60 to-primary/70 border-b">
+              <CardTitle className="text-base flex items-center text-primary-foreground">
+                <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                {conductTerms.parentCommitments.title}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-4">
+              <div className="max-h-96 overflow-y-auto border rounded-lg p-4 bg-muted/50">
+                {conductTerms.parentCommitments.sections.map((section, sectionIndex) => (
+                  <div key={sectionIndex} className="mb-4 last:mb-0">
+                    <h4 className="text-sm font-medium text-foreground mb-2 flex items-center">
+                      <span className="w-5 h-5 bg-primary/20 text-primary-foreground rounded-full flex items-center justify-center text-xs font-bold ml-2">
+                        {sectionIndex + 1}
+                      </span>
+                      {section.title}
+                    </h4>
+                    <ul className="space-y-1 pr-7">
+                      {section.items.map((item, itemIndex) => (
+                        <li key={itemIndex} className="flex items-start text-muted-foreground text-xs leading-relaxed">
+                          <span className="flex-shrink-0 w-1.5 h-1.5 bg-primary rounded-full mt-1.5 ml-2"></span>
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Step 4: Signature */}
+      {currentStep === 4 && (
+        <div className="space-y-6">
+          <Card className="border shadow-md">
+            <CardHeader className="bg-gradient-to-r from-secondary/10 to-secondary/20 border-b">
+              <CardTitle className="text-lg flex items-center text-secondary-foreground">
+                <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                التوقيع والاعتماد
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-6">
+              {/* Summary Information */}
+              <div className="bg-muted border rounded-lg p-3 mb-4">
+                <h4 className="font-medium text-foreground mb-2 text-sm">ملخص البيانات</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                  <div><span className="font-medium">المدرسة:</span> {formData.schoolName}</div>
+                  <div><span className="font-medium">الطالب:</span> {formData.studentName}</div>
+                  <div><span className="font-medium">ولي الأمر:</span> {formData.parentName}</div>
+                  <div><span className="font-medium">الصف:</span> {formData.grade}</div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-start gap-3 p-4 bg-accent/20 border border-accent rounded-lg">
+                  <div className="h-5 w-5 border-border rounded mt-0.5 bg-accent/40 flex items-center justify-center">
+                    <svg className="w-4 h-4 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4" />
+                    </svg>
+                  </div>
+                  <div className="text-xs text-muted-foreground leading-relaxed">
+                    <span className="font-medium text-foreground">إقرار ولي الأمر:</span><br />
+                    أقر بأنني اطلعت على جميع بنود ميثاق الشراكة بين المدرسة وولي الأمر، وفهمت محتواها بالكامل، 
+                    وأتعهد بالالتزام بجميع البنود والشروط المذكورة أعلاه، والتعاون مع المدرسة لضمان تحقيق المصلحة الفضلى لابني/ابنتي.
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 items-end gap-4 mt-4">
+                  <div className="md:col-span-2 flex flex-col items-center justify-center border-2 border-dashed border-secondary rounded-lg py-6 bg-secondary/10">
+                    <svg className="w-8 h-8 text-secondary mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <div className="text-secondary-foreground text-xs mb-1">ختم وزارة التربية والتعليم</div>
+                    <div className="text-lg font-bold text-secondary-foreground">معتمد</div>
+                  </div>
+                  <div>
+                    <div className="block text-xs font-medium text-foreground mb-2">التاريخ</div>
+                    <div className="bg-muted text-center font-medium text-sm rounded px-3 py-2">{today}</div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Navigation */}
+      <div className="flex items-center justify-between gap-4 pt-6 border-t">
+        <div className="flex gap-3">
+          {currentStep > 1 && (
+            <button 
+              type="button" 
+              className="px-4 py-2 border rounded bg-white hover:bg-muted text-foreground"
+              onClick={handlePrevious}
+            >
+              السابق
+            </button>
+          )}
+          <Link href={eid ? `/child/${encodeURIComponent(eid)}` : '/dashboard'}>
+            <button className="px-4 py-2 border rounded bg-muted text-foreground" type="button">إغلاق</button>
+          </Link>
+        </div>
+        <div className="flex gap-3">
+          {currentStep < 4 && (
+            <button 
+              type="button" 
+              className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-2 rounded"
+              onClick={handleNext}
+            >
+              التالي
+            </button>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
