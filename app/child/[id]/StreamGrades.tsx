@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useI18n } from '@/app/i18n/I18nProvider';
-import type { SchoolEnrollment, StreamGrade } from '@/types';
+import type { Org, SchoolEnrollment, StreamGrade } from '@/types';
 import clsx from 'clsx';
 
 type ApiResponse = {
@@ -17,6 +17,9 @@ type ApiResponse = {
   // Some vendors return nested arrays like [[{ streamGrade: {...} }]]
   // Allow any here and normalize at runtime
   StreamGrades?: any[];
+  // School info may come as a single or multiple orgs, possibly wrapped
+  schoolInfo?: any;
+  schoolInfos?: any;
   error?: string;
 };
 
@@ -45,6 +48,35 @@ export default function StreamGrades({ studentId }: { studentId: string }) {
     return undefined;
   };
 
+  // --- helpers to normalize various response shapes for Org(s) ---
+  const isOrg = (obj: any): obj is Org => !!obj && typeof obj === 'object' && ('sourcedId' in obj || 'metadata' in obj || 'name' in obj);
+  const extractOrgFromWrapper = (item: any): Org | null => {
+    if (!item) return null;
+    if (isOrg(item)) return item;
+    if (item.Org && isOrg(item.Org)) return item.Org as Org;
+    return null;
+  };
+  const normalizeManyOrgs = (input: ApiResponse['schoolInfos']): Org[] => {
+    if (!input) return [];
+    const collect: Org[] = [];
+    const pushIf = (o: Org | null) => { if (o) collect.push(o); };
+    if (Array.isArray(input)) {
+      const flat = (input as any[]).flat ? (input as any[]).flat(Infinity) : (input as any[]);
+      for (const item of flat) pushIf(extractOrgFromWrapper(item));
+    } else {
+      const one = extractOrgFromWrapper(input);
+      if (one) collect.push(one);
+    }
+    // Dedupe by sourcedId
+    const seen = new Set<string>();
+    return collect.filter((o) => {
+      const key = o.sourcedId ?? JSON.stringify(o);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  };
+
   // Build row list by pairing enrollments with stream grades (API keeps order aligned)
   const rows = React.useMemo(() => {
     if (!data?.enrollments || !data.StreamGrades) return [] as Array<{
@@ -52,9 +84,10 @@ export default function StreamGrades({ studentId }: { studentId: string }) {
       enrollmentId: string;
       sg?: StreamGrade['streamGrade'];
       status?: string;
+      schoolId?: string;
     }>;
 
-    const list: Array<{ year: number; enrollmentId: string; sg?: StreamGrade['streamGrade']; status?: string }> = [];
+    const list: Array<{ year: number; enrollmentId: string; sg?: StreamGrade['streamGrade']; status?: string; schoolId?: string }> = [];
     const seen = new Set<string>(); // key: `${year}:${sgId}`
 
     for (let i = 0; i < data.enrollments.length; i++) {
@@ -75,6 +108,7 @@ export default function StreamGrades({ studentId }: { studentId: string }) {
         enrollmentId: en.sourcedId,
         sg,
         status: sg?.status,
+        schoolId: en.school?.sourcedId,
       });
     }
 
@@ -147,32 +181,37 @@ export default function StreamGrades({ studentId }: { studentId: string }) {
         ) : (
           <div className="divide-y">
             <div className="grid grid-cols-12 px-6 py-3 text-xs font-semibold text-gray-500 bg-gray-50">
-              <div className="col-span-2">{locale === 'ar' ? 'السنة' : 'Year'}</div>
-              <div className="col-span-5">{locale === 'ar' ? 'المرحلة/المسمى' : 'Grade / Title'}</div>
-              <div className="col-span-3">{locale === 'ar' ? 'الاسم' : 'Name'}</div>
-              <div className="col-span-2 text-right">{locale === 'ar' ? 'الحالة' : 'Status'}</div>
+              <div className="col-span-1">{locale === 'ar' ? 'السنة' : 'Year'}</div>
+              <div className="col-span-5 text-center">{locale === 'ar' ? 'المرحلة/المسمى' : 'Grade / Title'}</div>
+              <div className="col-span-6 text-center">{locale === 'ar' ? 'المدرسة' : 'School'}</div>
             </div>
-            {rows.map((r) => {
-              const namePrimary = locale === 'ar' ? r.sg?.metadata?.titleArabic || r.sg?.title || r.sg?.name : r.sg?.title || r.sg?.name || r.sg?.metadata?.titleArabic;
-              const nameSecondary = locale === 'ar' ? (r.sg?.title || r.sg?.name) : r.sg?.metadata?.titleArabic;
-              return (
-                <div key={`${r.enrollmentId}`} className="grid grid-cols-12 px-6 py-4 items-center">
-                  <div className="col-span-2 font-mono text-sm">{r.year}</div>
-                  <div className="col-span-5">
-                    <div className="text-gray-900 font-medium">{namePrimary || '—'}</div>
-                    {nameSecondary && (
-                      <div className="text-gray-500 text-xs mt-0.5">{nameSecondary}</div>
-                    )}
+            {(() => {
+              // Build org map once per render for quick lookup
+              const orgs = normalizeManyOrgs(data.schoolInfos ?? (data.schoolInfo ? [data.schoolInfo] : undefined));
+              const orgById = new Map<string, Org>();
+              for (const o of orgs) {
+                if (o?.sourcedId) orgById.set(o.sourcedId, o);
+              }
+              return rows.map((r) => {
+                const namePrimary = locale === 'ar' ? r.sg?.metadata?.titleArabic || r.sg?.title || r.sg?.name : r.sg?.title || r.sg?.name || r.sg?.metadata?.titleArabic;
+                const nameSecondary = locale === 'ar' ? (r.sg?.title || r.sg?.name) : r.sg?.metadata?.titleArabic;
+                const org = r.schoolId ? orgById.get(r.schoolId) : undefined;
+                const schoolName = org?.name || org?.metadata?.englishName || org?.metadata?.shortName || '—';
+                return (
+                  <div key={`${r.enrollmentId}`} className="grid grid-cols-12 px-6 py-4 items-center">
+                    <div className="col-span-1 font-mono text-sm">{r.year}</div>
+                    <div className="col-span-5 text-center">
+                      <div className="text-gray-900 font-medium">{namePrimary || '—'}</div>
+                      {nameSecondary && (
+                        <div className="text-gray-500 text-xs mt-0.5">{nameSecondary}</div>
+                      )}
+                    </div>
+                    <div className="col-span-6 truncate text-gray-700 text-center">{schoolName}</div>
+                    
                   </div>
-                  <div className="col-span-3 truncate text-gray-700">{r.sg?.name || '—'}</div>
-                  <div className="col-span-2 text-right">
-                    <Badge variant={r.status === 'active' ? 'default' : 'secondary'} className="bg-white">
-                      {r.status || '—'}
-                    </Badge>
-                  </div>
-                </div>
-              );
-            })}
+                );
+              });
+            })()}
           </div>
         )}
         {!hasExpanded && rows.length > 0 && (
