@@ -92,7 +92,9 @@ export default function ChildDetailPage() {
               href="/dashboard" 
               className={`inline-flex items-center ${locale === 'ar' ? 'text-xs font-normal' : 'text-sm font-medium'} text-gray-500 hover:text-blue-600 transition-all duration-200 hover:bg-blue-50 px-3 py-2 rounded-lg group`}
             >
-              <svg className="w-4 h-4 mr-2 rtl:mr-0 rtl:ml-2 rtl:rotate-180 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className={clsx("w-4 h-4 me-2 group-hover:scale-110 transition-transform", 
+                locale === 'ar' && 'rotate-180'
+              )} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5v4M16 5v4" />
               </svg>
@@ -128,7 +130,9 @@ export default function ChildDetailPage() {
                 <div className="absolute -inset-1 bg-gradient-to-r from-blue-400 to-indigo-400 rounded-2xl blur opacity-30 group-hover:opacity-50 transition-opacity"></div>
               </div>
               
-              <div className="text-center sm:text-left w-full">
+              <div className={clsx("text-center w-full", 
+                locale === 'ar' ? 'sm:text-right' : 'sm:text-left'
+              )}>
                 <div className={clsx("flex flex-col sm:flex-row sm:items-start sm:justify-between w-full", locale === 'ar' && 'direction-rtl')}>
                   <div className="flex-1">
                     {/* Enhanced Name and Title */}
@@ -136,15 +140,17 @@ export default function ChildDetailPage() {
                     <p className={`text-blue-100 ${locale === 'ar' ? 'text-base font-normal' : 'text-lg font-medium'} mb-6`}>{t.child.child_profile}</p>
                     
                     {/* Enhanced Badges */}
-                    <div className="flex flex-wrap items-center gap-3 justify-center sm:justify-start">
+                    <div className={clsx("flex flex-wrap items-center gap-3 justify-center",
+                      locale === 'ar' ? 'sm:justify-end' : 'sm:justify-start'
+                    )}>
                       <Badge variant="outline" className="bg-white/90 backdrop-blur-sm border-white/30 text-gray-700 shadow-sm hover:bg-white transition-all">
-                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-4 h-4 me-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V4a2 2 0 114 0v2m-4 0a2 2 0 104 0m-4 0V4a2 2 0 014 0v2" />
                         </svg>
                         ID: {person.sourcedId}
                       </Badge>
                       <Badge variant="outline" className="bg-white/90 backdrop-blur-sm border-white/30 text-gray-700 shadow-sm hover:bg-white transition-all">
-                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-4 h-4 me-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                         </svg>
                         {person.role || (locale === 'ar' ? 'طالب' : 'Student')}
@@ -159,7 +165,7 @@ export default function ChildDetailPage() {
                               : "bg-gray-500 text-white border-gray-400"
                           )}
                         >
-                          <div className={clsx("w-2 h-2 rounded-full mr-2", 
+                          <div className={clsx("w-2 h-2 rounded-full me-2", 
                             person.status === 'active' ? 'bg-green-200' : 'bg-gray-200'
                           )}></div>
                           {person.status}
@@ -168,7 +174,7 @@ export default function ChildDetailPage() {
                     </div>
                   </div>
                   
-                  <div className="mt-6 sm:mt-0 sm:ml-6 sm:self-start flex-shrink-0">
+                  <div className="mt-6 sm:mt-0 sm:ms-6 sm:self-start flex-shrink-0">
                     <SignConductSection locale={locale} studentId={person.sourcedId} />
                   </div>
                 </div>

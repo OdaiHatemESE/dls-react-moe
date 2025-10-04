@@ -19,7 +19,7 @@ export default function InfoTab({ person, t, locale }: InfoTabProps) {
       <Card className="border-0 shadow-lg bg-white">
         <CardHeader className="bg-gradient-to-r from-blue-600 to-blue-700 text-white border-b-0 rounded-t-lg">
           <CardTitle className="flex items-center">
-            <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl mr-4">
+            <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl me-4">
               <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                 <circle cx="12" cy="8" r="4" />
                 <path d="M4 20c0-4 4-7 8-7s8 3 8 7" />
@@ -106,7 +106,7 @@ export default function InfoTab({ person, t, locale }: InfoTabProps) {
       <Card className="border-0 shadow-lg bg-white">
         <CardHeader className="bg-gradient-to-r from-green-600 to-emerald-600 text-white border-b-0 rounded-t-lg">
           <CardTitle className="flex items-center">
-            <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl mr-4">
+            <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl me-4">
               <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
@@ -169,7 +169,7 @@ export default function InfoTab({ person, t, locale }: InfoTabProps) {
       <Card className="border-0 shadow-lg bg-white">
         <CardHeader className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-b-0 rounded-t-lg">
           <CardTitle className="flex items-center">
-            <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl mr-4">
+            <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl me-4">
               <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
