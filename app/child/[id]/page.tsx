@@ -239,7 +239,7 @@ export default function ChildDetailPage() {
                   <p className="text-gray-600 mt-3">{t.child.child_profile}</p>
                 </div>
                 <div className="mt-4 sm:mt-0 sm:ml-6 sm:self-start flex-shrink-0 flex justify-center sm:justify-end">
-                  <SignConductSection locale={locale} />
+                  <SignConductSection locale={locale} studentId={person.sourcedId} eid={eid} />
                 </div>
               </div>
             </div>
@@ -460,7 +460,7 @@ export default function ChildDetailPage() {
   );
 }
 // SignConductSection component
-function SignConductSection({ locale }: { locale: string }) {
+function SignConductSection({ locale, studentId, eid }: { locale: string; studentId?: string; eid?: string }) {
   const [signed, setSigned] = React.useState(false);
   // Simulate download (replace with real logic as needed)
   const handleDownload = () => {
@@ -470,12 +470,12 @@ function SignConductSection({ locale }: { locale: string }) {
     <div className="mt-4 flex flex-col sm:flex-row items-center gap-3">
       {!signed ? (
         <>
-          <button
+          <Link
+            href={`/child/${encodeURIComponent(eid || '')}/parent-conduct${studentId ? `?studentId=${encodeURIComponent(studentId)}` : ''}`}
             className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
-            onClick={() => setSigned(true)}
           >
-            {locale === 'ar' ? 'توقيع السلوك' : 'Sign Conduct'}
-          </button>
+            {locale === 'ar' ? 'ميثاق ولي الأمر' : 'Parent Conduct'}
+          </Link>
           <span className="text-sm text-yellow-600 font-semibold">
             {locale === 'ar' ? 'غير موقع' : 'Not Signed'}
           </span>
