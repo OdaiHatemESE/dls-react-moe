@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSchoolEnrollmentsByStudent, getOrgBySourcedId } from "@/lib/roster-repo";
+import { getSchoolEnrollmentsByStudent, getOrgBySourcedId, getStreamGradeById } from "@/lib/roster-repo";
  
 
 export async function GET(req: Request) {
@@ -39,7 +39,9 @@ export async function GET(req: Request) {
 
     const schoolID = schoolIDs[0] ?? null;
     const schoolInfo = schoolInfos[0] ?? null;
+    const StreamGrades = await Promise.all(enrollments.map(e => e.streamGrade ? getStreamGradeById(e.streamGrade.sourcedId) : null));
 
+  
     return NextResponse.json({
       enrollments,
       count: enrollments.length,
@@ -51,6 +53,7 @@ export async function GET(req: Request) {
       // New fields with all schools' info
       schoolIDs,
       schoolInfos,
+  StreamGrades
     });
   } catch (error: unknown) {
     console.error("Error fetching school enrollments:", error);

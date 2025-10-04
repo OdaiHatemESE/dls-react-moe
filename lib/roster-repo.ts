@@ -1,6 +1,6 @@
 // lib/roster-repo.ts
 import { orFetch } from "@/lib/oneroster";
-import type { Person, StudentBasic, SchoolEnrollment, Org } from "@/types";
+import type { Person, StudentBasic, SchoolEnrollment, Org, StreamGrade } from "@/types";
 import { get } from "http";
 
 /**
@@ -166,6 +166,17 @@ export async function getOrgBySourcedId(id: string): Promise<Org | null> {
     return data as Org;
   } catch (err) {
     console.error("Failed fetching org by id", id, err);
+    return null;
+  }
+}
+
+export async function getStreamGradeById(id: string): Promise<StreamGrade | null> {
+  try {
+    const data:StreamGrade = await orFetch<StreamGrade>(`/v1p1/streamGrades/${encodeURIComponent(id)}`, "read");
+    console.debug("Fetched stream grade data for", id, typeof(data));
+    return data as StreamGrade;
+  } catch (err) {
+    console.error("Failed fetching stream grade by id", id, err);
     return null;
   }
 }

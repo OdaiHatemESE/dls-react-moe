@@ -281,3 +281,27 @@ export interface OrgRef {
   sourcedId: string;
   type: string;
 }
+
+export interface StreamGrade {
+  streamGrade: {
+    sourcedId: string;
+    metadata: {
+      titleArabic: string;
+    };
+    dateLastModified: string; // ISO date string
+    grade: {
+      href: string;
+      sourcedId: string;
+      type: "grades";
+    };
+    name: string;
+    educationPath: {
+      href: string;
+      sourcedId: string;
+      type: "educationPaths";
+    };
+    position: number;
+    title: string;
+    status: "active" | "inactive";
+  };
+}

@@ -251,7 +251,7 @@ export default function ChildDetailPage() {
       <Tabs defaultValue="info" className="w-full">
         <TabsList className="mb-4">
           <TabsTrigger value="info">{locale === 'ar' ? 'المعلومات الأساسية' : 'Basic Info'}</TabsTrigger>
-          <TabsTrigger value="grades">{locale === 'ar' ? 'الدرجات' : 'Grades'}</TabsTrigger>
+          <TabsTrigger value="grades">{locale === 'ar' ? 'المراحل الدراسية' : 'Grades'}</TabsTrigger>
           <TabsTrigger value="attendance">{locale === 'ar' ? 'الحضور' : 'Attendance'}</TabsTrigger>
           <TabsTrigger value="assignments">{locale === 'ar' ? 'الواجبات' : 'Assignments'}</TabsTrigger>
           <TabsTrigger value="school">{locale === 'ar' ? 'معلومات المدرسة' : 'School Info'}</TabsTrigger>
