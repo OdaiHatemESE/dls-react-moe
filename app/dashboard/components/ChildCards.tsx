@@ -56,18 +56,11 @@ const formatDate = (dateString: string, locale: string): string => {
   }
 };
 
-// Helper components for minimalism
-const InfoRow = ({ label, value, colSpan }: { label: string; value: string; colSpan?: number }) => (
-  <div className={`flex flex-col p-3 bg-gray-50 rounded-lg${colSpan === 2 ? ' col-span-2' : ''}`}>
-    <span className="text-gray-500 text-xs font-medium mb-1">{label}</span>
-    <span className="text-gray-900 font-semibold">{value}</span>
-  </div>
-);
-
-const AltName = ({ label, value, rtl }: { label: string; value: string; rtl?: boolean }) => (
-  <div className="pt-3 border-t border-gray-100">
-    <span className="text-gray-500 text-xs font-medium mb-1 block">{label}</span>
-    <span className="text-gray-700 text-sm" {...(rtl ? { dir: 'rtl' } : {})}>{value}</span>
+// Helper components for clean UI
+const InfoItem = ({ label, value }: { label: string; value: string }) => (
+  <div className="flex items-center justify-between py-2">
+    <span className="text-gray-500 text-sm">{label}</span>
+    <span className="text-gray-900 font-medium text-sm">{value}</span>
   </div>
 );
 
@@ -82,48 +75,38 @@ export default function ChildCards() {
   const isBusy = status === "loading" || (status === "authenticated" && isLoading);
 
   const SkeletonChildCard = ({ rtl }: { rtl?: boolean }) => (
-    <Card className={`relative border border-gray-200 bg-white rounded-xl overflow-hidden ${rtl ? 'direction-rtl' : 'direction-ltr'}`}>
-      <div className="bg-gray-50 p-6 border-b border-gray-100">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-4 mb-4">
-              <Skeleton className="w-12 h-12 rounded-full" />
-              <div className="space-y-2">
-                <Skeleton className="h-5 w-40" />
-                <Skeleton className="h-5 w-24" />
-              </div>
+    <Card className={`transition-all duration-200 hover:shadow-md ${rtl ? 'direction-rtl' : 'direction-ltr'}`}>
+      <CardContent className="p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <Skeleton className="w-14 h-14 rounded-full" />
+            <div className="space-y-2">
+              <Skeleton className="h-6 w-32" />
+              <Skeleton className="h-4 w-20" />
             </div>
           </div>
-          <Skeleton className="h-9 w-9 rounded-lg" />
+          <Skeleton className="h-8 w-8 rounded-full" />
         </div>
-      </div>
-      <CardContent className="p-6">
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Skeleton className="h-3 w-16" />
+        <div className="space-y-3 mb-4">
+          <div className="flex justify-between">
+            <Skeleton className="h-4 w-16" />
+            <Skeleton className="h-4 w-20" />
+          </div>
+          <div className="flex justify-between">
+            <Skeleton className="h-4 w-12" />
             <Skeleton className="h-4 w-24" />
           </div>
-          <div className="space-y-2">
-            <Skeleton className="h-3 w-20" />
-            <Skeleton className="h-4 w-28" />
-          </div>
-          <div className="col-span-2 space-y-2">
-            <Skeleton className="h-3 w-24" />
-            <Skeleton className="h-4 w-3/4" />
-          </div>
         </div>
+        <Skeleton className="h-10 w-full rounded-lg" />
       </CardContent>
-      <CardFooter className="px-6 pb-6">
-        <Skeleton className="h-11 w-full rounded-lg" />
-      </CardFooter>
     </Card>
   );
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
       {isBusy && (!children || children.length === 0) && (
         <>
-          {Array.from({ length: 3 }).map((_, i) => (
+          {Array.from({ length: 2 }).map((_, i) => (
             <SkeletonChildCard key={`skeleton-${i}`} rtl={locale === 'ar'} />
           ))}
         </>
@@ -162,81 +145,61 @@ export default function ChildCards() {
         return (
           <Card
             key={child.sourcedId}
-            className={`group relative transition-all duration-300 border border-gray-200 bg-white hover:bg-gray-50 rounded-xl overflow-hidden ${locale === 'ar' ? 'direction-rtl' : 'direction-ltr'}`}
+            className={`group transition-all duration-200 hover:shadow-md border-0 shadow-sm ${locale === 'ar' ? 'direction-rtl' : 'direction-ltr'}`}
           >
-            {/* Header with subtle background */}
-            <div className="bg-gray-50 p-6 border-b border-gray-100">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1 min-w-0">
-                  {/* Student Avatar/Initial */}
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                      <span className="text-lg font-bold text-blue-600">
-                        {displayName.charAt(0).toUpperCase()}
-                      </span>
-                    </div>
-                    <div>
-                      <CardTitle className="text-xl font-bold text-gray-900 leading-tight">
-                        {displayName}
-                      </CardTitle>
-                      <Badge variant="outline" className="text-xs px-2 py-1 mt-1 bg-white">
-                        ID: {child.sourcedId}
-                      </Badge>
-                    </div>
+            <CardContent className="p-6">
+              {/* Student Header */}
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
+                    <span className="text-xl font-bold text-white">
+                      {displayName.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg font-semibold text-gray-900 leading-tight">
+                      {displayName}
+                    </CardTitle>
+                    <p className="text-sm text-gray-500 mt-0.5">
+                      {genderLabel}
+                      {age > 0 && ` • ${age} ${t.student?.years || (locale === 'ar' ? 'سنة' : 'years')}`}
+                    </p>
                   </div>
                 </div>
                 <Link
                   href={`/child/${child.sourcedId}`}
-                  className="flex-shrink-0 p-2 text-gray-400 hover:text-gray-600 hover:bg-white rounded-lg transition-all duration-200"
+                  className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-all duration-200"
                   aria-label={`${t.student?.viewDetails || (locale === 'ar' ? 'عرض التفاصيل' : 'View Details')} ${displayName}`}
-                  title={t.student?.viewDetails || (locale === 'ar' ? 'عرض التفاصيل' : 'View Details')}
                 >
                   <ChevronRightIcon className="w-5 h-5" />
                 </Link>
               </div>
-            </div>
-            <CardContent className="p-6">
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <InfoRow label={t.student?.gender || (locale === 'ar' ? 'الجنس' : 'Gender')} value={genderLabel} />
-                  {(age > 0 || formattedBirthDate) && (
-                    <InfoRow
-                      label={age > 0 ? (t.student?.age || (locale === 'ar' ? 'العمر' : 'Age')) : (t.student?.birthDate || (locale === 'ar' ? 'تاريخ الميلاد' : 'Birth Date'))}
-                      value={age > 0 ? `${age} ${t.student?.years || (locale === 'ar' ? 'سنة' : 'years')}` : formattedBirthDate}
-                    />
-                  )}
-                  {displayNationality && (
-                    <InfoRow
-                      label={t.student?.nationality || (locale === 'ar' ? 'الجنسية' : 'Nationality')}
-                      value={displayNationality}
-                      colSpan={2}
-                    />
-                  )}
-                  {formattedBirthDate && (
-                    <InfoRow
-                      label={t.student?.birthDate || (locale === 'ar' ? 'تاريخ الميلاد' : 'Birth Date')}
-                      value={formattedBirthDate}
-                      colSpan={2}
-                    />
-                  )}
-                </div>
-                {locale === 'ar' && [child.metadata?.englishFirstName, child.metadata?.englishSecondName, child.metadata?.englishThirdName, child.metadata?.englishFamilyName].some(Boolean) && (
-                  <AltName label="English Name" value={[child.metadata?.englishFirstName, child.metadata?.englishSecondName, child.metadata?.englishThirdName, child.metadata?.englishFamilyName].filter(Boolean).join(' ')} />
+
+              {/* Essential Information Only */}
+              <div className="space-y-3 mb-6">
+                {displayNationality && (
+                  <InfoItem 
+                    label={t.student?.nationality || (locale === 'ar' ? 'الجنسية' : 'Nationality')} 
+                    value={displayNationality} 
+                  />
                 )}
-                {locale === 'en' && child.givenName && (
-                  <AltName label="الاسم بالعربية" value={[child.givenName, child.middleName, child.familyName].filter(Boolean).join(' ')} rtl />
+                {formattedBirthDate && (
+                  <InfoItem 
+                    label={t.student?.birthDate || (locale === 'ar' ? 'تاريخ الميلاد' : 'Birth Date')} 
+                    value={formattedBirthDate} 
+                  />
                 )}
               </div>
-            </CardContent>
-            <CardFooter className="px-6 pb-6">
+
+              {/* Action Button */}
               <Link
                 href={`/child/${child.sourcedId}`}
-                className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium text-white bg-gray-900 hover:bg-gray-800 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
               >
                 {t.student?.viewDetails || (locale === 'ar' ? 'عرض التفاصيل' : 'View Details')}
                 <ChevronRightIcon className="w-4 h-4" />
               </Link>
-            </CardFooter>
+            </CardContent>
           </Card>
         );
       })}
@@ -244,13 +207,16 @@ export default function ChildCards() {
 
       {/* If no children fetched and not loading/error, show helpful message */}
       {status === "authenticated" && !isBusy && !error && (!children || children.length === 0) && (
-        <div className="col-span-full text-center py-12">
-          <div className="max-w-md mx-auto">
-            <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
-              <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+        <div className="col-span-full text-center py-16">
+          <div className="max-w-sm mx-auto">
+            <div className="w-20 h-20 mx-auto mb-6 bg-blue-50 rounded-full flex items-center justify-center">
+              <svg className="w-10 h-10 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
               </svg>
             </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              {locale === 'ar' ? 'لا توجد بيانات طلاب' : 'No Students Found'}
+            </h3>
             <p className="text-sm text-gray-500">
               {t.dashboard?.noLinkedStudents || (locale === 'ar' ? 'لم يتم العثور على طلاب مرتبطين بحسابك.' : 'No linked students found for your account.')}
             </p>
