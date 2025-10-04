@@ -18,18 +18,39 @@ export async function GET(req: Request) {
     const enrollments = await getSchoolEnrollmentsByStudent(studentId, schoolYear || undefined);
     console.debug(`Returning ${enrollments.length} enrollments for student ${studentId}`);
 
-    // Try to fetch the org for the first enrollment's school as a convenience
-    const schoolID = enrollments[0]?.school.sourcedId || null;
-    const schoolInfo = schoolID ? await getOrgBySourcedId(schoolID) : [];
- 
+    // Collect unique school IDs from enrollments
+    const schoolIDs = Array.from(
+      new Set(
+        enrollments
+          .map((e) => e?.school?.sourcedId)
+          .filter((id): id is string => typeof id === "string" && id.length > 0)
+      )
+    );
+
+    // Fetch org info for all schools if multiple, otherwise just the first (for backwards-compat)
+    let schoolInfos: Array<unknown> = [];
+    if (schoolIDs.length > 1) {
+      const results = await Promise.all(schoolIDs.map((id) => getOrgBySourcedId(id)));
+      schoolInfos = results.filter((o): o is NonNullable<typeof o> => Boolean(o));
+    } else if (schoolIDs.length === 1) {
+      const single = await getOrgBySourcedId(schoolIDs[0]!);
+      schoolInfos = single ? [single] : [];
+    }
+
+    const schoolID = schoolIDs[0] ?? null;
+    const schoolInfo = schoolInfos[0] ?? null;
 
     return NextResponse.json({
       enrollments,
       count: enrollments.length,
       studentId,
       schoolYear: schoolYear || "all",
+      // Backwards-compatible fields
       schoolID,
-      schoolInfo: Array.isArray(schoolInfo) && schoolInfo.length > 0 && "Org" in schoolInfo[0] ? schoolInfo[0].Org : null,
+      schoolInfo,
+      // New fields with all schools' info
+      schoolIDs,
+      schoolInfos,
     });
   } catch (error: unknown) {
     console.error("Error fetching school enrollments:", error);

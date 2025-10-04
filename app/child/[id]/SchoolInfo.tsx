@@ -15,7 +15,16 @@ type ApiResponse = {
   studentId: string;
   schoolYear: string;
   schoolID?: string | null;
-  schoolInfo?: Org | null;
+  // The API may return any of these shapes:
+  // - schoolInfo: Org
+  // - schoolInfo: { Org: Org }
+  // - schoolInfo: Array<{ Org: Org }>
+  // - schoolInfos: Org[]
+  // - schoolInfos: Array<{ Org: Org }>
+  // - schoolInfos: Array<Array<{ Org: Org }>>
+  schoolInfo?: Org | { Org: Org } | Array<{ Org: Org }> | null;
+  schoolIDs?: string[];     // all school ids when multiple
+  schoolInfos?: Org[] | Array<{ Org: Org }> | Array<Array<{ Org: Org }>> | null;
   error?: string;
 };
 
@@ -37,9 +46,64 @@ function formatAddress(addresses?: Org['metadata']['addresses']): string {
 
 export default function SchoolInfo({ studentId, year }: { studentId: string; year: string }) {
   const { t, locale } = useI18n();
-  const { data, error, isLoading } = useSWR<ApiResponse>(
-    studentId && year ? `/api/oneroster/schoolenrollments?studentId=${encodeURIComponent(studentId)}&schoolYear=${encodeURIComponent(year)}` : null
-  );
+  const { data, error, isLoading } = useSWR<ApiResponse>(() => {
+    if (!studentId) return null;
+    const base = `/api/oneroster/schoolenrollments?studentId=${encodeURIComponent(studentId)}`;
+    if (!year || year === 'all') return base;
+    return `${base}&schoolYear=${encodeURIComponent(year)}`;
+  });
+
+  // --- helpers to normalize various response shapes into Org / Org[] ---
+  function isOrg(obj: any): obj is Org {
+    return !!obj && typeof obj === 'object' && ('sourcedId' in obj || 'metadata' in obj || 'name' in obj);
+  }
+
+  function extractOrgFromWrapper(item: any): Org | null {
+    if (!item) return null;
+    if (isOrg(item)) return item;
+    if (item.Org && isOrg(item.Org)) return item.Org;
+    return null;
+  }
+
+  function normalizeSingleOrg(input: ApiResponse['schoolInfo']): Org | undefined {
+    if (!input) return undefined;
+    // Direct Org
+    if (isOrg(input)) return input;
+    // { Org: Org }
+    const fromWrapper = extractOrgFromWrapper(input as any);
+    if (fromWrapper) return fromWrapper;
+    // Array<{ Org: Org }>
+    if (Array.isArray(input) && input.length) {
+      const first = extractOrgFromWrapper(input[0]);
+      if (first) return first;
+    }
+    return undefined;
+  }
+
+  function normalizeManyOrgs(input: ApiResponse['schoolInfos']): Org[] {
+    if (!input) return [];
+    const collect: Org[] = [];
+    const pushIf = (o: Org | null) => { if (o) collect.push(o); };
+    if (Array.isArray(input)) {
+      // Flatten arbitrarily nested arrays and unwrap
+      const flat = (input as any[]).flat ? (input as any[]).flat(Infinity) : (input as any[]);
+      for (const item of flat) {
+        pushIf(extractOrgFromWrapper(item));
+      }
+    } else {
+      // Single Org-like structure
+      const one = extractOrgFromWrapper(input);
+      if (one) collect.push(one);
+    }
+    // Dedupe by sourcedId
+    const seen = new Set<string>();
+    return collect.filter((o) => {
+      const key = o.sourcedId ?? JSON.stringify(o);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }
 
   if (isLoading) {
     return (
@@ -87,10 +151,13 @@ export default function SchoolInfo({ studentId, year }: { studentId: string; yea
     return <div className="text-center py-8 text-gray-600">{locale === 'ar' ? 'لا توجد بيانات تسجيل للمدرسة.' : 'No school enrollment data available.'}</div>;
   }
 
-  const org = data.schoolInfo ?? undefined;
-
+  const isAllYears = !year || year === 'all';
+  const org = !isAllYears ? normalizeSingleOrg(data.schoolInfo) : undefined;
+  const orgs = isAllYears ? normalizeManyOrgs(data.schoolInfos) : (org ? [org] : []);
+  console.log('Rendering SchoolInfo with orgs:', orgs);
   return (
     <div className={clsx('space-y-6', locale === 'ar' && 'direction-rtl')}>
+      {/* If year is 'all' (or empty), render the list of all schools; otherwise render single school */}
       <Card className="border border-gray-200">
         <CardHeader className="bg-indigo-50 border-b border-indigo-100">
           <CardTitle className="flex items-center">
@@ -100,27 +167,60 @@ export default function SchoolInfo({ studentId, year }: { studentId: string; yea
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 14l8 4 8-4" />
               </svg>
             </div>
-            <span className="text-gray-900">{locale === 'ar' ? 'معلومات المدرسة' : 'School Information'}</span>
+            <span className="text-gray-900">
+              {isAllYears
+                ? (locale === 'ar' ? 'معلومات المدارس' : 'Schools Information')
+                : (locale === 'ar' ? 'معلومات المدرسة' : 'School Information')}
+            </span>
           </CardTitle>
         </CardHeader>
         <CardContent className="p-6">
-          {org ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <div className="text-sm text-gray-500 mb-1">{locale === 'ar' ? 'اسم المدرسة' : 'School Name'}</div>
-                <div className="text-gray-900 font-semibold">{org.name || org.metadata?.englishName || org.metadata?.shortName || '—'}</div>
+          {isAllYears ? (
+            orgs.length > 0 ? (
+              <div className="space-y-4">
+                {orgs.map((o, i) => (
+                    
+                  <div key={`${o.sourcedId ?? 'org'}-${i}`} className="p-4 border rounded-lg">
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <div className="text-sm text-gray-500 mb-1">{locale === 'ar' ? 'اسم المدرسة' : 'School Name'}</div>
+                        <div className="text-gray-900 font-semibold">{o.name || o.metadata?.englishName || o.metadata?.shortName || '—'}</div>
+                      </div>
+                      <div>
+                        <div className="text-sm text-gray-500 mb-1">{locale === 'ar' ? 'معرف المدرسة' : 'School ID'}</div>
+                        <div className="text-gray-900 font-mono">{o.sourcedId}</div>
+                      </div>
+                      <div className="md:col-span-2">
+                        <div className="text-sm text-gray-500 mb-1">{locale === 'ar' ? 'العنوان' : 'Address'}</div>
+                        <div className="text-gray-900">{formatAddress(o.metadata?.addresses) || '—'}</div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
-              <div>
-                <div className="text-sm text-gray-500 mb-1">{locale === 'ar' ? 'معرف المدرسة' : 'School ID'}</div>
-                <div className="text-gray-900 font-mono">{org.sourcedId}</div>
-              </div>
-              <div className="md:col-span-2">
-                <div className="text-sm text-gray-500 mb-1">{locale === 'ar' ? 'العنوان' : 'Address'}</div>
-                <div className="text-gray-900">{formatAddress(org.metadata?.addresses) || '—'}</div>
-              </div>
-            </div>
+            ) : (
+              <div className="text-gray-500">{locale === 'ar' ? 'لا تتوفر معلومات المدارس.' : 'No schools information available.'}</div>
+            )
           ) : (
-            <div className="text-gray-500">{locale === 'ar' ? 'لا تتوفر معلومات المدرسة.' : 'No school information available.'}</div>
+            org ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <div className="text-sm text-gray-500 mb-1">{locale === 'ar' ? 'اسم المدرسة' : 'School Name'}</div>
+                  <div className="text-gray-900 font-semibold">{org.name || org.metadata?.englishName || org.metadata?.shortName || '—'}</div>
+                </div>
+                <div>
+                  <div className="text-sm text-gray-500 mb-1">{locale === 'ar' ? 'معرف المدرسة' : 'School ID'}</div>
+                  <div className="text-gray-900 font-mono">{org.sourcedId}</div>
+                </div>
+                <div className="md:col-span-2">
+                  <div className="text-sm text-gray-500 mb-1">{locale === 'ar' ? 'العنوان' : 'Address'}</div>
+                  <div className="text-gray-900">{formatAddress(org.metadata?.addresses) || '—'}</div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-gray-500">{locale === 'ar' ? 'لا تتوفر معلومات المدرسة.' : 'No school information available.'}</div>
+            )
           )}
         </CardContent>
       </Card>

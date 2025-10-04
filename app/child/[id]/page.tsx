@@ -427,6 +427,7 @@ export default function ChildDetailPage() {
                 <SelectValue placeholder={locale === 'ar' ? 'اختر السنة' : 'Select year'} />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="all">{locale === 'ar' ? 'كل السنوات' : 'All years'}</SelectItem>
                 {(() => {
                   const current = new Date().getFullYear();
                   const years: number[] = [];
