@@ -17,22 +17,22 @@ export const metadata: Metadata = {
   description: "A comprehensive parent portal for tracking your child's academic progress, attendance, and school communications.",
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+import HtmlLangDirProvider from "@/app/components/HtmlLangDirProvider";
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="ar" dir="rtl">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col bg-white dark:bg-black text-gray-900 dark:text-gray-100`}>
         <AuthProvider>
           <IconProvider>
-            <I18nProvider>
+            <I18nProvider defaultLocale="ar">
               <SWRProvider>
                 {/* Global Header */}
                 <SiteHeader />
                 <main className="flex-1">{children}</main>
                 <SiteFooter />
+                {/* Dynamically update lang/dir on client */}
+                <HtmlLangDirProvider />
               </SWRProvider>
             </I18nProvider>
           </IconProvider>

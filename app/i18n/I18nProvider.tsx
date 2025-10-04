@@ -22,10 +22,10 @@ type I18nContextType = {
 
 const I18nContext = createContext<I18nContextType | null>(null);
 
-export function I18nProvider({ children }: { children: React.ReactNode }) {
+export function I18nProvider({ children, defaultLocale = "ar" }: { children: React.ReactNode; defaultLocale?: Locale }) {
   const [locale, setLocale] = useState<Locale>(() => {
-    if (typeof window === "undefined") return "en";
-    return (localStorage.getItem("locale") as Locale) || "en";
+    if (typeof window === "undefined") return defaultLocale;
+    return (localStorage.getItem("locale") as Locale) || defaultLocale;
   });
 
   const dir: "ltr" | "rtl" = locale === "ar" ? "rtl" : "ltr";
