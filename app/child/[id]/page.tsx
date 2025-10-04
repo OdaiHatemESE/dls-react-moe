@@ -13,6 +13,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import clsx from 'clsx';
 import { Skeleton } from '@/components/ui/skeleton';
 import SchoolInfo from './SchoolInfo';
+import StreamGrades from './StreamGrades';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface BasicInfoResponse {
@@ -397,9 +398,15 @@ export default function ChildDetailPage() {
 
         {/* Tab 2: Grades */}
         <TabsContent value="grades">
-          <div className="py-8 text-center text-gray-500">
-            {locale === 'ar' ? 'سيتم عرض الدرجات هنا قريبًا.' : 'Grades will be displayed here soon.'}
-          </div>
+          {person?.sourcedId ? (
+            <div className="space-y-4">
+              <StreamGrades studentId={person.sourcedId} />
+            </div>
+          ) : (
+            <div className="py-8 text-center text-gray-500">
+              {locale === 'ar' ? 'هوية الطالب غير متوفرة.' : 'Student ID not available.'}
+            </div>
+          )}
         </TabsContent>
 
         {/* Tab 3: Attendance */}
