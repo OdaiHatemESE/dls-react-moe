@@ -48,7 +48,7 @@ export function AssignmentStatusBadge({ status }: { status: 'pending' | 'submitt
     <ShadcnBadge 
       variant={variants[status]} 
       className={
-        status === 'submitted' ? 'bg-blue-100 text-blue-800 hover:bg-blue-100' :
+        status === 'submitted' ? 'bg-blue-100 text-primary-800 hover:bg-blue-100' :
         status === 'graded' ? 'bg-green-100 text-green-800 hover:bg-green-100' :
         undefined
       }

@@ -22,7 +22,7 @@ export function EmptyState({ icon: Icon, title, description, action }: EmptyStat
       {action && (
         <button
           onClick={action.onClick}
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-blue-600 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-primary-600 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
         >
           {action.label}
         </button>
@@ -65,7 +65,7 @@ export function LoadingSpinner({ size = 'md', className = '' }: LoadingSpinnerPr
 
   return (
     <div className={`flex items-center justify-center ${className}`}>
-      <LoadingIcon className={`${sizeClasses[size]} text-blue-600`} />
+      <LoadingIcon className={`${sizeClasses[size]} text-primary-600`} />
     </div>
   );
 }

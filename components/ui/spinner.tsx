@@ -111,7 +111,7 @@ function Spinner({
     return (
       <div className={cn(containerClasses, "flex-col", className)} {...props}>
         <div className={cn(
-          "rounded-full bg-gradient-to-r from-primary to-primary/60 animate-bounce shadow-lg",
+          "rounded-full  animate-bounce shadow-lg",
           sizeClasses[size]
         )} />
         {displayText && (

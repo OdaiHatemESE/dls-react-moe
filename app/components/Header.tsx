@@ -37,7 +37,7 @@ export default function Header() {
   return (
     <header className="bg-white/95 backdrop-blur-md border-b border-gray-200/50 sticky top-0 z-50 shadow-xl">
       {/* Enhanced gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-r from-blue-50/50 via-indigo-50/30 to-purple-50/50" />
+      <div className="absolute inset-0 bg-gradient-to-r from-aegold-50/50 via-aegold-100/30 to-aegreen-50/50" />
       
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
@@ -45,9 +45,9 @@ export default function Header() {
           <div className="flex-shrink-0">
             <Link 
               href="/dashboard" 
-              className="group flex items-center gap-3 text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-lg px-3 py-2"
+              className="group flex items-center gap-3 text-2xl font-bold text-primary hover:text-primary/90 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-aegold-500 focus:ring-offset-2 rounded-lg px-3 py-2"
             >
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center  group-hover:shadow-xl group-hover:scale-105 transition-all duration-300">
+              <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center  group-hover:shadow-xl group-hover:scale-105 transition-all duration-300">
                 <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                 </svg>
@@ -68,8 +68,8 @@ export default function Header() {
                   href={item.href}
                   className={`group relative flex items-center gap-3 px-4 py-3 rounded-xl ${locale === 'ar' ? 'text-xs font-medium' : 'text-sm font-semibold'} transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 hover:scale-105 ${
                     isActive
-                      ? 'text-white bg-gradient-to-r from-blue-600 to-indigo-600 '
-                      : 'text-gray-700 hover:text-blue-600 hover:bg-white/80 hover:shadow-md'
+                      ? 'text-white bg-primary '
+                      : 'text-gray-700 hover:text-primary-600 hover:bg-white/80 hover:shadow-md'
                   }`}
                   aria-current={isActive ? 'page' : undefined}
                 >
@@ -100,13 +100,13 @@ export default function Header() {
           <div className={clsx("flex items-center gap-4")}> 
             {/* Enhanced Language Switch */}
             <button
-              className="group relative p-3 text-gray-600 hover:text-blue-600 hover:bg-white/80 backdrop-blur-sm rounded-xl border border-white/20  hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center gap-3 transition-all duration-300 hover:scale-105"
+              className="group relative p-3 text-gray-600 hover:text-primary-600 hover:bg-white/80 backdrop-blur-sm rounded-xl border border-white/20  hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center gap-3 transition-all duration-300 hover:scale-105"
               aria-label={t.common.switchLanguage}
               onClick={() => setLocale(locale === 'ar' ? 'en' : 'ar')}
               title={t.common.switchLanguage}
             >
-              <div className="p-1 rounded-lg bg-gradient-to-br from-blue-100 to-indigo-100 group-hover:from-blue-200 group-hover:to-indigo-200 transition-all duration-300">
-                <svg className="w-4 h-4 text-blue-600" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" viewBox="0 0 256 256">
+              <div className="p-1 rounded-lg bg-primary hover:bg-primary/90 transition-all duration-300">
+                <svg className="w-4 h-4 text-primary-600" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" viewBox="0 0 256 256">
                   <rect width="256" height="256" fill="none"></rect>
                   <circle cx="128" cy="128" r="96" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="16"></circle>
                   <path d="M168,128c0,64-40,96-40,96s-40-32-40-96,40-96,40-96S168,64,168,128Z" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="16"></path>
@@ -115,7 +115,7 @@ export default function Header() {
                 </svg>
               </div>
               <span className={`hidden sm:inline ${locale === 'ar' ? 'text-xs font-medium' : 'text-sm font-semibold'}`}>{t.common.switchLanguage}</span>
-              <span className={`${locale === 'ar' ? 'text-xs' : 'text-xs'} font-bold px-2 py-1 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md`}>{locale.toUpperCase()}</span>
+              <span className={`${locale === 'ar' ? 'text-xs' : 'text-xs'} font-bold px-2 py-1 rounded-lg bg-primary text-white shadow-md`}>{locale.toUpperCase()}</span>
             </button>
 
        
@@ -133,15 +133,15 @@ export default function Header() {
             {/* Enhanced User Avatar Menu */}
             <div className="hidden md:block relative group">
               <button
-                className="group/button flex items-center gap-3 text-sm text-gray-700 hover:text-blue-600 hover:bg-white/80 backdrop-blur-sm rounded-xl border border-white/20  hover:shadow-xl p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-300 hover:scale-105"
+                className="group/button flex items-center gap-3 text-sm text-gray-700 hover:text-primary-600 hover:bg-white/80 backdrop-blur-sm rounded-xl border border-white/20  hover:shadow-xl p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-300 hover:scale-105"
                 aria-label="User menu"
                 tabIndex={0}
               >
                 <div className="relative">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center  group-hover/button:shadow-xl transition-all duration-300">
+                  <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center  group-hover/button:shadow-xl transition-all duration-300">
                     <ProfileIcon className="w-6 h-6 text-white" aria-hidden="true" />
                   </div>
-                  <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-400 to-indigo-400 rounded-xl blur opacity-0 group-hover/button:opacity-30 transition-opacity duration-300" />
+                  <div className="absolute -inset-0.5 bg-primary rounded-xl blur opacity-0 group-hover/button:opacity-30 transition-opacity duration-300" />
                 </div>
                 <div className="hidden sm:block">
                   <div className={`text-left ${locale === 'ar' ? 'font-medium text-sm' : 'font-semibold'}`}>
@@ -162,7 +162,7 @@ export default function Header() {
                 <div className="p-2">
                   <Link
                     href="/profile"
-                    className={`flex items-center gap-3 px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-xl ${locale === 'ar' ? 'text-xs font-normal' : 'text-sm font-medium'} transition-all duration-200 group/item`}
+                    className={`flex items-center gap-3 px-4 py-3 text-gray-700 hover:text-primary-600 hover:bg-blue-50 rounded-xl ${locale === 'ar' ? 'text-xs font-normal' : 'text-sm font-medium'} transition-all duration-200 group/item`}
                   >
                     <div className="p-1 rounded-lg bg-gray-100 group-hover/item:bg-blue-100 transition-colors">
                       <ProfileIcon className="w-4 h-4" />
@@ -186,7 +186,7 @@ export default function Header() {
 
             {/* Enhanced Mobile menu button */}
             <button 
-              className="lg:hidden p-3 text-gray-600 hover:text-blue-600 hover:bg-white/80 backdrop-blur-sm rounded-xl border border-white/20  hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-300 hover:scale-105"
+              className="lg:hidden p-3 text-gray-600 hover:text-primary-600 hover:bg-white/80 backdrop-blur-sm rounded-xl border border-white/20  hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-300 hover:scale-105"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               aria-expanded={isMenuOpen}
               aria-label="Toggle menu"
@@ -219,8 +219,8 @@ export default function Header() {
                       href={item.href}
                       className={`group flex items-center gap-4 px-4 py-4 rounded-2xl ${locale === 'ar' ? 'text-sm font-medium' : 'text-base font-semibold'} transition-all duration-300 border ${
                         isActive
-                          ? 'text-white bg-gradient-to-r from-blue-600 to-indigo-600 border-blue-500 '
-                          : 'text-gray-700 hover:text-blue-600 bg-white/60 hover:bg-white/80 border-white/30 hover:border-blue-200 hover:shadow-md'
+                          ? 'text-white bg-primary border-aegold-500 '
+                          : 'text-gray-700 hover:text-primary-600 bg-white/60 hover:bg-white/80 border-white/30 hover:border-blue-200 hover:shadow-md'
                       }`}
                       onClick={() => setIsMenuOpen(false)}
                       aria-current={isActive ? 'page' : undefined}
@@ -247,7 +247,7 @@ export default function Header() {
               <div className="mt-6 pt-6 border-t border-gray-200/50">
                 <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-4 border border-white/30">
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center ">
+                    <div className="w-12 h-12 rounded-2xl bg-primary flex items-center justify-center ">
                       <ProfileIcon className="w-7 h-7 text-white" />
                     </div>
                     <div className="flex-1">
@@ -263,7 +263,7 @@ export default function Header() {
                   <div className="mt-4 flex flex-col gap-2">
                     <Link
                       href="/profile"
-                      className={`flex items-center gap-3 px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 ${locale === 'ar' ? 'text-xs font-normal' : 'text-sm font-medium'} rounded-xl transition-all duration-200 group/item`}
+                      className={`flex items-center gap-3 px-4 py-3 text-gray-700 hover:text-primary-600 hover:bg-blue-50 ${locale === 'ar' ? 'text-xs font-normal' : 'text-sm font-medium'} rounded-xl transition-all duration-200 group/item`}
                       onClick={() => setIsMenuOpen(false)}
                     >
                       <div className="p-1 rounded-lg bg-gray-100 group-hover/item:bg-blue-100 transition-colors">

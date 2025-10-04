@@ -20,9 +20,48 @@ const config = {
                 ...defaultTheme.colors,
   			white: '#ffffff',
   			black: '#000000',
-  			odai: '#ccc',
   			transparent: 'transparent',
   			current: 'currentColor',
+  			// UAE Government Design System Colors
+  			aegold: {
+  				'50': '#f9f7ed',
+  				'100': '#f2eccf',
+  				'200': '#e6d7a2',
+  				'300': '#d7bc6d',
+  				'400': '#cba344',
+  				'500': '#b68a35',
+  				'600': '#92722a', // Primary gold
+  				'700': '#b68a35',
+  				'800': '#6c4527',
+  				'900': '#5d3b26',
+  				'950': '#361e12'
+  			},
+  			aered: {
+  				'50': '#fef2f2',
+  				'100': '#fde4e3',
+  				'200': '#fdcdcb',
+  				'300': '#faaaa7',
+  				'400': '#f47a75',
+  				'500': '#ea4f49',
+  				'600': '#d83731',
+  				'700': '#b52520',
+  				'800': '#95231f',
+  				'900': '#7c2320',
+  				'950': '#430e0c'
+  			},
+  			aegreen: {
+  				'50': '#f3faf4',
+  				'100': '#e4f4e7',
+  				'200': '#cae8cf',
+  				'300': '#a0d5ab',
+  				'400': '#6fb97f',
+  				'500': '#4a9d5c',
+  				'600': '#3f8e50',
+  				'700': '#2f663c',
+  				'800': '#2a5133',
+  				'900': '#24432b',
+  				'950': '#0f2415'
+  			},
   			gray: {
   				'50': '#f9fafb',
   				'100': '#f3f4f6',

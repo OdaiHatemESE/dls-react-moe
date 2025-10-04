@@ -66,7 +66,7 @@ export default function LoginPage() {
                   required
                   value={formData.email}
                   onChange={handleInputChange}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary"
                   placeholder={t.login.emailAddress}
                 />
               </div>
@@ -83,7 +83,7 @@ export default function LoginPage() {
                   required
                   value={formData.password}
                   onChange={handleInputChange}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary"
                   placeholder={t.login.password}
                 />
               </div>
@@ -94,7 +94,7 @@ export default function LoginPage() {
                     id="remember-me"
                     name="remember-me"
                     type="checkbox"
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    className="h-4 w-4 text-aegold-600 focus:ring-aegold-500 border-gray-300 rounded"
                   />
                   <label htmlFor="remember-me" className="ms-2 block text-sm text-gray-700">
                     {t.login.rememberMe}
@@ -103,7 +103,7 @@ export default function LoginPage() {
 
                 <Link
                   href="/forgot-password"
-                  className="text-sm text-blue-600 hover:text-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-md px-1"
+                  className="text-sm text-aegold-600 hover:text-aegold-500 focus:outline-none focus:ring-2 focus:ring-aegold-500 focus:ring-offset-2 rounded-md px-1"
                 >
                   {t.login.forgotPassword}
                 </Link>
@@ -123,7 +123,7 @@ export default function LoginPage() {
                 {t.login.needHelp}{' '}
                 <Link
                   href="/support"
-                  className="text-blue-600 hover:text-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-md px-1"
+                  className="text-aegold-600 hover:text-aegold-500 focus:outline-none focus:ring-2 focus:ring-aegold-500 focus:ring-offset-2 rounded-md px-1"
                 >
                   {t.login.contactSupport}
                 </Link>

@@ -17,7 +17,7 @@ export default function InfoTab({ person, t, locale }: InfoTabProps) {
     <div className="space-y-8">
       {/* Contact & Identity */}
       <Card className="border-0 shadow-lg bg-white">
-        <CardHeader className="bg-gradient-to-r from-blue-600 to-blue-700 text-white border-b-0 rounded-t-lg">
+        <CardHeader className="bg-primary text-white border-b-0 rounded-t-lg">
           <CardTitle className="flex items-center">
             <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl me-4">
               <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -27,7 +27,7 @@ export default function InfoTab({ person, t, locale }: InfoTabProps) {
             </div>
             <div>
               <span className={`${locale === 'ar' ? 'text-lg font-semibold' : 'text-xl font-bold'}`}>{t.child.basic_information}</span>
-              <p className={`text-blue-100 ${locale === 'ar' ? 'text-xs' : 'text-sm'} font-normal mt-1`}>Personal identification and contact details</p>
+              <p className={`text-aegold-100 ${locale === 'ar' ? 'text-xs' : 'text-sm'} font-normal mt-1`}>Personal identification and contact details</p>
             </div>
           </CardTitle>
         </CardHeader>
@@ -167,7 +167,7 @@ export default function InfoTab({ person, t, locale }: InfoTabProps) {
 
       {/* Address */}
       <Card className="border-0 shadow-lg bg-white">
-        <CardHeader className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-b-0 rounded-t-lg">
+        <CardHeader className="bg-gradient-to-r from-aegreen-600 to-aegreen-700 text-white border-b-0 rounded-t-lg">
           <CardTitle className="flex items-center">
             <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl me-4">
               <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">

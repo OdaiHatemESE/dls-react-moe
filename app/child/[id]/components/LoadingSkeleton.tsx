@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import clsx from 'clsx';
 
 export const LoadingSkeleton = ({ locale }: { locale?: string }) => (
-    <div className={clsx("min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30", locale === 'ar' && 'direction-rtl')}>
+    <div className={clsx("min-h-screen ", locale === 'ar' && 'direction-rtl')}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             {/* Enhanced Back Navigation Skeleton */}
             <nav className="mb-8">
@@ -18,7 +18,7 @@ export const LoadingSkeleton = ({ locale }: { locale?: string }) => (
 
             {/* Enhanced Header Card Skeleton */}
             <Card className="mb-8 border-0 shadow-xl bg-white overflow-hidden">
-                <div className="relative bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 px-8 py-16">
+                <div className="relative bg-primary px-8 py-16">
                     <div className="relative flex flex-col sm:flex-row items-center sm:items-start gap-8">
                         <div className="relative">
                             <Skeleton className="w-32 h-32 rounded-2xl" />

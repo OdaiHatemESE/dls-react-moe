@@ -69,11 +69,11 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div className={clsx("min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30", locale === 'ar' && 'direction-rtl')}>
+    <div className={clsx("min-h-screen bg-gradient-to-br from-background to-aegold-50/30", locale === 'ar' && 'direction-rtl')}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Enhanced Header Section */}
         <div className="mb-12">
-          <Card className="border-0 shadow-xl bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 overflow-hidden">
+          <Card className="border-0 shadow-xl bg-primary overflow-hidden">
             {/* Background Pattern */}
             <div className="absolute inset-0 bg-black/5">
               <div className="absolute inset-0" style={{
@@ -87,7 +87,7 @@ export default function DashboardPage() {
                   <h1 className={`${locale === 'ar' ? 'text-3xl sm:text-4xl font-semibold' : 'text-4xl sm:text-5xl font-bold'} text-white mb-4 drop-shadow-lg`}>
                     {locale === 'ar' ? 'مرحباً' : 'Welcome'}{session?.user?.name ? `, ${session.user.name}` : ''}
                   </h1>
-                  <p className={`${locale === 'ar' ? 'text-lg font-normal' : 'text-xl font-medium'} text-blue-100 max-w-2xl`}>
+                  <p className={`${locale === 'ar' ? 'text-lg font-normal' : 'text-xl font-medium'} text-aegold-100 max-w-2xl`}>
                     {t.dashboard.welcome || (locale === 'ar' ? 'نظرة عامة على أطفالك ونشاطاتهم المدرسية' : 'Overview of your children and their school activities')}
                   </p>
                 </div>
@@ -127,7 +127,7 @@ export default function DashboardPage() {
                         "p-2 rounded-lg",
                         stat.color === 'orange' && "bg-orange-50 text-orange-600",
                         stat.color === 'purple' && "bg-purple-50 text-purple-600", 
-                        stat.color === 'blue' && "bg-blue-50 text-blue-600"
+                        stat.color === 'blue' && "bg-aegold-50 text-aegold-600"
                       )}>
                         <IconComponent />
                       </div>
@@ -154,8 +154,8 @@ export default function DashboardPage() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="p-3 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-xl">
-                      <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="p-3 bg-primary rounded-xl">
+                      <svg className="w-6 h-6 text-aegold-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
                       </svg>
                     </div>
@@ -168,7 +168,7 @@ export default function DashboardPage() {
                       </p>
                     </div>
                   </div>
-                  <Badge variant="outline" className={`bg-blue-50 text-blue-700 border-blue-200 ${locale === 'ar' ? 'text-xs font-normal' : ''}`}>
+                  <Badge variant="outline" className={`bg-aegold-50 text-aegold-700 border-aegold-200 ${locale === 'ar' ? 'text-xs font-normal' : ''}`}>
                     <svg className={`w-3 h-3 ${locale === 'ar' ? 'ml-1' : 'mr-1'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>

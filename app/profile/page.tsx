@@ -258,8 +258,8 @@ export default function ProfilePage() {
     <div className={clsx("max-w-5xl mx-auto px-4 sm:px-8 py-10", locale === 'ar' && 'direction-rtl')}>
       {/* Header */}
       <div className="flex flex-col items-center mb-10">
-        <span className="w-24 h-24 rounded-full border-4 border-blue-100 shadow flex items-center justify-center bg-white">
-          <ProfileIcon className="w-20 h-20 text-blue-400" weight="duotone" />
+        <span className="w-24 h-24 rounded-full border-4 border-primary/20 shadow flex items-center justify-center bg-white">
+          <ProfileIcon className="w-20 h-20 text-primary/60" weight="duotone" />
         </span>
         <h1 className="mt-4 text-3xl font-bold text-gray-900">{formData.name}</h1>
         <p className="text-gray-500 text-base">{t.profile.parentAccount}</p>
@@ -429,8 +429,8 @@ export default function ProfilePage() {
                 {profileData.children.map((child: any) => (
                   <div key={child.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg bg-gray-50">
                     <div className={clsx("flex items-center space-x-3", locale === 'ar' && 'space-x-reverse')}>
-                      <span className="w-10 h-10 rounded-full flex items-center justify-center bg-blue-50">
-                        <ProfileIcon className="w-7 h-7 text-blue-400" weight="duotone" />
+                      <span className="w-10 h-10 rounded-full flex items-center justify-center bg-primary/10">
+                        <ProfileIcon className="w-7 h-7 text-primary/60" weight="duotone" />
                       </span>
                       <div>
                         <p className="text-sm font-medium text-gray-900">{child.name}</p>
@@ -465,8 +465,8 @@ export default function ProfilePage() {
                   </div>
                   <button
                     onClick={() => handlePreferenceChange('emailNotifications')}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                      profileData.preferences.emailNotifications ? 'bg-blue-600' : 'bg-gray-200'
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
+                      profileData.preferences.emailNotifications ? 'bg-primary' : 'bg-gray-200'
                     }`}
                     role="switch"
                     aria-checked={profileData.preferences.emailNotifications}
@@ -485,8 +485,8 @@ export default function ProfilePage() {
                   </div>
                   <button
                     onClick={() => handlePreferenceChange('smsNotifications')}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                      profileData.preferences.smsNotifications ? 'bg-blue-600' : 'bg-gray-200'
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
+                      profileData.preferences.smsNotifications ? 'bg-primary' : 'bg-gray-200'
                     }`}
                     role="switch"
                     aria-checked={profileData.preferences.smsNotifications}
@@ -505,8 +505,8 @@ export default function ProfilePage() {
                   </div>
                   <button
                     onClick={() => handlePreferenceChange('pushNotifications')}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                      profileData.preferences.pushNotifications ? 'bg-blue-600' : 'bg-gray-200'
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
+                      profileData.preferences.pushNotifications ? 'bg-primary' : 'bg-gray-200'
                     }`}
                     role="switch"
                     aria-checked={profileData.preferences.pushNotifications}

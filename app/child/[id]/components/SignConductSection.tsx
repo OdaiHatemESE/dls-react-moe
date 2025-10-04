@@ -41,7 +41,7 @@ function SignConductSection({ locale, studentId }: { locale: string; studentId?:
             <Sheet open={isOpen} onOpenChange={setIsOpen}>
                 <SheetTrigger asChild>
                     <Button 
-                        className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 font-medium hover:scale-105 transform"
+                        className="px-6 py-3 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 font-medium hover:scale-105 transform"
                     >
                         {locale === 'ar' ? 'ابدأ الآن' : 'Get Started'}
                         <svg className={`w-5 h-5 ${locale === 'ar' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -53,7 +53,7 @@ function SignConductSection({ locale, studentId }: { locale: string; studentId?:
                 <SheetContent className={`sm:max-w-lg ${locale === 'ar' ? 'direction-rtl' : ''} bg-white`}>
                     <SheetHeader className="mb-8 pb-6 border-b border-gray-100">
                         <div className="flex items-center gap-3 mb-3">
-                            <div className="p-2 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg">
+                            <div className="p-2 bg-primary rounded-xl shadow-lg">
                                 <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                 </svg>
@@ -104,29 +104,29 @@ function SignConductSection({ locale, studentId }: { locale: string; studentId?:
                         </div>
 
                         {/* Sign Conduct Action */}
-                        <div className="group relative overflow-hidden bg-white rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
-                            <div className="absolute inset-0 bg-gradient-to-r from-blue-50 to-indigo-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                        <div className="group relative overflow-hidden bg-white rounded-xl border border-gray-200 hover:border-primary/30 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                            <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                             <Button
                                 onClick={handleSignConduct}
                                 className="relative w-full justify-start gap-4 h-auto p-6 bg-transparent hover:bg-transparent text-gray-900 border-0 shadow-none"
                                 variant="ghost"
                             >
-                                <div className="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110">
+                                <div className="p-3 bg-primary rounded-xl shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110">
                                     <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                     </svg>
                                 </div>
                                 <div className={`flex-1 ${locale === 'ar' ? 'text-right' : 'text-left'}`}>
-                                    <div className={`${locale === 'ar' ? 'font-semibold text-base' : 'font-bold text-lg'} text-gray-900 group-hover:text-blue-700 transition-colors`}>
+                                    <div className={`${locale === 'ar' ? 'font-semibold text-base' : 'font-bold text-lg'} text-gray-900 group-hover:text-primary transition-colors`}>
                                         {locale === 'ar' ? 'توقيع ميثاق السلوك' : 'Sign Conduct Charter'}
                                     </div>
-                                    <div className={`${locale === 'ar' ? 'text-sm' : 'text-base'} text-gray-600 group-hover:text-blue-600 transition-colors mt-1`}>
+                                    <div className={`${locale === 'ar' ? 'text-sm' : 'text-base'} text-gray-600 group-hover:text-primary/80 transition-colors mt-1`}>
                                         {locale === 'ar' ? 'راجع ووقع على ميثاق السلوك المدرسي' : 'Review and digitally sign the school conduct charter'}
                                     </div>
                                 </div>
                                 <div className="flex items-center">
-                                    <div className="w-8 h-8 rounded-full bg-blue-100 group-hover:bg-blue-200 flex items-center justify-center transition-all duration-300">
-                                        <svg className={`w-4 h-4 text-blue-600 group-hover:translate-x-1 transition-transform ${locale === 'ar' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <div className="w-8 h-8 rounded-full bg-primary/10 group-hover:bg-primary/20 flex items-center justify-center transition-all duration-300">
+                                        <svg className={`w-4 h-4 text-primary group-hover:translate-x-1 transition-transform ${locale === 'ar' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                                         </svg>
                                     </div>
@@ -137,13 +137,13 @@ function SignConductSection({ locale, studentId }: { locale: string; studentId?:
                         {/* Download Document Action (for signed documents) */}
                         {signed && (
                             <div className="group relative overflow-hidden bg-white rounded-xl border border-gray-200 hover:border-purple-300 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
-                                <div className="absolute inset-0 bg-gradient-to-r from-purple-50 to-violet-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                <div className="absolute inset-0 bg-gradient-to-r from-aegreen-50 to-aegreen-100 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                                 <Button
                                     onClick={handleDownloadDocument}
                                     className="relative w-full justify-start gap-4 h-auto p-6 bg-transparent hover:bg-transparent text-gray-900 border-0 shadow-none"
                                     variant="ghost"
                                 >
-                                    <div className="p-3 bg-gradient-to-br from-purple-500 to-violet-600 rounded-xl shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110">
+                                    <div className="p-3 bg-gradient-to-br from-aegreen-500 to-aegreen-600 rounded-xl shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110">
                                         <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                         </svg>

@@ -154,7 +154,7 @@ export default function CalendarPage() {
                           day === new Date().getDate() && 
                           currentMonth === new Date().getMonth() && 
                           currentYear === new Date().getFullYear()
-                            ? 'text-blue-600' 
+                            ? 'text-primary-600' 
                             : 'text-gray-900'
                         }`}>
                           {day}
@@ -169,7 +169,7 @@ export default function CalendarPage() {
                                 event.type === 'exam' ? 'bg-yellow-100 text-yellow-800' :
                                 event.type === 'holiday' ? 'bg-green-100 text-green-800' :
                                 event.type === 'meeting' ? 'bg-purple-100 text-purple-800' :
-                                'bg-blue-100 text-blue-800'
+                                'bg-blue-100 text-primary-800'
                               }`}
                               title={event.title}
                             >

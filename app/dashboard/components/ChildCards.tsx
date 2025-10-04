@@ -61,7 +61,7 @@ const InfoItem = ({ label, value, icon, locale }: { label: string; value: string
   <div className={`flex items-center justify-between py-3 px-4 bg-white/60 backdrop-blur-sm rounded-xl border border-white/50 hover:bg-white/80 transition-all duration-200 ${locale === 'ar' ? 'flex-row-reverse' : ''}`}>
     <div className={`flex items-center gap-2 ${locale === 'ar' ? 'flex-row-reverse' : ''}`}>
       {icon && (
-        <div className="text-blue-600">
+        <div className="text-primary-600">
           {icon}
         </div>
       )}
@@ -84,8 +84,8 @@ export default function ChildCards() {
   const SkeletonChildCard = ({ rtl }: { rtl?: boolean }) => (
     <Card className={`group relative overflow-hidden border border-gray-200 shadow-sm bg-white transition-all duration-300 hover:shadow-md hover:scale-[1.01] ${rtl ? 'direction-rtl' : 'direction-ltr'}`}>
       {/* Animated gradient background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 opacity-50" />
-      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-200/20 to-transparent rounded-full -translate-y-16 translate-x-16" />
+      <div className="absolute inset-0 bg-gradient-to-br from-aegold-50 via-aegold-100/50 to-aegreen-50 opacity-50" />
+      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-aegold-200/20 to-transparent rounded-full -translate-y-16 translate-x-16" />
       
       <CardContent className="relative p-8">
         <div className="flex items-center justify-between mb-6">
@@ -163,16 +163,16 @@ export default function ChildCards() {
             className={`group relative overflow-hidden border border-gray-200 shadow-sm bg-white transition-all duration-300 hover:shadow-md hover:scale-[1.01] ${locale === 'ar' ? 'direction-rtl' : 'direction-ltr'}`}
           >
             {/* Enhanced Background Effects */}
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 opacity-60" />
-            <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-blue-200/20 to-transparent rounded-full -translate-y-20 translate-x-20" />
-            <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-purple-200/20 to-transparent rounded-full translate-y-16 -translate-x-16" />
+            <div className="absolute inset-0 bg-gradient-to-br from-aegold-50 via-aegold-100/50 to-aegreen-50 opacity-60" />
+            <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-aegold-200/20 to-transparent rounded-full -translate-y-20 translate-x-20" />
+            <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-aegreen-200/20 to-transparent rounded-full translate-y-16 -translate-x-16" />
             
             <CardContent className="relative p-8">
               {/* Enhanced Student Header */}
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-4">
                   <div className="relative group/avatar">
-                    <div className="w-16 h-16 bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-sm group-hover/avatar:shadow-md transition-all duration-300">
+                    <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center shadow-sm group-hover/avatar:shadow-md transition-all duration-300">
                       <span className="text-2xl font-bold text-white">
                         {displayName.charAt(0).toUpperCase()}
                       </span>
@@ -183,14 +183,14 @@ export default function ChildCards() {
                       {displayName}
                     </CardTitle>
                     <div className={`flex items-center ${locale === 'ar' ? 'gap-3' : 'gap-2'}`}>
-                      <Badge variant="outline" className={`bg-white/80 backdrop-blur-sm border-blue-200 text-blue-700 ${locale === 'ar' ? 'text-xs font-normal px-2 py-1' : 'text-xs font-medium'}`}>
+                      <Badge variant="outline" className={`bg-white/80 backdrop-blur-sm border-aegold-200 text-aegold-700 ${locale === 'ar' ? 'text-xs font-normal px-2 py-1' : 'text-xs font-medium'}`}>
                         <svg className={`w-3 h-3 ${locale === 'ar' ? 'ml-1' : 'mr-1'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                         </svg>
                         {genderLabel}
                       </Badge>
                       {age > 0 && (
-                        <Badge variant="outline" className={`bg-white/80 backdrop-blur-sm border-green-200 text-green-700 ${locale === 'ar' ? 'text-xs font-normal px-2 py-1' : 'text-xs font-medium'}`}>
+                        <Badge variant="outline" className={`bg-white/80 backdrop-blur-sm border-aegreen-200 text-aegreen-700 ${locale === 'ar' ? 'text-xs font-normal px-2 py-1' : 'text-xs font-medium'}`}>
                           <svg className={`w-3 h-3 ${locale === 'ar' ? 'ml-1' : 'mr-1'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                           </svg>
@@ -202,7 +202,7 @@ export default function ChildCards() {
                 </div>
                 <Link
                   href={`/child/${child.sourcedId}`}
-                  className="p-3 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all duration-200 hover:scale-110 group/link"
+                  className="p-3 text-gray-400 hover:text-primary-600 hover:bg-blue-50 rounded-xl transition-all duration-200 hover:scale-110 group/link"
                   aria-label={`${t.student?.viewDetails || (locale === 'ar' ? 'عرض التفاصيل' : 'View Details')} ${displayName}`}
                 >
                   <ChevronRightIcon className={`w-5 h-5 transition-transform ${locale === 'ar' ? 'rotate-180 group-hover/link:-translate-x-1' : 'group-hover/link:translate-x-1'}`} />
@@ -232,7 +232,7 @@ export default function ChildCards() {
               {/* Enhanced Action Button */}
               <Link
                 href={`/child/${child.sourcedId}`}
-                className={`group/button w-full inline-flex items-center justify-center gap-3 px-6 py-4 ${locale === 'ar' ? 'text-xs font-medium' : 'text-sm font-semibold'} text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 hover:scale-[1.01] ${locale === 'ar' ? 'flex-row-reverse' : ''}`}
+                className={`group/button w-full inline-flex items-center justify-center gap-3 px-6 py-4 ${locale === 'ar' ? 'text-xs font-medium' : 'text-sm font-semibold'} text-white bg-primary hover:bg-primary/90 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-aegold-500 focus:ring-offset-2 hover:scale-[1.01] ${locale === 'ar' ? 'flex-row-reverse' : ''}`}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -250,11 +250,11 @@ export default function ChildCards() {
       {/* Enhanced Empty State */}
       {status === "authenticated" && !isBusy && !error && (!children || children.length === 0) && (
         <div className="col-span-full">
-          <Card className="border border-gray-200 shadow-sm bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 overflow-hidden">
+          <Card className="border border-gray-200 shadow-sm bg-gradient-to-br from-aegold-50 via-aegold-100/50 to-aegreen-50 overflow-hidden">
             <CardContent className="p-16 text-center relative">
               <div className="relative max-w-md mx-auto">
-                <div className="w-32 h-32 mx-auto mb-8 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-3xl flex items-center justify-center shadow-sm">
-                  <svg className="w-16 h-16 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-32 h-32 mx-auto mb-8 bg-primary rounded-3xl flex items-center justify-center shadow-sm">
+                  <svg className="w-16 h-16 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
                   </svg>
                 </div>
@@ -264,7 +264,7 @@ export default function ChildCards() {
                 <p className={`${locale === 'ar' ? 'text-base' : 'text-lg'} text-gray-600 mb-6`}>
                   {t.dashboard?.noLinkedStudents || (locale === 'ar' ? 'لم يتم العثور على طلاب مرتبطين بحسابك.' : 'No linked students found for your account.')}
                 </p>
-                <div className={`inline-flex items-center gap-2 px-6 py-3 ${locale === 'ar' ? 'text-xs font-normal' : 'text-sm font-medium'} text-blue-600 bg-white/80 backdrop-blur-sm rounded-xl shadow-sm hover:shadow-md transition-all duration-200`}>
+                <div className={`inline-flex items-center gap-2 px-6 py-3 ${locale === 'ar' ? 'text-xs font-normal' : 'text-sm font-medium'} text-primary-600 bg-white/80 backdrop-blur-sm rounded-xl shadow-sm hover:shadow-md transition-all duration-200`}>
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>

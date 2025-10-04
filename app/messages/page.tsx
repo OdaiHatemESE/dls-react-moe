@@ -109,7 +109,7 @@ export default function MessagesPage() {
                     key={thread.id}
                     onClick={() => setSelectedThread(thread.id)}
                     className={`w-full text-left p-4 hover:bg-gray-50 focus:outline-none focus:bg-gray-50 transition-colors ${
-                      selectedThread === thread.id ? 'bg-blue-50 border-r-2 border-blue-500' : ''
+                      selectedThread === thread.id ? 'bg-primary/10 border-r-2 border-primary' : ''
                     }`}
                   >
                     <div className="flex items-start justify-between">
@@ -179,7 +179,7 @@ export default function MessagesPage() {
                       >
                         <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
                           message.from === 'Parent' 
-                            ? 'bg-blue-500 text-white' 
+                            ? 'bg-primary text-primary-foreground' 
                             : 'bg-gray-100 text-gray-900'
                         }`}>
                           <div className="flex items-center justify-between mb-1">

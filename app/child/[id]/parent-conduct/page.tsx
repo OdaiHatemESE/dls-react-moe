@@ -57,7 +57,7 @@ export default function ParentConductPage() {
 
       {/* Header */}
       <Card className="mb-6 border border-gray-200">
-        <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50">
+        <CardHeader className="bg-primary">
           <CardTitle className="text-center text-2xl sm:text-3xl font-bold text-gray-900">
             ميثاق الشراكة بين المدرسة وولي الأمر
           </CardTitle>

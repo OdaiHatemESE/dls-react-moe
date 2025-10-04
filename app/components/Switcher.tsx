@@ -51,7 +51,7 @@ export default function Switcher() {
       {/* Floating Icon Button */}
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed top-1/2 left-4 transform -translate-y-1/2 z-50 w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center group"
+        className="fixed top-1/2 left-4 transform -translate-y-1/2 z-50 w-12 h-12 bg-primary hover:bg-primary/90 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center group"
         title="Switch Student"
       >
         <svg className="w-5 h-5 transition-transform group-hover:scale-110" fill="currentColor" viewBox="0 0 20 20">
@@ -79,7 +79,7 @@ export default function Switcher() {
               {/* Header */}
               <div className="flex items-center justify-between p-6 border-b border-gray-200">
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
+                  <div className="w-10 h-10  rounded-xl flex items-center justify-center">
                     <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
                       <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z"/>
                     </svg>
@@ -138,7 +138,7 @@ export default function Switcher() {
                           key={child.sourcedId}
                           className={`w-full text-left p-4 rounded-xl transition-all duration-200 flex items-center space-x-4 ${
                             isCurrentStudent
-                              ? 'bg-blue-50 text-blue-900 border-2 border-blue-200 shadow-sm'
+                              ? 'bg-blue-50 text-primary-900 border-2 border-blue-200 shadow-sm'
                               : 'hover:bg-gray-50 text-gray-700 hover:text-gray-900 border-2 border-transparent'
                           }`}
                           onClick={() => {
@@ -152,7 +152,7 @@ export default function Switcher() {
                           {/* Avatar */}
                           <div className={`w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold ${
                             isCurrentStudent
-                              ? 'bg-blue-100 text-blue-700'
+                              ? 'bg-blue-100 text-primary-700'
                               : 'bg-gray-100 text-gray-600'
                           }`}>
                             {displayName.charAt(0).toUpperCase()}
@@ -161,12 +161,12 @@ export default function Switcher() {
                           {/* Name and Status */}
                           <div className="flex-1 min-w-0">
                             <p className={`text-base font-semibold truncate ${
-                              isCurrentStudent ? 'text-blue-900' : 'text-gray-900'
+                              isCurrentStudent ? 'text-primary-900' : 'text-gray-900'
                             }`}>
                               {displayName}
                             </p>
                             <p className={`text-sm truncate ${
-                              isCurrentStudent ? 'text-blue-600' : 'text-gray-500'
+                              isCurrentStudent ? 'text-primary-600' : 'text-gray-500'
                             }`}>
                               Student ID: {child.sourcedId}
                             </p>
@@ -176,7 +176,7 @@ export default function Switcher() {
                           <div className="flex items-center space-x-2">
                             {isCurrentStudent ? (
                               <div className="flex items-center space-x-2">
-                                <span className="text-xs font-medium text-blue-600 bg-blue-100 px-2 py-1 rounded-full">Current</span>
+                                <span className="text-xs font-medium text-primary-600 bg-blue-100 px-2 py-1 rounded-full">Current</span>
                                 <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
                               </div>
                             ) : (

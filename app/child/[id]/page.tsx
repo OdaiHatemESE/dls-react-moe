@@ -52,18 +52,18 @@ export default function ChildDetailPage() {
     if (error.warning) {
       return (
         <div className="text-center py-10">
-          <div className="mb-4 text-yellow-700 bg-yellow-100 border border-yellow-300 rounded p-4">
+          <div className="mb-4 text-aegold-800 bg-aegold-100 border border-aegold-300 rounded p-4">
             {error.warning}
           </div>
         </div>
       );
     }
-    return <div className="text-center py-10 text-red-600">{t.child.error_loading_child_data}</div>;
+    return <div className="text-center py-10 text-aered-600">{t.child.error_loading_child_data}</div>;
   }
   if (data && (data as any).warning) {
     return (
       <div className="text-center py-10">
-        <div className="mb-4 text-yellow-700 bg-yellow-100 border border-yellow-300 rounded p-4">
+        <div className="mb-4 text-aegold-800 bg-aegold-100 border border-aegold-300 rounded p-4">
           {(data as any).warning}
         </div>
       </div>
@@ -83,14 +83,14 @@ export default function ChildDetailPage() {
     : [person.metadata?.englishFirstName, person.metadata?.englishSecondName, person.metadata?.englishThirdName, person.metadata?.englishFamilyName].filter(Boolean).join(' ');
 
   return (
-    <div className={clsx("min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30", locale === 'ar' && 'direction-rtl')}>
+    <div className={clsx("min-h-screen", locale === 'ar' && 'direction-rtl')}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Enhanced Back Navigation with Breadcrumbs */}
         <nav className="mb-6" aria-label="Breadcrumb">
           <div className="flex items-center space-x-2 rtl:space-x-reverse">
             <Link 
               href="/dashboard" 
-              className={`inline-flex items-center ${locale === 'ar' ? 'text-xs font-normal' : 'text-sm font-medium'} text-gray-500 hover:text-blue-600 transition-all duration-200 hover:bg-blue-50 px-3 py-2 rounded-lg group`}
+              className={`inline-flex items-center ${locale === 'ar' ? 'text-xs font-normal' : 'text-sm font-medium'} text-muted-foreground hover:text-primary transition-all duration-200 hover:bg-primary/10 px-3 py-2 rounded-lg group`}
             >
               <svg className={clsx("w-4 h-4 me-2 group-hover:scale-110 transition-transform", 
                 locale === 'ar' && 'rotate-180'
@@ -100,10 +100,10 @@ export default function ChildDetailPage() {
               </svg>
               {locale === 'ar' ? 'لوحة التحكم' : 'Dashboard'}
             </Link>
-            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={locale === 'ar' ? "M15 19l-7-7 7-7" : "M9 5l7 7-7 7"} />
             </svg>
-            <span className={`${locale === 'ar' ? 'text-xs font-normal' : 'text-sm font-medium'} text-gray-900`}>
+            <span className={`${locale === 'ar' ? 'text-xs font-normal' : 'text-sm font-medium'} text-foreground`}>
               {locale === 'ar' ? 'ملف الطالب' : 'Student Profile'}
             </span>
           </div>
@@ -111,21 +111,21 @@ export default function ChildDetailPage() {
 
         {/* Parent Actions Section - Full Width with Intro Message */}
         <div className="mb-6">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="bg-card rounded-xl shadow-sm border border-border p-6">
             <div className={clsx("flex items-center justify-between", 
               locale === 'ar' && 'direction-rtl'
             )}>
               <div className="flex items-center gap-4">
-                <div className="p-3 bg-blue-100 rounded-full">
-                  <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="p-3 bg-primary/10 rounded-full">
+                  <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
                 </div>
                 <div className={locale === 'ar' ? 'text-right' : 'text-left'}>
-                  <h3 className={`${locale === 'ar' ? 'font-medium text-base' : 'font-semibold text-lg'} text-gray-900 mb-1`}>
+                  <h3 className={`${locale === 'ar' ? 'font-medium text-base' : 'font-semibold text-lg'} text-card-foreground mb-1`}>
                     {locale === 'ar' ? 'إجراءات ولي الأمر' : 'Parent Actions'}
                   </h3>
-                  <p className={`${locale === 'ar' ? 'text-xs' : 'text-sm'} text-gray-600`}>
+                  <p className={`${locale === 'ar' ? 'text-xs' : 'text-sm'} text-muted-foreground`}>
                     {locale === 'ar' 
                       ? 'انقر هنا للوصول إلى خيارات الطباعة والتوقيع والمزيد' 
                       : 'Click here to access printing, signing options and more'
@@ -141,8 +141,8 @@ export default function ChildDetailPage() {
         </div>
 
         {/* Enhanced Header Card */}
-        <Card className="mb-8 border-0 shadow-xl bg-white overflow-hidden">
-          <div className="relative bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 px-8 py-16">
+        <Card className="mb-8 border-0 shadow-xl bg-card overflow-hidden">
+          <div className="relative bg-primary px-8 py-16">
             {/* Background Pattern */}
             <div className="absolute inset-0 bg-black/5">
               <div className="absolute inset-0" style={{
@@ -158,7 +158,7 @@ export default function ChildDetailPage() {
                     {displayName.charAt(0).toUpperCase()}
                   </span>
                 </div>
-                <div className="absolute -inset-1 bg-gradient-to-r from-blue-400 to-indigo-400 rounded-2xl blur opacity-30 group-hover:opacity-50 transition-opacity"></div>
+                <div className="absolute -inset-1 bg-primary rounded-2xl blur opacity-30 group-hover:opacity-50 transition-opacity"></div>
               </div>
               
               <div className={clsx("text-center w-full", 
@@ -168,19 +168,19 @@ export default function ChildDetailPage() {
                   <div className="flex-1">
                     {/* Enhanced Name and Title */}
                     <h1 className={`${locale === 'ar' ? 'text-3xl font-semibold' : 'text-4xl font-bold'} text-white mb-3 drop-shadow-lg`}>{displayName}</h1>
-                    <p className={`text-blue-100 ${locale === 'ar' ? 'text-base font-normal' : 'text-lg font-medium'} mb-6`}>{t.child.child_profile}</p>
+                    <p className={`text-primary-foreground/80 ${locale === 'ar' ? 'text-base font-normal' : 'text-lg font-medium'} mb-6`}>{t.child.child_profile}</p>
                     
                     {/* Enhanced Badges */}
                     <div className={clsx("flex flex-wrap items-center gap-3 justify-center sm:justify-start",
                        
                     )}>
-                      <Badge variant="outline" className="bg-white/90 backdrop-blur-sm border-white/30 text-gray-700 shadow-sm hover:bg-white transition-all">
+                      <Badge variant="outline" className="bg-white/90 backdrop-blur-sm border-white/30 text-foreground shadow-sm hover:bg-white transition-all">
                         <svg className="w-4 h-4 me-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V4a2 2 0 114 0v2m-4 0a2 2 0 104 0m-4 0V4a2 2 0 014 0v2" />
                         </svg>
                         ID: {person.sourcedId}
                       </Badge>
-                      <Badge variant="outline" className="bg-white/90 backdrop-blur-sm border-white/30 text-gray-700 shadow-sm hover:bg-white transition-all">
+                      <Badge variant="outline" className="bg-white/90 backdrop-blur-sm border-white/30 text-foreground shadow-sm hover:bg-white transition-all">
                         <svg className="w-4 h-4 me-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                         </svg>
@@ -192,12 +192,12 @@ export default function ChildDetailPage() {
                           className={clsx(
                             "shadow-sm hover:scale-105 transition-all",
                             person.status === 'active' 
-                              ? "bg-green-500 text-white border-green-400" 
-                              : "bg-gray-500 text-white border-gray-400"
+                              ? "bg-aegreen-600 text-white border-aegreen-500" 
+                              : "bg-muted text-muted-foreground border-muted"
                           )}
                         >
                           <div className={clsx("w-2 h-2 rounded-full me-2", 
-                            person.status === 'active' ? 'bg-green-200' : 'bg-gray-200'
+                            person.status === 'active' ? 'bg-aegreen-200' : 'bg-muted-foreground/30'
                           )}></div>
                           {person.status}
                         </Badge>
@@ -213,11 +213,11 @@ export default function ChildDetailPage() {
 
         {/* Enhanced Tabs Section */}
         <Tabs defaultValue="info" className={clsx("w-full", locale === 'ar' && 'direction-rtl')}>
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-2 mb-8">
-            <TabsList className="grid w-full grid-cols-5 bg-gray-50 rounded-lg p-1">
+          <div className="bg-card rounded-xl shadow-sm border border-border p-2 mb-8">
+            <TabsList className="grid w-full grid-cols-5 bg-muted rounded-lg p-1">
               <TabsTrigger 
                 value="info" 
-                className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all duration-200"
+                className="flex items-center gap-2 data-[state=active]:bg-card data-[state=active]:shadow-sm transition-all duration-200"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -227,7 +227,7 @@ export default function ChildDetailPage() {
               </TabsTrigger>
               <TabsTrigger 
                 value="grades"
-                className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all duration-200"
+                className="flex items-center gap-2 data-[state=active]:bg-card data-[state=active]:shadow-sm transition-all duration-200"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
@@ -237,7 +237,7 @@ export default function ChildDetailPage() {
               </TabsTrigger>
               <TabsTrigger 
                 value="attendance"
-                className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all duration-200"
+                className="flex items-center gap-2 data-[state=active]:bg-card data-[state=active]:shadow-sm transition-all duration-200"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -247,7 +247,7 @@ export default function ChildDetailPage() {
               </TabsTrigger>
               <TabsTrigger 
                 value="assignments"
-                className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all duration-200"
+                className="flex items-center gap-2 data-[state=active]:bg-card data-[state=active]:shadow-sm transition-all duration-200"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -257,7 +257,7 @@ export default function ChildDetailPage() {
               </TabsTrigger>
               <TabsTrigger 
                 value="school"
-                className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all duration-200"
+                className="flex items-center gap-2 data-[state=active]:bg-card data-[state=active]:shadow-sm transition-all duration-200"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
@@ -299,8 +299,8 @@ export default function ChildDetailPage() {
           <TabsContent value="attendance" className="animate-in fade-in-50 duration-300">
             <Card className="p-12">
               <div className="text-center">
-                <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full flex items-center justify-center">
-                  <svg className="w-10 h-10 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-20 h-20 mx-auto mb-6 bg-primary rounded-full flex items-center justify-center">
+                  <svg className="w-10 h-10 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
