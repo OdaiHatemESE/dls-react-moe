@@ -86,7 +86,7 @@ export default function ChildDetailPage() {
     <div className={clsx("min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30", locale === 'ar' && 'direction-rtl')}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Enhanced Back Navigation with Breadcrumbs */}
-        <nav className="mb-8" aria-label="Breadcrumb">
+        <nav className="mb-6" aria-label="Breadcrumb">
           <div className="flex items-center space-x-2 rtl:space-x-reverse">
             <Link 
               href="/dashboard" 
@@ -108,6 +108,13 @@ export default function ChildDetailPage() {
             </span>
           </div>
         </nav>
+
+        {/* Parent Actions Button - Outside the Header Card */}
+        <div className={clsx("mb-6 flex", 
+          locale === 'ar' ? 'justify-end' : 'justify-start'
+        )}>
+          <SignConductSection locale={locale} studentId={person.sourcedId} />
+        </div>
 
         {/* Enhanced Header Card */}
         <Card className="mb-8 border-0 shadow-xl bg-white overflow-hidden">
@@ -133,7 +140,7 @@ export default function ChildDetailPage() {
               <div className={clsx("text-center w-full", 
                 locale === 'ar' ? 'sm:text-right' : 'sm:text-left'
               )}>
-                <div className={clsx("flex flex-col sm:flex-row sm:items-start sm:justify-between w-full", locale === 'ar' && 'direction-rtl')}>
+                <div className={clsx("flex flex-col w-full", locale === 'ar' && 'direction-rtl')}>
                   <div className="flex-1">
                     {/* Enhanced Name and Title */}
                     <h1 className={`${locale === 'ar' ? 'text-3xl font-semibold' : 'text-4xl font-bold'} text-white mb-3 drop-shadow-lg`}>{displayName}</h1>
@@ -172,10 +179,6 @@ export default function ChildDetailPage() {
                         </Badge>
                       )}
                     </div>
-                  </div>
-                  
-                  <div className="mt-6 sm:mt-0 sm:ms-6 sm:self-start flex-shrink-0">
-                    <SignConductSection locale={locale} studentId={person.sourcedId} />
                   </div>
                 </div>
               </div>
