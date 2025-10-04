@@ -99,7 +99,7 @@ export default function Header() {
 
        
             {/* Notifications */}
-            <button 
+            {/* <button 
               className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
               aria-label="Notifications"
             >
@@ -107,34 +107,24 @@ export default function Header() {
               <span className="absolute -top-1 -ie-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center" aria-label="3 unread notifications">
                 3
               </span>
-            </button>
+            </button> */}
 
             {/* User Avatar Menu */}
             <div className="hidden md:block relative group">
-              <button
+                <button
                 className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                 aria-label="User menu"
                 tabIndex={0}
-              >
-                <Image
-                  className="w-8 h-8 rounded-full"
-                  src={
-                    session?.identityProfile?.avatar ||
-                    session?.user?.image ||
-                    '/public/globe.svg'
-                  }
-                  alt={`${session?.identityProfile?.name || session?.user?.name || 'User'} avatar`}
-                  width={32}
-                  height={32}
-                />
+                >
+                <ProfileIcon className="w-8 h-8 rounded-full bg-gray-200 text-gray-400" aria-hidden="true" />
                 <span className="hidden sm:block font-medium">
                   {(() => {
-                    const name = session?.identityProfile?.name || session?.user?.name || '';
-                    return name.split(' ')[0] || t.common.profile;
+                    const name = session?.identityProfile?.result?.firstName || session?.user?.name || '';
+                  return typeof name === 'string' && name ? name.split(' ')[0] : t.common.profile;
                   })()}
                 </span>
                 <ChevronDownIcon className="w-4 h-4" />
-              </button>
+                </button>
               {/* Dropdown menu */}
               <div className="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded-md shadow-lg opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity z-50 pointer-events-none group-hover:pointer-events-auto group-focus-within:pointer-events-auto">
                 <Link
