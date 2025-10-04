@@ -86,7 +86,7 @@ const config = {
 	plugins: [
 		function ({ addUtilities }) {
       addUtilities({
-        '.direction-rtl': { direction: 'rtl' },
+        '.direction-rtl': { direction: 'rtl',textAlign: 'right' },
         '.direction-ltr': { direction: 'ltr' },
       })
     },

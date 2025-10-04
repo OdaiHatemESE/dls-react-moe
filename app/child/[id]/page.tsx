@@ -241,8 +241,8 @@ export default function ChildDetailPage() {
               </span>
             </div>
             <div className="text-center sm:text-left w-full">
-              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between w-full">
-                <div className="flex-1">
+              <div  className={clsx("flex flex-col sm:flex-row sm:items-start sm:justify-between w-full", locale === 'ar' && 'direction-rtl')}>
+                <div className="flex-1" >
                   <h1 className="text-3xl font-bold text-gray-900 mb-2">{displayName}</h1>
                   <div className="flex flex-wrap items-center gap-3 justify-center sm:justify-start">
                     <Badge variant="outline" className="bg-white">
@@ -270,7 +270,7 @@ export default function ChildDetailPage() {
 
 
       {/* Tabs Section */}
-      <Tabs defaultValue="info" className="w-full">
+      <Tabs defaultValue="info"  className={clsx("w-full", locale === 'ar' && 'direction-rtl')} >
         <TabsList className="mb-4">
           <TabsTrigger value="info">{locale === 'ar' ? 'المعلومات الأساسية' : 'Basic Info'}</TabsTrigger>
           <TabsTrigger value="grades">{locale === 'ar' ? 'المراحل الدراسية' : 'Grades'}</TabsTrigger>
@@ -280,7 +280,7 @@ export default function ChildDetailPage() {
         </TabsList>
 
         {/* Tab 1: Info */}
-        <TabsContent value="info">
+        <TabsContent value="info" className={clsx( locale === 'ar' && 'direction-rtl')} >
           <div className="space-y-8">
             {/* Contact & Identity */}
             <Card className="border border-gray-200">
