@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { IconContext } from '@phosphor-icons/react';
 import { signIn, useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { Spinner } from '@/components/ui/spinner';
 
 type Props = {
   children: React.ReactNode;
@@ -68,12 +69,12 @@ export default function IconProvider({ children }: Props) {
   // While auth is loading or we haven't populated the store, show spinner
     if (status === 'loading' ) {
      
-      return <>OI</>;
+      return <Spinner className="mx-auto my-20" />;
     }
   
     // If unauthenticated, we already triggered signIn above; just show a loader
     if (status === 'unauthenticated') {
-     return <>OI2</>;
+     return <Spinner className="mx-auto my-20" />;
     }
   return (
     <IconContext.Provider value={{ size: 20, weight: 'regular' }}>
