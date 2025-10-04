@@ -82,7 +82,7 @@ export default function ChildCards() {
   const isBusy = status === "loading" || (status === "authenticated" && isLoading);
 
   const SkeletonChildCard = ({ rtl }: { rtl?: boolean }) => (
-    <Card className={`group relative overflow-hidden border-0 shadow-xl bg-white transition-all duration-300 hover:shadow-2xl hover:scale-[1.02] ${rtl ? 'direction-rtl' : 'direction-ltr'}`}>
+    <Card className={`group relative overflow-hidden border border-gray-200 shadow-sm bg-white transition-all duration-300 hover:shadow-md hover:scale-[1.01] ${rtl ? 'direction-rtl' : 'direction-ltr'}`}>
       {/* Animated gradient background */}
       <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 opacity-50" />
       <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-200/20 to-transparent rounded-full -translate-y-16 translate-x-16" />
@@ -92,7 +92,6 @@ export default function ChildCards() {
           <div className="flex items-center gap-4">
             <div className="relative">
               <Skeleton className="w-16 h-16 rounded-2xl" />
-              <div className="absolute -inset-1 bg-gradient-to-r from-blue-400 to-indigo-400 rounded-2xl blur opacity-30" />
             </div>
             <div className="space-y-3">
               <Skeleton className="h-7 w-36" />
@@ -161,7 +160,7 @@ export default function ChildCards() {
         return (
           <Card
             key={child.sourcedId}
-            className={`group relative overflow-hidden border-0 shadow-xl bg-white transition-all duration-300 hover:shadow-2xl hover:scale-[1.02] ${locale === 'ar' ? 'direction-rtl' : 'direction-ltr'}`}
+            className={`group relative overflow-hidden border border-gray-200 shadow-sm bg-white transition-all duration-300 hover:shadow-md hover:scale-[1.01] ${locale === 'ar' ? 'direction-rtl' : 'direction-ltr'}`}
           >
             {/* Enhanced Background Effects */}
             <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 opacity-60" />
@@ -173,12 +172,11 @@ export default function ChildCards() {
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-4">
                   <div className="relative group/avatar">
-                    <div className="w-16 h-16 bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg group-hover/avatar:shadow-xl transition-all duration-300">
-                      <span className="text-2xl font-bold text-white drop-shadow-lg">
+                    <div className="w-16 h-16 bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-sm group-hover/avatar:shadow-md transition-all duration-300">
+                      <span className="text-2xl font-bold text-white">
                         {displayName.charAt(0).toUpperCase()}
                       </span>
                     </div>
-                    <div className="absolute -inset-1 bg-gradient-to-r from-blue-400 to-indigo-400 rounded-2xl blur opacity-30 group-hover/avatar:opacity-50 transition-opacity" />
                   </div>
                   <div>
                     <CardTitle className="text-xl font-bold text-gray-900 leading-tight mb-1">
@@ -232,7 +230,7 @@ export default function ChildCards() {
               {/* Enhanced Action Button */}
               <Link
                 href={`/child/${child.sourcedId}`}
-                className="group/button w-full inline-flex items-center justify-center gap-3 px-6 py-4 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 hover:scale-[1.02]"
+                className="group/button w-full inline-flex items-center justify-center gap-3 px-6 py-4 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 hover:scale-[1.01]"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -250,17 +248,10 @@ export default function ChildCards() {
       {/* Enhanced Empty State */}
       {status === "authenticated" && !isBusy && !error && (!children || children.length === 0) && (
         <div className="col-span-full">
-          <Card className="border-0 shadow-xl bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 overflow-hidden">
+          <Card className="border border-gray-200 shadow-sm bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 overflow-hidden">
             <CardContent className="p-16 text-center relative">
-              {/* Background Pattern */}
-              <div className="absolute inset-0 opacity-10">
-                <div className="absolute inset-0" style={{
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%234F46E5' fill-opacity='0.1' fill-rule='nonzero'%3E%3Ccircle cx='7' cy='7' r='7'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-                }} />
-              </div>
-              
               <div className="relative max-w-md mx-auto">
-                <div className="w-32 h-32 mx-auto mb-8 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-3xl flex items-center justify-center shadow-xl">
+                <div className="w-32 h-32 mx-auto mb-8 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-3xl flex items-center justify-center shadow-sm">
                   <svg className="w-16 h-16 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
                   </svg>
@@ -271,7 +262,7 @@ export default function ChildCards() {
                 <p className="text-lg text-gray-600 mb-6">
                   {t.dashboard?.noLinkedStudents || (locale === 'ar' ? 'لم يتم العثور على طلاب مرتبطين بحسابك.' : 'No linked students found for your account.')}
                 </p>
-                <div className="inline-flex items-center gap-2 px-6 py-3 text-sm font-medium text-blue-600 bg-white/80 backdrop-blur-sm rounded-xl shadow-lg hover:shadow-xl transition-all duration-200">
+                <div className="inline-flex items-center gap-2 px-6 py-3 text-sm font-medium text-blue-600 bg-white/80 backdrop-blur-sm rounded-xl shadow-sm hover:shadow-md transition-all duration-200">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>

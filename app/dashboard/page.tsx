@@ -150,7 +150,7 @@ export default function DashboardPage() {
         {/* Enhanced Children Section */}
         <div>
           <div className="mb-8">
-            <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
+            <Card className="border-0 bg-white ">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
