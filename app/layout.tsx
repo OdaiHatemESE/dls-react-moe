@@ -24,8 +24,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="ar" dir="rtl">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col bg-white dark:bg-black text-gray-900 dark:text-gray-100`}>
         <AuthProvider>
-          <IconProvider>
+       
             <I18nProvider defaultLocale="ar">
+                 <IconProvider>
               <SWRProvider>
                 {/* Global Header */}
                 <SiteHeader />
@@ -34,8 +35,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 {/* Dynamically update lang/dir on client */}
                 <HtmlLangDirProvider />
               </SWRProvider>
+                     </IconProvider>
             </I18nProvider>
-          </IconProvider>
+   
         </AuthProvider>
       </body>
     </html>

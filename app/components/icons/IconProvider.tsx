@@ -47,7 +47,7 @@ export default function IconProvider({ children }: Props) {
 
         // Fallback: interactive OIDC login (this will navigate)
         // Fallback: interactive OIDC login (this will navigate)
-        await signIn('oidc', { callbackUrl: url });
+      await signIn('oidc', { callbackUrl: url });
       };
 
       void tryMobileToken();
@@ -69,12 +69,12 @@ export default function IconProvider({ children }: Props) {
   // While auth is loading or we haven't populated the store, show spinner
     if (status === 'loading' ) {
      
-      return <Spinner className="mx-auto my-20" />;
+      return <Spinner variant="creative" textKey="common.loading"  fullPage={true} size="lg" />;
     }
   
     // If unauthenticated, we already triggered signIn above; just show a loader
     if (status === 'unauthenticated') {
-     return <Spinner className="mx-auto my-20" />;
+     return <Spinner variant="dots"  textKey="common.loading" fullPage={true} size="lg" />;
     }
   return (
     <IconContext.Provider value={{ size: 20, weight: 'regular' }}>
