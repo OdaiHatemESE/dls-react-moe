@@ -75,7 +75,7 @@ export default function ChildCards() {
   const isBusy = status === "loading" || (status === "authenticated" && isLoading);
 
   const SkeletonChildCard = ({ rtl }: { rtl?: boolean }) => (
-    <Card className={`transition-all duration-200 hover:shadow-md ${rtl ? 'direction-rtl' : 'direction-ltr'}`}>
+    <Card className={`transition-all duration-200 hover:shadow-md border border-gray-200 ${rtl ? 'direction-rtl' : 'direction-ltr'}`}>
       <CardContent className="p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
@@ -145,7 +145,7 @@ export default function ChildCards() {
         return (
           <Card
             key={child.sourcedId}
-            className={`group transition-all duration-200 hover:shadow-md border-0 shadow-sm ${locale === 'ar' ? 'direction-rtl' : 'direction-ltr'}`}
+            className={`group transition-all duration-200 hover:shadow-md border border-gray-200 shadow-sm ${locale === 'ar' ? 'direction-rtl' : 'direction-ltr'}`}
           >
             <CardContent className="p-6">
               {/* Student Header */}
