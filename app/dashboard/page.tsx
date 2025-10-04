@@ -69,32 +69,49 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div className={clsx("max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6", locale === 'ar' && 'direction-rtl')}>
-      {/* Header Section */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-2">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">
-              {locale === 'ar' ? 'مرحباً' : 'Welcome'}{session?.user?.name ? `, ${session.user.name}` : ''}
-            </h1>
-            <p className="mt-2 text-gray-600">
-              {t.dashboard.welcome || (locale === 'ar' ? 'نظرة عامة على أطفالك ونشاطاتهم المدرسية' : 'Overview of your children and their school activities')}
-            </p>
-          </div>
-          <div className="hidden sm:block">
-            <div className="text-right text-sm text-gray-500">
-              <div>{new Date().toLocaleDateString(locale === 'ar' ? 'ar-AE' : 'en-US', { weekday: 'long' })}</div>
-              <div className="font-medium text-gray-900">
-                {new Date().toLocaleDateString(locale === 'ar' ? 'ar-AE' : 'en-US', { 
-                  year: 'numeric', 
-                  month: 'long', 
-                  day: 'numeric' 
-                })}
-              </div>
+    <div className={clsx("min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30", locale === 'ar' && 'direction-rtl')}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Enhanced Header Section */}
+        <div className="mb-12">
+          <Card className="border-0 shadow-xl bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 overflow-hidden">
+            {/* Background Pattern */}
+            <div className="absolute inset-0 bg-black/5">
+              <div className="absolute inset-0" style={{
+                backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05' fill-rule='nonzero'%3E%3Ccircle cx='7' cy='7' r='7'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+              }} />
             </div>
-          </div>
+            
+            <CardContent className="relative p-8 sm:p-12">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between">
+                <div className="flex-1 mb-6 sm:mb-0">
+                  <h1 className="text-4xl sm:text-5xl font-bold text-white mb-4 drop-shadow-lg">
+                    {locale === 'ar' ? 'مرحباً' : 'Welcome'}{session?.user?.name ? `, ${session.user.name}` : ''}
+                  </h1>
+                  <p className="text-xl text-blue-100 font-medium max-w-2xl">
+                    {t.dashboard.welcome || (locale === 'ar' ? 'نظرة عامة على أطفالك ونشاطاتهم المدرسية' : 'Overview of your children and their school activities')}
+                  </p>
+                </div>
+                
+                <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
+                  <div className="text-center">
+                    <div className="text-white/80 text-sm font-medium mb-1">
+                      {new Date().toLocaleDateString(locale === 'ar' ? 'ar-AE' : 'en-US', { weekday: 'long' })}
+                    </div>
+                    <div className="text-white text-lg font-bold">
+                      {new Date().toLocaleDateString(locale === 'ar' ? 'ar-AE' : 'en-US', { 
+                        month: 'short', 
+                        day: 'numeric' 
+                      })}
+                    </div>
+                    <div className="text-white/60 text-xs mt-1">
+                      {new Date().getFullYear()}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
-      </div>
 
       {/* Quick Stats */}
       {/* <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
@@ -130,12 +147,36 @@ export default function DashboardPage() {
 
       {/* Main Content Grid */}
       <div className="space-y-8">
-        {/* Children Cards */}
+        {/* Enhanced Children Section */}
         <div>
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold text-gray-900">
-              {locale === 'ar' ? 'الأطفال' : 'My Children'}
-            </h2>
+          <div className="mb-8">
+            <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-xl">
+                      <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h2 className="text-2xl font-bold text-gray-900">
+                        {locale === 'ar' ? 'أطفالي' : 'My Children'}
+                      </h2>
+                      <p className="text-gray-600 text-sm">
+                        {locale === 'ar' ? 'إدارة ومتابعة بيانات الأطفال' : 'Manage and track your children\'s information'}
+                      </p>
+                    </div>
+                  </div>
+                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                    <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    {locale === 'ar' ? 'نشط' : 'Active'}
+                  </Badge>
+                </div>
+              </CardContent>
+            </Card>
           </div>
           <ChildCards />
         </div>
@@ -184,6 +225,7 @@ export default function DashboardPage() {
           </div>
         </div>
         */}
+        </div>
       </div>
     </div>
   );
