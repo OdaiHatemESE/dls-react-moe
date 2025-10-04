@@ -16,13 +16,14 @@ import {
   MenuIcon,
   XIcon
 } from './icons';
-import { mockParent } from '../data/mockData';
+import { useSession, signOut } from 'next-auth/react';
 import { useI18n } from '@/app/i18n/I18nProvider';
 
 export default function Header() {
   const { t, locale, setLocale } = useI18n();
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { data: session } = useSession();
 
   type NavItem = { key: keyof typeof t.nav; href: string; icon: typeof DashboardIcon } & ({ badge: string } | { badge?: undefined });
   const navigation: NavItem[] = [
@@ -109,21 +110,46 @@ export default function Header() {
             </button>
 
             {/* User Avatar Menu */}
-            <div className="hidden md:block relative">
-              <button 
+            <div className="hidden md:block relative group">
+              <button
                 className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                 aria-label="User menu"
+                tabIndex={0}
               >
-                <Image 
-                  className="w-8 h-8 rounded-full" 
-                  src={mockParent.avatar} 
-                  alt={`${mockParent.name} avatar`}
+                <Image
+                  className="w-8 h-8 rounded-full"
+                  src={
+                    session?.identityProfile?.avatar ||
+                    session?.user?.image ||
+                    '/public/globe.svg'
+                  }
+                  alt={`${session?.identityProfile?.name || session?.user?.name || 'User'} avatar`}
                   width={32}
                   height={32}
                 />
-                <span className="hidden sm:block font-medium">{mockParent.name.split(' ')[0]}</span>
+                <span className="hidden sm:block font-medium">
+                  {(() => {
+                    const name = session?.identityProfile?.name || session?.user?.name || '';
+                    return name.split(' ')[0] || t.common.profile;
+                  })()}
+                </span>
                 <ChevronDownIcon className="w-4 h-4" />
               </button>
+              {/* Dropdown menu */}
+              <div className="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded-md shadow-lg opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity z-50 pointer-events-none group-hover:pointer-events-auto group-focus-within:pointer-events-auto">
+                <Link
+                  href="/profile"
+                  className="block px-4 py-2 text-gray-700 hover:bg-gray-100 text-sm"
+                >
+                  {t.nav.profile}
+                </Link>
+                <button
+                  className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 text-sm"
+                  onClick={() => signOut({ callbackUrl: '/login' })}
+                >
+                  {t.common.logout || 'Logout'}
+                </button>
+              </div>
             </div>
 
             {/* Mobile menu button */}
@@ -180,17 +206,40 @@ export default function Header() {
             {/* User Info - Mobile */}
             <div className="px-4 py-4 border-t border-gray-200 mt-4">
               <div className="flex items-center gap-3">
-                <Image 
-                  className="w-10 h-10 rounded-full" 
-                  src={mockParent.avatar} 
-                  alt={`${mockParent.name} avatar`}
+                <Image
+                  className="w-10 h-10 rounded-full"
+                  src={
+                    session?.identityProfile?.avatar ||
+                    session?.user?.image ||
+                    '/public/globe.svg'
+                  }
+                  alt={`${session?.identityProfile?.name || session?.user?.name || 'User'} avatar`}
                   width={40}
                   height={40}
                 />
                 <div>
-                  <p className="text-sm font-medium text-gray-900">{mockParent.name}</p>
-                  <p className="text-sm text-gray-500">{mockParent.email}</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {session?.identityProfile?.name || session?.user?.name || t.common.profile}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    {session?.identityProfile?.email || session?.user?.email || ''}
+                  </p>
                 </div>
+              </div>
+              <div className="mt-3 flex flex-col gap-1">
+                <Link
+                  href="/profile"
+                  className="block px-4 py-2 text-gray-700 hover:bg-gray-100 text-sm rounded"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  {t.nav.profile}
+                </Link>
+                <button
+                  className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 text-sm rounded"
+                  onClick={() => { setIsMenuOpen(false); signOut({ callbackUrl: '/login' }); }}
+                >
+                  {t.common.logout || 'Logout'}
+                </button>
               </div>
             </div>
           </div>
