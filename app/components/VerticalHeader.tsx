@@ -128,18 +128,18 @@ export default function VerticalHeader() {
   return (
     <>
       {/* Professional Mobile Header */}
-      <header className="lg:hidden bg-white/98 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-50 shadow-sm">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-50/30 via-white to-indigo-50/30" />
+      <header className="lg:hidden bg-card/98 backdrop-blur-md border-b border-border sticky top-0 z-50 shadow-sm">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-background to-secondary/5" />
         <div className="relative px-4 sm:px-6">
           <div className="flex justify-between items-center h-16">
             {/* Modern Mobile Logo */}
             <div className="flex-shrink-0">
               <Link 
                 href="/dashboard" 
-                className="group flex items-center gap-3 text-xl font-bold text-slate-900 hover:text-blue-700 transition-all duration-300"
+                className="group flex items-center gap-3 text-xl font-bold text-foreground hover:text-primary transition-all duration-300"
               >
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center group-hover:shadow-lg group-hover:scale-105 transition-all duration-300 shadow-md">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/80 rounded-xl flex items-center justify-center group-hover:shadow-lg group-hover:scale-105 transition-all duration-300 shadow-md">
+                  <svg className="w-6 h-6 text-primary-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                   </svg>
                 </div>
@@ -149,7 +149,7 @@ export default function VerticalHeader() {
 
             {/* Professional Menu Button */}
             <button 
-              className="p-2.5 text-slate-600 hover:text-blue-700 hover:bg-slate-100/80 rounded-xl border border-slate-200/60 hover:border-slate-300 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:ring-offset-2 transition-all duration-300"
+              className="p-2.5 text-muted-foreground hover:text-primary hover:bg-muted/80 rounded-xl border border-border hover:border-border/80 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:ring-offset-2 transition-all duration-300"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               aria-expanded={isMenuOpen}
               aria-label="Toggle menu"
@@ -168,8 +168,8 @@ export default function VerticalHeader() {
 
         {/* Professional Mobile Navigation */}
         {isMenuOpen && (
-          <div className="border-t border-slate-200/60 backdrop-blur-md">
-            <div className="bg-gradient-to-b from-white/98 to-slate-50/95 p-4">
+          <div className="border-t border-border backdrop-blur-md">
+            <div className="bg-gradient-to-b from-card/98 to-muted/95 p-4">
               {/* Enhanced Navigation Links */}
               <nav className="space-y-2" role="navigation" aria-label="Mobile navigation">
                 {navigation.map((item) => {
@@ -182,22 +182,22 @@ export default function VerticalHeader() {
                       href={item.href}
                       className={`group flex items-center gap-4 px-4 py-4 rounded-xl ${locale === 'ar' ? 'text-sm font-semibold tracking-wide' : 'text-sm font-semibold'} transition-all duration-300 border ${
                         isActive
-                          ? 'text-white bg-gradient-to-r from-blue-500 to-indigo-600 border-blue-400 shadow-lg'
-                          : 'text-slate-700 hover:text-blue-700 bg-white/80 hover:bg-white border-slate-200/60 hover:border-blue-200 hover:shadow-md backdrop-blur-sm'
+                          ? 'text-primary-foreground bg-gradient-to-r from-primary to-primary/80 border-primary/40 shadow-lg'
+                          : 'text-foreground hover:text-primary bg-card/80 hover:bg-card border-border hover:border-primary/20 hover:shadow-md backdrop-blur-sm'
                       }`}
                       onClick={() => setIsMenuOpen(false)}
                       aria-current={isActive ? 'page' : undefined}
                     >
                       <div className={`p-2.5 rounded-lg transition-all duration-300 ${
                         isActive 
-                          ? 'bg-white/25 shadow-sm' 
-                          : 'bg-slate-100 group-hover:bg-blue-100'
+                          ? 'bg-card/25 shadow-sm' 
+                          : 'bg-muted group-hover:bg-primary/10'
                       }`}>
                         <Icon className="w-5 h-5" aria-hidden="true" />
                       </div>
                       <span className="flex-1 font-medium">{t.nav[item.key]}</span>
                       {item.badge && (
-                        <span className="bg-red-500 text-white text-xs rounded-full h-6 w-6 flex items-center justify-center animate-pulse font-medium">
+                        <span className="bg-destructive text-destructive-foreground text-xs rounded-full h-6 w-6 flex items-center justify-center animate-pulse font-medium">
                           {item.badge}
                         </span>
                       )}
@@ -207,17 +207,17 @@ export default function VerticalHeader() {
               </nav>
 
               {/* User Info - Mobile */}
-              <div className="mt-6 pt-6 border-t border-gray-200/50">
-                <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-4 border border-white/30">
+              <div className="mt-6 pt-6 border-t border-border">
+                <div className="bg-card/60 backdrop-blur-sm rounded-2xl p-4 border border-border">
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-gray-100 flex items-center justify-center">
-                      <ProfileIcon className="w-7 h-7 text-gray-600" />
+                    <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center">
+                      <ProfileIcon className="w-7 h-7 text-muted-foreground" />
                     </div>
                     <div className="flex-1">
-                      <p className={`text-gray-900 ${locale === 'ar' ? 'text-sm font-bold tracking-wide' : 'text-sm font-bold'}`}>
+                      <p className={`text-foreground ${locale === 'ar' ? 'text-sm font-bold tracking-wide' : 'text-sm font-bold'}`}>
                         {(session?.user?.name as string) || 'Profile'}
                       </p>
-                      <p className={`text-gray-600 ${locale === 'ar' ? 'text-xs font-medium' : 'text-xs'}`}>
+                      <p className={`text-muted-foreground ${locale === 'ar' ? 'text-xs font-medium' : 'text-xs'}`}>
                         {(session?.user?.email as string) || ''}
                       </p>
                     </div>
@@ -226,26 +226,26 @@ export default function VerticalHeader() {
                   <div className="mt-4 flex flex-col gap-2">
                     <Link
                       href="/profile"
-                      className={`flex items-center gap-3 px-4 py-3 text-gray-700 hover:text-primary hover:bg-primary/5 ${locale === 'ar' ? 'text-xs font-semibold tracking-wide' : 'text-xs font-medium'} rounded-xl transition-all duration-200 group/item`}
+                      className={`flex items-center gap-3 px-4 py-3 text-foreground hover:text-primary hover:bg-primary/5 ${locale === 'ar' ? 'text-xs font-semibold tracking-wide' : 'text-xs font-medium'} rounded-xl transition-all duration-200 group/item`}
                       onClick={() => setIsMenuOpen(false)}
                     >
-                      <div className="p-1 rounded-lg bg-gray-100 group-hover/item:bg-primary/10 transition-colors">
+                      <div className="p-1 rounded-lg bg-muted group-hover/item:bg-primary/10 transition-colors">
                         <ProfileIcon className="w-4 h-4" />
                       </div>
                       {t.nav.profile}
                     </Link>
                     
                     {/* Mobile Theme Settings */}
-                    <div className="border-t border-gray-200/50 pt-2 mt-2">
-                      <div className={`text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 px-4 ${locale === 'ar' ? 'text-right text-xs' : 'text-left'}`}>
+                    <div className="border-t border-border pt-2 mt-2">
+                      <div className={`text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2 px-4 ${locale === 'ar' ? 'text-right text-xs' : 'text-left'}`}>
                         {locale === 'ar' ? 'الإعدادات' : 'Settings'}
                       </div>
                       <button
-                        className={`flex items-center gap-3 px-4 py-3 text-gray-700 hover:text-primary hover:bg-primary/5 ${locale === 'ar' ? 'text-xs font-semibold tracking-wide' : 'text-xs font-medium'} rounded-xl transition-all duration-200 group/item w-full`}
+                        className={`flex items-center gap-3 px-4 py-3 text-foreground hover:text-primary hover:bg-primary/5 ${locale === 'ar' ? 'text-xs font-semibold tracking-wide' : 'text-xs font-medium'} rounded-xl transition-all duration-200 group/item w-full`}
                         onClick={() => setIsThemeMenuOpen(!isThemeMenuOpen)}
                         data-theme-menu
                       >
-                        <div className="p-1 rounded-lg bg-gray-100 group-hover/item:bg-primary/10 transition-colors">
+                        <div className="p-1 rounded-lg bg-muted group-hover/item:bg-primary/10 transition-colors">
                           <svg className="w-4 h-4 transition-transform group-hover/item:rotate-180 duration-300" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
                           </svg>
@@ -272,10 +272,10 @@ export default function VerticalHeader() {
                                 className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 ${
                                   isActive
                                     ? 'bg-primary/10 border border-primary/20 text-primary'
-                                    : 'hover:bg-blue-50 hover:text-primary-600 text-gray-600'
+                                    : 'hover:bg-primary/5 hover:text-primary text-muted-foreground'
                                 } ${locale === 'ar' ? 'text-xs font-medium' : 'text-xs'}`}
                               >
-                                <div className={`w-6 h-6 rounded ${theme.preview} shadow-sm ring-1 ring-white/30`}>
+                                <div className={`w-6 h-6 rounded ${theme.preview} shadow-sm ring-1 ring-card/30`}>
                                   {theme.name === 'dark' && (
                                     <div className="w-full h-full rounded bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
                                       <svg className="w-3 h-3 text-yellow-400" fill="currentColor" viewBox="0 0 24 24">
@@ -298,10 +298,10 @@ export default function VerticalHeader() {
                     </div>
                     
                     <button
-                      className={`flex items-center gap-3 px-4 py-3 text-gray-700 hover:text-red-600 hover:bg-red-50 ${locale === 'ar' ? 'text-xs font-semibold tracking-wide' : 'text-xs font-medium'} rounded-xl transition-all duration-200 group/item`}
+                      className={`flex items-center gap-3 px-4 py-3 text-foreground hover:text-destructive hover:bg-destructive/5 ${locale === 'ar' ? 'text-xs font-semibold tracking-wide' : 'text-xs font-medium'} rounded-xl transition-all duration-200 group/item`}
                       onClick={() => { setIsMenuOpen(false); signOut({ callbackUrl: '/login' }); }}
                     >
-                      <div className="p-1 rounded-lg bg-gray-100 group-hover/item:bg-red-100 transition-colors">
+                      <div className="p-1 rounded-lg bg-muted group-hover/item:bg-destructive/10 transition-colors">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                         </svg>
@@ -320,19 +320,19 @@ export default function VerticalHeader() {
       <aside className={`hidden lg:fixed lg:flex lg:flex-col z-50 ${
         locale === 'ar' ? 'lg:right-4 lg:top-6 lg:bottom-6' : 'lg:left-4 lg:top-6 lg:bottom-6'
       } lg:w-72`}>
-        <div className={`flex grow flex-col gap-y-6 overflow-y-auto bg-white shadow-lg px-6 pb-6 rounded-2xl border border-slate-200/60`}>
+        <div className={`flex grow flex-col gap-y-6 overflow-y-auto bg-card shadow-lg px-6 pb-6 rounded-2xl border border-border`}>
           {/* Modern gradient overlay */}
-          <div className="absolute inset-0 bg-gradient-to-b from-blue-50/20 via-white to-indigo-50/10 rounded-2xl" />
+          <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-background to-secondary/5 rounded-2xl" />
    
           <div className="relative">
             {/* Professional Desktop Logo */}
-            <div className="flex h-20 shrink-0 items-center justify-center border-b border-slate-100 mb-6">
+            <div className="flex h-20 shrink-0 items-center justify-center border-b border-border mb-6">
               <Link 
                 href="/dashboard" 
-                className={`group flex items-center gap-4 text-slate-900 hover:text-blue-700 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:ring-offset-2 rounded-xl px-4 py-3 hover:bg-slate-50 ${locale === 'ar' ? 'text-xl font-black tracking-wide' : 'text-xl font-bold'}`}
+                className={`group flex items-center gap-4 text-foreground hover:text-primary transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:ring-offset-2 rounded-xl px-4 py-3 hover:bg-muted ${locale === 'ar' ? 'text-xl font-black tracking-wide' : 'text-xl font-bold'}`}
               >
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center group-hover:shadow-lg group-hover:scale-105 transition-all duration-300 shadow-md">
-                  <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary/80 rounded-xl flex items-center justify-center group-hover:shadow-lg group-hover:scale-105 transition-all duration-300 shadow-md">
+                  <svg className="w-7 h-7 text-primary-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                   </svg>
                 </div>
@@ -357,22 +357,22 @@ export default function VerticalHeader() {
                               'group flex items-center gap-x-4 rounded-lg px-4 py-3 transition-all duration-200',
                               locale === 'ar' ? 'text-sm font-semibold tracking-wide' : 'text-sm font-medium',
                               isActive
-                                ? 'bg-blue-600 text-white shadow-sm'
-                                : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
+                                ? 'bg-primary text-primary-foreground shadow-sm'
+                                : 'text-foreground hover:bg-muted hover:text-foreground'
                             )}
                             aria-current={isActive ? 'page' : undefined}
                           >
                             <div className={clsx(
                               'flex h-6 w-6 shrink-0 items-center justify-center transition-all duration-200',
                               isActive 
-                                ? 'text-white' 
-                                : 'text-slate-600 group-hover:text-slate-700'
+                                ? 'text-primary-foreground' 
+                                : 'text-muted-foreground group-hover:text-foreground'
                             )}>
                               <Icon className="h-6 w-6" aria-hidden="true" />
                             </div>
                             <span className="truncate font-medium">{t.nav[item.key]}</span>
                             {item.badge && (
-                              <span className="ml-auto inline-flex items-center justify-center w-5 h-5 text-xs font-medium text-white bg-red-500 rounded-full">
+                              <span className="ml-auto inline-flex items-center justify-center w-5 h-5 text-xs font-medium text-destructive-foreground bg-destructive rounded-full">
                                 {item.badge}
                               </span>
                             )}
@@ -385,15 +385,15 @@ export default function VerticalHeader() {
 
                 {/* Settings and User Section */}
                 <li className="mt-auto">
-                  <div className="border-t border-slate-200/60 pt-6 mb-4">
+                  <div className="border-t border-border pt-6 mb-4">
                   </div>
                   {/* Language Switch */}
                   <button
-                    className={`group w-full flex items-center gap-x-4 rounded-lg px-4 py-3 text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition-all duration-200 ${locale === 'ar' ? 'text-sm font-medium tracking-wide' : 'text-sm font-medium'}`}
+                    className={`group w-full flex items-center gap-x-4 rounded-lg px-4 py-3 text-foreground hover:bg-muted hover:text-foreground transition-all duration-200 ${locale === 'ar' ? 'text-sm font-medium tracking-wide' : 'text-sm font-medium'}`}
                     onClick={() => setLocale(locale === 'ar' ? 'en' : 'ar')}
                     aria-label={t.common.switchLanguage}
                   >
-                    <div className="flex h-6 w-6 shrink-0 items-center justify-center text-slate-600 group-hover:text-slate-700 transition-all duration-200">
+                    <div className="flex h-6 w-6 shrink-0 items-center justify-center text-muted-foreground group-hover:text-foreground transition-all duration-200">
                       <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor">
                         <circle cx="128" cy="128" r="96" fill="none" stroke="currentColor" strokeWidth="16"/>
                         <path d="M168,128c0,64-40,96-40,96s-40-32-40-96,40-96,40-96S168,64,168,128Z" fill="none" stroke="currentColor" strokeWidth="16"/>
@@ -402,7 +402,7 @@ export default function VerticalHeader() {
                       </svg>
                     </div>
                     <span className="truncate font-medium">{t.common.switchLanguage}</span>
-                    <span className="ml-auto inline-flex items-center justify-center w-8 h-6 text-xs font-medium text-white bg-blue-600 rounded">
+                    <span className="ml-auto inline-flex items-center justify-center w-8 h-6 text-xs font-medium text-primary-foreground bg-primary rounded">
                       {locale.toUpperCase()}
                     </span>
                   </button>
@@ -410,24 +410,24 @@ export default function VerticalHeader() {
                   {/* Theme Switch */}
                   <div className="relative" data-theme-menu>
                     <button
-                      className={`group w-full flex items-center gap-x-4 rounded-lg px-4 py-3 text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition-all duration-200 ${locale === 'ar' ? 'text-sm font-medium tracking-wide' : 'text-sm font-medium'}`}
+                      className={`group w-full flex items-center gap-x-4 rounded-lg px-4 py-3 text-foreground hover:bg-muted hover:text-foreground transition-all duration-200 ${locale === 'ar' ? 'text-sm font-medium tracking-wide' : 'text-sm font-medium'}`}
                       onClick={() => setIsThemeMenuOpen(!isThemeMenuOpen)}
                       aria-label="Switch Theme"
                     >
-                      <div className="flex h-6 w-6 shrink-0 items-center justify-center text-slate-600 group-hover:text-slate-700 transition-all duration-200">
+                      <div className="flex h-6 w-6 shrink-0 items-center justify-center text-muted-foreground group-hover:text-foreground transition-all duration-200">
                         <svg className="h-6 w-6 transition-transform group-hover:rotate-180 duration-300" fill="currentColor" viewBox="0 0 24 24">
                           <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
                         </svg>
                       </div>
                       <span className="truncate font-medium">{locale === 'ar' ? 'تغيير المظهر' : 'Switch Theme'}</span>
-                      <span className="ml-auto inline-flex items-center justify-center px-2 py-1 text-xs font-medium text-white bg-blue-600 rounded">
+                      <span className="ml-auto inline-flex items-center justify-center px-2 py-1 text-xs font-medium text-primary-foreground bg-primary rounded">
                         {themes.find(t => t.name === currentTheme)?.label.split(' ')[0] || 'UAE'}
                       </span>
                     </button>
 
                     {/* Theme Dropdown Menu */}
                     {isThemeMenuOpen && (
-                      <div className="absolute bottom-full left-0 right-0 mb-3 bg-gradient-to-b from-white/95 to-white/90 backdrop-blur-xl border border-gray-200/60 rounded-2xl shadow-2xl z-20 overflow-hidden">
+                      <div className="absolute bottom-full left-0 right-0 mb-3 bg-gradient-to-b from-card/95 to-card/90 backdrop-blur-xl border border-border rounded-2xl shadow-2xl z-20 overflow-hidden">
                         <div className="p-3 space-y-2">
                           {themes.map((theme) => {
                             const isActive = currentTheme === theme.name;
@@ -442,12 +442,12 @@ export default function VerticalHeader() {
                                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 hover:scale-[1.02] hover:shadow-sm border group/theme ${
                                   isActive
                                     ? 'bg-primary/10 border-primary/20 text-primary'
-                                    : 'hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-primary-600 border-transparent hover:border-blue-100 text-gray-700'
+                                    : 'hover:bg-gradient-to-r hover:from-primary/5 hover:to-secondary/5 hover:text-primary border-transparent hover:border-primary/10 text-foreground'
                                 } ${locale === 'ar' ? 'text-xs font-semibold tracking-wide' : 'text-xs font-medium'}`}
                               >
                                 {/* Theme Preview */}
                                 <div className="relative">
-                                  <div className={`w-8 h-8 rounded-lg ${theme.preview} shadow-sm ring-2 ring-white/50`}>
+                                  <div className={`w-8 h-8 rounded-lg ${theme.preview} shadow-sm ring-2 ring-card/50`}>
                                     {theme.name === 'dark' && (
                                       <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-gray-800 via-gray-700 to-gray-900 flex items-center justify-center">
                                         <svg className="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 24 24">
@@ -486,8 +486,8 @@ export default function VerticalHeader() {
                             );
                           })}
                         </div>
-                        <div className="px-4 py-2 bg-gray-50/50 border-t border-gray-200/50">
-                          <p className="text-xs text-gray-500 text-center">
+                        <div className="px-4 py-2 bg-muted/50 border-t border-border">
+                          <p className="text-xs text-muted-foreground text-center">
                             {locale === 'ar' ? 'اختر المظهر المفضل' : 'Choose your preferred theme'}
                           </p>
                         </div>
@@ -497,38 +497,38 @@ export default function VerticalHeader() {
 
                   {/* User Profile */}
                   <div className="group relative mt-6">
-                    <div className="flex items-center gap-x-3 rounded-lg p-3 bg-slate-50 hover:bg-slate-100 transition-all duration-200 cursor-pointer border border-slate-200">
-                      <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-sm">
-                        <ProfileIcon className="h-5 w-5 text-white" />
+                    <div className="flex items-center gap-x-3 rounded-lg p-3 bg-muted hover:bg-muted/80 transition-all duration-200 cursor-pointer border border-border">
+                      <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-sm">
+                        <ProfileIcon className="h-5 w-5 text-primary-foreground" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className={`text-slate-900 truncate ${locale === 'ar' ? 'text-sm font-semibold tracking-wide' : 'text-sm font-medium'}`}>
+                        <p className={`text-foreground truncate ${locale === 'ar' ? 'text-sm font-semibold tracking-wide' : 'text-sm font-medium'}`}>
                           {((session?.user?.name as string) || '').split(' ')[0] || 'Profile'}
                         </p>
-                        <p className={`text-slate-500 truncate ${locale === 'ar' ? 'text-xs' : 'text-xs'}`}>
+                        <p className={`text-muted-foreground truncate ${locale === 'ar' ? 'text-xs' : 'text-xs'}`}>
                           {locale === 'ar' ? 'عرض الملف الشخصي' : 'View Profile'}
                         </p>
                       </div>
-                      <ChevronDownIcon className="h-4 w-4 text-slate-400 group-hover:text-slate-600 transition-colors" />
+                      <ChevronDownIcon className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
                     </div>
 
                     {/* User Dropdown */}
-                    <div className="absolute bottom-full left-0 right-0 mb-2 bg-white border border-slate-200 rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-200 z-10 pointer-events-none group-hover:pointer-events-auto transform translate-y-1 group-hover:translate-y-0">
+                    <div className="absolute bottom-full left-0 right-0 mb-2 bg-card border border-border rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-200 z-10 pointer-events-none group-hover:pointer-events-auto transform translate-y-1 group-hover:translate-y-0">
                       <div className="p-2">
                         <Link
                           href="/profile"
-                          className={`flex items-center gap-3 px-3 py-2.5 text-slate-700 hover:text-blue-600 hover:bg-slate-50 rounded-md transition-colors group/item ${locale === 'ar' ? 'text-sm font-medium tracking-wide' : 'text-sm font-medium'}`}
+                          className={`flex items-center gap-3 px-3 py-2.5 text-foreground hover:text-primary hover:bg-muted rounded-md transition-colors group/item ${locale === 'ar' ? 'text-sm font-medium tracking-wide' : 'text-sm font-medium'}`}
                         >
-                          <div className="h-7 w-7 rounded-md bg-slate-100 flex items-center justify-center group-hover/item:bg-blue-50 transition-colors">
-                            <ProfileIcon className="h-4 w-4 text-slate-600 group-hover/item:text-blue-600" />
+                          <div className="h-7 w-7 rounded-md bg-muted flex items-center justify-center group-hover/item:bg-primary/10 transition-colors">
+                            <ProfileIcon className="h-4 w-4 text-muted-foreground group-hover/item:text-primary" />
                           </div>
                           {t.nav.profile}
                         </Link>
                         <button
-                          className={`w-full flex items-center gap-3 px-3 py-2.5 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors group/item ${locale === 'ar' ? 'text-sm font-medium tracking-wide' : 'text-sm font-medium'}`}
+                          className={`w-full flex items-center gap-3 px-3 py-2.5 text-destructive hover:text-destructive/80 hover:bg-destructive/5 rounded-md transition-colors group/item ${locale === 'ar' ? 'text-sm font-medium tracking-wide' : 'text-sm font-medium'}`}
                           onClick={() => signOut({ callbackUrl: '/login' })}
                         >
-                          <div className="h-7 w-7 rounded-md bg-red-50 flex items-center justify-center group-hover/item:bg-red-100 transition-colors">
+                          <div className="h-7 w-7 rounded-md bg-destructive/10 flex items-center justify-center group-hover/item:bg-destructive/20 transition-colors">
                             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                             </svg>
