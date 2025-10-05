@@ -17,17 +17,17 @@ export default function InfoTab({ person, t, locale }: InfoTabProps) {
     <div className="space-y-8">
       {/* Contact & Identity */}
       <Card className="border-0 shadow-lg bg-white">
-        <CardHeader className="bg-primary text-white border-b-0 rounded-t-lg">
+        <CardHeader className="bg-gray-50 text-gray-900 border-b border-gray-200 rounded-t-lg">
           <CardTitle className="flex items-center">
-            <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl me-4">
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <div className="p-3 bg-gray-100 rounded-xl me-4">
+              <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                 <circle cx="12" cy="8" r="4" />
                 <path d="M4 20c0-4 4-7 8-7s8 3 8 7" />
               </svg>
             </div>
             <div>
               <span className={`${locale === 'ar' ? 'text-lg font-semibold' : 'text-xl font-bold'}`}>{t.child.basic_information}</span>
-              <p className={`text-aegold-100 ${locale === 'ar' ? 'text-xs' : 'text-sm'} font-normal mt-1`}>Personal identification and contact details</p>
+              <p className={`text-gray-600 ${locale === 'ar' ? 'text-xs' : 'text-sm'} font-normal mt-1`}>Personal identification and contact details</p>
             </div>
           </CardTitle>
         </CardHeader>
@@ -104,16 +104,16 @@ export default function InfoTab({ person, t, locale }: InfoTabProps) {
 
       {/* Demographics & Names */}
       <Card className="border-0 shadow-lg bg-white">
-        <CardHeader className="bg-gradient-to-r from-green-600 to-emerald-600 text-white border-b-0 rounded-t-lg">
+        <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 text-gray-900 border-b border-gray-200 rounded-t-lg">
           <CardTitle className="flex items-center">
-            <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl me-4">
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <div className="p-3 bg-slate-100 rounded-xl me-4">
+              <svg className="w-6 h-6 text-slate-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
             </div>
             <div>
               <span className={`${locale === 'ar' ? 'text-lg font-semibold' : 'text-xl font-bold'}`}>{t.child.demographics_and_names}</span>
-              <p className={`text-green-100 ${locale === 'ar' ? 'text-xs' : 'text-sm'} font-normal mt-1`}>Personal demographics and name variations</p>
+              <p className={`text-gray-600 ${locale === 'ar' ? 'text-xs' : 'text-sm'} font-normal mt-1`}>Personal demographics and name variations</p>
             </div>
           </CardTitle>
         </CardHeader>
@@ -167,17 +167,17 @@ export default function InfoTab({ person, t, locale }: InfoTabProps) {
 
       {/* Address */}
       <Card className="border-0 shadow-lg bg-white">
-        <CardHeader className="bg-gradient-to-r from-aegreen-600 to-aegreen-700 text-white border-b-0 rounded-t-lg">
+        <CardHeader className="bg-gradient-to-r from-stone-50 to-stone-100 text-gray-900 border-b border-gray-200 rounded-t-lg">
           <CardTitle className="flex items-center">
-            <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl me-4">
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <div className="p-3 bg-stone-100 rounded-xl me-4">
+              <svg className="w-6 h-6 text-stone-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
             </div>
             <div>
               <span className={`${locale === 'ar' ? 'text-lg font-semibold' : 'text-xl font-bold'}`}>{t.child.primary_address}</span>
-              <p className={`text-purple-100 ${locale === 'ar' ? 'text-xs' : 'text-sm'} font-normal mt-1`}>Current residential address information</p>
+              <p className={`text-gray-600 ${locale === 'ar' ? 'text-xs' : 'text-sm'} font-normal mt-1`}>Current residential address information</p>
             </div>
           </CardTitle>
         </CardHeader>

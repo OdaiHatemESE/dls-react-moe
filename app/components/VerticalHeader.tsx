@@ -7,7 +7,7 @@ import clsx from 'clsx';
 import { 
   DashboardIcon, 
   MessagesIcon, 
-  AnnouncementsIcon, 
+  AnnouncementsIcon,
   CalendarIcon, 
   ProfileIcon,
   ChevronDownIcon,
@@ -210,8 +210,8 @@ export default function VerticalHeader() {
               <div className="mt-6 pt-6 border-t border-gray-200/50">
                 <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-4 border border-white/30">
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-primary flex items-center justify-center">
-                      <ProfileIcon className="w-7 h-7 text-white" />
+                    <div className="w-12 h-12 rounded-2xl bg-gray-100 flex items-center justify-center">
+                      <ProfileIcon className="w-7 h-7 text-gray-600" />
                     </div>
                     <div className="flex-1">
                       <p className={`text-gray-900 ${locale === 'ar' ? 'text-sm font-bold tracking-wide' : 'text-sm font-bold'}`}>
@@ -226,10 +226,10 @@ export default function VerticalHeader() {
                   <div className="mt-4 flex flex-col gap-2">
                     <Link
                       href="/profile"
-                      className={`flex items-center gap-3 px-4 py-3 text-gray-700 hover:text-primary-600 hover:bg-blue-50 ${locale === 'ar' ? 'text-xs font-semibold tracking-wide' : 'text-xs font-medium'} rounded-xl transition-all duration-200 group/item`}
+                      className={`flex items-center gap-3 px-4 py-3 text-gray-700 hover:text-primary hover:bg-primary/5 ${locale === 'ar' ? 'text-xs font-semibold tracking-wide' : 'text-xs font-medium'} rounded-xl transition-all duration-200 group/item`}
                       onClick={() => setIsMenuOpen(false)}
                     >
-                      <div className="p-1 rounded-lg bg-gray-100 group-hover/item:bg-blue-100 transition-colors">
+                      <div className="p-1 rounded-lg bg-gray-100 group-hover/item:bg-primary/10 transition-colors">
                         <ProfileIcon className="w-4 h-4" />
                       </div>
                       {t.nav.profile}
@@ -241,11 +241,11 @@ export default function VerticalHeader() {
                         {locale === 'ar' ? 'الإعدادات' : 'Settings'}
                       </div>
                       <button
-                        className={`flex items-center gap-3 px-4 py-3 text-gray-700 hover:text-primary-600 hover:bg-blue-50 ${locale === 'ar' ? 'text-xs font-semibold tracking-wide' : 'text-xs font-medium'} rounded-xl transition-all duration-200 group/item w-full`}
+                        className={`flex items-center gap-3 px-4 py-3 text-gray-700 hover:text-primary hover:bg-primary/5 ${locale === 'ar' ? 'text-xs font-semibold tracking-wide' : 'text-xs font-medium'} rounded-xl transition-all duration-200 group/item w-full`}
                         onClick={() => setIsThemeMenuOpen(!isThemeMenuOpen)}
                         data-theme-menu
                       >
-                        <div className="p-1 rounded-lg bg-gray-100 group-hover/item:bg-blue-100 transition-colors">
+                        <div className="p-1 rounded-lg bg-gray-100 group-hover/item:bg-primary/10 transition-colors">
                           <svg className="w-4 h-4 transition-transform group-hover/item:rotate-180 duration-300" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
                           </svg>
@@ -526,9 +526,9 @@ export default function VerticalHeader() {
                       <div className="p-3">
                         <Link
                           href="/profile"
-                          className={`flex items-center gap-3 px-4 py-3 text-gray-700 hover:text-primary-600 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 rounded-xl transition-all duration-200 hover:scale-[1.02] hover:shadow-sm border border-transparent hover:border-blue-100 group/item ${locale === 'ar' ? 'text-xs font-semibold tracking-wide' : 'text-xs font-medium'}`}
+                          className={`flex items-center gap-3 px-4 py-3 text-gray-700 hover:text-primary hover:bg-primary/5 rounded-xl transition-all duration-200 hover:scale-[1.02] hover:shadow-sm border border-transparent hover:border-primary/20 group/item ${locale === 'ar' ? 'text-xs font-semibold tracking-wide' : 'text-xs font-medium'}`}
                         >
-                          <div className="p-1.5 rounded-lg bg-gray-100 group-hover/item:bg-blue-100 transition-colors">
+                          <div className="p-1.5 rounded-lg bg-gray-100 group-hover/item:bg-primary/10 transition-colors">
                             <ProfileIcon className="h-4 w-4" />
                           </div>
                           {t.nav.profile}

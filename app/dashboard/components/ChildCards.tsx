@@ -56,12 +56,12 @@ const formatDate = (dateString: string, locale: string): string => {
   }
 };
 
-// Enhanced helper components for clean UI
+// Enhanced helper components for clean UI with eye-friendly colors
 const InfoItem = ({ label, value, icon, locale }: { label: string; value: string; icon?: React.ReactNode; locale?: string }) => (
-  <div className={`flex items-center justify-between py-3 px-4 bg-white/60 backdrop-blur-sm rounded-xl border border-white/50 hover:bg-white/80 transition-all duration-200 ${locale === 'ar' ? 'flex-row-reverse' : ''}`}>
+  <div className={`flex items-center justify-between py-3 px-4 bg-gray-50/80 backdrop-blur-sm rounded-xl border border-gray-100 hover:bg-white hover:shadow-sm transition-all duration-200 ${locale === 'ar' ? 'flex-row-reverse' : ''}`}>
     <div className={`flex items-center gap-2 ${locale === 'ar' ? 'flex-row-reverse' : ''}`}>
       {icon && (
-        <div className="text-primary-600">
+        <div className="text-gray-600">
           {icon}
         </div>
       )}
@@ -123,10 +123,10 @@ export default function ChildCards() {
           <table className={`w-full ${locale === 'ar' ? 'direction-rtl' : 'direction-ltr'}`}>
             {/* Enhanced Table Header */}
             <thead>
-              <tr className="border-b border-gray-200 bg-gradient-to-r from-aegold-50/50 to-aegreen-50/50">
+              <tr className="border-b border-gray-200 bg-gray-50/50">
                 <th className={`px-6 py-5 text-left ${locale === 'ar' ? 'text-right text-sm font-semibold' : 'text-sm font-bold'} text-gray-900 uppercase tracking-wider`}>
                   <div className="flex items-center gap-2">
-                    <svg className="w-4 h-4 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
                     {locale === 'ar' ? 'الطالب' : 'Student'}
@@ -236,15 +236,15 @@ export default function ChildCards() {
                     <td className="px-6 py-6">
                       <div className={`flex items-center gap-4 ${locale === 'ar' ? 'flex-row' : ''}`}>
                         <div className="relative group/avatar">
-                          <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center shadow-sm group-hover/avatar:shadow-md transition-all duration-300 group-hover:scale-105">
-                            <span className="text-lg font-bold text-white">
+                          <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center shadow-sm group-hover/avatar:shadow-md transition-all duration-300 group-hover:scale-105">
+                            <span className="text-lg font-bold text-gray-600">
                               {displayName.charAt(0).toUpperCase()}
                             </span>
                           </div>
                           <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
                         </div>
                         <div>
-                          <div className={`${locale === 'ar' ? 'text-sm font-semibold' : 'text-base font-bold'} text-gray-900 group-hover:text-primary-600 transition-colors`}>
+                          <div className={`${locale === 'ar' ? 'text-sm font-semibold' : 'text-base font-bold'} text-gray-900 group-hover:text-primary transition-colors`}>
                             {displayName}
                           </div>
                           <div className={`${locale === 'ar' ? 'text-xs' : 'text-sm'} text-gray-500 mt-1`}>
@@ -313,7 +313,7 @@ export default function ChildCards() {
                     <td className="px-6 py-6">
                       <Link
                         href={`/child/${child.sourcedId}`}
-                        className={`inline-flex items-center gap-2 px-4 py-2 ${locale === 'ar' ? 'text-xs font-medium' : 'text-sm font-semibold'} text-white bg-primary hover:bg-primary/90 rounded-lg shadow-sm hover:shadow-md transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:ring-offset-1 hover:scale-105 group/button ${locale === 'ar' ? 'flex-row-reverse' : ''}`}
+                        className={`inline-flex items-center gap-2 px-4 py-2 ${locale === 'ar' ? 'text-xs font-medium' : 'text-sm font-semibold'} text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 hover:border-primary/30 rounded-lg shadow-sm hover:shadow-md transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:ring-offset-1 hover:scale-105 group/button ${locale === 'ar' ? 'flex-row-reverse' : ''}`}
                         aria-label={`${t.student?.viewDetails || (locale === 'ar' ? 'عرض التفاصيل' : 'View Details')} ${displayName}`}
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -352,7 +352,7 @@ export default function ChildCards() {
                 <p className={`${locale === 'ar' ? 'text-base' : 'text-lg'} text-gray-600 mb-8`}>
                   {t.dashboard?.noLinkedStudents || (locale === 'ar' ? 'لم يتم العثور على طلاب مرتبطين بحسابك.' : 'No linked students found for your account.')}
                 </p>
-                <div className={`inline-flex items-center gap-2 px-6 py-3 ${locale === 'ar' ? 'text-sm font-normal' : 'text-sm font-medium'} text-primary-600 bg-white/80 backdrop-blur-sm rounded-xl shadow-sm hover:shadow-md transition-all duration-200 border border-primary/20`}>
+                <div className={`inline-flex items-center gap-2 px-6 py-3 ${locale === 'ar' ? 'text-sm font-normal' : 'text-sm font-medium'} text-gray-600 bg-gray-50/80 backdrop-blur-sm rounded-xl shadow-sm hover:shadow-md transition-all duration-200 border border-gray-200`}>
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>

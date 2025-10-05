@@ -26,31 +26,31 @@
   h5 { @apply text-sm font-semibold leading-tight; }
   h6 { @apply text-xs font-semibold leading-tight; }
   :root {
-    /* UAE Government Design System - Default Light Theme */
+    /* UAE Government Design System - Eye-friendly Light Theme */
     --background: 0 0% 100%;
     --foreground: 240 10% 16%;
-    --card: 0 0% 100%;
+    --card: 0 0% 98%;
     --card-foreground: 240 10% 16%;
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 16%;
-    --primary: 38 51% 47%; /* UAE Gold-600 */
+    --primary: 38 51% 47%; /* UAE Gold-600 - used only for interactive elements */
     --primary-foreground: 0 0% 98%;
-    --secondary: 134 24% 61%; /* UAE Green-400 */
-    --secondary-foreground: 137 46% 15%;
+    --secondary: 240 4% 96%; /* Neutral secondary instead of green */
+    --secondary-foreground: 240 10% 16%;
     --muted: 240 5% 96%;
     --muted-foreground: 240 4% 46%;
-    --accent: 36 65% 76%; /* UAE Gold-300 */
-    --accent-foreground: 38 51% 47%;
+    --accent: 240 4% 94%; /* Neutral accent instead of gold */
+    --accent-foreground: 240 10% 16%;
     --destructive: 0 72% 51%; /* UAE Red-500 */
     --destructive-foreground: 0 0% 98%;
     --border: 240 6% 90%;
-    --input: 240 6% 90%;
+    --input: 240 6% 95%;
     --ring: 38 51% 47%;
     --chart-1: 38 51% 47%; /* UAE Gold */
     --chart-2: 134 24% 61%; /* UAE Green */
     --chart-3: 0 72% 51%; /* UAE Red */
     --chart-4: 240 4% 46%; /* Neutral */
-    --chart-5: 36 65% 76%; /* UAE Gold Light */
+    --chart-5: 240 4% 70%; /* Neutral instead of gold */
     --radius: 0.5rem;
   }
 
@@ -167,12 +167,30 @@
 }
 
 @layer components {
+  /* Eye-friendly interactive states - use primary colors only for interactions */
+  .interactive-primary {
+    @apply hover:bg-primary/10 hover:text-primary hover:border-primary/20 transition-all duration-200;
+  }
+  
+  .interactive-card {
+    @apply hover:shadow-md hover:bg-white/80 transition-all duration-200 hover:border-primary/10;
+  }
+  
+  .selected-state {
+    @apply bg-primary/5 border-l-4 border-primary text-primary;
+  }
+  
+  .neutral-bg {
+    @apply bg-white/60 backdrop-blur-sm border border-white/30;
+  }
+  
   /* Line clamp utility for text truncation */
   .line-clamp-1 {
     overflow: hidden;
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 1;
+    line-clamp: 1;
   }
 
   .line-clamp-2 {
@@ -180,6 +198,7 @@
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
   }
 
   .line-clamp-3 {
@@ -187,6 +206,7 @@
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 3;
+    line-clamp: 3;
   }
 
   /* Custom scrollbar */

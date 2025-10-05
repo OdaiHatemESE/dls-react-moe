@@ -91,23 +91,23 @@ export default function DashboardPage() {
             }}
           />
         </div>
-        {/* Minimized Enhanced Header Section */}
+        {/* Eye-friendly Header Section */}
         <div className="mb-8">
-          <Card className="border-0 shadow-lg bg-primary overflow-hidden">
+          <Card className="border-0 shadow-lg bg-gradient-to-r from-gray-50 to-gray-100 overflow-hidden">
             <CardContent className="relative p-4 sm:p-6">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div className="flex-1">
-                  <h1 className={`${locale === 'ar' ? 'text-2xl sm:text-3xl font-semibold' : 'text-3xl sm:text-4xl font-bold'} text-white mb-2 drop-shadow-md`}>
+                  <h1 className={`${locale === 'ar' ? 'text-2xl sm:text-3xl font-semibold' : 'text-3xl sm:text-4xl font-bold'} text-gray-900 mb-2`}>
                     {locale === 'ar' ? 'مرحباً' : 'Welcome'}{session?.user?.name ? `, ${session.user.name}` : ''}
                   </h1>
-                  <p className={`${locale === 'ar' ? 'text-sm font-normal' : 'text-base font-medium'} text-aegold-100 max-w-2xl`}>
+                  <p className={`${locale === 'ar' ? 'text-sm font-normal' : 'text-base font-medium'} text-gray-600 max-w-2xl`}>
                     {t.dashboard.welcome || (locale === 'ar' ? 'نظرة عامة على أطفالك ونشاطاتهم المدرسية' : 'Overview of your children and their school activities')}
                   </p>
                 </div>
                 
-                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20 min-w-[120px]">
+                <div className="bg-white/90 backdrop-blur-sm rounded-xl p-4 border border-gray-200 min-w-[120px]">
                   <div className="text-center">
-                    <div className={`text-white/80 ${locale === 'ar' ? 'text-xs font-normal' : 'text-xs font-medium'} mb-1`}>
+                    <div className={`text-gray-600 ${locale === 'ar' ? 'text-xs font-normal' : 'text-xs font-medium'} mb-1`}>
                       {new Date().toLocaleDateString(locale === 'ar' ? 'ar-AE' : 'en-US', { weekday: 'short' })}
                     </div>
                     <div className={`text-white ${locale === 'ar' ? 'text-sm font-semibold' : 'text-base font-bold'}`}>
