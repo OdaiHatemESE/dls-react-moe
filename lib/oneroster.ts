@@ -18,25 +18,23 @@ type AuthResponse =
   | { bearerToken: string; expiresIn?: number }
   | Record<string, unknown>;
 
-const AUTH_URL = process.env.ONEROSTER_AUTH_URL!;
-const BASE_URL = process.env.ONEROSTER_BASE!;
-
-if (!AUTH_URL || !BASE_URL) {
-  throw new Error("Missing ONEROSTER_AUTH_URL or ONEROSTER_BASE in .env");
-}
+const AUTH_URL = process.env.ONEROSTER_AUTH_URL || "";
+const BASE_URL = process.env.ONEROSTER_BASE || "";
 
 function getCreds(kind: TokenKind) {
   if (kind === "read") {
     const u = process.env.ONEROSTER_READ_USERNAME!;
     const p = process.env.ONEROSTER_READ_PASSWORD!;
     const s = process.env.ONEROSTER_READ_SITE_UID!;
-    if (!u || !p || !s) throw new Error("Missing READ creds in .env");
+    if (!u || !p || !s)
+      throw new Error("OneRoster READ credentials are not configured. Please set ONEROSTER_READ_USERNAME, ONEROSTER_READ_PASSWORD, and ONEROSTER_READ_SITE_UID.");
     return { username: u, password: p, siteUid: s };
   } else {
     const u = process.env.ONEROSTER_WRITE_USERNAME!;
     const p = process.env.ONEROSTER_WRITE_PASSWORD!;
     const s = process.env.ONEROSTER_WRITE_SITE_UID!;
-    if (!u || !p || !s) throw new Error("Missing WRITE creds in .env");
+    if (!u || !p || !s)
+      throw new Error("OneRoster WRITE credentials are not configured. Please set ONEROSTER_WRITE_USERNAME, ONEROSTER_WRITE_PASSWORD, and ONEROSTER_WRITE_SITE_UID.");
     return { username: u, password: p, siteUid: s };
   }
 }
@@ -194,6 +192,9 @@ function headersToObject(h?: HeadersInit): Record<string, string> {
  * @param kind "read" (default) or "write"
  */
 export async function orFetch<T>(path: string, kind: TokenKind = "read", init?: RequestInit): Promise<T> {
+  if (!AUTH_URL || !BASE_URL) {
+    throw new Error("OneRoster endpoints are not configured. Please set ONEROSTER_AUTH_URL and ONEROSTER_BASE.");
+  }
   const makeReq = async (retry: boolean): Promise<T> => {
     const token = await getToken(kind);
     const url = joinBaseAndPath(BASE_URL, path);

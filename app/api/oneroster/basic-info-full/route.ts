@@ -45,7 +45,9 @@ async function getFullPersonById(
     }
   }
 
-  const data = await orFetch<Person>(`/v1p1/persons?filter=${filterField}='${value}'`, "read"); 
+  const literal = String(value).replace(/'/g, "''");
+  const filter = `${filterField}='${literal}'`;
+  const data = await orFetch<Person>(`/v1p1/persons?filter=${encodeURIComponent(filter)}` , "read"); 
   const arr = Array.isArray(data) ? data : [data]; 
   const fetchedAt = new Date().toISOString();
   await cacheSetJSON<Wrapped<unknown[]>>(key, { data: arr as unknown[], fetchedAt }, { ttlSeconds: TTL.PERSON });          // [NEW-Cache]
@@ -253,7 +255,8 @@ export async function GET(req: Request) {
       }
 
       // [NEW-Cache] cache full children payload batch (with nocache + wrapper)
-      const childrenKey = makeKey(["or", "children", person.sourcedId, `n=${studentIds.length}`]); // [NEW-Cache]
+  // Include sorted studentIds to avoid collisions between same-length sets
+  const childrenKey = makeKey(["or", "children", person.sourcedId, "ids", studentIds.slice().sort().join(",")]); // [NEW-Cache]
       let childrenFetchedAt: string | null = null;
       let childrenSource: "cache" | "upstream" = "cache";
       let childrenFull: unknown[] = [];
@@ -270,11 +273,18 @@ export async function GET(req: Request) {
         }
       }
       if (!childrenFull.length) {
-        const full = await getStudentsFull(studentIds);
-        childrenFull = full as unknown[];
-        childrenFetchedAt = new Date().toISOString();
-        childrenSource = "upstream";
-        await cacheSetJSON<Wrapped<unknown[]>>(childrenKey, { data: childrenFull, fetchedAt: childrenFetchedAt }, { ttlSeconds: TTL.CHILDREN });
+        try {
+          const full = await getStudentsFull(studentIds);
+          childrenFull = full as unknown[];
+          childrenFetchedAt = new Date().toISOString();
+          childrenSource = "upstream";
+          await cacheSetJSON<Wrapped<unknown[]>>(childrenKey, { data: childrenFull, fetchedAt: childrenFetchedAt }, { ttlSeconds: TTL.CHILDREN });
+        } catch (e) {
+          // On failure, do not hard-fail the entire endpoint. Return empty children with a cache hint.
+          childrenFull = [];
+          childrenFetchedAt = null;
+          childrenSource = "upstream";
+        }
       }
 
       return NextResponse.json({ 

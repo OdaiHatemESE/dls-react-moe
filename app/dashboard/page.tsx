@@ -79,20 +79,20 @@ export default function DashboardPage() {
       {/* Mobile App-like Header Section */}
       <div className="bg-card/95 backdrop-blur-md border-b border-border shadow-sm sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between py-3 md:py-4 gap-2 min-w-0 overflow-hidden">
+          <div className="flex items-center justify-between py-2 md:py-3 gap-2 min-w-0 overflow-hidden">
             {/* Dashboard Header - Mobile Optimized */}
             <div className="flex items-center gap-2 md:gap-3 min-w-0 flex-1 overflow-hidden">
-              <div className="p-1.5 md:p-2 bg-gradient-to-br from-primary to-primary/80 rounded-xl shadow-sm flex-shrink-0">
-                <svg className="w-5 h-5 md:w-6 md:h-6 text-primary-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="p-1 md:p-1.5 bg-gradient-to-br from-primary to-primary/80 rounded-lg shadow-sm flex-shrink-0">
+                <svg className="w-4 h-4 md:w-5 md:h-5 text-primary-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5v4M16 5v4" />
                 </svg>
               </div>
               <div className="min-w-0 overflow-hidden">
-                <h1 className="text-lg md:text-2xl font-bold text-foreground truncate">
+                <h1 className="text-base md:text-xl font-bold text-foreground truncate">
                   {locale === 'ar' ? 'لوحة التحكم' : 'Dashboard'}
                 </h1>
-                <p className="text-muted-foreground text-xs md:text-sm hidden md:block truncate">
+                <p className="text-muted-foreground text-xs md:text-xs hidden md:block truncate">
                   {locale === 'ar' ? 'نظرة عامة على أنشطة أطفالك' : 'Overview of your children\'s activities'}
                 </p>
               </div>
@@ -135,31 +135,31 @@ export default function DashboardPage() {
         {/* Professional Welcome Section */}
         <div className="mb-8">
           <Card className="border-0 shadow-xl bg-card overflow-hidden">
-            {/* Background Pattern */}
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-secondary/5"></div>
+             
+            {/* <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-secondary/5"></div>
             <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-primary/10 to-transparent rounded-full -translate-y-48 translate-x-48"></div>
             <div className="absolute bottom-0 left-0 w-64 h-64 bg-gradient-to-tr from-secondary/8 to-transparent rounded-full translate-y-32 -translate-x-32"></div>
-            
-            <CardContent className="relative p-8">
-              <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+             */}
+            <CardContent className="relative p-6">
+              <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
                 <div className="flex-1">
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary/80 rounded-2xl flex items-center justify-center shadow-lg">
-                      <svg className="w-8 h-8 text-primary-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary/80 rounded-xl flex items-center justify-center shadow-lg">
+                      <svg className="w-6 h-6 text-primary-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                       </svg>
                     </div>
                     <div>
                       <h1 className={clsx(
-                        "text-4xl font-bold text-foreground mb-1",
-                        locale === 'ar' && "text-3xl leading-relaxed"
+                        "text-2xl font-bold text-foreground mb-1",
+                        locale === 'ar' && "text-xl leading-relaxed"
                       )}>
                         {locale === 'ar' ? 'مرحباً' : 'Welcome'}
                         {session?.user?.name && (
                           <span className="text-primary">, {session.user.name}</span>
                         )}
                       </h1>
-                      <p className="text-muted-foreground text-lg">
+                      <p className="text-muted-foreground text-sm">
                         {t.dashboard.welcome || (locale === 'ar' ? 'نظرة عامة على أطفالك ونشاطاتهم المدرسية' : 'Overview of your children and their school activities')}
                       </p>
                     </div>
@@ -212,40 +212,40 @@ export default function DashboardPage() {
         <Card className="border-0 bg-card shadow-lg overflow-hidden">
           {/* Professional Header */}
           <div className="border-b border-border bg-gradient-to-r from-primary/5 to-secondary/5">
-            <CardContent className="p-6">
+            <CardContent className="p-4">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-gradient-to-br from-primary to-primary/80 rounded-xl shadow-sm">
-                    <svg className="w-6 h-6 text-primary-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-gradient-to-br from-primary to-primary/80 rounded-lg shadow-sm">
+                    <svg className="w-5 h-5 text-primary-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                     </svg>
                   </div>
                   <div>
                     <h2 className={clsx(
-                      "text-2xl font-bold text-foreground",
-                      locale === 'ar' && "text-xl leading-relaxed"
+                      "text-lg font-bold text-foreground",
+                      locale === 'ar' && "text-base leading-relaxed"
                     )}>
                       {locale === 'ar' ? 'أطفالي' : 'My Children'}
                     </h2>
-                    <p className="text-muted-foreground font-medium">
+                    <p className="text-muted-foreground font-medium text-xs">
                       {locale === 'ar' ? 'إدارة ومتابعة بيانات الأطفال' : 'Manage and track your children\'s information'}
                     </p>
                   </div>
                 </div>
                 
                 <div className="flex items-center gap-3">
-                  <Badge className="bg-chart-2/10 text-chart-2 border-chart-2/20 hover:bg-chart-2/20 px-3 py-1.5">
-                    <svg className="w-3 h-3 me-1.5" fill="currentColor" viewBox="0 0 20 20">
+                  <Badge className="bg-chart-2/10 text-chart-2 border-chart-2/20 hover:bg-chart-2/20 px-2 py-1">
+                    <svg className="w-2.5 h-2.5 me-1" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                     </svg>
-                    <span className="font-medium">{locale === 'ar' ? 'نشط' : 'Active'}</span>
+                    <span className="font-medium text-xs">{locale === 'ar' ? 'نشط' : 'Active'}</span>
                   </Badge>
                   
-                  <div className="hidden sm:flex items-center gap-2 bg-card/80 backdrop-blur-sm rounded-lg px-3 py-2 border border-border">
-                    <svg className="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="hidden sm:flex items-center gap-2 bg-card/80 backdrop-blur-sm rounded-lg px-2 py-1.5 border border-border">
+                    <svg className="w-3 h-3 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    <span className="text-sm font-medium text-foreground">
+                    <span className="text-xs font-medium text-foreground">
                       {locale === 'ar' ? 'محدث' : 'Updated'}
                     </span>
                   </div>
@@ -255,7 +255,7 @@ export default function DashboardPage() {
           </div>
           
           {/* Enhanced Content */}
-          <CardContent className="p-8">
+          <CardContent className="p-4">
             <ChildCards />
           </CardContent>
         </Card>
