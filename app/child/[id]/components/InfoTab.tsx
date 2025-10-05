@@ -16,8 +16,8 @@ export default function InfoTab({ person, t, locale }: InfoTabProps) {
   return (
     <div className="space-y-8">
       {/* Contact & Identity */}
-      <Card className="border-0 shadow-lg bg-white">
-        <CardHeader className="bg-gray-50 text-gray-900 border-b border-gray-200 rounded-t-lg">
+      <Card className="border-0  bg-white">
+        <CardHeader className="bg-gradient-to-r from-primary/5 via-background to-primary/5 text-gray-900 border-b border-gray-200 rounded-t-lg">
           <CardTitle className="flex items-center">
             <div className="p-3 bg-gray-100 rounded-xl me-4">
               <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -103,8 +103,8 @@ export default function InfoTab({ person, t, locale }: InfoTabProps) {
       </Card>
 
       {/* Demographics & Names */}
-      <Card className="border-0 shadow-lg bg-white">
-        <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 text-gray-900 border-b border-gray-200 rounded-t-lg">
+      <Card className="border-0  bg-white">
+        <CardHeader className="bg-gradient-to-r from-primary/5 via-background to-primary/5 text-gray-900 border-b border-gray-200 rounded-t-lg">
           <CardTitle className="flex items-center">
             <div className="p-3 bg-slate-100 rounded-xl me-4">
               <svg className="w-6 h-6 text-slate-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -166,8 +166,8 @@ export default function InfoTab({ person, t, locale }: InfoTabProps) {
       </Card>
 
       {/* Address */}
-      <Card className="border-0 shadow-lg bg-white">
-        <CardHeader className="bg-gradient-to-r from-stone-50 to-stone-100 text-gray-900 border-b border-gray-200 rounded-t-lg">
+      <Card className="border-0  bg-white">
+        <CardHeader className="bg-gradient-to-r from-primary/5 via-background to-primary/5 text-gray-900 border-b border-gray-200 rounded-t-lg">
           <CardTitle className="flex items-center">
             <div className="p-3 bg-stone-100 rounded-xl me-4">
               <svg className="w-6 h-6 text-stone-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">

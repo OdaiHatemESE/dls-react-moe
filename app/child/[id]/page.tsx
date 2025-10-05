@@ -92,8 +92,7 @@ export default function ChildDetailPage() {
           className="mb-4"
           labels={{
             lastUpdated: locale === 'ar' ? 'آخر تحديث:' : 'Last updated:',
-            outdatedMsg: locale === 'ar' ? 'قد تكون البيانات غير محدثة. انقر للتحديث.' : 'Your data might be outdated. Click refresh to update.',
-            confirm: locale === 'ar' ? 'جلب بيانات حديثة؟' : 'Fetch fresh data?',
+             confirm: locale === 'ar' ? 'جلب بيانات حديثة؟' : 'Fetch fresh data?',
             refresh: locale === 'ar' ? 'تحديث' : 'Refresh',
             refreshing: locale === 'ar' ? 'جاري التحديث…' : 'Refreshing…',
             unknown: locale === 'ar' ? 'غير معروف' : 'unknown',
@@ -123,101 +122,76 @@ export default function ChildDetailPage() {
           </div>
         </nav>
 
-        {/* Parent Actions Section - Full Width with Intro Message */}
-        <div className="mb-6">
-          <div className="bg-card rounded-xl shadow-sm border border-border p-6">
-            <div className={clsx("flex items-center justify-between", 
-              locale === 'ar' && 'direction-rtl'
-            )}>
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-primary/10 rounded-full">
-                  <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        {/* Compact Parent Actions */}
+        <div className="mb-4">
+          <div className="bg-card rounded-lg shadow-sm border border-border p-4">
+            <div className={clsx("flex items-center justify-between", locale === 'ar' && 'direction-rtl')}>
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-primary/10 rounded-lg">
+                  <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
                 </div>
-                <div className={locale === 'ar' ? 'text-right' : 'text-left'}>
-                  <h3 className={`${locale === 'ar' ? 'font-medium text-base' : 'font-semibold text-lg'} text-card-foreground mb-1`}>
+                <div>
+                  <h3 className={`${locale === 'ar' ? 'text-sm font-medium' : 'text-base font-semibold'} text-card-foreground`}>
                     {locale === 'ar' ? 'إجراءات ولي الأمر' : 'Parent Actions'}
                   </h3>
-                  <p className={`${locale === 'ar' ? 'text-xs' : 'text-sm'} text-muted-foreground`}>
-                    {locale === 'ar' 
-                      ? 'انقر هنا للوصول إلى خيارات الطباعة والتوقيع والمزيد' 
-                      : 'Click here to access printing, signing options and more'
-                    }
+                  <p className="text-xs text-muted-foreground">
+                    {locale === 'ar' ? 'طباعة وتوقيع الوثائق' : 'Print & sign documents'}
                   </p>
                 </div>
               </div>
-              <div className="flex-shrink-0">
-                <SignConductSection locale={locale} studentId={person.sourcedId} />
-              </div>
+              <SignConductSection locale={locale} studentId={person.sourcedId} />
             </div>
           </div>
         </div>
 
-        {/* Eye-friendly Header Card */}
-        <Card className="mb-8 border-0 shadow-xl bg-card overflow-hidden">
-          <div className="relative bg-gradient-to-r from-gray-50 to-gray-100 px-8 py-16">
-            {/* Subtle Background Pattern */}
-            <div className="absolute inset-0 bg-gray-100/10">
-              <div className="absolute inset-0" style={{
-                backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23374151' fill-opacity='0.03' fill-rule='nonzero'%3E%3Ccircle cx='7' cy='7' r='7'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-              }} />
-            </div>
-            
-            <div className="relative flex flex-col sm:flex-row items-center sm:items-start gap-8">
-              {/* Eye-friendly Avatar */}
-              <div className="relative group">
-                <div className="w-32 h-32 bg-white backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-2xl border border-gray-200">
-                  <span className="text-5xl font-bold text-gray-700">
+        {/* Minimized Student Header */}
+        <Card className="mb-6 border-0 shadow-sm bg-card overflow-hidden">
+          <div className="relative bg-gradient-to-r from-primary/5 via-background to-primary/5 px-6 py-6">
+            <div className="flex items-center gap-4">
+              {/* Compact Avatar */}
+              <div className="relative flex-shrink-0">
+                <div className="w-16 h-16 bg-primary/10 rounded-xl flex items-center justify-center border border-primary/20">
+                  <span className="text-2xl font-bold text-primary">
                     {displayName.charAt(0).toUpperCase()}
                   </span>
                 </div>
-                <div className="absolute -inset-1 bg-gray-200 rounded-2xl blur opacity-20 group-hover:opacity-30 transition-opacity"></div>
               </div>
               
-              <div className={clsx("text-center w-full", 
-                locale === 'ar' ? 'sm:text-right' : 'sm:text-left'
-              )}>
-                <div className={clsx("flex flex-col w-full", locale === 'ar' && 'direction-rtl')}>
-                  <div className="flex-1">
-                    {/* Enhanced Name and Title */}
-                    <h1 className={`${locale === 'ar' ? 'text-3xl font-semibold' : 'text-4xl font-bold'} text-gray-900 mb-3`}>{displayName}</h1>
-                    <p className={`text-gray-600 ${locale === 'ar' ? 'text-base font-normal' : 'text-lg font-medium'} mb-6`}>{t.child.child_profile}</p>
-                    
-                    {/* Enhanced Badges */}
-                    <div className={clsx("flex flex-wrap items-center gap-3 justify-center sm:justify-start",
-                       
-                    )}>
-                      <Badge variant="outline" className="bg-white backdrop-blur-sm border-gray-200 text-gray-700 shadow-sm hover:bg-gray-50 transition-all">
-                        <svg className="w-4 h-4 me-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V4a2 2 0 114 0v2m-4 0a2 2 0 104 0m-4 0V4a2 2 0 014 0v2" />
-                        </svg>
-                        ID: {person.sourcedId}
-                      </Badge>
-                      <Badge variant="outline" className="bg-white backdrop-blur-sm border-gray-200 text-gray-700 shadow-sm hover:bg-gray-50 transition-all">
-                        <svg className="w-4 h-4 me-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                        </svg>
-                        {person.role || (locale === 'ar' ? 'طالب' : 'Student')}
-                      </Badge>
-                      {person.status && (
-                        <Badge 
-                          variant={person.status === 'active' ? 'default' : 'secondary'} 
-                          className={clsx(
-                            "shadow-sm hover:scale-105 transition-all",
-                            person.status === 'active' 
-                              ? "bg-green-100 text-green-800 border-green-200" 
-                              : "bg-muted text-muted-foreground border-muted"
-                          )}
-                        >
-                          <div className={clsx("w-2 h-2 rounded-full me-2", 
-                            person.status === 'active' ? 'bg-green-500' : 'bg-muted-foreground/30'
-                          )}></div>
-                          {person.status}
-                        </Badge>
+              {/* Student Info */}
+              <div className={clsx("flex-1 min-w-0", locale === 'ar' && 'text-right')}>
+                <h1 className={`${locale === 'ar' ? 'text-xl font-semibold' : 'text-2xl font-bold'} text-foreground mb-1 truncate`}>
+                  {displayName}
+                </h1>
+                <p className={`text-muted-foreground ${locale === 'ar' ? 'text-sm' : 'text-sm'} mb-3`}>
+                  {t.child.child_profile}
+                </p>
+                
+                {/* Compact Badges */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant="secondary" className="text-xs px-2 py-1">
+                    ID: {person.sourcedId}
+                  </Badge>
+                  <Badge variant="outline" className="text-xs px-2 py-1">
+                    {person.role || (locale === 'ar' ? 'طالب' : 'Student')}
+                  </Badge>
+                  {person.status && (
+                    <Badge 
+                      variant={person.status === 'active' ? 'default' : 'secondary'} 
+                      className={clsx(
+                        "text-xs px-2 py-1",
+                        person.status === 'active' 
+                          ? "bg-green-100 text-green-800 border-green-200" 
+                          : "bg-muted text-muted-foreground"
                       )}
-                    </div>
-                  </div>
+                    >
+                      <div className={clsx("w-1.5 h-1.5 rounded-full me-1", 
+                        person.status === 'active' ? 'bg-green-500' : 'bg-muted-foreground/50'
+                      )}></div>
+                      {person.status}
+                    </Badge>
+                  )}
                 </div>
               </div>
             </div>
@@ -225,62 +199,55 @@ export default function ChildDetailPage() {
         </Card>
 
 
-        {/* Enhanced Tabs Section */}
+        {/* Streamlined Navigation Tabs */}
         <Tabs defaultValue="info" className={clsx("w-full", locale === 'ar' && 'direction-rtl')}>
-          <div className="bg-card rounded-xl shadow-sm border border-border p-2 mb-8">
-            <TabsList className="grid w-full grid-cols-5 bg-muted rounded-lg p-1">
-              <TabsTrigger 
-                value="info" 
-                className="flex items-center gap-2 data-[state=active]:bg-card data-[state=active]:shadow-sm transition-all duration-200"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-                <span className={`hidden sm:inline ${locale === 'ar' ? 'text-xs' : ''}`}>{locale === 'ar' ? 'المعلومات الأساسية' : 'Basic Info'}</span>
-                <span className={`sm:hidden ${locale === 'ar' ? 'text-xs' : ''}`}>{locale === 'ar' ? 'معلومات' : 'Info'}</span>
-              </TabsTrigger>
-              <TabsTrigger 
-                value="grades"
-                className="flex items-center gap-2 data-[state=active]:bg-card data-[state=active]:shadow-sm transition-all duration-200"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
-                <span className={`hidden sm:inline ${locale === 'ar' ? 'text-xs' : ''}`}>{locale === 'ar' ? 'المراحل الدراسية' : 'Grades'}</span>
-                <span className={`sm:hidden ${locale === 'ar' ? 'text-xs' : ''}`}>{locale === 'ar' ? 'درجات' : 'Grades'}</span>
-              </TabsTrigger>
-              <TabsTrigger 
-                value="attendance"
-                className="flex items-center gap-2 data-[state=active]:bg-card data-[state=active]:shadow-sm transition-all duration-200"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span className={`hidden sm:inline ${locale === 'ar' ? 'text-xs' : ''}`}>{locale === 'ar' ? 'الحضور' : 'Attendance'}</span>
-                <span className={`sm:hidden ${locale === 'ar' ? 'text-xs' : ''}`}>{locale === 'ar' ? 'حضور' : 'Attend'}</span>
-              </TabsTrigger>
-              <TabsTrigger 
-                value="assignments"
-                className="flex items-center gap-2 data-[state=active]:bg-card data-[state=active]:shadow-sm transition-all duration-200"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                <span className={`hidden sm:inline ${locale === 'ar' ? 'text-xs' : ''}`}>{locale === 'ar' ? 'الواجبات' : 'Assignments'}</span>
-                <span className={`sm:hidden ${locale === 'ar' ? 'text-xs' : ''}`}>{locale === 'ar' ? 'واجبات' : 'Tasks'}</span>
-              </TabsTrigger>
-              <TabsTrigger 
-                value="school"
-                className="flex items-center gap-2 data-[state=active]:bg-card data-[state=active]:shadow-sm transition-all duration-200"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                </svg>
-                <span className={`hidden sm:inline ${locale === 'ar' ? 'text-xs' : ''}`}>{locale === 'ar' ? 'معلومات المدرسة' : 'School Info'}</span>
-                <span className={`sm:hidden ${locale === 'ar' ? 'text-xs' : ''}`}>{locale === 'ar' ? 'مدرسة' : 'School'}</span>
-              </TabsTrigger>
-            </TabsList>
-          </div>
+          <TabsList className="grid w-full grid-cols-5 bg-muted/50 rounded-lg p-1 mb-6">
+            <TabsTrigger 
+              value="info" 
+              className="flex items-center gap-1.5 text-sm data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              <span className="hidden sm:inline">{locale === 'ar' ? 'معلومات' : 'Info'}</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="grades"
+              className="flex items-center gap-1.5 text-sm data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+              <span className="hidden sm:inline">{locale === 'ar' ? 'درجات' : 'Grades'}</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="attendance"
+              className="flex items-center gap-1.5 text-sm data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className="hidden sm:inline">{locale === 'ar' ? 'حضور' : 'Attend'}</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="assignments"
+              className="flex items-center gap-1.5 text-sm data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <span className="hidden sm:inline">{locale === 'ar' ? 'واجبات' : 'Tasks'}</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="school"
+              className="flex items-center gap-1.5 text-sm data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              </svg>
+              <span className="hidden sm:inline">{locale === 'ar' ? 'مدرسة' : 'School'}</span>
+            </TabsTrigger>
+          </TabsList>
 
           {/* Tab 1: Info */}
           <TabsContent value="info" className={clsx("animate-in fade-in-50 duration-300", locale === 'ar' && 'direction-rtl')}>
@@ -296,14 +263,14 @@ export default function ChildDetailPage() {
                 </div>
               </div>
             ) : (
-              <Card className="p-12">
+              <Card className="p-6">
                 <div className="text-center">
-                  <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
-                    <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="w-12 h-12 mx-auto mb-3 bg-muted rounded-lg flex items-center justify-center">
+                    <svg className="w-6 h-6 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
                     </svg>
                   </div>
-                  <p className="text-gray-500 text-lg">{locale === 'ar' ? 'هوية الطالب غير متوفرة.' : 'Student ID not available.'}</p>
+                  <p className="text-sm text-muted-foreground">{locale === 'ar' ? 'هوية الطالب غير متوفرة' : 'Student ID not available'}</p>
                 </div>
               </Card>
             )}
@@ -311,18 +278,18 @@ export default function ChildDetailPage() {
 
           {/* Tab 3: Attendance */}
           <TabsContent value="attendance" className="animate-in fade-in-50 duration-300">
-            <Card className="p-12">
+            <Card className="p-8">
               <div className="text-center">
-                <div className="w-20 h-20 mx-auto mb-6 bg-blue-100 rounded-full flex items-center justify-center">
-                  <svg className="w-10 h-10 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-16 h-16 mx-auto mb-4 bg-blue-50 rounded-lg flex items-center justify-center">
+                  <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
-                <h3 className={`${locale === 'ar' ? 'text-lg font-medium' : 'text-xl font-semibold'} text-gray-900 mb-2`}>
+                <h3 className="text-lg font-semibold text-foreground mb-2">
                   {locale === 'ar' ? 'قريبًا' : 'Coming Soon'}
                 </h3>
-                <p className={`text-gray-500 ${locale === 'ar' ? 'text-base' : 'text-lg'} max-w-md mx-auto`}>
-                  {locale === 'ar' ? 'سيتم عرض معلومات الحضور والغياب هنا قريبًا.' : 'Attendance tracking and reports will be displayed here soon.'}
+                <p className="text-sm text-muted-foreground">
+                  {locale === 'ar' ? 'معلومات الحضور والغياب' : 'Attendance tracking reports'}
                 </p>
               </div>
             </Card>
@@ -330,18 +297,18 @@ export default function ChildDetailPage() {
 
           {/* Tab 4: Assignments */}
           <TabsContent value="assignments" className="animate-in fade-in-50 duration-300">
-            <Card className="p-12">
+            <Card className="p-8">
               <div className="text-center">
-                <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-green-100 to-emerald-100 rounded-full flex items-center justify-center">
-                  <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-16 h-16 mx-auto mb-4 bg-green-50 rounded-lg flex items-center justify-center">
+                  <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
                 </div>
-                <h3 className={`${locale === 'ar' ? 'text-lg font-medium' : 'text-xl font-semibold'} text-gray-900 mb-2`}>
+                <h3 className="text-lg font-semibold text-foreground mb-2">
                   {locale === 'ar' ? 'قريبًا' : 'Coming Soon'}
                 </h3>
-                <p className={`text-gray-500 ${locale === 'ar' ? 'text-base' : 'text-lg'} max-w-md mx-auto`}>
-                  {locale === 'ar' ? 'سيتم عرض الواجبات والمهام الدراسية هنا قريبًا.' : 'Assignments, homework, and academic tasks will be displayed here soon.'}
+                <p className="text-sm text-muted-foreground">
+                  {locale === 'ar' ? 'الواجبات والمهام الدراسية' : 'Assignments and homework'}
                 </p>
               </div>
             </Card>
@@ -349,28 +316,21 @@ export default function ChildDetailPage() {
 
           {/* Tab 5: School Info */}
           <TabsContent value="school" className="animate-in fade-in-50 duration-300">
-            <div className="space-y-6">
-              {/* Enhanced Year Selector */}
-              <Card className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-gray-100 rounded-lg">
-                      <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <h3 className={`${locale === 'ar' ? 'font-medium text-base' : 'font-semibold'} text-gray-900`}>
-                        {locale === 'ar' ? 'السنة الدراسية' : 'Academic Year'}
-                      </h3>
-                      <p className={`${locale === 'ar' ? 'text-xs' : 'text-sm'} text-gray-600`}>
-                        {locale === 'ar' ? 'اختر السنة الدراسية لعرض المعلومات' : 'Select academic year to view information'}
-                      </p>
-                    </div>
+            <div className="space-y-4">
+              {/* Compact Year Selector */}
+              <Card className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <svg className="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <span className="text-sm font-medium text-foreground">
+                      {locale === 'ar' ? 'السنة الدراسية' : 'Academic Year'}
+                    </span>
                   </div>
                   <Select value={year} onValueChange={setYear}>
-                    <SelectTrigger className="w-48 bg-white shadow-sm border-gray-300 hover:border-primary/30 transition-colors">
-                      <SelectValue placeholder={locale === 'ar' ? 'اختر السنة' : 'Select year'} />
+                    <SelectTrigger className="w-32 bg-background border-border">
+                      <SelectValue placeholder={locale === 'ar' ? 'اختر' : 'Select'} />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all" className="font-medium">
@@ -402,14 +362,14 @@ export default function ChildDetailPage() {
                   <SchoolInfo studentId={person.sourcedId} year={year} />
                 </div>
               ) : (
-                <Card className="p-12">
+                <Card className="p-6">
                   <div className="text-center">
-                    <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
-                      <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="w-12 h-12 mx-auto mb-3 bg-muted rounded-lg flex items-center justify-center">
+                      <svg className="w-6 h-6 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
                       </svg>
                     </div>
-                    <p className={`text-gray-500 ${locale === 'ar' ? 'text-base' : 'text-lg'}`}>{locale === 'ar' ? 'هوية الطالب غير متوفرة.' : 'Student ID not available.'}</p>
+                    <p className="text-sm text-muted-foreground">{locale === 'ar' ? 'هوية الطالب غير متوفرة' : 'Student ID not available'}</p>
                   </div>
                 </Card>
               )}
