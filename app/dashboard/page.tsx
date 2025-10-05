@@ -84,7 +84,6 @@ export default function DashboardPage() {
             meta={parentBasicInfo?.meta}
             labels={{
               lastUpdated: locale === 'ar' ? 'آخر تحديث:' : 'Last updated:',
-              outdatedMsg: locale === 'ar' ? 'قد تكون البيانات غير محدثة. انقر للتحديث.' : 'Your data might be outdated. Click refresh to update.',
               confirm: locale === 'ar' ? 'جلب بيانات حديثة؟' : 'Fetch fresh data?',
               refresh: locale === 'ar' ? 'تحديث' : 'Refresh',
               refreshing: locale === 'ar' ? 'جاري التحديث…' : 'Refreshing…',
@@ -92,39 +91,32 @@ export default function DashboardPage() {
             }}
           />
         </div>
-        {/* Enhanced Header Section */}
-        <div className="mb-12">
-          <Card className="border-0 shadow-xl bg-primary overflow-hidden">
-            {/* Background Pattern */}
-            {/* <div className="absolute inset-0 bg-black/5">
-              <div className="absolute inset-0" style={{
-                backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05' fill-rule='nonzero'%3E%3Ccircle cx='7' cy='7' r='7'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-              }} />
-            </div> */}
-            
-            <CardContent className="relative p-8 sm:p-12">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between">
-                <div className="flex-1 mb-6 sm:mb-0">
-                  <h1 className={`${locale === 'ar' ? 'text-3xl sm:text-4xl font-semibold' : 'text-4xl sm:text-5xl font-bold'} text-white mb-4 drop-shadow-lg`}>
+        {/* Minimized Enhanced Header Section */}
+        <div className="mb-8">
+          <Card className="border-0 shadow-lg bg-primary overflow-hidden">
+            <CardContent className="relative p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex-1">
+                  <h1 className={`${locale === 'ar' ? 'text-2xl sm:text-3xl font-semibold' : 'text-3xl sm:text-4xl font-bold'} text-white mb-2 drop-shadow-md`}>
                     {locale === 'ar' ? 'مرحباً' : 'Welcome'}{session?.user?.name ? `, ${session.user.name}` : ''}
                   </h1>
-                  <p className={`${locale === 'ar' ? 'text-lg font-normal' : 'text-xl font-medium'} text-aegold-100 max-w-2xl`}>
+                  <p className={`${locale === 'ar' ? 'text-sm font-normal' : 'text-base font-medium'} text-aegold-100 max-w-2xl`}>
                     {t.dashboard.welcome || (locale === 'ar' ? 'نظرة عامة على أطفالك ونشاطاتهم المدرسية' : 'Overview of your children and their school activities')}
                   </p>
                 </div>
                 
-                <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
+                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20 min-w-[120px]">
                   <div className="text-center">
-                    <div className={`text-white/80 ${locale === 'ar' ? 'text-xs font-normal' : 'text-sm font-medium'} mb-1`}>
-                      {new Date().toLocaleDateString(locale === 'ar' ? 'ar-AE' : 'en-US', { weekday: 'long' })}
+                    <div className={`text-white/80 ${locale === 'ar' ? 'text-xs font-normal' : 'text-xs font-medium'} mb-1`}>
+                      {new Date().toLocaleDateString(locale === 'ar' ? 'ar-AE' : 'en-US', { weekday: 'short' })}
                     </div>
-                    <div className={`text-white ${locale === 'ar' ? 'text-base font-semibold' : 'text-lg font-bold'}`}>
+                    <div className={`text-white ${locale === 'ar' ? 'text-sm font-semibold' : 'text-base font-bold'}`}>
                       {new Date().toLocaleDateString(locale === 'ar' ? 'ar-AE' : 'en-US', { 
                         month: 'short', 
                         day: 'numeric' 
                       })}
                     </div>
-                    <div className={`text-white/60 ${locale === 'ar' ? 'text-xs' : 'text-xs'} mt-1`}>
+                    <div className={`text-white/60 ${locale === 'ar' ? 'text-xs' : 'text-xs'}`}>
                       {new Date().getFullYear()}
                     </div>
                   </div>
@@ -170,39 +162,41 @@ export default function DashboardPage() {
 
       {/* Main Content Grid */}
       <div className="space-y-8">
-        {/* Enhanced Children Section */}
-        <div>
-          <div className="mb-8">
-            <Card className="border-0 bg-white ">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="p-3 bg-primary rounded-xl">
-                      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <h2 className={`${locale === 'ar' ? 'text-xl font-semibold' : 'text-2xl font-bold'} text-gray-900`}>
-                        {locale === 'ar' ? 'أطفالي' : 'My Children'}
-                      </h2>
-                      <p className={`text-gray-600 ${locale === 'ar' ? 'text-xs' : 'text-sm'}`}>
-                        {locale === 'ar' ? 'إدارة ومتابعة بيانات الأطفال' : 'Manage and track your children\'s information'}
-                      </p>
-                    </div>
-                  </div>
-                  <Badge variant="outline" className={`bg-aegold-50 text-aegold-700 border-aegold-200 ${locale === 'ar' ? 'text-xs font-normal' : ''}`}>
-                    <svg className={`w-3 h-3 ${locale === 'ar' ? 'ml-1' : 'mr-1'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        {/* Combined Children Section */}
+        <Card className="border-0 bg-white shadow-sm">
+          <CardContent className="p-0">
+            {/* Header */}
+            <div className="p-4 border-b border-gray-100">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-primary rounded-lg">
+                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
                     </svg>
-                    {locale === 'ar' ? 'نشط' : 'Active'}
-                  </Badge>
+                  </div>
+                  <div>
+                    <h2 className={`${locale === 'ar' ? 'text-lg font-semibold' : 'text-xl font-bold'} text-gray-900`}>
+                      {locale === 'ar' ? 'أطفالي' : 'My Children'}
+                    </h2>
+                    <p className={`text-gray-600 ${locale === 'ar' ? 'text-xs' : 'text-sm'}`}>
+                      {locale === 'ar' ? 'إدارة ومتابعة بيانات الأطفال' : 'Manage and track your children\'s information'}
+                    </p>
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-          <ChildCards />
-        </div>
+                <Badge variant="outline" className={`bg-aegold-50 text-aegold-700 border-aegold-200 ${locale === 'ar' ? 'text-xs font-normal' : 'text-xs'}`}>
+                  <svg className={`w-3 h-3 ${locale === 'ar' ? 'ml-1' : 'mr-1'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  {locale === 'ar' ? 'نشط' : 'Active'}
+                </Badge>
+              </div>
+            </div>
+            {/* Content */}
+            <div className="p-4">
+              <ChildCards />
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Secondary Content 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
