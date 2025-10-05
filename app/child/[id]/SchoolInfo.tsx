@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useI18n } from '@/app/i18n/I18nProvider';
 import type { Org, SchoolEnrollment } from '@/types';
 import clsx from 'clsx';
+import RefreshBar from '@/components/RefreshBar';
 
 type ApiResponse = {
   enrollments: SchoolEnrollment[];
@@ -26,6 +27,7 @@ type ApiResponse = {
   schoolIDs?: string[];     // all school ids when multiple
   schoolInfos?: Org[] | Array<{ Org: Org }> | Array<Array<{ Org: Org }>> | null;
   error?: string;
+  meta?: { cache?: { source?: 'cache' | 'upstream'; lastUpdated?: string | null } };
 };
 
 function formatAddress(addresses?: Org['metadata']['addresses']): string {
@@ -46,12 +48,13 @@ function formatAddress(addresses?: Org['metadata']['addresses']): string {
 
 export default function SchoolInfo({ studentId, year }: { studentId: string; year: string }) {
   const { t, locale } = useI18n();
-  const { data, error, isLoading } = useSWR<ApiResponse>(() => {
+  const swrKey = (() => {
     if (!studentId) return null;
     const base = `/api/oneroster/schoolenrollments?studentId=${encodeURIComponent(studentId)}`;
     if (!year || year === 'all') return base;
     return `${base}&schoolYear=${encodeURIComponent(year)}`;
-  });
+  })();
+  const { data, error, isLoading } = useSWR<ApiResponse>(swrKey);
 
   // --- helpers to normalize various response shapes into Org / Org[] ---
   function isOrg(obj: any): obj is Org {
@@ -108,6 +111,11 @@ export default function SchoolInfo({ studentId, year }: { studentId: string; yea
   if (isLoading) {
     return (
       <div className={clsx('space-y-6', locale === 'ar' && 'direction-rtl')}>
+        {/* Freshness bar placeholder for skeleton state */}
+        <div className="flex items-center justify-between gap-3 rounded-md border p-3 bg-card">
+          <div className="h-4 w-40 bg-muted rounded" />
+          <div className="h-8 w-28 bg-muted rounded" />
+        </div>
         <Card className="border border-gray-200">
           <CardHeader className="bg-indigo-50 border-b border-indigo-100">
             <div className="flex items-center gap-3">
@@ -157,6 +165,19 @@ export default function SchoolInfo({ studentId, year }: { studentId: string; yea
   console.log('Rendering SchoolInfo with orgs:', orgs);
   return (
     <div className={clsx('space-y-6', locale === 'ar' && 'direction-rtl')}>
+      {/* Freshness bar */}
+      <RefreshBar
+        swrKey={swrKey}
+        meta={data.meta}
+        labels={{
+          lastUpdated: locale === 'ar' ? 'آخر تحديث:' : 'Last updated:',
+          outdatedMsg: locale === 'ar' ? 'قد تكون البيانات غير محدثة. انقر للتحديث.' : 'Your data might be outdated. Click refresh to update.',
+          confirm: locale === 'ar' ? 'جلب بيانات حديثة؟' : 'Fetch fresh data?',
+          refresh: locale === 'ar' ? 'تحديث' : 'Refresh',
+          refreshing: locale === 'ar' ? 'جاري التحديث…' : 'Refreshing…',
+          unknown: locale === 'ar' ? 'غير معروف' : 'unknown',
+        }}
+      />
       {/* If year is 'all' (or empty), render the list of all schools; otherwise render single school */}
       <Card className="border border-gray-200">
         <CardHeader className="bg-indigo-50 border-b border-indigo-100">

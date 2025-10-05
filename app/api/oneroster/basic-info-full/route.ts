@@ -21,18 +21,35 @@ const TTL = {                                             // [NEW-Cache]
 // Helpers
 // ──────────────────────────────────────────────────────────────────────────────
 
-// [NEW-Cache] modified to include Redis read-through caching
-async function getFullPersonById(value: string, isStudent: boolean): Promise<unknown[]> { 
+type Wrapped<T> = { data: T; fetchedAt: string };
+
+// [NEW-Cache] modified to include Redis read-through caching with optional bypass and fetchedAt
+async function getFullPersonById(
+  value: string,
+  isStudent: boolean,
+  noCache: boolean
+): Promise<{ data: unknown[]; fetchedAt: string | null; source: "cache" | "upstream" }> {
   const filterField = isStudent ? "sourcedId" : "identifier"; 
   const key = makeKey(["or", "person", filterField, value]);           // [NEW-Cache]
-  const cached = await cacheGetJSON<unknown[]>(key);                 // [NEW-Cache]
-  if (cached) return cached;                                         // [NEW-Cache]
+
+  if (!noCache) {
+    const cachedAny = await cacheGetJSON<unknown>(key);                 // [NEW-Cache]
+    if (cachedAny) {
+      if (Array.isArray(cachedAny)) {
+        return { data: cachedAny as unknown[], fetchedAt: null, source: "cache" };
+      }
+      if (typeof cachedAny === "object" && cachedAny !== null && Array.isArray((cachedAny as Wrapped<unknown[]>).data)) {
+        const w = cachedAny as Wrapped<unknown[]>;
+        return { data: w.data, fetchedAt: w.fetchedAt ?? null, source: "cache" };
+      }
+    }
+  }
 
   const data = await orFetch<Person>(`/v1p1/persons?filter=${filterField}='${value}'`, "read"); 
   const arr = Array.isArray(data) ? data : [data]; 
-
-  await cacheSetJSON(key, arr, { ttlSeconds: TTL.PERSON });          // [NEW-Cache]
-  return arr; 
+  const fetchedAt = new Date().toISOString();
+  await cacheSetJSON<Wrapped<unknown[]>>(key, { data: arr as unknown[], fetchedAt }, { ttlSeconds: TTL.PERSON });          // [NEW-Cache]
+  return { data: arr as unknown[], fetchedAt, source: "upstream" };
 } 
 
 function isRecord(x: unknown): x is Record<string, unknown> { 
@@ -89,6 +106,7 @@ function pickRole(fullPersonArr: unknown[]): string | undefined {
 export async function GET(req: Request) { 
   const { searchParams } = new URL(req.url); 
   const sourcedId = searchParams.get("sourcedId"); 
+  const noCache = ["1", "true", "yes"].includes((searchParams.get("nocache") || "").toLowerCase());
   const eid = await getSessionEid(); 
   if (!eid && !sourcedId) { 
     return NextResponse.json({ error: "Missing ?sourcedId or not authenticated" }, { status: 400 }); 
@@ -108,19 +126,35 @@ export async function GET(req: Request) {
         return NextResponse.json({ error: `No parent found for EID ${eid}` }, { status: 404 }); 
       } 
 
-      // [NEW-Cache] cache parent→student links
-  const linksKey = makeKey(["or", "links", "parent", foundParent.sourcedId]);           // [NEW-Cache]
-      let linkedStudentIds =                                                               // [NEW-Cache]
-        (await cacheGetJSON<string[]>(linksKey)) ??                                        // [NEW-Cache]
-        (await (async () => {                                                              // [NEW-Cache]
-          try { 
-            const ids = await getStudentIdsForPerson(foundParent.sourcedId); 
-            await cacheSetJSON(linksKey, ids, { ttlSeconds: TTL.LINKS });                  // [NEW-Cache]
-            return ids; 
-          } catch { 
-            return [] as string[]; 
-          } 
-        })());                                                                             // [NEW-Cache]
+      // [NEW-Cache] cache parent→student links (with nocache and wrapper)
+      const linksKey = makeKey(["or", "links", "parent", foundParent.sourcedId]);
+      let linksFetchedAt: string | null = null;
+      let linksSource: "cache" | "upstream" = "cache";
+      let linkedStudentIds: string[] = [];
+      if (!noCache) {
+        const cachedAny = await cacheGetJSON<unknown>(linksKey);
+        if (cachedAny) {
+          if (Array.isArray(cachedAny)) {
+            linkedStudentIds = cachedAny as string[];
+            linksSource = "cache";
+          } else if (typeof cachedAny === "object" && cachedAny !== null && Array.isArray((cachedAny as Wrapped<string[]>).data)) {
+            const w = cachedAny as Wrapped<string[]>;
+            linkedStudentIds = w.data;
+            linksFetchedAt = w.fetchedAt ?? null;
+            linksSource = "cache";
+          }
+        }
+      }
+      if (!linkedStudentIds.length) {
+        try {
+          linkedStudentIds = await getStudentIdsForPerson(foundParent.sourcedId);
+          linksFetchedAt = new Date().toISOString();
+          linksSource = "upstream";
+          await cacheSetJSON<Wrapped<string[]>>(linksKey, { data: linkedStudentIds, fetchedAt: linksFetchedAt }, { ttlSeconds: TTL.LINKS });
+        } catch {
+          linkedStudentIds = [];
+        }
+      }
 
       if (!linkedStudentIds.includes(sourcedId)) { 
         return NextResponse.json({  
@@ -134,8 +168,9 @@ export async function GET(req: Request) {
       personIdentifier = sourcedId; 
       identifierType = "sourcedId"; 
 
-      // [NEW-Cache] call cached person fetch
-      const parentOrStudentFull = await getFullPersonById(personIdentifier, true);         // [NEW-Cache]
+  // [NEW-Cache] call cached person fetch with nocache
+  const parentOrStudentFullWrap = await getFullPersonById(personIdentifier, true, noCache);         // [NEW-Cache]
+  const parentOrStudentFull = parentOrStudentFullWrap.data;
       const role = pickRole(parentOrStudentFull)?.toString().toLowerCase() || ""; 
 
       if (!role.includes("student")) { 
@@ -148,6 +183,12 @@ export async function GET(req: Request) {
           parentEid: eid, 
           role: "student", 
           studentCount: 0, 
+          cache: {
+            source: [parentOrStudentFullWrap.source, linksSource].includes("upstream") ? "upstream" : "cache",
+            lastUpdated: [parentOrStudentFullWrap.fetchedAt, linksFetchedAt]
+              .filter((x): x is string => typeof x === "string")
+              .sort((a, b) => Date.parse(b) - Date.parse(a))[0] ?? null,
+          },
         }, 
         parent: parentOrStudentFull, 
         children: [], 
@@ -161,8 +202,9 @@ export async function GET(req: Request) {
       personIdentifier = eid; 
       identifierType = "eid"; 
 
-      // [NEW-Cache] cached parent record
-      const parentOrStudentFull = await getFullPersonById(personIdentifier, false);        // [NEW-Cache]
+  // [NEW-Cache] cached parent record (with nocache)
+  const parentOrStudentFullWrap = await getFullPersonById(personIdentifier, false, noCache);        // [NEW-Cache]
+  const parentOrStudentFull = parentOrStudentFullWrap.data;
       const role = pickRole(parentOrStudentFull)?.toString().toLowerCase() || ""; 
 
       if (role.includes("student")) { 
@@ -172,35 +214,68 @@ export async function GET(req: Request) {
             personSourcedId: person.sourcedId, 
             role: "student", 
             studentCount: 0, 
+            cache: {
+              source: parentOrStudentFullWrap.source,
+              lastUpdated: parentOrStudentFullWrap.fetchedAt,
+            },
           }, 
           parent: parentOrStudentFull, 
           children: [], 
         }); 
       } 
 
-      // [NEW-Cache] cache links for parent→students
-  const linksKey = makeKey(["or", "links", "parent", person.sourcedId]);                 // [NEW-Cache]
-      const studentIds =                                                                   // [NEW-Cache]
-        (await cacheGetJSON<string[]>(linksKey)) ??                                        // [NEW-Cache]
-        (await (async () => {                                                              // [NEW-Cache]
-          try { 
-            const ids = await getStudentIdsForPerson(person.sourcedId); 
-            await cacheSetJSON(linksKey, ids, { ttlSeconds: TTL.LINKS });                  // [NEW-Cache]
-            return ids; 
-          } catch { 
-            return [] as string[]; 
-          } 
-        })());                                                                             // [NEW-Cache]
+      // [NEW-Cache] cache links for parent→students (with nocache + wrapper)
+      const linksKey = makeKey(["or", "links", "parent", person.sourcedId]);                 // [NEW-Cache]
+      let linksFetchedAt2: string | null = null;
+      let linksSource2: "cache" | "upstream" = "cache";
+      let studentIds: string[] = [];
+      if (!noCache) {
+        const cachedAny = await cacheGetJSON<unknown>(linksKey);
+        if (cachedAny) {
+          if (Array.isArray(cachedAny)) {
+            studentIds = cachedAny as string[];
+          } else if (typeof cachedAny === "object" && cachedAny !== null && Array.isArray((cachedAny as Wrapped<string[]>).data)) {
+            const w = cachedAny as Wrapped<string[]>;
+            studentIds = w.data;
+            linksFetchedAt2 = w.fetchedAt ?? null;
+          }
+        }
+      }
+      if (!studentIds.length) {
+        try {
+          studentIds = await getStudentIdsForPerson(person.sourcedId);
+          linksFetchedAt2 = new Date().toISOString();
+          linksSource2 = "upstream";
+          await cacheSetJSON<Wrapped<string[]>>(linksKey, { data: studentIds, fetchedAt: linksFetchedAt2 }, { ttlSeconds: TTL.LINKS });
+        } catch {
+          studentIds = [] as string[];
+        }
+      }
 
-      // [NEW-Cache] cache full children payload batch
-  const childrenKey = makeKey(["or", "children", person.sourcedId, `n=${studentIds.length}`]); // [NEW-Cache]
-      const childrenFull =                                                                 // [NEW-Cache]
-        (await cacheGetJSON<unknown[]>(childrenKey)) ??                                    // [NEW-Cache]
-        (await (async () => {                                                              // [NEW-Cache]
-          const full = await getStudentsFull(studentIds); 
-          await cacheSetJSON(childrenKey, full, { ttlSeconds: TTL.CHILDREN });             // [NEW-Cache]
-          return full; 
-        })());                                                                             // [NEW-Cache]
+      // [NEW-Cache] cache full children payload batch (with nocache + wrapper)
+      const childrenKey = makeKey(["or", "children", person.sourcedId, `n=${studentIds.length}`]); // [NEW-Cache]
+      let childrenFetchedAt: string | null = null;
+      let childrenSource: "cache" | "upstream" = "cache";
+      let childrenFull: unknown[] = [];
+      if (!noCache) {
+        const cachedAny = await cacheGetJSON<unknown>(childrenKey);
+        if (cachedAny) {
+          if (Array.isArray(cachedAny)) {
+            childrenFull = cachedAny as unknown[];
+          } else if (typeof cachedAny === "object" && cachedAny !== null && Array.isArray((cachedAny as Wrapped<unknown[]>).data)) {
+            const w = cachedAny as Wrapped<unknown[]>;
+            childrenFull = w.data;
+            childrenFetchedAt = w.fetchedAt ?? null;
+          }
+        }
+      }
+      if (!childrenFull.length) {
+        const full = await getStudentsFull(studentIds);
+        childrenFull = full as unknown[];
+        childrenFetchedAt = new Date().toISOString();
+        childrenSource = "upstream";
+        await cacheSetJSON<Wrapped<unknown[]>>(childrenKey, { data: childrenFull, fetchedAt: childrenFetchedAt }, { ttlSeconds: TTL.CHILDREN });
+      }
 
       return NextResponse.json({ 
         meta: { 
@@ -209,6 +284,12 @@ export async function GET(req: Request) {
           personSourcedId: person.sourcedId, 
           role: role || "parent", 
           studentCount: studentIds.length, 
+          cache: {
+            source: [parentOrStudentFullWrap.source, linksSource2, childrenSource].includes("upstream") ? "upstream" : "cache",
+            lastUpdated: [parentOrStudentFullWrap.fetchedAt, linksFetchedAt2, childrenFetchedAt]
+              .filter((x): x is string => typeof x === "string")
+              .sort((a, b) => Date.parse(b) - Date.parse(a))[0] ?? null,
+          },
         }, 
         parent: parentOrStudentFull, 
         children: childrenFull, 

@@ -2,13 +2,14 @@
 
 import React from 'react';
 import { useParams } from 'next/navigation';
-import useSWR from 'swr';
+import useSWR, { mutate } from 'swr';
 import clsx from 'clsx';
 import Link from 'next/link';
 
 import { useI18n } from '@/app/i18n/I18nProvider';
 import { jsonFetcher } from '@/lib/swr';
 import { Person } from '@/types';
+import RefreshBar from '@/components/RefreshBar';
 
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -27,6 +28,7 @@ interface BasicInfoResponse {
     personSourcedId: string;
     role: string;
     studentCount: number;
+    cache?: { source?: 'cache' | 'upstream'; lastUpdated?: string | null };
   };
   parent: Person[];
   children: Person[];
@@ -38,10 +40,8 @@ export default function ChildDetailPage() {
   const sourcedId = params.id as string;
 
   // Only send sourcedId, do not send eid (parent EID is taken from session on backend)
-  const { data, error, isLoading } = useSWR<BasicInfoResponse>(
-    sourcedId ? `/api/oneroster/basic-info-full?sourcedId=${encodeURIComponent(sourcedId)}` : null,
-    jsonFetcher
-  );
+  const swrKey = sourcedId ? `/api/oneroster/basic-info-full?sourcedId=${encodeURIComponent(sourcedId)}` : null;
+  const { data, error, isLoading } = useSWR<BasicInfoResponse>(swrKey, jsonFetcher);
   const [year, setYear] = React.useState<string>(() => String(new Date().getFullYear()));
 
   if (isLoading) {
@@ -85,6 +85,20 @@ export default function ChildDetailPage() {
   return (
     <div className={clsx("min-h-screen", locale === 'ar' && 'direction-rtl')}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Data freshness bar (basic-info-full) */}
+        <RefreshBar
+          swrKey={swrKey}
+          meta={data.meta}
+          className="mb-4"
+          labels={{
+            lastUpdated: locale === 'ar' ? 'آخر تحديث:' : 'Last updated:',
+            outdatedMsg: locale === 'ar' ? 'قد تكون البيانات غير محدثة. انقر للتحديث.' : 'Your data might be outdated. Click refresh to update.',
+            confirm: locale === 'ar' ? 'جلب بيانات حديثة؟' : 'Fetch fresh data?',
+            refresh: locale === 'ar' ? 'تحديث' : 'Refresh',
+            refreshing: locale === 'ar' ? 'جاري التحديث…' : 'Refreshing…',
+            unknown: locale === 'ar' ? 'غير معروف' : 'unknown',
+          }}
+        />
         {/* Enhanced Back Navigation with Breadcrumbs */}
         <nav className="mb-6" aria-label="Breadcrumb">
           <div className="flex items-center space-x-2 rtl:space-x-reverse">

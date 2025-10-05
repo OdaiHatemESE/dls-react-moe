@@ -17,6 +17,7 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const studentId = searchParams.get("studentId");
   const schoolYear = searchParams.get("schoolYear");
+  const noCache = ["1", "true", "yes"].includes((searchParams.get("nocache") || "").toLowerCase());
 
   if (!studentId) {
     return NextResponse.json(
@@ -28,13 +29,41 @@ export async function GET(req: Request) {
   try {
     // Cache enrollments by student and schoolYear (or "all")
     const enrollmentsKey = makeKey(["or", "enrollments", "student", studentId, schoolYear || "all"]);
-    const enrollments =
-      (await cacheGetJSON<Array<any>>(enrollmentsKey)) ??
-      (await (async () => {
-        const data = await getSchoolEnrollmentsByStudent(studentId, schoolYear || undefined);
-        await cacheSetJSON(enrollmentsKey, data, { ttlSeconds: TTL.ENROLLMENTS });
-        return data;
-      })());
+
+    type Wrapped<T> = { data: T; fetchedAt: string };
+
+    let enrollments: Array<any> = [];
+    let fetchedAt: string | null = null;
+    let source: "cache" | "upstream" = "cache";
+
+    if (!noCache) {
+      const cachedAny = await cacheGetJSON<unknown>(enrollmentsKey);
+      if (cachedAny) {
+        if (Array.isArray(cachedAny)) {
+          // Backwards-compat with older cache shape
+          enrollments = cachedAny as Array<any>;
+          fetchedAt = null;
+          source = "cache";
+        } else if (
+          typeof cachedAny === "object" && cachedAny !== null &&
+          Array.isArray((cachedAny as Wrapped<Array<any>>).data)
+        ) {
+          const wrapped = cachedAny as Wrapped<Array<any>>;
+          enrollments = wrapped.data;
+          fetchedAt = wrapped.fetchedAt ?? null;
+          source = "cache";
+        }
+      }
+    }
+
+    if (!enrollments.length) {
+      // Fetch fresh from upstream and update cache with wrapped payload
+      const fresh = await getSchoolEnrollmentsByStudent(studentId, schoolYear || undefined);
+      enrollments = fresh;
+      fetchedAt = new Date().toISOString();
+      source = "upstream";
+      await cacheSetJSON<Wrapped<Array<any>>>(enrollmentsKey, { data: fresh, fetchedAt }, { ttlSeconds: TTL.ENROLLMENTS });
+    }
 
     console.debug(`Returning ${enrollments.length} enrollments for student ${studentId}`);
 
@@ -53,8 +82,10 @@ export async function GET(req: Request) {
       const results = await Promise.all(
         schoolIDs.map(async (id) => {
           const key = makeKey(["or", "org", "sourcedId", id]);
-          const cached = await cacheGetJSON<unknown>(key);
-          if (cached) return cached;
+          if (!noCache) {
+            const cached = await cacheGetJSON<unknown>(key);
+            if (cached) return cached;
+          }
           const org = await getOrgBySourcedId(id);
           if (org) await cacheSetJSON(key, org, { ttlSeconds: TTL.ORG });
           return org ?? null;
@@ -64,8 +95,10 @@ export async function GET(req: Request) {
     } else if (schoolIDs.length === 1) {
       const id = schoolIDs[0]!;
       const key = makeKey(["or", "org", "sourcedId", id]);
-      const cached = await cacheGetJSON<unknown>(key);
-      let single = cached;
+      let single: unknown = null;
+      if (!noCache) {
+        single = await cacheGetJSON<unknown>(key);
+      }
       if (!single) {
         single = await getOrgBySourcedId(id);
         if (single) await cacheSetJSON(key, single, { ttlSeconds: TTL.ORG });
@@ -81,8 +114,10 @@ export async function GET(req: Request) {
         const sgId: string | undefined = e?.streamGrade?.sourcedId;
         if (!sgId) return null;
         const key = makeKey(["or", "streamgrade", sgId]);
-        const cached = await cacheGetJSON<unknown>(key);
-        if (cached) return cached;
+        if (!noCache) {
+          const cached = await cacheGetJSON<unknown>(key);
+          if (cached) return cached;
+        }
         try {
           const sg = await getStreamGradeById(sgId);
           if (sg) await cacheSetJSON(key, sg, { ttlSeconds: TTL.STREAMGRADE });
@@ -105,7 +140,13 @@ export async function GET(req: Request) {
       // New fields with all schools' info
       schoolIDs,
       schoolInfos,
-  StreamGrades
+      StreamGrades,
+      meta: {
+        cache: {
+          source,
+          lastUpdated: fetchedAt,
+        },
+      },
     });
   } catch (error: unknown) {
     console.error("Error fetching school enrollments:", error);
