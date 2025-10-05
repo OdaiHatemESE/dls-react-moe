@@ -22,25 +22,28 @@ import HtmlLangDirProvider from "@/app/components/HtmlLangDirProvider";
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ar" dir="rtl" suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col bg-background text-foreground`} suppressHydrationWarning>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-background text-foreground`} suppressHydrationWarning>
         <ThemeProvider>
           <AuthProvider>
-         
-              <I18nProvider defaultLocale="ar">
-                   <IconProvider>
+            <I18nProvider defaultLocale="ar">
+              <IconProvider>
                 <SWRProvider>
-                  {/* Global Header */}
+                  {/* Vertical Sidebar Header */}
                   <SiteHeader />
                   <Switcher /> 
                   <ThemeSwitcher />
-                  <main className="flex-1">{children}</main>
+                  
+                  {/* Main content area with sidebar offset */}
+                  <MainContent>
+                    {children}
+                  </MainContent>
                   <SiteFooter />
+                  
                   {/* Dynamically update lang/dir on client */}
                   <HtmlLangDirProvider />
                 </SWRProvider>
-                       </IconProvider>
-              </I18nProvider>
-     
+              </IconProvider>
+            </I18nProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>
@@ -49,7 +52,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 }
 
 // Local imports placed after component to avoid hoist issues in app dir
-import Header from "./components/Header";
+import VerticalHeader from "./components/VerticalHeader";
+import MainContent from "./components/MainContent";
 import Footer from "./components/Footer";
 import AuthProvider from "./components/AuthProvider";
 import IconProvider from "./components/icons/IconProvider";
@@ -61,7 +65,7 @@ import ThemeSwitcher from "@/app/components/ThemeSwitcher";
 import ThemeProvider from "@/app/components/ThemeProvider";
 
 function SiteHeader() {
-  return <Header />;
+  return <VerticalHeader />;
 }
 
 function SiteFooter() {
