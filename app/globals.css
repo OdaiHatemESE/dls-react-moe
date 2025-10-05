@@ -6,6 +6,10 @@
 @tailwind components;
 @tailwind utilities;
 
+html  {
+  overflow-x: hidden;
+}
+
 @layer base {
   /* Improve focus visibility for accessibility */
   *:focus {
