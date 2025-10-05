@@ -124,11 +124,12 @@ export default function ChildDetailPage() {
             </nav>
 
             {/* Mobile-Optimized Action Buttons */}
-            <div className="flex items-center gap-2 md:gap-3">
+            <div className="flex items-center gap-1 md:gap-2 min-w-0 overflow-hidden">
               <RefreshBar
                 swrKey={swrKey}
                 meta={data.meta}
-                className="shrink-0 scale-90 md:scale-100"
+                variant="compact"
+                className="flex-shrink-0 min-w-0"
                 labels={{
                   lastUpdated: locale === 'ar' ? 'آخر تحديث:' : 'Last updated:',
                   confirm: locale === 'ar' ? 'جلب بيانات حديثة؟' : 'Fetch fresh data?',

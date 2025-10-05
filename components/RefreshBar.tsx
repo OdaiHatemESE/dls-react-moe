@@ -359,76 +359,100 @@ export function RefreshBar<T = any>({
   return (
     <>
       <LoadingOverlay />
-      <div className={getContainerClasses()}>
-        <div className="flex items-center gap-1 md:gap-2 min-w-0 flex-1 overflow-hidden">
-        {showIcon && (
-          <div className="flex-shrink-0">
-            {getStatusIcon()}
+      
+      {/* Mobile Ultra-Compact Version (only button) */}
+      <div className="sm:hidden">
+        <Button 
+          variant="ghost"
+          size="sm"
+          onClick={doRefresh} 
+          disabled={isRefreshing || isRateLimited}
+          className={`p-2 min-w-fit transition-all duration-300 hover:bg-primary/10 rounded-lg ${
+            isRateLimited ? "opacity-50 cursor-not-allowed" : ""
+          }`}
+        >
+          <div className="relative flex-shrink-0">
+            <RefreshCcw className={`${isRefreshing ? "animate-spin text-primary" : "text-primary"} transition-all duration-300`} size={16} />
+            {isRefreshing && (
+              <div className="absolute inset-0 animate-pulse bg-primary/20 rounded-full"></div>
+            )}
           </div>
-        )}
-        {/* Mobile: Simplified layout, Desktop: Full layout */}
-        <div className="flex items-center gap-1 md:gap-2 min-w-0 overflow-hidden">
-          {/* Mobile: Show only essential info */}
-          <div className="flex items-center gap-1 px-1.5 md:px-2 py-1 bg-muted/30 rounded-full">
-            <Download className="text-muted-foreground flex-shrink-0" size={10} />
-            <span className="text-muted-foreground font-medium text-xs hidden md:inline truncate">{t.lastUpdated}</span>
-          </div>
-          <div className="px-1.5 md:px-2 py-1 bg-primary/10 rounded-full">
-            <span className="font-semibold text-primary text-xs truncate">
-              {lastUpdateDate}
-            </span>
-          </div>
-          {/* Hide time on mobile to save space */}
-          {lastUpdateTime && (
-            <div className="px-1.5 md:px-2 py-1 bg-secondary/20 rounded-full hidden sm:block">
-              <span className="font-medium text-secondary-foreground text-xs flex items-center gap-1 truncate">
-                <Clock size={10} className="flex-shrink-0" />
-                <span className="truncate">{lastUpdateTime}</span>
+        </Button>
+      </div>
+
+      {/* Desktop and Tablet Version */}
+      <div className="hidden sm:block">
+        <div className={getContainerClasses()}>
+          <div className="flex items-center gap-1 md:gap-2 min-w-0 flex-1 overflow-hidden">
+          {showIcon && (
+            <div className="flex-shrink-0">
+              {getStatusIcon()}
+            </div>
+          )}
+          {/* Tablet: Simplified layout, Desktop: Full layout */}
+          <div className="flex items-center gap-1 md:gap-2 min-w-0 overflow-hidden">
+            {/* Show only essential info */}
+            <div className="flex items-center gap-1 px-1.5 md:px-2 py-1 bg-muted/30 rounded-full">
+              <Download className="text-muted-foreground flex-shrink-0" size={10} />
+              <span className="text-muted-foreground font-medium text-xs hidden lg:inline truncate">{t.lastUpdated}</span>
+            </div>
+            <div className="px-1.5 md:px-2 py-1 bg-primary/10 rounded-full">
+              <span className="font-semibold text-primary text-xs truncate">
+                {lastUpdateDate}
               </span>
+            </div>
+            {/* Hide time on tablet to save space */}
+            {lastUpdateTime && (
+              <div className="px-1.5 md:px-2 py-1 bg-secondary/20 rounded-full hidden lg:block">
+                <span className="font-medium text-secondary-foreground text-xs flex items-center gap-1 truncate">
+                  <Clock size={10} className="flex-shrink-0" />
+                  <span className="truncate">{lastUpdateTime}</span>
+                </span>
+              </div>
+            )}
+          </div>
+          {/* Status message - hide on tablet if space is tight */}
+          {statusMessage && (
+            <div className={`text-xs font-medium px-1.5 md:px-2 py-1 rounded-full transition-all duration-300 hidden lg:block ${
+              refreshStatus === "success" 
+                ? "text-emerald-700 bg-emerald-100 border border-emerald-200" : 
+              refreshStatus === "error" 
+                ? "text-red-700 bg-red-100 border border-red-200" : 
+                "text-muted-foreground bg-muted/50"
+            }`}>
+              <span className="truncate">{statusMessage}</span>
             </div>
           )}
         </div>
-        {/* Status message - hide on mobile if space is tight */}
-        {statusMessage && (
-          <div className={`text-xs font-medium px-1.5 md:px-2 py-1 rounded-full transition-all duration-300 hidden sm:block ${
-            refreshStatus === "success" 
-              ? "text-emerald-700 bg-emerald-100 border border-emerald-200" : 
-            refreshStatus === "error" 
-              ? "text-red-700 bg-red-100 border border-red-200" : 
-              "text-muted-foreground bg-muted/50"
-          }`}>
-            <span className="truncate">{statusMessage}</span>
+
+        <Button 
+          variant="default"
+          size="sm"
+          onClick={doRefresh} 
+          disabled={isRefreshing || isRateLimited}
+          className={`gap-1 md:gap-2 min-w-fit flex-shrink-0 transition-all duration-300 ${
+            isRateLimited 
+              ? "bg-gray-400 cursor-not-allowed opacity-70" 
+              : "bg-amber-500 hover:bg-amber-600"
+          } text-white border-0 rounded-md px-2 md:px-4 py-2 font-medium ${
+            isRefreshing ? "cursor-wait animate-pulse opacity-80" : 
+            isRateLimited ? "" : "hover:scale-105"
+          }`}
+        >
+          <div className="relative flex-shrink-0">
+            <RefreshCcw className={`${isRefreshing ? "animate-spin text-white" : "text-white"} transition-all duration-300`} size={14} />
+            {isRefreshing && (
+              <div className="absolute inset-0 animate-pulse bg-blue-500/20 rounded-full"></div>
+            )}
           </div>
-        )}
-      </div>
-      
-      <Button 
-        variant="default"
-        size="sm"
-        onClick={doRefresh} 
-        disabled={isRefreshing || isRateLimited}
-        className={`gap-1 md:gap-2 min-w-fit flex-shrink-0 transition-all duration-300 ${
-          isRateLimited 
-            ? "bg-gray-400 cursor-not-allowed opacity-70" 
-            : "bg-amber-500 hover:bg-amber-600"
-        } text-white border-0 rounded-md px-2 md:px-4 py-2 font-medium ${
-          isRefreshing ? "cursor-wait animate-pulse opacity-80" : 
-          isRateLimited ? "" : "hover:scale-105"
-        }`}
-      >
-        <div className="relative flex-shrink-0">
-          <RefreshCcw className={`${isRefreshing ? "animate-spin text-white" : "text-white"} transition-all duration-300`} size={14} />
-          {isRefreshing && (
-            <div className="absolute inset-0 animate-pulse bg-blue-500/20 rounded-full"></div>
-          )}
+          <span className="font-medium text-white text-xs md:text-sm truncate">
+            {isRefreshing ? t.refreshing : 
+             isRateLimited ? `${t.rateLimited} ${countdownMinutes}:${countdownSeconds.toString().padStart(2, '0')}` : 
+             t.refresh}
+          </span>
+        </Button>
         </div>
-        <span className="font-medium text-white text-xs md:text-sm truncate">
-          {isRefreshing ? t.refreshing : 
-           isRateLimited ? `${t.rateLimited} ${countdownMinutes}:${countdownSeconds.toString().padStart(2, '0')}` : 
-           t.refresh}
-        </span>
-      </Button>
-    </div>
+      </div>
     </>
   );
 }

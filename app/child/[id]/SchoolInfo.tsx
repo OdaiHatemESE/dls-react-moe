@@ -165,19 +165,22 @@ export default function SchoolInfo({ studentId, year }: { studentId: string; yea
   console.log('Rendering SchoolInfo with orgs:', orgs);
   return (
     <div className={clsx('space-y-6', locale === 'ar' && 'direction-rtl')}>
-      {/* Freshness bar */}
-      <RefreshBar
-        swrKey={swrKey}
-        meta={data.meta}
-        labels={{
-          lastUpdated: locale === 'ar' ? 'آخر تحديث:' : 'Last updated:',
-          outdatedMsg: locale === 'ar' ? 'قد تكون البيانات غير محدثة. انقر للتحديث.' : 'Your data might be outdated. Click refresh to update.',
-          confirm: locale === 'ar' ? 'جلب بيانات حديثة؟' : 'Fetch fresh data?',
-          refresh: locale === 'ar' ? 'تحديث' : 'Refresh',
-          refreshing: locale === 'ar' ? 'جاري التحديث…' : 'Refreshing…',
-          unknown: locale === 'ar' ? 'غير معروف' : 'unknown',
-        }}
-      />
+      {/* Freshness bar - Mobile Optimized */}
+      <div className="overflow-hidden">
+        <RefreshBar
+          swrKey={swrKey}
+          meta={data.meta}
+          variant="compact"
+          className="min-w-0"
+          labels={{
+            lastUpdated: locale === 'ar' ? 'آخر تحديث:' : 'Last updated:',
+            confirm: locale === 'ar' ? 'جلب بيانات حديثة؟' : 'Fetch fresh data?',
+            refresh: locale === 'ar' ? 'تحديث' : 'Refresh',
+            refreshing: locale === 'ar' ? 'جاري التحديث…' : 'Refreshing…',
+            unknown: locale === 'ar' ? 'غير معروف' : 'unknown',
+          }}
+        />
+      </div>
       {/* If year is 'all' (or empty), render the list of all schools; otherwise render single school */}
       <Card className="border border-gray-200">
         <CardHeader className="bg-indigo-50 border-b border-indigo-100">
