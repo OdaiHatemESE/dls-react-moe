@@ -30,8 +30,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <SWRProvider>
                   {/* Vertical Sidebar Header */}
                   <SiteHeader />
-                  <Switcher /> 
-                  <ThemeSwitcher />
+                  <Switcher />
                   
                   {/* Main content area with sidebar offset */}
                   <MainContent>
@@ -61,7 +60,6 @@ import { I18nProvider } from "./i18n/I18nProvider";
 import SWRProvider from "@/app/components/SWRProvider";
 
 import Switcher from "@/app/components/Switcher";
-import ThemeSwitcher from "@/app/components/ThemeSwitcher";
 import ThemeProvider from "@/app/components/ThemeProvider";
 
 function SiteHeader() {
