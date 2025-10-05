@@ -1,223 +1,223 @@
-import { NextResponse } from "next/server";
-import { getPersonByEid, getStudentIdsForPerson, getStudentsFull } from "@/lib/roster-repo";
-import { orFetch } from "@/lib/oneroster";
-import { Person } from "@/types";
-import { getSessionEid } from "./session";
+import { NextResponse } from "next/server"; 
+import { getPersonByEid, getStudentIdsForPerson, getStudentsFull } from "@/lib/roster-repo"; 
+import { orFetch } from "@/lib/oneroster"; 
+import { Person } from "@/types"; 
+import { getSessionEid } from "./session"; 
 
-/**
- * OneRoster Basic Info (Full) API
- * --------------------------------
- * Given an external identifier (eid), this endpoint returns the full vendor-native
- * person record and, if the person is a parent/guardian, the full records of their
- * linked students. If the person is a student, children will be an empty array.
- *
- * Notes
- * - The vendor payload shape is preserved (no normalization beyond role detection).
- * - Role detection is resilient to different vendor shapes and fields.
- */
+// [NEW-Cache] import cache helpers for Redis-based caching
+import { cacheGetJSON, cacheSetJSON, makeKey } from "@/lib/cache"; // [NEW-Cache]
 
-// Ensure this API route is always dynamic (no ISR caching)
-export const dynamic = "force-dynamic";
+// [NEW-Cache] make sure route remains dynamic (not ISR)
+export const dynamic = "force-dynamic"; 
+
+// [NEW-Cache] define TTLs for each data type
+const TTL = {                                             // [NEW-Cache]
+  PERSON: 60 * 60,       // 1 hour for person records     // [NEW-Cache]
+  LINKS: 15 * 60,        // 15 min for parent→student links // [NEW-Cache]
+  CHILDREN: 10 * 60,     // 10 min for children payloads  // [NEW-Cache]
+} as const;                                                // [NEW-Cache]
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Helpers
 // ──────────────────────────────────────────────────────────────────────────────
 
-/**
- * Fetch a full OneRoster person payload by identifier or sourcedId.
- * If isStudent is true, use sourcedId; otherwise, use identifier (EID).
- * Always returns an array to simplify downstream handling regardless of vendor shape.
- */
-async function getFullPersonById(value: string, isStudent: boolean): Promise<unknown[]> {
-  const filterField = isStudent ? "sourcedId" : "identifier";
-  const data = await orFetch<Person>(`/v1p1/persons?filter=${filterField}='${value}'`, "read");
-  return Array.isArray(data) ? data : [data];
-}
+// [NEW-Cache] modified to include Redis read-through caching
+async function getFullPersonById(value: string, isStudent: boolean): Promise<unknown[]> { 
+  const filterField = isStudent ? "sourcedId" : "identifier"; 
+  const key = makeKey(["or", "person", filterField, value]);           // [NEW-Cache]
+  const cached = await cacheGetJSON<unknown[]>(key);                 // [NEW-Cache]
+  if (cached) return cached;                                         // [NEW-Cache]
 
-/** Narrowing helper to check plain object records. */
-function isRecord(x: unknown): x is Record<string, unknown> {
-  return typeof x === "object" && x !== null;
-}
+  const data = await orFetch<Person>(`/v1p1/persons?filter=${filterField}='${value}'`, "read"); 
+  const arr = Array.isArray(data) ? data : [data]; 
 
-/** Safe property getter that tolerates unknown vendor shapes. */
-function getProp(obj: Record<string, unknown> | undefined, key: string): unknown {
-  if (!obj) return undefined;
-  return (obj as Record<string, unknown>)[key];
-}
+  await cacheSetJSON(key, arr, { ttlSeconds: TTL.PERSON });          // [NEW-Cache]
+  return arr; 
+} 
 
-/**
- * Attempt to extract the role from a variety of vendor payload shapes.
- * Supported patterns include:
- * - [ { persons: { ... } } ]
- * - [ { persons: [ { ... } ] } ]
- * - [ { ...person } ]
- *
- * Role may be provided as:
- * - role
- * - metadata.role
- * - roleList (string[] or { role: string }[])
- */
-function pickRole(fullPersonArr: unknown[]): string | undefined {
-  // Locate the primary person node
-  const node = isRecord(fullPersonArr?.[0]) ? (fullPersonArr[0] as Record<string, unknown>) : undefined;
-  let p: Record<string, unknown> | undefined;
-  const persons = getProp(node, "persons");
-  if (Array.isArray(persons)) {
-    p = isRecord(persons[0]) ? (persons[0] as Record<string, unknown>) : undefined;
-  } else if (isRecord(persons)) {
-    p = persons as Record<string, unknown>;
-  } else {
-    p = node;
-  }
+function isRecord(x: unknown): x is Record<string, unknown> { 
+  return typeof x === "object" && x !== null; 
+} 
 
-  // Resolve role from multiple possible fields
-  const meta = getProp(p, "metadata");
-  const roleCandidate =
-    getProp(p, "role") ?? (isRecord(meta) ? getProp(meta, "role") : undefined) ?? getProp(p, "roleList");
-  if (!roleCandidate) return undefined;
+function getProp(obj: Record<string, unknown> | undefined, key: string): unknown { 
+  if (!obj) return undefined; 
+  return (obj as Record<string, unknown>)[key]; 
+} 
 
-  // roleList could be ["student"] or [{ role: "student" }]
-  if (Array.isArray(roleCandidate)) {
-    const asStrings = roleCandidate
-      .map((r: unknown) => {
-        if (typeof r === "string") return r;
-        if (isRecord(r)) {
-          const rv = getProp(r, "role");
-          return typeof rv === "string" ? rv : "";
-        }
-        return "";
-      })
-      .filter((s): s is string => typeof s === "string" && s.length > 0);
-    return asStrings.join(",");
-  }
+function pickRole(fullPersonArr: unknown[]): string | undefined { 
+  const node = isRecord(fullPersonArr?.[0]) ? (fullPersonArr[0] as Record<string, unknown>) : undefined; 
+  let p: Record<string, unknown> | undefined; 
+  const persons = getProp(node, "persons"); 
+  if (Array.isArray(persons)) { 
+    p = isRecord(persons[0]) ? (persons[0] as Record<string, unknown>) : undefined; 
+  } else if (isRecord(persons)) { 
+    p = persons as Record<string, unknown>; 
+  } else { 
+    p = node; 
+  } 
 
-  return typeof roleCandidate === "string"
-    ? roleCandidate
-    : isRecord(roleCandidate) && typeof getProp(roleCandidate, "role") === "string"
-      ? (getProp(roleCandidate, "role") as string)
-      : String(roleCandidate);
-}
+  const meta = getProp(p, "metadata"); 
+  const roleCandidate = 
+    getProp(p, "role") ?? (isRecord(meta) ? getProp(meta, "role") : undefined) ?? getProp(p, "roleList"); 
+  if (!roleCandidate) return undefined; 
+
+  if (Array.isArray(roleCandidate)) { 
+    const asStrings = roleCandidate 
+      .map((r: unknown) => { 
+        if (typeof r === "string") return r; 
+        if (isRecord(r)) { 
+          const rv = getProp(r, "role"); 
+          return typeof rv === "string" ? rv : ""; 
+        } 
+        return ""; 
+      }) 
+      .filter((s): s is string => typeof s === "string" && s.length > 0); 
+    return asStrings.join(","); 
+  } 
+
+  return typeof roleCandidate === "string" 
+    ? roleCandidate 
+    : isRecord(roleCandidate) && typeof getProp(roleCandidate, "role") === "string" 
+      ? (getProp(roleCandidate, "role") as string) 
+      : String(roleCandidate); 
+} 
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Route handler
 // ──────────────────────────────────────────────────────────────────────────────
 
-export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const sourcedId = searchParams.get("sourcedId");
-  // Get parent EID from session (not from query)
-  const eid = await getSessionEid();
-  if (!eid && !sourcedId) {
-    return NextResponse.json({ error: "Missing ?sourcedId or not authenticated" }, { status: 400 });
-  }
+export async function GET(req: Request) { 
+  const { searchParams } = new URL(req.url); 
+  const sourcedId = searchParams.get("sourcedId"); 
+  const eid = await getSessionEid(); 
+  if (!eid && !sourcedId) { 
+    return NextResponse.json({ error: "Missing ?sourcedId or not authenticated" }, { status: 400 }); 
+  } 
 
-  try {
-    let person: { sourcedId: string };
-    let personIdentifier: string;
-    let identifierType: string;
+  try { 
+    let person: { sourcedId: string }; 
+    let personIdentifier: string; 
+    let identifierType: string; 
 
-    if (typeof sourcedId === "string" && sourcedId) {
-      // Student lookup: require eid from session and verify link
-      if (!eid) {
-        return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-      }
-      const foundParent = await getPersonByEid(eid);
-      if (!foundParent || !foundParent.sourcedId) {
-        return NextResponse.json({ error: `No parent found for EID ${eid}` }, { status: 404 });
-      }
-      // Get all student IDs linked to this parent
-      let linkedStudentIds: string[] = [];
-      try {
-        linkedStudentIds = await getStudentIdsForPerson(foundParent.sourcedId);
-      } catch {
-        linkedStudentIds = [];
-      }
-      // Check if requested sourcedId is linked to this parent
-      if (!linkedStudentIds.includes(sourcedId)) {
+    if (typeof sourcedId === "string" && sourcedId) { 
+      if (!eid) { 
+        return NextResponse.json({ error: "Not authenticated" }, { status: 401 }); 
+      } 
+      const foundParent = await getPersonByEid(eid); 
+      if (!foundParent || !foundParent.sourcedId) { 
+        return NextResponse.json({ error: `No parent found for EID ${eid}` }, { status: 404 }); 
+      } 
+
+      // [NEW-Cache] cache parent→student links
+  const linksKey = makeKey(["or", "links", "parent", foundParent.sourcedId]);           // [NEW-Cache]
+      let linkedStudentIds =                                                               // [NEW-Cache]
+        (await cacheGetJSON<string[]>(linksKey)) ??                                        // [NEW-Cache]
+        (await (async () => {                                                              // [NEW-Cache]
+          try { 
+            const ids = await getStudentIdsForPerson(foundParent.sourcedId); 
+            await cacheSetJSON(linksKey, ids, { ttlSeconds: TTL.LINKS });                  // [NEW-Cache]
+            return ids; 
+          } catch { 
+            return [] as string[]; 
+          } 
+        })());                                                                             // [NEW-Cache]
+
+      if (!linkedStudentIds.includes(sourcedId)) { 
+        return NextResponse.json({  
+          error: "Student not linked to this parent",  
+          forbidden: true,  
+          warning: "You do not have access to this student's information."  
+        }, { status: 403 }); 
+      } 
+
+      person = { sourcedId }; 
+      personIdentifier = sourcedId; 
+      identifierType = "sourcedId"; 
+
+      // [NEW-Cache] call cached person fetch
+      const parentOrStudentFull = await getFullPersonById(personIdentifier, true);         // [NEW-Cache]
+      const role = pickRole(parentOrStudentFull)?.toString().toLowerCase() || ""; 
+
+      if (!role.includes("student")) { 
+        return NextResponse.json({ error: "Not a student record" }, { status: 400 }); 
+      } 
+
+      return NextResponse.json({ 
+        meta: { 
+          sourcedId: person.sourcedId, 
+          parentEid: eid, 
+          role: "student", 
+          studentCount: 0, 
+        }, 
+        parent: parentOrStudentFull, 
+        children: [], 
+      }); 
+    } else if (eid) { 
+      const foundPerson = await getPersonByEid(eid); 
+      if (!foundPerson || !foundPerson.sourcedId) { 
+        return NextResponse.json({ error: `No person found for EID ${eid}` }, { status: 404 }); 
+      } 
+      person = { sourcedId: foundPerson.sourcedId }; 
+      personIdentifier = eid; 
+      identifierType = "eid"; 
+
+      // [NEW-Cache] cached parent record
+      const parentOrStudentFull = await getFullPersonById(personIdentifier, false);        // [NEW-Cache]
+      const role = pickRole(parentOrStudentFull)?.toString().toLowerCase() || ""; 
+
+      if (role.includes("student")) { 
         return NextResponse.json({ 
-          error: "Student not linked to this parent", 
-          forbidden: true, 
-          warning: "You do not have access to this student's information. Please check your access or contact support if you believe this is an error." 
-        }, { status: 403 });
-      }
-      // Proceed to fetch student info
-      person = { sourcedId };
-      personIdentifier = sourcedId;
-      identifierType = "sourcedId";
+          meta: { 
+            eid: personIdentifier, 
+            personSourcedId: person.sourcedId, 
+            role: "student", 
+            studentCount: 0, 
+          }, 
+          parent: parentOrStudentFull, 
+          children: [], 
+        }); 
+      } 
 
-      // Fetch FULL record to determine role (should be student)
-      const parentOrStudentFull = await getFullPersonById(personIdentifier, true);
-      const role = pickRole(parentOrStudentFull)?.toString().toLowerCase() || "";
+      // [NEW-Cache] cache links for parent→students
+  const linksKey = makeKey(["or", "links", "parent", person.sourcedId]);                 // [NEW-Cache]
+      const studentIds =                                                                   // [NEW-Cache]
+        (await cacheGetJSON<string[]>(linksKey)) ??                                        // [NEW-Cache]
+        (await (async () => {                                                              // [NEW-Cache]
+          try { 
+            const ids = await getStudentIdsForPerson(person.sourcedId); 
+            await cacheSetJSON(linksKey, ids, { ttlSeconds: TTL.LINKS });                  // [NEW-Cache]
+            return ids; 
+          } catch { 
+            return [] as string[]; 
+          } 
+        })());                                                                             // [NEW-Cache]
 
-      if (!role.includes("student")) {
-        return NextResponse.json({ error: "Not a student record" }, { status: 400 });
-      }
+      // [NEW-Cache] cache full children payload batch
+  const childrenKey = makeKey(["or", "children", person.sourcedId, `n=${studentIds.length}`]); // [NEW-Cache]
+      const childrenFull =                                                                 // [NEW-Cache]
+        (await cacheGetJSON<unknown[]>(childrenKey)) ??                                    // [NEW-Cache]
+        (await (async () => {                                                              // [NEW-Cache]
+          const full = await getStudentsFull(studentIds); 
+          await cacheSetJSON(childrenKey, full, { ttlSeconds: TTL.CHILDREN });             // [NEW-Cache]
+          return full; 
+        })());                                                                             // [NEW-Cache]
 
-      return NextResponse.json({
-        meta: {
-          sourcedId: person.sourcedId,
-          parentEid: eid,
-          role: "student",
-          studentCount: 0,
-        },
-        parent: parentOrStudentFull,
-        children: [],
-      });
-    } else if (eid) {
-      // Parent lookup: show all linked students
-      const foundPerson = await getPersonByEid(eid);
-      if (!foundPerson || !foundPerson.sourcedId) {
-        return NextResponse.json({ error: `No person found for EID ${eid}` }, { status: 404 });
-      }
-      person = { sourcedId: foundPerson.sourcedId };
-      personIdentifier = eid;
-      identifierType = "eid";
-
-      // Fetch FULL record to determine role (should be parent)
-      const parentOrStudentFull = await getFullPersonById(personIdentifier, false);
-      const role = pickRole(parentOrStudentFull)?.toString().toLowerCase() || "";
-
-      // If the identifier is a student → no children, return student payload in `parent`
-      if (role.includes("student")) {
-        return NextResponse.json({
-          meta: {
-            eid: personIdentifier,
-            personSourcedId: person.sourcedId,
-            role: "student",
-            studentCount: 0,
-          },
-          parent: parentOrStudentFull,
-          children: [],
-        });
-      }
-
-      // Otherwise assume parent/guardian → collect linked students
-      let studentIds: string[] = [];
-      try {
-        studentIds = await getStudentIdsForPerson(person.sourcedId);
-      } catch {
-        studentIds = [];
-      }
-
-      const childrenFull = await getStudentsFull(studentIds);
-
-      return NextResponse.json({
-        meta: {
-          eid: personIdentifier,
-          parentSourcedId: person.sourcedId,
-          personSourcedId: person.sourcedId,
-          role: role || "parent",
-          studentCount: studentIds.length,
-        },
-        parent: parentOrStudentFull,
-        children: childrenFull,
-      });
-    } else {
-      // Should not reach here due to earlier check, but just in case
-      return NextResponse.json({ error: "Missing ?sourcedId or not authenticated" }, { status: 400 });
-    }
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Server error";
-    return NextResponse.json({ error: message }, { status: 500 });
-  }
-}
+      return NextResponse.json({ 
+        meta: { 
+          eid: personIdentifier, 
+          parentSourcedId: person.sourcedId, 
+          personSourcedId: person.sourcedId, 
+          role: role || "parent", 
+          studentCount: studentIds.length, 
+        }, 
+        parent: parentOrStudentFull, 
+        children: childrenFull, 
+      }); 
+    } else { 
+      return NextResponse.json({ error: "Missing ?sourcedId or not authenticated" }, { status: 400 }); 
+    } 
+  } catch (err: unknown) { 
+    const message = err instanceof Error ? err.message : "Server error"; 
+    return NextResponse.json({ error: message }, { status: 500 }); 
+  } 
+} 
