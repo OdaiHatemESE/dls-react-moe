@@ -75,51 +75,122 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div className={clsx("min-h-screen bg-gradient-to-br from-background to-aegold-50/30", locale === 'ar' && 'direction-rtl')}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            {/* Data freshness bar for parent/children basic info */}
-        <div className="mb-8">
-          <RefreshBar
-            swrKey={swrKey}
-            meta={parentBasicInfo?.meta}
-            labels={{
-              lastUpdated: locale === 'ar' ? 'آخر تحديث:' : 'Last updated:',
-              confirm: locale === 'ar' ? 'جلب بيانات حديثة؟' : 'Fetch fresh data?',
-              refresh: locale === 'ar' ? 'تحديث' : 'Refresh',
-              refreshing: locale === 'ar' ? 'جاري التحديث…' : 'Refreshing…',
-              unknown: locale === 'ar' ? 'غير معروف' : 'unknown',
-            }}
-          />
+    <div className={clsx("min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30", locale === 'ar' && 'direction-rtl')}>
+      {/* Professional Header Section */}
+      <div className="bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-sm sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between py-4">
+            {/* Dashboard Header */}
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-sm">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5v4M16 5v4" />
+                </svg>
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-slate-900">
+                  {locale === 'ar' ? 'لوحة التحكم' : 'Dashboard'}
+                </h1>
+                <p className="text-slate-600 text-sm">
+                  {locale === 'ar' ? 'نظرة عامة على أنشطة أطفالك' : 'Overview of your children\'s activities'}
+                </p>
+              </div>
+            </div>
+
+            {/* Data Refresh & Date Info */}
+            <div className="flex items-center gap-4">
+              <RefreshBar
+                swrKey={swrKey}
+                meta={parentBasicInfo?.meta}
+                className="shrink-0"
+                labels={{
+                  lastUpdated: locale === 'ar' ? 'آخر تحديث:' : 'Last updated:',
+                  confirm: locale === 'ar' ? 'جلب بيانات حديثة؟' : 'Fetch fresh data?',
+                  refresh: locale === 'ar' ? 'تحديث' : 'Refresh',
+                  refreshing: locale === 'ar' ? 'جاري التحديث…' : 'Refreshing…',
+                  unknown: locale === 'ar' ? 'غير معروف' : 'unknown',
+                }}
+              />
+              
+              <div className="hidden sm:flex items-center gap-2 bg-slate-100 rounded-lg px-3 py-2">
+                <svg className="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span className="text-sm font-medium text-slate-700">
+                  {new Date().toLocaleDateString(locale === 'ar' ? 'ar-AE' : 'en-US', { 
+                    weekday: 'short',
+                    month: 'short', 
+                    day: 'numeric' 
+                  })}
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
-        {/* Eye-friendly Header Section */}
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Professional Welcome Section */}
         <div className="mb-8">
-          <Card className="border-0 shadow-lg bg-gradient-to-r from-gray-50 to-gray-100 overflow-hidden">
-            <CardContent className="relative p-4 sm:p-6">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <Card className="border-0 shadow-xl bg-white overflow-hidden">
+            {/* Background Pattern */}
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-white to-indigo-50"></div>
+            <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-blue-200/20 to-transparent rounded-full -translate-y-48 translate-x-48"></div>
+            <div className="absolute bottom-0 left-0 w-64 h-64 bg-gradient-to-tr from-indigo-200/15 to-transparent rounded-full translate-y-32 -translate-x-32"></div>
+            
+            <CardContent className="relative p-8">
+              <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
                 <div className="flex-1">
-                  <h1 className={`${locale === 'ar' ? 'text-2xl sm:text-3xl font-semibold' : 'text-3xl sm:text-4xl font-bold'} text-gray-900 mb-2`}>
-                    {locale === 'ar' ? 'مرحباً' : 'Welcome'}{session?.user?.name ? `, ${session.user.name}` : ''}
-                  </h1>
-                  <p className={`${locale === 'ar' ? 'text-sm font-normal' : 'text-base font-medium'} text-gray-600 max-w-2xl`}>
-                    {t.dashboard.welcome || (locale === 'ar' ? 'نظرة عامة على أطفالك ونشاطاتهم المدرسية' : 'Overview of your children and their school activities')}
-                  </p>
-                </div>
-                
-                <div className="bg-white/90 backdrop-blur-sm rounded-xl p-4 border border-gray-200 min-w-[120px]">
-                  <div className="text-center">
-                    <div className={`text-gray-600 ${locale === 'ar' ? 'text-xs font-normal' : 'text-xs font-medium'} mb-1`}>
-                      {new Date().toLocaleDateString(locale === 'ar' ? 'ar-AE' : 'en-US', { weekday: 'short' })}
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg">
+                      <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
                     </div>
-                    <div className={`text-white ${locale === 'ar' ? 'text-sm font-semibold' : 'text-base font-bold'}`}>
-                      {new Date().toLocaleDateString(locale === 'ar' ? 'ar-AE' : 'en-US', { 
-                        month: 'short', 
-                        day: 'numeric' 
-                      })}
-                    </div>
-                    <div className={`text-white/60 ${locale === 'ar' ? 'text-xs' : 'text-xs'}`}>
-                      {new Date().getFullYear()}
+                    <div>
+                      <h1 className={clsx(
+                        "text-4xl font-bold text-slate-900 mb-1",
+                        locale === 'ar' && "text-3xl leading-relaxed"
+                      )}>
+                        {locale === 'ar' ? 'مرحباً' : 'Welcome'}
+                        {session?.user?.name && (
+                          <span className="text-blue-600">, {session.user.name}</span>
+                        )}
+                      </h1>
+                      <p className="text-slate-600 text-lg">
+                        {t.dashboard.welcome || (locale === 'ar' ? 'نظرة عامة على أطفالك ونشاطاتهم المدرسية' : 'Overview of your children and their school activities')}
+                      </p>
                     </div>
                   </div>
+                </div>
+                
+                {/* Enhanced Stats Cards */}
+                <div className="flex flex-col sm:flex-row gap-4">
+                  {quickStats.map((stat, index) => {
+                    const IconComponent = stat.icon;
+                    return (
+                      <Link key={index} href={stat.href} className="group">
+                        <div className={clsx(
+                          "bg-white/80 backdrop-blur-sm rounded-xl border p-4 shadow-sm hover:shadow-md transition-all duration-200 min-w-[140px]",
+                          "group-hover:scale-105 group-hover:border-slate-300"
+                        )}>
+                          <div className="flex items-center gap-3 mb-2">
+                            <div className={clsx(
+                              "p-2 rounded-lg",
+                              stat.color === 'orange' && "bg-orange-100 text-orange-600",
+                              stat.color === 'purple' && "bg-purple-100 text-purple-600", 
+                              stat.color === 'blue' && "bg-blue-100 text-blue-600"
+                            )}>
+                              <IconComponent />
+                            </div>
+                            <div className="text-2xl font-bold text-slate-900">{stat.value}</div>
+                          </div>
+                          <p className="text-sm font-medium text-slate-600 leading-tight">{stat.title}</p>
+                        </div>
+                      </Link>
+                    );
+                  })}
                 </div>
               </div>
             </CardContent>
@@ -162,86 +233,155 @@ export default function DashboardPage() {
 
       {/* Main Content Grid */}
       <div className="space-y-8">
-        {/* Combined Children Section */}
-        <Card className="border-0 bg-white shadow-sm">
-          <CardContent className="p-0">
-            {/* Header */}
-            <div className="p-4 border-b border-gray-100">
+        {/* Enhanced Children Section */}
+        <Card className="border-0 bg-white shadow-lg overflow-hidden">
+          {/* Professional Header */}
+          <div className="border-b border-slate-200/80 bg-gradient-to-r from-blue-50 to-indigo-50">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-primary rounded-lg">
-                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-sm">
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                     </svg>
                   </div>
                   <div>
-                    <h2 className={`${locale === 'ar' ? 'text-lg font-semibold' : 'text-xl font-bold'} text-gray-900`}>
+                    <h2 className={clsx(
+                      "text-2xl font-bold text-slate-900",
+                      locale === 'ar' && "text-xl leading-relaxed"
+                    )}>
                       {locale === 'ar' ? 'أطفالي' : 'My Children'}
                     </h2>
-                    <p className={`text-gray-600 ${locale === 'ar' ? 'text-xs' : 'text-sm'}`}>
+                    <p className="text-slate-600 font-medium">
                       {locale === 'ar' ? 'إدارة ومتابعة بيانات الأطفال' : 'Manage and track your children\'s information'}
                     </p>
                   </div>
                 </div>
-                <Badge variant="outline" className={`bg-aegold-50 text-aegold-700 border-aegold-200 ${locale === 'ar' ? 'text-xs font-normal' : 'text-xs'}`}>
-                  <svg className={`w-3 h-3 ${locale === 'ar' ? 'ml-1' : 'mr-1'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  {locale === 'ar' ? 'نشط' : 'Active'}
-                </Badge>
+                
+                <div className="flex items-center gap-3">
+                  <Badge className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100 px-3 py-1.5">
+                    <svg className="w-3 h-3 me-1.5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    <span className="font-medium">{locale === 'ar' ? 'نشط' : 'Active'}</span>
+                  </Badge>
+                  
+                  <div className="hidden sm:flex items-center gap-2 bg-white/80 backdrop-blur-sm rounded-lg px-3 py-2 border border-slate-200">
+                    <svg className="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span className="text-sm font-medium text-slate-700">
+                      {locale === 'ar' ? 'محدث' : 'Updated'}
+                    </span>
+                  </div>
+                </div>
               </div>
-            </div>
-            {/* Content */}
-            <div className="p-4">
-              <ChildCards />
-            </div>
+            </CardContent>
+          </div>
+          
+          {/* Enhanced Content */}
+          <CardContent className="p-8">
+            <ChildCards />
           </CardContent>
         </Card>
 
-        {/* Secondary Content 
+        {/* Professional Secondary Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Recent Announcements  
+          {/* Quick Actions Section */}
           <div className="space-y-6">
-            <RecentAnnouncements />
-            
-            {/* Quick Actions Card  
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <svg className="w-5 h-5 me-2 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                  </svg>
-                  {locale === 'ar' ? 'إجراءات سريعة' : 'Quick Actions'}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
+            <Card className="border-0 bg-white shadow-lg overflow-hidden">
+              <div className="border-b border-slate-200/80 bg-gradient-to-r from-emerald-50 to-green-50">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center gap-3 text-xl font-bold text-slate-900">
+                    <div className="p-2 bg-emerald-100 rounded-lg">
+                      <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3>{locale === 'ar' ? 'إجراءات سريعة' : 'Quick Actions'}</h3>
+                      <p className="text-sm font-normal text-emerald-700 mt-1">
+                        {locale === 'ar' ? 'الوصول السريع للخدمات' : 'Quick access to services'}
+                      </p>
+                    </div>
+                  </CardTitle>
+                </CardHeader>
+              </div>
+              <CardContent className="p-6 space-y-4">
                 {quickActions.map((action, index) => {
                   const IconComponent = action.icon;
                   return (
-                    <Link key={index} href={action.href} className="group">
-                      <div className="flex items-center p-3 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all">
-                        <div className="flex-shrink-0 p-2 bg-gray-100 rounded-md group-hover:bg-gray-200 transition-colors">
+                    <Link key={index} href={action.href} className="group block">
+                      <div className="flex items-center p-4 rounded-xl border border-slate-200 hover:border-slate-300 hover:bg-slate-50 transition-all duration-200 group-hover:shadow-md">
+                        <div className="flex-shrink-0 p-3 bg-slate-100 rounded-xl group-hover:bg-slate-200 transition-colors">
                           <IconComponent />
                         </div>
-                        <div className="ml-3 rtl:ml-0 rtl:mr-3 flex-1">
-                          <p className="text-sm font-medium text-gray-900">{action.title}</p>
-                          <p className="text-xs text-gray-500">{action.description}</p>
+                        <div className={clsx("flex-1", locale === 'ar' ? "mr-4" : "ml-4")}>
+                          <p className="text-base font-semibold text-slate-900 group-hover:text-slate-800">
+                            {action.title}
+                          </p>
+                          <p className="text-sm text-slate-600 mt-1">
+                            {action.description}
+                          </p>
                         </div>
-                        <ChevronRightIcon className="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors flex-shrink-0" />
+                        <ChevronRightIcon className={clsx(
+                          "w-5 h-5 text-slate-400 group-hover:text-slate-600 transition-all duration-200 group-hover:translate-x-1",
+                          locale === 'ar' && "rotate-180 group-hover:-translate-x-1"
+                        )} />
                       </div>
                     </Link>
                   );
                 })}
               </CardContent>
             </Card>
+
+            {/* Recent Announcements */}
+            <div className="bg-white rounded-xl shadow-lg border-0 overflow-hidden">
+              <div className="border-b border-slate-200/80 bg-gradient-to-r from-amber-50 to-orange-50 px-6 py-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-amber-100 rounded-lg">
+                    <AnnouncementsIcon className="w-5 h-5 text-amber-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-amber-900">
+                      {locale === 'ar' ? 'الإعلانات الحديثة' : 'Recent Announcements'}
+                    </h3>
+                    <p className="text-sm text-amber-700">
+                      {locale === 'ar' ? 'آخر الأخبار والتحديثات' : 'Latest news and updates'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div className="p-6">
+                <RecentAnnouncements />
+              </div>
+            </div>
           </div>
 
-          {/* Upcoming Events  
+          {/* Upcoming Events Section */}
           <div>
-            <UpcomingEvents />
+            <Card className="border-0 bg-white shadow-lg overflow-hidden h-fit">
+              <div className="border-b border-slate-200/80 bg-gradient-to-r from-purple-50 to-violet-50">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center gap-3 text-xl font-bold text-slate-900">
+                    <div className="p-2 bg-purple-100 rounded-lg">
+                      <CalendarIcon className="w-5 h-5 text-purple-600" />
+                    </div>
+                    <div>
+                      <h3>{locale === 'ar' ? 'الأحداث القادمة' : 'Upcoming Events'}</h3>
+                      <p className="text-sm font-normal text-purple-700 mt-1">
+                        {locale === 'ar' ? 'المواعيد والفعاليات المهمة' : 'Important dates and activities'}
+                      </p>
+                    </div>
+                  </CardTitle>
+                </CardHeader>
+              </div>
+              <CardContent className="p-6">
+                <UpcomingEvents />
+              </CardContent>
+            </Card>
           </div>
         </div>
-        */}
         </div>
       </div>
     </div>
