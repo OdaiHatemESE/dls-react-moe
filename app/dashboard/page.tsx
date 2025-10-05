@@ -96,11 +96,11 @@ export default function DashboardPage() {
         <div className="mb-12">
           <Card className="border-0 shadow-xl bg-primary overflow-hidden">
             {/* Background Pattern */}
-            <div className="absolute inset-0 bg-black/5">
+            {/* <div className="absolute inset-0 bg-black/5">
               <div className="absolute inset-0" style={{
                 backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05' fill-rule='nonzero'%3E%3Ccircle cx='7' cy='7' r='7'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
               }} />
-            </div>
+            </div> */}
             
             <CardContent className="relative p-8 sm:p-12">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between">

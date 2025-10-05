@@ -6,6 +6,8 @@ import { RefreshCcw, Clock, Wifi, WifiOff, Download } from "lucide-react";
 import { mutate } from "swr";
 import { buildNoCacheUrl } from "@/lib/refresh";
 import { timeAgo } from "@/lib/time";
+import { useI18n } from "@/app/i18n/I18nProvider";
+
 
 export type CacheMeta = { source?: "cache" | "upstream"; lastUpdated?: string | null };
 
@@ -20,6 +22,9 @@ type Props<T> = {
     unknown?: string;
     refreshSuccess?: string;
     refreshError?: string;
+    loadingTitle?: string;
+    loadingMessage?: string;
+    loadingWaitMessage?: string;
   };
   // Optional: transform fetched JSON before mutate
   onAfterFetch?: (json: T) => T;
@@ -40,15 +45,52 @@ export function RefreshBar<T = any>({
   const [isRefreshing, setRefreshing] = React.useState(false);
   const [lastRefresh, setLastRefresh] = React.useState<Date | null>(null);
   const [refreshStatus, setRefreshStatus] = React.useState<"idle" | "success" | "error">("idle");
+  const [showLoadingOverlay, setShowLoadingOverlay] = React.useState(false);
   
+  // Get locale from i18n provider
+  const { locale } = useI18n();
+  
+  const defaultLabels = {
+    en: {
+      lastUpdated: "Last updated",
+      confirm: "Refresh data now?",
+      refresh: "Refresh",
+      refreshing: "Updating...",
+      unknown: "Unknown",
+      refreshSuccess: "Data updated successfully",
+      refreshError: "Failed to update data",
+      loadingTitle: "Getting your child's latest information",
+      loadingMessage: "We're fetching the most current data from your child's school. This helps ensure you have the latest updates on grades, attendance, and activities.",
+      loadingWaitMessage: "Thank you for your patience - school systems sometimes need a moment to respond.",
+    },
+    ar: {
+      lastUpdated: "آخر تحديث",
+      confirm: "تحديث البيانات الآن؟",
+      refresh: "تحديث",
+      refreshing: "جاري التحديث...",
+      unknown: "غير معروف",
+      refreshSuccess: "تم تحديث البيانات بنجاح",
+      refreshError: "فشل في تحديث البيانات",
+      loadingTitle: "جاري الحصول على آخر معلومات طفلك",
+      loadingMessage: "نحن نجلب أحدث البيانات من مدرسة طفلك. هذا يضمن حصولك على آخر التحديثات حول الدرجات والحضور والأنشطة.",
+      loadingWaitMessage: "شكراً لصبرك - أنظمة المدارس تحتاج أحياناً لبعض الوقت للاستجابة.",
+    }
+  };
+
+  // Use the locale from i18n provider or default to English
+  const defaults = defaultLabels[locale as 'en' | 'ar'] || defaultLabels.en;
+
   const t = {
-    lastUpdated: labels?.lastUpdated ?? "Last updated",
-    confirm: labels?.confirm ?? "Refresh data now?",
-    refresh: labels?.refresh ?? "Refresh",
-    refreshing: labels?.refreshing ?? "Updating...",
-    unknown: labels?.unknown ?? "Unknown",
-    refreshSuccess: labels?.refreshSuccess ?? "Data updated successfully",
-    refreshError: labels?.refreshError ?? "Failed to update data",
+    lastUpdated: labels?.lastUpdated ?? defaults.lastUpdated,
+    confirm: labels?.confirm ?? defaults.confirm,
+    refresh: labels?.refresh ?? defaults.refresh,
+    refreshing: labels?.refreshing ?? defaults.refreshing,
+    unknown: labels?.unknown ?? defaults.unknown,
+    refreshSuccess: labels?.refreshSuccess ?? defaults.refreshSuccess,
+    refreshError: labels?.refreshError ?? defaults.refreshError,
+    loadingTitle: labels?.loadingTitle ?? defaults.loadingTitle,
+    loadingMessage: labels?.loadingMessage ?? defaults.loadingMessage,
+    loadingWaitMessage: labels?.loadingWaitMessage ?? defaults.loadingWaitMessage,
   };
 
   const lastUpdated = meta?.cache?.lastUpdated ?? null;
@@ -70,6 +112,7 @@ export function RefreshBar<T = any>({
     
     try {
       setRefreshing(true);
+      setShowLoadingOverlay(true);
       setRefreshStatus("idle");
       const url = buildNoCacheUrl(swrKey);
       const res = await fetch(url, { cache: "no-store" });
@@ -87,6 +130,8 @@ export function RefreshBar<T = any>({
       setRefreshStatus("error");
     } finally {
       setRefreshing(false);
+      // Add a small delay before hiding overlay to show success/error state
+      setTimeout(() => setShowLoadingOverlay(false), 500);
     }
   };
 
@@ -172,6 +217,56 @@ export function RefreshBar<T = any>({
   
   const { date: lastUpdateDate, time: lastUpdateTime } = formatDateTime(displayTime);
 
+  // Loading Overlay Component
+  const LoadingOverlay = () => {
+    if (!showLoadingOverlay) return null;
+    
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center">
+        {/* Blur Background */}
+        <div className="absolute inset-0 bg-black/20 backdrop-blur-md" onClick={(e) => e.stopPropagation()} />
+        
+        {/* Loading Card */}
+        <div className="relative bg-card border border-border rounded-xl p-8 shadow-2xl max-w-md w-full mx-4 animate-in fade-in-0 zoom-in-95 duration-300">
+          <div className="flex flex-col items-center gap-4">
+            {/* Loading Icon */}
+            <div className="relative">
+              <RefreshCcw className="animate-spin text-primary" size={48} />
+              <div className="absolute inset-0 animate-pulse bg-primary/20 rounded-full"></div>
+            </div>
+            
+            {/* Loading Text */}
+            <div className="text-center space-y-3">
+              <h3 className="font-semibold text-lg text-foreground">
+                {t.loadingTitle}
+              </h3>
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {t.loadingMessage}
+                </p>
+                <p className="text-xs text-muted-foreground/80 italic">
+                  {t.loadingWaitMessage}
+                </p>
+              </div>
+            </div>
+            
+            {/* Progress Bar */}
+            <div className="w-full bg-muted rounded-full h-3">
+              <div className="bg-gradient-to-r from-primary to-primary/80 h-3 rounded-full animate-pulse transition-all duration-1000" style={{ width: '70%' }}></div>
+            </div>
+            
+            {/* Supportive Icon */}
+            <div className="flex items-center justify-center gap-2 mt-2">
+              <div className="w-2 h-2 bg-primary/60 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+              <div className="w-2 h-2 bg-primary/60 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+              <div className="w-2 h-2 bg-primary/60 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   if (variant === "minimal") {
     return (
       <div className={getContainerClasses()}>
@@ -190,8 +285,10 @@ export function RefreshBar<T = any>({
   }
 
   return (
-    <div className={getContainerClasses()}>
-      <div className="flex items-center gap-3">
+    <>
+      <LoadingOverlay />
+      <div className={getContainerClasses()}>
+        <div className="flex items-center gap-3">
         {showIcon && (
           <div className="flex-shrink-0">
             {getStatusIcon()}
@@ -249,6 +346,7 @@ export function RefreshBar<T = any>({
         </span>
       </Button>
     </div>
+    </>
   );
 }
 
