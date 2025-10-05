@@ -11,7 +11,7 @@ export default function MainContent({ children }: MainContentProps) {
   
   return (
     <div className={`${locale === 'ar' ? 'lg:pr-72' : 'lg:pl-72'}`}>
-      <main className="min-h-screen">{children}</main>
+      <main className="min-h-screen pb-20 lg:pb-0">{children}</main>
     </div>
   );
 }

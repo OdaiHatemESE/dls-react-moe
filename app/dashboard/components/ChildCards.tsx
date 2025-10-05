@@ -57,18 +57,18 @@ const formatDate = (dateString: string, locale: string): string => {
   }
 };
 
-// Enhanced helper components for clean UI with theme-aware colors
+// Enhanced helper components for clean UI with theme-aware colors - Mobile Optimized
 const InfoItem = ({ label, value, icon, locale }: { label: string; value: string; icon?: React.ReactNode; locale?: string }) => (
-  <div className={`flex items-center justify-between py-3 px-4 bg-muted/80 backdrop-blur-sm rounded-xl border border-border hover:bg-card hover:shadow-sm transition-all duration-200 ${locale === 'ar' ? 'flex-row-reverse' : ''}`}>
-    <div className={`flex items-center gap-2 ${locale === 'ar' ? 'flex-row-reverse' : ''}`}>
+  <div className={`flex items-center justify-between py-2.5 md:py-3 px-3 md:px-4 bg-muted/80 backdrop-blur-sm rounded-lg md:rounded-xl border border-border hover:bg-card hover:shadow-sm transition-all duration-200 touch-manipulation active:scale-95 ${locale === 'ar' ? 'flex-row-reverse' : ''}`}>
+    <div className={`flex items-center gap-1.5 md:gap-2 ${locale === 'ar' ? 'flex-row-reverse' : ''}`}>
       {icon && (
         <div className="text-muted-foreground">
           {icon}
         </div>
       )}
-      <span className={`text-muted-foreground font-medium ${locale === 'ar' ? 'text-xs' : 'text-sm'}`}>{label}</span>
+      <span className={`text-muted-foreground font-medium text-xs md:text-sm ${locale === 'ar' ? 'font-semibold' : ''}`}>{label}</span>
     </div>
-    <span className={`text-foreground font-semibold ${locale === 'ar' ? 'text-xs' : 'text-sm'}`}>{value}</span>
+    <span className={`text-foreground font-semibold text-xs md:text-sm ${locale === 'ar' ? 'font-bold' : ''}`}>{value}</span>
   </div>
 );
 
@@ -122,8 +122,168 @@ export default function ChildCards() {
 
   return (
     <div className="mb-12">
-      {/* Professional Table Container */}
-      <div className="relative overflow-hidden bg-card rounded-xl shadow-lg border border-border">
+      {/* Mobile-First Responsive Design */}
+      
+      {/* Mobile Cards Layout (Hidden on Desktop) */}
+      <div className="block lg:hidden space-y-4">
+        {/* Loading State for Mobile */}
+        {isBusy && (!children || children.length === 0) && (
+          <>
+            {Array.from({ length: 2 }).map((_, i) => (
+              <Card key={`mobile-skeleton-${i}`} className="p-4 animate-pulse">
+                <div className="flex items-center gap-4 mb-4">
+                  <Skeleton className="w-16 h-16 rounded-xl bg-gradient-to-br from-muted to-muted/70" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-5 w-32 bg-muted" />
+                    <Skeleton className="h-3 w-20 bg-muted" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-full bg-muted" />
+                  <Skeleton className="h-4 w-3/4 bg-muted" />
+                </div>
+              </Card>
+            ))}
+          </>
+        )}
+
+        {/* Error State for Mobile */}
+        {error && (
+          <Card className="p-6 text-center">
+            <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-destructive/10 to-destructive/20 rounded-2xl flex items-center justify-center">
+              <svg className="w-8 h-8 text-destructive" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h3 className="text-base font-semibold text-foreground mb-2">
+              {locale === 'ar' ? 'حدث خطأ' : 'Something went wrong'}
+            </h3>
+            <p className="text-sm text-destructive">
+              {error instanceof Error ? error.message : String(error)}
+            </p>
+          </Card>
+        )}
+
+        {/* Mobile Student Cards */}
+        {(children ?? []).map((child: Person) => {
+          const displayName = locale === 'ar'
+            ? [child.givenName, child.middleName, child.familyName].filter(Boolean).join(' ')
+            : [child.metadata?.englishFirstName, child.metadata?.englishSecondName, child.metadata?.englishThirdName, child.metadata?.englishFamilyName].filter(Boolean).join(' ');
+          const displayNationality = locale === 'ar'
+            ? child.metadata?.nationalityArabic || child.metadata?.nationality || ''
+            : child.metadata?.nationality || '';
+          const gender = child.metadata?.gender || '';
+          const birthDate = child.metadata?.birthDate || '';
+          const age = calculateAge(birthDate);
+          const formattedBirthDate = formatDate(birthDate, locale);
+
+          const genderLabel = (() => {
+            const g = gender?.toLowerCase();
+            if (g === 'm' || g === 'male' || g === 'ذكر') {
+              return t.student?.male || (locale === 'ar' ? 'ذكر' : 'Male');
+            } else if (g === 'f' || g === 'female' || g === 'أنثى') {
+              return t.student?.female || (locale === 'ar' ? 'أنثى' : 'Female');
+            }
+            return gender || '—';
+          })();
+
+          return (
+            <Card key={child.sourcedId} className="overflow-hidden shadow-md hover:shadow-lg transition-all duration-200 touch-manipulation active:scale-98">
+              <div className="relative p-4">
+                {/* Background gradient */}
+                <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-secondary/5" />
+                
+                <div className="relative">
+                  {/* Student Header */}
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary/80 rounded-xl flex items-center justify-center shadow-md">
+                      <span className="text-xl font-bold text-primary-foreground">
+                        {displayName.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-lg font-bold text-foreground truncate">
+                        {displayName}
+                      </h3>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Badge className="text-xs px-2 py-1">
+                          {child.sourcedId.slice(-6)}
+                        </Badge>
+                        {child.status === 'active' && (
+                          <div className="flex items-center gap-1">
+                            <div className="w-2 h-2 bg-green-500 rounded-full" />
+                            <span className="text-xs text-green-700 font-medium">
+                              {locale === 'ar' ? 'نشط' : 'Active'}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Student Info Grid */}
+                  <div className="space-y-3 mb-4">
+                    <div className="grid grid-cols-2 gap-3">
+                      <InfoItem
+                        label={t.student?.age || (locale === 'ar' ? 'العمر' : 'Age')}
+                        value={age > 0 ? `${age} ${t.student?.years || (locale === 'ar' ? 'سنة' : 'yrs')}` : '—'}
+                        icon={<svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>}
+                        locale={locale}
+                      />
+                      <InfoItem
+                        label={t.student?.gender || (locale === 'ar' ? 'الجنس' : 'Gender')}
+                        value={genderLabel}
+                        icon={<svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1z" /></svg>}
+                        locale={locale}
+                      />
+                    </div>
+                    
+                    <InfoItem
+                      label={t.student?.nationality || (locale === 'ar' ? 'الجنسية' : 'Nationality')}
+                      value={displayNationality || '—'}
+                      icon={<svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
+                      locale={locale}
+                    />
+                    
+                    <InfoItem
+                      label={t.student?.birthDate || (locale === 'ar' ? 'تاريخ الميلاد' : 'Birth Date')}
+                      value={formattedBirthDate || '—'}
+                      icon={<svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>}
+                      locale={locale}
+                    />
+                  </div>
+
+                  {/* Action Button */}
+                  <Link
+                    href={`/child/${child.sourcedId}`}
+                    className={clsx(
+                      "flex items-center justify-center gap-2 w-full px-4 py-3 text-sm font-semibold",
+                      "bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary",
+                      "text-primary-foreground rounded-xl shadow-md hover:shadow-lg",
+                      "transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/20",
+                      "active:scale-95 touch-manipulation",
+                      locale === 'ar' && 'flex-row-reverse'
+                    )}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                    <span>{locale === 'ar' ? 'عرض الملف' : 'View Profile'}</span>
+                    <ChevronRightIcon className={clsx(
+                      "w-4 h-4 transition-transform",
+                      locale === 'ar' ? 'rotate-180' : ''
+                    )} />
+                  </Link>
+                </div>
+              </div>
+            </Card>
+          );
+        })}
+      </div>
+
+      {/* Desktop Table Layout (Hidden on Mobile) */}
+      <div className="hidden lg:block relative overflow-hidden bg-card rounded-xl shadow-lg border border-border">
         {/* Modern Background Pattern */}
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-secondary/5" />
         <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-primary/10 to-transparent rounded-full -translate-y-48 translate-x-48" />
@@ -376,55 +536,55 @@ export default function ChildCards() {
         </div>
       </div>
 
-      {/* Professional Empty State */}
+      {/* Mobile-Optimized Empty State */}
       {status === "authenticated" && !isBusy && !error && (!children || children.length === 0) && (
-        <div className="mt-8">
+        <div className="mt-6 md:mt-8">
           <div className="relative overflow-hidden bg-card rounded-xl shadow-lg border border-border">
             {/* Modern Background Pattern */}
             <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-secondary/5" />
-            <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-br from-primary/10 to-transparent rounded-full -translate-y-40 translate-x-40" />
-            <div className="absolute bottom-0 left-0 w-64 h-64 bg-gradient-to-tr from-secondary/8 to-transparent rounded-full translate-y-32 -translate-x-32" />
+            <div className="absolute top-0 right-0 w-40 h-40 md:w-80 md:h-80 bg-gradient-to-br from-primary/10 to-transparent rounded-full -translate-y-20 translate-x-20 md:-translate-y-40 md:translate-x-40" />
+            <div className="absolute bottom-0 left-0 w-32 h-32 md:w-64 md:h-64 bg-gradient-to-tr from-secondary/8 to-transparent rounded-full translate-y-16 -translate-x-16 md:translate-y-32 md:-translate-x-32" />
             
-            <div className="relative p-20 text-center">
+            <div className="relative p-8 md:p-20 text-center">
               <div className="max-w-lg mx-auto">
-                <div className="w-28 h-28 mx-auto mb-8 bg-gradient-to-br from-primary to-primary/80 rounded-3xl flex items-center justify-center shadow-xl ring-4 ring-card">
-                  <svg className="w-14 h-14 text-primary-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-20 h-20 md:w-28 md:h-28 mx-auto mb-6 md:mb-8 bg-gradient-to-br from-primary to-primary/80 rounded-2xl md:rounded-3xl flex items-center justify-center shadow-xl ring-2 md:ring-4 ring-card">
+                  <svg className="w-10 h-10 md:w-14 md:h-14 text-primary-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                   </svg>
                 </div>
                 <h3 className={clsx(
-                  "text-3xl font-bold text-foreground mb-4",
-                  locale === 'ar' && "text-2xl leading-relaxed"
+                  "text-xl md:text-3xl font-bold text-foreground mb-3 md:mb-4",
+                  locale === 'ar' && "leading-relaxed"
                 )}>
                   {locale === 'ar' ? 'لا توجد بيانات طلاب' : 'No Students Found'}
                 </h3>
                 <p className={clsx(
-                  "text-lg text-muted-foreground mb-8 leading-relaxed",
-                  locale === 'ar' && "text-base"
+                  "text-sm md:text-lg text-muted-foreground mb-6 md:mb-8 leading-relaxed px-4",
+                  locale === 'ar' && "text-sm md:text-base"
                 )}>
                   {t.dashboard?.noLinkedStudents || (locale === 'ar' ? 'لم يتم العثور على طلاب مرتبطين بحسابك. تحقق من إعدادات الحساب أو تواصل مع الإدارة.' : 'No linked students found for your account. Please check your account settings or contact administration.')}
                 </p>
-                <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <div className={clsx(
-                    "inline-flex items-center gap-3 px-6 py-3 text-sm font-semibold",
+                <div className="flex flex-col gap-3 md:flex-row md:gap-4 justify-center">
+                  <button className={clsx(
+                    "inline-flex items-center justify-center gap-2 md:gap-3 px-4 py-3 md:px-6 text-sm font-semibold",
                     "text-muted-foreground bg-muted hover:bg-muted/80 rounded-xl shadow-sm hover:shadow-md",
-                    "transition-all duration-200 border border-border hover:border-border/80"
+                    "transition-all duration-200 border border-border hover:border-border/80 touch-manipulation active:scale-95"
                   )}>
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    {locale === 'ar' ? 'تحقق من إعدادات الحساب' : 'Check Account Settings'}
-                  </div>
-                  <div className={clsx(
-                    "inline-flex items-center gap-3 px-6 py-3 text-sm font-semibold",
+                    <span className="text-xs md:text-sm">{locale === 'ar' ? 'تحقق من إعدادات الحساب' : 'Check Account Settings'}</span>
+                  </button>
+                  <button className={clsx(
+                    "inline-flex items-center justify-center gap-2 md:gap-3 px-4 py-3 md:px-6 text-sm font-semibold",
                     "text-primary bg-primary/10 hover:bg-primary/20 rounded-xl shadow-sm hover:shadow-md",
-                    "transition-all duration-200 border border-primary/20 hover:border-primary/30"
+                    "transition-all duration-200 border border-primary/20 hover:border-primary/30 touch-manipulation active:scale-95"
                   )}>
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    {locale === 'ar' ? 'تواصل مع الدعم' : 'Contact Support'}
-                  </div>
+                    <span className="text-xs md:text-sm">{locale === 'ar' ? 'تواصل مع الدعم' : 'Contact Support'}</span>
+                  </button>
                 </div>
               </div>
             </div>

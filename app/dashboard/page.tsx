@@ -76,34 +76,35 @@ export default function DashboardPage() {
 
   return (
     <div className={clsx("min-h-screen bg-gradient-to-br from-background via-background to-primary/5", locale === 'ar' && 'direction-rtl')}>
-      {/* Professional Header Section */}
+      {/* Mobile App-like Header Section */}
       <div className="bg-card/95 backdrop-blur-md border-b border-border shadow-sm sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between py-4">
-            {/* Dashboard Header */}
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-gradient-to-br from-primary to-primary/80 rounded-xl shadow-sm">
-                <svg className="w-6 h-6 text-primary-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between py-3 md:py-4 gap-2 min-w-0 overflow-hidden">
+            {/* Dashboard Header - Mobile Optimized */}
+            <div className="flex items-center gap-2 md:gap-3 min-w-0 flex-1 overflow-hidden">
+              <div className="p-1.5 md:p-2 bg-gradient-to-br from-primary to-primary/80 rounded-xl shadow-sm flex-shrink-0">
+                <svg className="w-5 h-5 md:w-6 md:h-6 text-primary-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5v4M16 5v4" />
                 </svg>
               </div>
-              <div>
-                <h1 className="text-2xl font-bold text-foreground">
+              <div className="min-w-0 overflow-hidden">
+                <h1 className="text-lg md:text-2xl font-bold text-foreground truncate">
                   {locale === 'ar' ? 'لوحة التحكم' : 'Dashboard'}
                 </h1>
-                <p className="text-muted-foreground text-sm">
+                <p className="text-muted-foreground text-xs md:text-sm hidden md:block truncate">
                   {locale === 'ar' ? 'نظرة عامة على أنشطة أطفالك' : 'Overview of your children\'s activities'}
                 </p>
               </div>
             </div>
 
-            {/* Data Refresh & Date Info */}
-            <div className="flex items-center gap-4">
+            {/* Data Refresh & Date Info - Mobile Optimized */}
+            <div className="flex items-center gap-1 md:gap-2 min-w-0 overflow-hidden">
               <RefreshBar
                 swrKey={swrKey}
                 meta={parentBasicInfo?.meta}
-                className="shrink-0"
+                variant="compact"
+                className="flex-shrink-0 min-w-0"
                 labels={{
                   lastUpdated: locale === 'ar' ? 'آخر تحديث:' : 'Last updated:',
                   confirm: locale === 'ar' ? 'جلب بيانات حديثة؟' : 'Fetch fresh data?',
@@ -113,11 +114,11 @@ export default function DashboardPage() {
                 }}
               />
               
-              <div className="hidden sm:flex items-center gap-2 bg-muted rounded-lg px-3 py-2">
-                <svg className="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="hidden lg:flex items-center gap-2 bg-muted rounded-lg px-2 py-1.5 flex-shrink-0">
+                <svg className="w-3 h-3 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
-                <span className="text-sm font-medium text-foreground">
+                <span className="text-xs font-medium text-foreground whitespace-nowrap">
                   {new Date().toLocaleDateString(locale === 'ar' ? 'ar-AE' : 'en-US', { 
                     weekday: 'short',
                     month: 'short', 
@@ -165,33 +166,7 @@ export default function DashboardPage() {
                   </div>
                 </div>
                 
-                {/* Enhanced Stats Cards */}
-                <div className="flex flex-col sm:flex-row gap-4">
-                  {quickStats.map((stat, index) => {
-                    const IconComponent = stat.icon;
-                    return (
-                      <Link key={index} href={stat.href} className="group">
-                        <div className={clsx(
-                          "bg-card/80 backdrop-blur-sm rounded-xl border p-4 shadow-sm hover:shadow-md transition-all duration-200 min-w-[140px]",
-                          "group-hover:scale-105 group-hover:border-border/80"
-                        )}>
-                          <div className="flex items-center gap-3 mb-2">
-                            <div className={clsx(
-                              "p-2 rounded-lg",
-                              stat.color === 'orange' && "bg-chart-1/20 text-chart-1",
-                              stat.color === 'purple' && "bg-chart-2/20 text-chart-2", 
-                              stat.color === 'blue' && "bg-primary/20 text-primary"
-                            )}>
-                              <IconComponent />
-                            </div>
-                            <div className="text-2xl font-bold text-foreground">{stat.value}</div>
-                          </div>
-                          <p className="text-sm font-medium text-muted-foreground leading-tight">{stat.title}</p>
-                        </div>
-                      </Link>
-                    );
-                  })}
-                </div>
+              
               </div>
             </CardContent>
           </Card>

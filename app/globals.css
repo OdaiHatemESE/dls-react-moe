@@ -8,9 +8,34 @@
 
 html  {
   overflow-x: hidden;
+  /* Mobile app-like scroll behavior */
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
 }
 
 @layer base {
+  /* Mobile app-like enhancements */
+  * {
+    /* Prevent text selection on UI elements */
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  /* Touch-friendly interactions */
+  .touch-manipulation {
+    touch-action: manipulation;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+  
+  .select-none {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+
   /* Improve focus visibility for accessibility */
   *:focus {
     outline: 2px solid transparent;
@@ -20,6 +45,9 @@ html  {
   /* Ensure text meets WCAG AA contrast requirements */
   body {
     @apply text-gray-900 bg-white;
+    /* Smooth font rendering on mobile */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   /* Typography scale */

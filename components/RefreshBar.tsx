@@ -202,27 +202,29 @@ export function RefreshBar<T = any>({
   };
 
   const getStatusIcon = () => {
+    const iconSize = variant === "compact" ? 14 : 18;
+    
     if (isRefreshing) return (
       <div className="relative">
-        <RefreshCcw className="animate-spin text-blue-500" size={18} />
+        <RefreshCcw className="animate-spin text-blue-500" size={iconSize} />
         <div className="absolute inset-0 animate-pulse bg-blue-500/20 rounded-full"></div>
       </div>
     );
     if (refreshStatus === "success") return (
       <div className="relative">
-        <Wifi className="text-emerald-500 drop-shadow-sm" size={18} />
+        <Wifi className="text-emerald-500 drop-shadow-sm" size={iconSize} />
         <div className="absolute -inset-1 bg-emerald-500/10 rounded-full animate-ping"></div>
       </div>
     );
     if (refreshStatus === "error") return (
       <div className="relative">
-        <WifiOff className="text-red-500 drop-shadow-sm" size={18} />
+        <WifiOff className="text-red-500 drop-shadow-sm" size={iconSize} />
         <div className="absolute -inset-1 bg-red-500/10 rounded-full animate-pulse"></div>
       </div>
     );
     return (
-      <div className="p-1 bg-muted/50 rounded-full">
-        <Wifi className="text-emerald-500 drop-shadow-sm" size={25} />
+      <div className="p-0.5 md:p-1 bg-muted/50 rounded-full">
+        <Wifi className="text-emerald-500 drop-shadow-sm" size={variant === "compact" ? 16 : 20} />
       </div>
     );
   };
@@ -233,12 +235,12 @@ export function RefreshBar<T = any>({
     return null;
   };
 
-  // Enhanced variant-based styling
+  // Enhanced variant-based styling with overflow protection
   const getContainerClasses = () => {
-    const base = "flex items-center gap-3 rounded-lg border transition-all duration-300";
+    const base = "flex items-center gap-2 md:gap-3 rounded-lg border transition-all duration-300 overflow-hidden";
     const variants = {
-      default: "justify-between px-4 py-2 bg-primary/5 hover:bg-primary/8 hover:scale-[1.01] border-primary/20",
-      compact: "justify-between px-3 py-2 bg-primary/5 hover:bg-primary/8 border-primary/15",
+      default: "justify-between px-2 md:px-4 py-2 bg-primary/5 hover:bg-primary/8 hover:scale-[1.01] border-primary/20",
+      compact: "justify-between px-2 md:px-3 py-2 bg-primary/5 hover:bg-primary/8 border-primary/15",
       minimal: "justify-end p-2 bg-transparent border-transparent hover:bg-primary/5"
     };
     return `${base} ${variants[variant]} ${className ?? ""}`;
@@ -341,10 +343,10 @@ export function RefreshBar<T = any>({
           size="sm" 
           onClick={doRefresh} 
           disabled={isRefreshing || isRateLimited}
-          className="gap-3 hover:bg-primary/10 hover:text-primary transition-all duration-200 rounded-lg px-4 py-2"
+          className="gap-1 md:gap-2 hover:bg-primary/10 hover:text-primary transition-all duration-200 rounded-lg px-2 md:px-4 py-2 min-w-0 overflow-hidden"
         >
-          {showIcon && getStatusIcon()}
-          <span className="font-medium">
+          {showIcon && <div className="flex-shrink-0">{getStatusIcon()}</div>}
+          <span className="font-medium text-xs md:text-sm truncate">
             {isRefreshing ? t.refreshing : 
              isRateLimited ? `${t.rateLimited} ${countdownMinutes}:${countdownSeconds.toString().padStart(2, '0')}` : 
              t.refresh}
@@ -358,40 +360,44 @@ export function RefreshBar<T = any>({
     <>
       <LoadingOverlay />
       <div className={getContainerClasses()}>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1 md:gap-2 min-w-0 flex-1 overflow-hidden">
         {showIcon && (
           <div className="flex-shrink-0">
             {getStatusIcon()}
           </div>
         )}
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1 px-2 py-1 bg-muted/30 rounded-full">
-            <Download className="text-muted-foreground" size={12} />
-            <span className="text-muted-foreground font-medium text-xs">{t.lastUpdated}</span>
+        {/* Mobile: Simplified layout, Desktop: Full layout */}
+        <div className="flex items-center gap-1 md:gap-2 min-w-0 overflow-hidden">
+          {/* Mobile: Show only essential info */}
+          <div className="flex items-center gap-1 px-1.5 md:px-2 py-1 bg-muted/30 rounded-full">
+            <Download className="text-muted-foreground flex-shrink-0" size={10} />
+            <span className="text-muted-foreground font-medium text-xs hidden md:inline truncate">{t.lastUpdated}</span>
           </div>
-          <div className="px-2 py-1 bg-primary/10 rounded-full">
-            <span className="font-semibold text-primary text-xs">
+          <div className="px-1.5 md:px-2 py-1 bg-primary/10 rounded-full">
+            <span className="font-semibold text-primary text-xs truncate">
               {lastUpdateDate}
             </span>
           </div>
+          {/* Hide time on mobile to save space */}
           {lastUpdateTime && (
-            <div className="px-2 py-1 bg-secondary/20 rounded-full">
-              <span className="font-medium text-secondary-foreground text-xs flex items-center gap-1">
-                <Clock size={10} />
-                {lastUpdateTime}
+            <div className="px-1.5 md:px-2 py-1 bg-secondary/20 rounded-full hidden sm:block">
+              <span className="font-medium text-secondary-foreground text-xs flex items-center gap-1 truncate">
+                <Clock size={10} className="flex-shrink-0" />
+                <span className="truncate">{lastUpdateTime}</span>
               </span>
             </div>
           )}
         </div>
+        {/* Status message - hide on mobile if space is tight */}
         {statusMessage && (
-          <div className={`text-xs font-medium px-2 py-1 rounded-full transition-all duration-300 ${
+          <div className={`text-xs font-medium px-1.5 md:px-2 py-1 rounded-full transition-all duration-300 hidden sm:block ${
             refreshStatus === "success" 
               ? "text-emerald-700 bg-emerald-100 border border-emerald-200" : 
             refreshStatus === "error" 
               ? "text-red-700 bg-red-100 border border-red-200" : 
               "text-muted-foreground bg-muted/50"
           }`}>
-            {statusMessage}
+            <span className="truncate">{statusMessage}</span>
           </div>
         )}
       </div>
@@ -401,22 +407,22 @@ export function RefreshBar<T = any>({
         size="sm"
         onClick={doRefresh} 
         disabled={isRefreshing || isRateLimited}
-        className={`gap-2 min-w-fit transition-all duration-300 ${
+        className={`gap-1 md:gap-2 min-w-fit flex-shrink-0 transition-all duration-300 ${
           isRateLimited 
             ? "bg-gray-400 cursor-not-allowed opacity-70" 
             : "bg-amber-500 hover:bg-amber-600"
-        } text-white border-0 rounded-md px-4 py-2 font-medium ${
+        } text-white border-0 rounded-md px-2 md:px-4 py-2 font-medium ${
           isRefreshing ? "cursor-wait animate-pulse opacity-80" : 
           isRateLimited ? "" : "hover:scale-105"
         }`}
       >
-        <div className="relative">
-          <RefreshCcw className={`${isRefreshing ? "animate-spin text-white" : "text-white"} transition-all duration-300`} size={16} />
+        <div className="relative flex-shrink-0">
+          <RefreshCcw className={`${isRefreshing ? "animate-spin text-white" : "text-white"} transition-all duration-300`} size={14} />
           {isRefreshing && (
             <div className="absolute inset-0 animate-pulse bg-blue-500/20 rounded-full"></div>
           )}
         </div>
-        <span className="font-medium text-white text-sm">
+        <span className="font-medium text-white text-xs md:text-sm truncate">
           {isRefreshing ? t.refreshing : 
            isRateLimited ? `${t.rateLimited} ${countdownMinutes}:${countdownSeconds.toString().padStart(2, '0')}` : 
            t.refresh}
