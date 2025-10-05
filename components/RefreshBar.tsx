@@ -25,12 +25,17 @@ type Props<T> = {
     loadingTitle?: string;
     loadingMessage?: string;
     loadingWaitMessage?: string;
+    rateLimited?: string;
+    rateLimitedMinutes?: string;
+    rateLimitedSeconds?: string;
   };
   // Optional: transform fetched JSON before mutate
   onAfterFetch?: (json: T) => T;
   className?: string;
   showIcon?: boolean;
   variant?: "default" | "compact" | "minimal";
+  // Optional: rate limit duration in minutes (defaults based on environment)
+  rateLimitMinutes?: number;
 };
 
 export function RefreshBar<T = any>({ 
@@ -40,15 +45,34 @@ export function RefreshBar<T = any>({
   onAfterFetch, 
   className, 
   showIcon = true,
-  variant = "default"
+  variant = "default",
+  rateLimitMinutes
 }: Props<T>) {
   const [isRefreshing, setRefreshing] = React.useState(false);
   const [lastRefresh, setLastRefresh] = React.useState<Date | null>(null);
   const [refreshStatus, setRefreshStatus] = React.useState<"idle" | "success" | "error">("idle");
   const [showLoadingOverlay, setShowLoadingOverlay] = React.useState(false);
+  const [isRateLimited, setIsRateLimited] = React.useState(false);
+  const [countdownMinutes, setCountdownMinutes] = React.useState(0);
+  const [countdownSeconds, setCountdownSeconds] = React.useState(0);
   
   // Get locale from i18n provider
   const { locale } = useI18n();
+  
+  // Determine rate limit duration based on environment
+  const getRateLimitDuration = () => {
+    if (rateLimitMinutes !== undefined) {
+      return rateLimitMinutes; // Use prop if provided
+    }
+    
+    const env = process.env.NODE_ENV;
+    if (env === 'development' || env === 'test') {
+      return 1; // 1 minute for dev/test
+    }
+    return 15; // 15 minutes for production
+  };
+  
+  const rateLimitDurationMinutes = getRateLimitDuration();
   
   const defaultLabels = {
     en: {
@@ -62,6 +86,9 @@ export function RefreshBar<T = any>({
       loadingTitle: "Getting your child's latest information",
       loadingMessage: "We're fetching the most current data from your child's school. This helps ensure you have the latest updates on grades, attendance, and activities.",
       loadingWaitMessage: "Thank you for your patience - school systems sometimes need a moment to respond.",
+      rateLimited: "Please wait",
+      rateLimitedMinutes: "min",
+      rateLimitedSeconds: "sec",
     },
     ar: {
       lastUpdated: "آخر تحديث",
@@ -74,6 +101,9 @@ export function RefreshBar<T = any>({
       loadingTitle: "جاري الحصول على آخر معلومات طفلك",
       loadingMessage: "نحن نجلب أحدث البيانات من مدرسة طفلك. هذا يضمن حصولك على آخر التحديثات حول الدرجات والحضور والأنشطة.",
       loadingWaitMessage: "شكراً لصبرك - أنظمة المدارس تحتاج أحياناً لبعض الوقت للاستجابة.",
+      rateLimited: "يرجى الانتظار",
+      rateLimitedMinutes: "دقيقة",
+      rateLimitedSeconds: "ثانية",
     }
   };
 
@@ -91,6 +121,9 @@ export function RefreshBar<T = any>({
     loadingTitle: labels?.loadingTitle ?? defaults.loadingTitle,
     loadingMessage: labels?.loadingMessage ?? defaults.loadingMessage,
     loadingWaitMessage: labels?.loadingWaitMessage ?? defaults.loadingWaitMessage,
+    rateLimited: defaults.rateLimited,
+    rateLimitedMinutes: defaults.rateLimitedMinutes,
+    rateLimitedSeconds: defaults.rateLimitedSeconds,
   };
 
   const lastUpdated = meta?.cache?.lastUpdated ?? null;
@@ -104,11 +137,38 @@ export function RefreshBar<T = any>({
     }
   }, [refreshStatus]);
 
-  const doRefresh = async () => {
-    if (!swrKey) return;
+  // Rate limiting effect - configurable countdown
+  React.useEffect(() => {
+    let interval: NodeJS.Timeout;
     
-    // Simple confirmation without mentioning outdated data
-    if (!window.confirm(t.confirm)) return;
+    if (isRateLimited) {
+      interval = setInterval(() => {
+        const now = new Date().getTime();
+        const lastRefreshTime = lastRefresh?.getTime() || 0;
+        const timeDiff = now - lastRefreshTime;
+        const rateLimitDurationMs = rateLimitDurationMinutes * 60 * 1000; // Convert minutes to milliseconds
+        
+        if (timeDiff >= rateLimitDurationMs) {
+          setIsRateLimited(false);
+          setCountdownMinutes(0);
+          setCountdownSeconds(0);
+        } else {
+          const remainingTime = rateLimitDurationMs - timeDiff;
+          const minutes = Math.floor(remainingTime / (60 * 1000));
+          const seconds = Math.floor((remainingTime % (60 * 1000)) / 1000);
+          setCountdownMinutes(minutes);
+          setCountdownSeconds(seconds);
+        }
+      }, 1000);
+    }
+    
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isRateLimited, lastRefresh, rateLimitDurationMinutes]);
+
+  const doRefresh = async () => {
+    if (!swrKey || isRateLimited) return;
     
     try {
       setRefreshing(true);
@@ -123,8 +183,14 @@ export function RefreshBar<T = any>({
       
       const json = (await res.json()) as T;
       mutate(swrKey, onAfterFetch ? onAfterFetch(json) : json, false);
-      setLastRefresh(new Date());
+      const refreshTime = new Date();
+      setLastRefresh(refreshTime);
       setRefreshStatus("success");
+      
+      // Start rate limiting
+      setIsRateLimited(true);
+      setCountdownMinutes(rateLimitDurationMinutes);
+      setCountdownSeconds(0);
     } catch (error) {
       console.error("Refresh failed:", error);
       setRefreshStatus("error");
@@ -274,11 +340,15 @@ export function RefreshBar<T = any>({
           variant="ghost" 
           size="sm" 
           onClick={doRefresh} 
-          disabled={isRefreshing}
+          disabled={isRefreshing || isRateLimited}
           className="gap-3 hover:bg-primary/10 hover:text-primary transition-all duration-200 rounded-lg px-4 py-2"
         >
           {showIcon && getStatusIcon()}
-          <span className="font-medium">{isRefreshing ? t.refreshing : t.refresh}</span>
+          <span className="font-medium">
+            {isRefreshing ? t.refreshing : 
+             isRateLimited ? `${t.rateLimited} ${countdownMinutes}:${countdownSeconds.toString().padStart(2, '0')}` : 
+             t.refresh}
+          </span>
         </Button>
       </div>
     );
@@ -330,9 +400,14 @@ export function RefreshBar<T = any>({
         variant="default"
         size="sm"
         onClick={doRefresh} 
-        disabled={isRefreshing}
-        className={`gap-2 min-w-fit transition-all duration-300 bg-amber-500 hover:bg-amber-600 text-white border-0 rounded-md px-4 py-2 font-medium ${
-          isRefreshing ? "cursor-wait animate-pulse opacity-80" : "hover:scale-105"
+        disabled={isRefreshing || isRateLimited}
+        className={`gap-2 min-w-fit transition-all duration-300 ${
+          isRateLimited 
+            ? "bg-gray-400 cursor-not-allowed opacity-70" 
+            : "bg-amber-500 hover:bg-amber-600"
+        } text-white border-0 rounded-md px-4 py-2 font-medium ${
+          isRefreshing ? "cursor-wait animate-pulse opacity-80" : 
+          isRateLimited ? "" : "hover:scale-105"
         }`}
       >
         <div className="relative">
@@ -342,7 +417,9 @@ export function RefreshBar<T = any>({
           )}
         </div>
         <span className="font-medium text-white text-sm">
-          {isRefreshing ? t.refreshing : t.refresh}
+          {isRefreshing ? t.refreshing : 
+           isRateLimited ? `${t.rateLimited} ${countdownMinutes}:${countdownSeconds.toString().padStart(2, '0')}` : 
+           t.refresh}
         </span>
       </Button>
     </div>
