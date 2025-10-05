@@ -76,7 +76,7 @@ export default function ChildCards() {
   const { data: session, status } = useSession();
 
   // normalization is handled by useChildren
-  const eid = status === "authenticated" ? (session?.user?.emiratesId || "784198791735438") : undefined;
+  const eid = status === "authenticated" ? (session?.user?.emiratesId || '') : undefined;
   const { children, error, isLoading } = useChildren(eid);
   console.log("Children:", children, error, isLoading);
   const isBusy = status === "loading" || (status === "authenticated" && isLoading);

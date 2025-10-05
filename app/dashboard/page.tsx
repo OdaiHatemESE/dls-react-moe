@@ -1,12 +1,15 @@
 "use client";
 
 import React from 'react';
+import useSWR from 'swr';
 import { useI18n } from "@/app/i18n/I18nProvider";
 import { useSession } from "next-auth/react";
 import clsx from "clsx";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { jsonFetcher } from "@/lib/swr";
+import RefreshBar from "@/components/RefreshBar";
 import ChildCards from "./components/ChildCards";
 import RecentAnnouncements from "./components/RecentAnnouncements";
 import UpcomingEvents from "./components/UpcomingEvents";
@@ -19,6 +22,9 @@ import {
 export default function DashboardPage() {
   const { t, locale } = useI18n();
   const { data: session } = useSession();
+  const eid = session?.user?.emiratesId as string | undefined;
+  const swrKey = eid ? `/api/oneroster/basic-info-full?eid=${encodeURIComponent(eid)}` : "/api/oneroster/basic-info-full";
+  const { data: parentBasicInfo } = useSWR<any>(swrKey, jsonFetcher);
 
   // Quick stats data (you can replace with real data)
   const quickStats = [
@@ -71,6 +77,21 @@ export default function DashboardPage() {
   return (
     <div className={clsx("min-h-screen bg-gradient-to-br from-background to-aegold-50/30", locale === 'ar' && 'direction-rtl')}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            {/* Data freshness bar for parent/children basic info */}
+        <div className="mb-8">
+          <RefreshBar
+            swrKey={swrKey}
+            meta={parentBasicInfo?.meta}
+            labels={{
+              lastUpdated: locale === 'ar' ? 'آخر تحديث:' : 'Last updated:',
+              outdatedMsg: locale === 'ar' ? 'قد تكون البيانات غير محدثة. انقر للتحديث.' : 'Your data might be outdated. Click refresh to update.',
+              confirm: locale === 'ar' ? 'جلب بيانات حديثة؟' : 'Fetch fresh data?',
+              refresh: locale === 'ar' ? 'تحديث' : 'Refresh',
+              refreshing: locale === 'ar' ? 'جاري التحديث…' : 'Refreshing…',
+              unknown: locale === 'ar' ? 'غير معروف' : 'unknown',
+            }}
+          />
+        </div>
         {/* Enhanced Header Section */}
         <div className="mb-12">
           <Card className="border-0 shadow-xl bg-primary overflow-hidden">
@@ -112,6 +133,8 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
         </div>
+
+    
 
       {/* Quick Stats */}
       {/* <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
