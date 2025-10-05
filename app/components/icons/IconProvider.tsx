@@ -18,11 +18,12 @@ export default function IconProvider({ children }: Props) {
 
   useEffect(() => {
     const url = window.location.href;
-
+  
     if (status === 'loading') return;
 
     // 2) If not signed in yet, try mobile-token ONCE, else fall back to OIDC
     if (status === 'unauthenticated' && !attemptedRef.current) {
+      alert('unauthenticated - redirecting to login');
       attemptedRef.current = true;
 
       const mobileToken =
