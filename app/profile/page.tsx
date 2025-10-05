@@ -28,11 +28,16 @@ export default function ProfilePage() {
   const { t, locale } = useI18n();
 
   // Get session to extract EID (external identifier)
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   // You may need to adjust this depending on your session shape
   // Use emiratesId or id from session.user for EID
 
   const eid = session?.user?.emiratesId || session?.user?.id || session?.user?.email;
+
+  // During HMR, avoid rendering aggressive redirects; show a lightweight loader if auth is loading
+  if (status === 'loading') {
+    return <div className="max-w-5xl mx-auto px-4 sm:px-8 py-10 text-center text-muted-foreground">Loading session…</div>;
+  }
 
   // SWR fetcher for API
   const fetcher = (url: string) => fetch(url).then(res => res.json());
