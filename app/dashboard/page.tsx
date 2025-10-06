@@ -5,20 +5,12 @@ import useSWR from 'swr';
 import { useI18n } from "@/app/i18n/I18nProvider";
 import { useSession } from "next-auth/react";
 import clsx from "clsx";
-import Link from "next/link";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { jsonFetcher } from "@/lib/swr";
 import RefreshBar from "@/components/RefreshBar";
 import ChildCards from "./components/ChildCards";
-import RecentAnnouncements from "./components/RecentAnnouncements";
-import UpcomingEvents from "./components/UpcomingEvents";
-import { 
-  CalendarIcon, 
-  AnnouncementsIcon,
-  ChevronRightIcon
-} from "@/app/components/icons";
-
+ 
 export default function DashboardPage() {
   const { t, locale } = useI18n();
   const { data: session } = useSession();
@@ -26,53 +18,7 @@ export default function DashboardPage() {
   const swrKey = eid ? `/api/oneroster/basic-info-full?eid=${encodeURIComponent(eid)}` : "/api/oneroster/basic-info-full";
   const { data: parentBasicInfo } = useSWR<any>(swrKey, jsonFetcher);
 
-  // Quick stats data (you can replace with real data)
-  const quickStats = [
-    {
-      title: locale === 'ar' ? 'الإعلانات الجديدة' : 'New Announcements',
-      value: '3',
-      icon: AnnouncementsIcon,
-      color: 'orange',
-      href: '/announcements'
-    },
-    {
-      title: locale === 'ar' ? 'الأحداث القادمة' : 'Upcoming Events', 
-      value: '2',
-      icon: CalendarIcon,
-      color: 'purple',
-      href: '/calendar'
-    },
-    {
-      title: locale === 'ar' ? 'الرسائل' : 'Messages',
-      value: '5',
-      icon: () => (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-        </svg>
-      ),
-      color: 'blue',
-      href: '/messages'
-    }
-  ];
-
-  const quickActions = [
-    {
-      title: locale === 'ar' ? 'عرض الملف الشخصي' : 'View Profile',
-      description: locale === 'ar' ? 'إدارة معلوماتك الشخصية' : 'Manage your personal information',
-      href: '/profile',
-      icon: () => (
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-        </svg>
-      )
-    },
-    {
-      title: locale === 'ar' ? 'التقويم المدرسي' : 'School Calendar',
-      description: locale === 'ar' ? 'تصفح الأحداث والمواعيد المهمة' : 'Browse important events and dates',
-      href: '/calendar',
-      icon: CalendarIcon
-    }
-  ];
+ 
 
   return (
     <div className={clsx("min-h-screen bg-gradient-to-br from-background via-background to-primary/5", locale === 'ar' && 'direction-rtl')}>
@@ -135,11 +81,6 @@ export default function DashboardPage() {
         {/* Professional Welcome Section */}
         <div className="mb-8">
           <Card className="border-0 shadow-xl bg-card overflow-hidden">
-             
-            {/* <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-secondary/5"></div>
-            <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-primary/10 to-transparent rounded-full -translate-y-48 translate-x-48"></div>
-            <div className="absolute bottom-0 left-0 w-64 h-64 bg-gradient-to-tr from-secondary/8 to-transparent rounded-full translate-y-32 -translate-x-32"></div>
-             */}
             <CardContent className="relative p-6">
               <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
                 <div className="flex-1">
@@ -171,41 +112,7 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
         </div>
-
-    
-
-      {/* Quick Stats */}
-      {/* <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-        {quickStats.map((stat, index) => {
-          const IconComponent = stat.icon;
-          return (
-            <Link key={index} href={stat.href} className="group">
-              <Card className="transition-all duration-200 border-l-4 border-l-gray-200 hover:border-l-gray-400">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3 rtl:space-x-reverse">
-                      <div className={clsx(
-                        "p-2 rounded-lg",
-                        stat.color === 'orange' && "bg-orange-50 text-orange-600",
-                        stat.color === 'purple' && "bg-purple-50 text-purple-600", 
-                        stat.color === 'blue' && "bg-aegold-50 text-aegold-600"
-                      )}>
-                        <IconComponent />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-600">{stat.title}</p>
-                        <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-                      </div>
-                    </div>
-                    <ChevronRightIcon className="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors" />
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          );
-        })}
-      </div> */}
-
+ 
       {/* Main Content Grid */}
       <div className="space-y-8">
         {/* Enhanced Children Section */}

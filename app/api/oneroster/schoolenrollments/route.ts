@@ -7,9 +7,9 @@ export const dynamic = "force-dynamic";
 
 // TTLs for cached entities
 const TTL = {
-  ENROLLMENTS: 10 * 60, // 10 minutes
+  ENROLLMENTS: 60 * 60, // 1 hour
   ORG: 60 * 60,         // 1 hour
-  STREAMGRADE: 30 * 60, // 30 minutes
+  STREAMGRADE: 60 * 60, // 1 hour
 } as const;
  
 
