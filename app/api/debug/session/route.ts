@@ -11,8 +11,7 @@ export async function GET() {
   const sanitized = session
     ? {
         ...session,
-        accessToken: session.accessToken ? "<redacted>" : undefined,
-        idToken: session.idToken ? "<redacted>" : undefined,
+        atKey: session.atKey ? "<present>" : undefined,
       }
     : null;
 

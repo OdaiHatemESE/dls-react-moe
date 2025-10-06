@@ -2,6 +2,8 @@ import type { NextAuthOptions, Session, User } from "next-auth";
 import type { JWT } from "next-auth/jwt";
 import Auth0Provider from "next-auth/providers/auth0";
 import Credentials from "next-auth/providers/credentials";
+import { redis } from "./redis";
+import crypto from "crypto";
 
 // Support both OIDC_* and legacy AUTH0_* environment variables
 const OIDC_ISSUER = process.env.OIDC_ISSUER || process.env.AUTH0_ISSUER || "";
@@ -109,7 +111,7 @@ function extractEmiratesId(claims?: Record<string, unknown>): string | undefined
 const IDENTITY_PROFILE_URL =
   process.env.IDENTITY_PROFILE_URL?.trim() || "https://stg-login.moe.gov.ae/en/api/users/profile";
 
-async function fetchIdentityProfile(
+export async function fetchIdentityProfile(
   accessToken?: string
 ): Promise<Record<string, unknown> | null> {
   if (!accessToken) return null;
@@ -197,13 +199,26 @@ export const authOptions: NextAuthOptions = {
 
   callbacks: {
     async jwt({ token, account, user }): Promise<JWT> {
+      // Helper to store large secrets in Redis and keep only a reference in the JWT
+      async function persistAccessToken(accessToken: string | undefined, subject?: string): Promise<string | undefined> {
+        if (!accessToken) return undefined;
+        try {
+          const key = `na:at:${subject ?? token.sub ?? "anon"}:${crypto.randomBytes(8).toString("hex")}`;
+          const ttlSeconds = 24 * 60 * 60; // match session.maxAge
+          await redis.set(key, accessToken, "EX", ttlSeconds);
+          return key;
+        } catch {
+          // If Redis fails, we will NOT attach the raw access token to JWT to avoid large cookies
+          return undefined;
+        }
+      }
       // From OIDC flow
       if (account?.access_token) {
-        const t = token as JWT & { accessToken?: string; idToken?: string; emiratesId?: string; identityProfile?: Record<string, unknown> };
-        t.accessToken = account.access_token;
+        const t = token as JWT & { emiratesId?: string; atKey?: string };
+        // Store access token in Redis and keep only a small key reference in JWT
+        t.atKey = await persistAccessToken(account.access_token, token.sub as string | undefined);
         // Persist id_token if available and extract claims we care about
         if (account.id_token) {
-          t.idToken = account.id_token;
           const idClaims = decodeJwtPayload(account.id_token) || {};
           const maybeEmiratesId = extractEmiratesId(idClaims as Record<string, unknown>);
           if (maybeEmiratesId) t.emiratesId = normalizeEmiratesId(maybeEmiratesId);
@@ -218,53 +233,32 @@ export const authOptions: NextAuthOptions = {
           const maybeEmiratesId = extractEmiratesId(atClaims as Record<string, unknown>);
           if (maybeEmiratesId) t.emiratesId = normalizeEmiratesId(maybeEmiratesId);
         }
-
-        // Fetch identity profile once per login (avoid re-fetch if already present on token)
-        if (!t.identityProfile) {
-          t.identityProfile = await fetchIdentityProfile(t.accessToken) || undefined;
-        }
       }
       // From mobile-token (credentials) flow
       if (user) {
         const u = user as User & { accessToken?: string; emiratesId?: string };
-        const t = token as JWT & { accessToken?: string; emiratesId?: string; identityProfile?: Record<string, unknown> };
-        t.accessToken = u.accessToken || t.accessToken;
-        t.emiratesId = normalizeEmiratesId(u.emiratesId) || t.emiratesId;
-
-        // If we have an access token from mobile, try to fetch identity profile once
-        if (t.accessToken && !t.identityProfile) {
-          t.identityProfile = await fetchIdentityProfile(t.accessToken) || undefined;
+        const t = token as JWT & { emiratesId?: string; atKey?: string };
+        if (u.accessToken) {
+          t.atKey = await persistAccessToken(u.accessToken, token.sub as string | undefined);
         }
+        t.emiratesId = normalizeEmiratesId(u.emiratesId) || t.emiratesId;
       }
       return token;
     },
 
     async session({ session, token }): Promise<Session> {
-      const t = token as JWT & { accessToken?: string; idToken?: string; emiratesId?: string; sub?: string; identityProfile?: Record<string, unknown> };
+  const t = token as JWT & { emiratesId?: string; sub?: string; atKey?: string };
       
       // Only expose essential user information in the session to keep cookie size small
       // Access tokens and large objects should be accessed via server-side API calls when needed
       const u = (session.user ?? {}) as User & { id?: string; emiratesId?: string };
       if (t.sub) u.id = t.sub;
       if (t.emiratesId) u.emiratesId = normalizeEmiratesId(t.emiratesId);
-      
-      // Only include basic profile info from identityProfile if it's small
-      if (t.identityProfile) {
-        const basicInfo: Record<string, unknown> = {};
-        
-        // Include only essential fields that are small
-        if (t.identityProfile.name && typeof t.identityProfile.name === 'string') {
-          basicInfo.name = t.identityProfile.name;
-        }
-        if (t.identityProfile.email && typeof t.identityProfile.email === 'string') {
-          basicInfo.email = t.identityProfile.email;
-        }
-        
-        // Only add if the stringified version is reasonably small
-        if (JSON.stringify(basicInfo).length < 500) {
-          Object.assign(u, basicInfo);
-        }
-      }
+  // Keep standard small profile fields
+  const name = (t as Partial<JWT>).name as unknown;
+  const email = (t as Partial<JWT> & { email?: unknown }).email;
+  if (typeof name === 'string') u.name = name;
+  if (typeof email === 'string') u.email = email;
       
       session.user = u;
       return session;
@@ -285,6 +279,20 @@ export const authOptions: NextAuthOptions = {
       // Allow absolute URLs
       if (url.startsWith("http")) return url;
       return `${baseUrl}${url}`;
+    },
+  },
+
+  // Clean up server-stored secrets on sign-out when possible
+  events: {
+    async signOut({ token }) {
+      const t = token as JWT & { atKey?: string };
+      if (t?.atKey) {
+        try {
+          await redis.del(t.atKey);
+        } catch {
+          // non-fatal
+        }
+      }
     },
   },
 

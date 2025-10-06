@@ -3,9 +3,8 @@ import { JWT as DefaultJWT } from "next-auth/jwt";
 
 declare module "next-auth" {
   interface Session {
-    accessToken?: string;
-    idToken?: string;
-    identityProfile?: Record<string, unknown>;
+    // Small pointer to access token stored server-side
+    atKey?: string;
     user: (DefaultSession["user"] & { id?: string; emiratesId?: string }) | null;
   }
 
@@ -17,11 +16,10 @@ declare module "next-auth" {
 
 declare module "next-auth/jwt" {
   interface JWT extends DefaultJWT {
-    accessToken?: string;
-    idToken?: string;
+    // Small pointer to access token stored server-side
+    atKey?: string;
     emiratesId?: string;
     name?: string;
     email?: string;
-    identityProfile?: Record<string, unknown>;
   }
 }

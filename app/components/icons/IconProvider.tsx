@@ -11,7 +11,7 @@ type Props = {
 };
 
 export default function IconProvider({ children }: Props) {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const router = useRouter();
   const [initialized, setInitialized] = useState(false);
   const attemptedRef = useRef(false); // ⬅️ prevent multiple signIns per mount
@@ -55,17 +55,13 @@ export default function IconProvider({ children }: Props) {
       return; // important: don't continue in this effect
     }
 
-    // 3) If authenticated, decode once and init your store
-    if (status === 'authenticated' && session?.accessToken && !initialized) {
-      try {
-        setInitialized(true);
-      } catch (error) {
-        console.error("Failed to decode access token:", error);
-      }
+    // 3) If authenticated, perform any one-time client init
+    if (status === 'authenticated' && !initialized) {
+      setInitialized(true);
     }
 
 
-  }, [status, session, initialized, router]);
+  }, [status, initialized, router]);
 
   // While auth is loading or we haven't populated the store, show spinner
     if (status === 'loading' ) {
