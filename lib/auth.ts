@@ -179,10 +179,12 @@ export const authOptions: NextAuthOptions = {
         // Here we minimally decode to extract claims. Replace with a call to your
         // verifier if available (e.g., verifyExternalToken(accessToken)).
         const claims = decodeJwtPayload(accessToken) || {};
+        
         const sub = claims.sub || "unknown";
-        const name = claims.name || "Mobile User";
+        const name = claims.FullNameAr || "Mobile User";
         const email = claims.email as string | undefined;
-  const emiratesId = normalizeEmiratesId(claims.emiratesId || claims.EID);
+  const emiratesId = normalizeEmiratesId(claims.EmiratesId || claims.EID);
+
 
         return {
           id: sub,

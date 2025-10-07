@@ -23,7 +23,6 @@ export default function IconProvider({ children }: Props) {
 
     // 2) If not signed in yet, try mobile-token ONCE, else fall back to OIDC
     if (status === 'unauthenticated' && !attemptedRef.current) {
-      alert('unauthenticated - redirecting to login');
       attemptedRef.current = true;
 
       const mobileToken =
