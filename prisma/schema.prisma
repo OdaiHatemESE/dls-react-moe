@@ -1,5 +1,3 @@
-
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -9,6 +7,229 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model testTable {
-  Id Int @id(map: "PK_testTable") @default(autoincrement())
+// Announcements
+model Announcement {
+  id        Int      @id @default(autoincrement())
+  sourcedId String   @unique
+  title     String
+  content   String   @db.Text
+  author    String
+  date      DateTime
+  category  String // "school" | "class" | "urgent"
+  tags      String   @db.Text // JSON array as string
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("announcements")
+}
+
+// Messages and MessageThreads
+model MessageThread {
+  id              Int      @id @default(autoincrement())
+  sourcedId       String   @unique
+  participants    String   @db.Text // JSON array as string
+  subject         String
+  lastMessage     String   @db.Text
+  lastMessageTime DateTime
+  unreadCount     Int      @default(0)
+  avatar          String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  messages Message[]
+
+  @@map("message_threads")
+}
+
+model Message {
+  id        Int           @id @default(autoincrement())
+  sourcedId String        @unique
+  threadId  String
+  from      String
+  to        String
+  subject   String
+  content   String        @db.Text
+  timestamp DateTime
+  read      Boolean       @default(false)
+  avatar    String?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  thread MessageThread @relation(fields: [threadId], references: [sourcedId])
+
+  @@map("messages")
+}
+
+// Calendar Events
+model CalendarEvent {
+  id          Int      @id @default(autoincrement())
+  sourcedId   String   @unique
+  title       String
+  date        DateTime
+  time        String?
+  type        String   // "exam" | "event" | "holiday" | "meeting"
+  description String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("calendar_events")
+}
+
+// Attendance
+model Attendance {
+  id        Int      @id @default(autoincrement())
+  studentId String
+  date      DateTime
+  status    String   // "present" | "absent" | "late"
+  notes     String?  @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  student Person @relation(fields: [studentId], references: [sourcedId])
+
+  @@unique([studentId, date])
+  @@map("attendance")
+}
+
+// Assignments
+model Assignment {
+  id          Int      @id @default(autoincrement())
+  sourcedId   String   @unique
+  title       String
+  subject     String
+  dueDate     DateTime
+  status      String   // "pending" | "submitted" | "graded" | "overdue"
+  description String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("assignments")
+}
+
+// Person (covers parents, students, etc.)
+model Person {
+  id               Int      @id @default(autoincrement())
+  sourcedId        String   @unique
+  role             String?  // "parent", "student", etc.
+  type             String?  // "Real User"
+  status           String?  // "active"
+  enabledUser      String?  // boolean as string from vendor
+  identifier       String?  // national id
+  username         String?
+  userIds          String?
+  
+  // Names
+  givenName        String?
+  middleName       String?
+  familyName       String?
+  
+  // Contact info
+  email            String?
+  phone            String?
+  sms              String?
+  
+  // Additional attributes
+  agents           String?
+  grades           String?
+  password         String?
+  dateLastModified DateTime?
+  
+  // Rich metadata as JSON
+  metadata         String?  @db.Text // JSON string
+  
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // Relations
+  attendance       Attendance[]
+  schoolEnrollments SchoolEnrollment[]
+
+  @@map("persons")
+}
+
+// School Enrollments
+model SchoolEnrollment {
+  id                    Int      @id @default(autoincrement())
+  sourcedId             String   @unique
+  entryType             String
+  exitType              String
+  note                  String?  @db.Text
+  exitReason            String?
+  entryDate             DateTime
+  exitDate              DateTime?
+  dateLastModified      DateTime
+  isSpecialNeed         Boolean  @default(false)
+  schoolYear            Int
+  enrollmentType        String
+  status                String
+  isMandatoryEducation  String
+  createDate            DateTime
+  
+  // Student reference
+  studentSourcedId      String
+  student               Person   @relation(fields: [studentSourcedId], references: [sourcedId])
+  
+  // School reference (as JSON for now)
+  schoolData            String   @db.Text // JSON with href, sourcedId, type
+  
+  // Session reference (as JSON for now)
+  sessionData           String   @db.Text // JSON with href, sourcedId, type
+  
+  // Community reference (as JSON for now)
+  communityData         String   @db.Text // JSON with href, sourcedId, type
+  
+  // StreamGrade reference (as JSON for now)
+  streamGradeData       String   @db.Text // JSON with href, sourcedId, type
+  
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@map("school_enrollments")
+}
+
+// Organizations (schools, etc.)
+model Organization {
+  id               Int      @id @default(autoincrement())
+  sourcedId        String   @unique
+  identifier       String?
+  type             String?
+  dateLastModified DateTime?
+  name             String?
+  
+  // Parent organizations as JSON array
+  parentOrgs       String?  @db.Text // JSON array
+  
+  // Manager organization as JSON
+  manager          String?  @db.Text // JSON object
+  
+  // Rich metadata as JSON
+  metadata         String?  @db.Text // JSON string
+  
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@map("organizations")
+}
+
+// Stream Grades
+model StreamGrade {
+  id               Int      @id @default(autoincrement())
+  sourcedId        String   @unique
+  name             String
+  title            String
+  titleArabic      String?
+  position         Int
+  status           String   // "active" | "inactive"
+  dateLastModified DateTime
+  
+  // Grade reference as JSON
+  gradeData        String   @db.Text // JSON with href, sourcedId, type
+  
+  // Education Path reference as JSON
+  educationPathData String  @db.Text // JSON with href, sourcedId, type
+  
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@map("stream_grades")
 }
