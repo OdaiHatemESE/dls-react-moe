@@ -7,103 +7,45 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Announcements
-model Announcement {
-  id        Int      @id @default(autoincrement())
-  sourcedId String   @unique
-  title     String
-  content   String   @db.Text
-  author    String
-  date      DateTime
-  category  String // "school" | "class" | "urgent"
-  tags      String   @db.Text // JSON array as string
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 
-  @@map("announcements")
-}
+// Users (covers parents, students, etc.)
+model Users {
+  id               Int      @id @default(autoincrement())
+  sourcedId        String   @unique
+  role             String?  // "parent", "student", etc.
+  type             String?  // "Real User"
+  status           String?  // "active"
+  enabledUser      String?  // boolean as string from vendor
+  identifier       String?  // national id
+  username         String?
+  userIds          String?
+  
+  // Names
+  givenName        String?
+  middleName       String?
+  familyName       String?
+  
+  // Contact info
+  email            String?
+  phone            String?
+  sms              String?
+  
+  // Additional attributes
+  agents           String?
+  grades           String?
+  password         String?
+  dateLastModified DateTime?
+  
+  // Rich metadata as JSON
+  metadata         String?  @db.Text // JSON string
+  
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
-// Messages and MessageThreads
-model MessageThread {
-  id              Int      @id @default(autoincrement())
-  sourcedId       String   @unique
-  participants    String   @db.Text // JSON array as string
-  subject         String
-  lastMessage     String   @db.Text
-  lastMessageTime DateTime
-  unreadCount     Int      @default(0)
-  avatar          String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  // Relations
+  schoolEnrollments SchoolEnrollment[]
 
-  messages Message[]
-
-  @@map("message_threads")
-}
-
-model Message {
-  id        Int           @id @default(autoincrement())
-  sourcedId String        @unique
-  threadId  String
-  from      String
-  to        String
-  subject   String
-  content   String        @db.Text
-  timestamp DateTime
-  read      Boolean       @default(false)
-  avatar    String?
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
-
-  thread MessageThread @relation(fields: [threadId], references: [sourcedId])
-
-  @@map("messages")
-}
-
-// Calendar Events
-model CalendarEvent {
-  id          Int      @id @default(autoincrement())
-  sourcedId   String   @unique
-  title       String
-  date        DateTime
-  time        String?
-  type        String   // "exam" | "event" | "holiday" | "meeting"
-  description String?  @db.Text
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@map("calendar_events")
-}
-
-// Attendance
-model Attendance {
-  id        Int      @id @default(autoincrement())
-  studentId String
-  date      DateTime
-  status    String   // "present" | "absent" | "late"
-  notes     String?  @db.Text
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  student Person @relation(fields: [studentId], references: [sourcedId])
-
-  @@unique([studentId, date])
-  @@map("attendance")
-}
-
-// Assignments
-model Assignment {
-  id          Int      @id @default(autoincrement())
-  sourcedId   String   @unique
-  title       String
-  subject     String
-  dueDate     DateTime
-  status      String   // "pending" | "submitted" | "graded" | "overdue"
-  description String?  @db.Text
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@map("assignments")
+  @@map("persons")
 }
 
 // Person (covers parents, students, etc.)
@@ -141,7 +83,6 @@ model Person {
   updatedAt        DateTime @updatedAt
 
   // Relations
-  attendance       Attendance[]
   schoolEnrollments SchoolEnrollment[]
 
   @@map("persons")
