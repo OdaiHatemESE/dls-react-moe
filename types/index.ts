@@ -342,3 +342,18 @@ export interface StreamGrade {
     status: "active" | "inactive";
   };
 }
+
+// --- Onwani/MyLand selection types ---
+export type Municipality = "ADM" | "AAM" | "WRM";
+
+export interface OnwaniSelection {
+  municipality: Municipality;
+  districtEn: string;
+  communityEn: string;
+  // Only applicable for AAM municipality
+  roadId?: string;
+  // Plot is user-entered; there is no public endpoint in this app for lookups
+  plot?: string;
+  // Optional overlay geometry returned by the getcommunityshape endpoint
+  shapeGeoJSON?: unknown;
+}
