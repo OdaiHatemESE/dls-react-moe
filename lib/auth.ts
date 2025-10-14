@@ -171,7 +171,7 @@ export const authOptions: NextAuthOptions = {
       credentials: {
         accessToken: { label: "Access Token", type: "text" },
       },
-      async authorize(creds) {
+  async authorize(creds) {
         const accessToken = (creds?.accessToken || "").trim();
         if (!accessToken) return null;
 
@@ -179,20 +179,26 @@ export const authOptions: NextAuthOptions = {
         // Here we minimally decode to extract claims. Replace with a call to your
         // verifier if available (e.g., verifyExternalToken(accessToken)).
         const claims = decodeJwtPayload(accessToken) || {};
-        
-        const sub = claims.sub || "unknown";
-        const name = claims.FullNameAr || "Mobile User";
-        const email = claims.email as string | undefined;
-  const emiratesId = normalizeEmiratesId(claims.EmiratesId || claims.EID);
+        const sub = typeof claims.sub === "string" ? claims.sub : "unknown";
+        const name: string =
+          typeof (claims as Record<string, unknown>).FullNameAr === "string"
+            ? ((claims as Record<string, unknown>).FullNameAr as string)
+            : typeof claims.name === "string"
+            ? (claims.name as string)
+            : "Mobile User";
+        const email = typeof claims.email === "string" ? (claims.email as string) : undefined;
+        const emiratesId = normalizeEmiratesId(
+          (claims as Record<string, unknown>).EmiratesId ?? claims.EID
+        );
 
-
-        return {
+        const user: User & { accessToken?: string; emiratesId?: string } = {
           id: sub,
           name,
           email,
           accessToken,
           emiratesId,
         };
+        return user;
       },
     }),
   ],

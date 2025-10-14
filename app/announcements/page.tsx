@@ -82,7 +82,7 @@ export default function AnnouncementsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">{t.announcements.allTags}</SelectItem>
-                {allTags.map((tag) => (
+                {allTags.map((tag: string) => (
                   <SelectItem key={tag} value={tag}>
                     {tag.charAt(0).toUpperCase() + tag.slice(1)}
                   </SelectItem>
@@ -131,7 +131,7 @@ export default function AnnouncementsPage() {
                   {/* Tags */}
                   {announcement.tags.length > 0 && (
                     <div className="flex flex-wrap gap-2 mb-4">
-                      {announcement.tags.map((tag) => (
+                      {announcement.tags.map((tag: string) => (
                         <Badge key={tag} variant="outline" className="text-xs">
                           #{tag}
                         </Badge>

@@ -15,6 +15,99 @@ export interface NavigationItem {
   badge?: string;
 }
 
+// --- Mock/demo data types (used by app/data/mockData.ts) ---
+export interface Child {
+  id: string;
+  name: string;
+  grade: string;
+  classroom: string;
+  teacher: string;
+  avatar: string;
+  attendanceRate: number;
+  latestGrade: string;
+  nextEvent: string;
+}
+
+export interface Announcement {
+  id: string;
+  title: string;
+  content: string;
+  author: string;
+  date: string; // ISO date string
+  category: "school" | "class" | "urgent";
+  tags: string[];
+}
+
+export interface MessageThread {
+  id: string;
+  participants: string[];
+  subject: string;
+  lastMessage: string;
+  lastMessageTime: string; // ISO datetime
+  unreadCount: number;
+  avatar?: string;
+}
+
+export interface Message {
+  id: string;
+  threadId: string;
+  from: string;
+  to: string;
+  subject: string;
+  content: string;
+  timestamp: string; // ISO datetime
+  read: boolean;
+  avatar?: string;
+}
+
+export interface CalendarEvent {
+  id: string;
+  title: string;
+  date: string; // ISO date string
+  time?: string;
+  type: "event" | "exam" | "meeting" | "holiday";
+  description?: string;
+}
+
+export interface Attendance {
+  date: string; // ISO date string
+  status: "present" | "absent" | "late";
+  notes?: string;
+}
+
+export interface Grade {
+  id: string;
+  subject: string;
+  assignment: string;
+  grade: string;
+  maxGrade: string;
+  date: string; // ISO date string
+  teacher: string;
+}
+
+export interface Assignment {
+  id: string;
+  title: string;
+  subject: string;
+  dueDate: string; // ISO date string
+  status: "pending" | "completed" | "overdue";
+  description?: string;
+}
+
+export interface Parent {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  avatar: string;
+  children: Child[];
+  preferences: {
+    emailNotifications: boolean;
+    smsNotifications: boolean;
+    pushNotifications: boolean;
+  };
+}
+
 // --- Header/Menu types ---
 export interface MenuLink {
   label: string;
@@ -194,7 +287,7 @@ export interface OrgMetadata {
   type: string;
   note?: string;
   shortName?: string;
-  contacts?: Record<string, any>[]; // adjust if you know structure
+  contacts?: Array<Record<string, unknown>>; // adjust if you know structure
   guid?: string;
   addresses?: OrgAddress[];
   englishName?: string;

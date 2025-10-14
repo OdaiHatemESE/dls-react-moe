@@ -6,6 +6,8 @@ declare module "next-auth" {
     // Small pointer to access token stored server-side
     atKey?: string;
     user: (DefaultSession["user"] & { id?: string; emiratesId?: string }) | null;
+    // Optional identity profile blob (debug view may display this if present)
+    identityProfile?: Record<string, unknown>;
   }
 
   interface User extends DefaultUser {

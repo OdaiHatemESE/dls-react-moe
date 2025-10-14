@@ -162,7 +162,7 @@ export default function CalendarPage() {
                       </div>
                       {eventsByDate[day] && (
                         <div className="space-y-1">
-                          {eventsByDate[day].slice(0, 2).map((event) => (
+                          {eventsByDate[day].slice(0, 2).map((event: (typeof mockCalendarEvents)[number]) => (
                             <div
                               key={event.id}
                               className={`text-xs p-1 rounded truncate ${
@@ -221,7 +221,7 @@ export default function CalendarPage() {
           <CardContent>
             {mockCalendarEvents.length > 0 ? (
               <div className="space-y-4">
-                {mockCalendarEvents.map((event) => (
+                {mockCalendarEvents.map((event: (typeof mockCalendarEvents)[number]) => (
                   <div key={event.id} className="flex items-start justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
                     <div className="flex-1">
                       <h3 className="text-lg font-medium text-gray-900 mb-1">
