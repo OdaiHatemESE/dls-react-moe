@@ -41,6 +41,7 @@ export default function MyLandPicker({
   type PlotOption = { label: string; value: string; gisid?: string };
   const [plotOptions, setPlotOptions] = React.useState<PlotOption[]>([]);
   const [shape, setShape] = React.useState<unknown>(undefined);
+  const [submitting, setSubmitting] = React.useState<boolean>(false);
   const [loading, setLoading] = React.useState<{ districts?: boolean; communities?: boolean; roads?: boolean; shape?: boolean }>({});
   const pendingRef = React.useRef<{ district?: string; community?: string; roadId?: string; plot?: string }>({});
   const gisInfoRef = React.useRef<unknown>(undefined);
@@ -431,11 +432,28 @@ export default function MyLandPicker({
     []
   );
 
-  const canSubmit = municipality && district && community && (municipality !== "AAM" || roadId) && plot.trim().length > 0;
+  const canSubmit = municipality && district && community && (municipality !== "AAM" || roadId) && plot.trim().length > 0 && !submitting;
 
-  const handleOk = () => {
+  const handleOk = async () => {
     if (!canSubmit) return;
-    const payload: OnwaniSelection = {
+    setSubmitting(true);
+    try {
+      // Prefer GISID when available, fallback to selected plot value
+      const selected = plotOptions.find((o) => o.value === plot || o.label === plot);
+      const gisid = selected?.gisid ?? plot;
+      // Call backend API to fetch plot mapping/details by GISID
+      const res = await fetch(`/api/db/plots?filter=${encodeURIComponent(gisid)}`, { cache: "no-store" });
+      let dbPayload: unknown = undefined;
+      try {
+        dbPayload = await res.json();
+      } catch {
+        // ignore parse errors; keep undefined
+      }
+      // You can choose to surface errors to the UI if needed
+      if (!res.ok) {
+        console.error("GetPlot API error", dbPayload);
+      }
+    const payload: OnwaniSelection & { dbPlotResponse?: unknown } = {
       municipality,
       districtEn: district!,
       communityEn: community!,
@@ -443,9 +461,14 @@ export default function MyLandPicker({
       plot: plot.trim() || undefined,
       shapeGeoJSON: shape,
     };
+    // Attach raw API response for callers that need it
+    payload.dbPlotResponse = dbPayload;
     onOk?.(payload);
     // Optionally send to iframe
     sendToIframe({ type: "onwani-selection", payload });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   // When municipality changes, inform iframe (region) and fetching happens via getDistricts effect
@@ -676,7 +699,7 @@ export default function MyLandPicker({
 
         <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={onCancel}>{isAr ? "إلغاء" : "Cancel"}</Button>
-          <Button onClick={handleOk} disabled={!canSubmit}>{isAr ? "موافق" : "OK"}</Button>
+          <Button onClick={handleOk} disabled={!canSubmit}>{submitting ? (isAr ? "جارٍ الإرسال..." : "Submitting...") : (isAr ? "موافق" : "OK")}</Button>
         </div>
       </CardContent>
     </Card>
