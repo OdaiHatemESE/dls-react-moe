@@ -22,9 +22,9 @@ export async function GET(req: Request) {
     const where = emirateId !== null ? Prisma.sql` AND EmirateId = ${emirateId}` : Prisma.empty;
     const order = Prisma.sql` ORDER BY TitleEn ASC`;
 
-    const regions = await prisma.$queryRaw<Array<{ Id: number; TitleAr: string; TitleEn: string; IsActive: boolean; EmirateId: number }>>(
+    const regions = (await prisma.$queryRaw(
       Prisma.sql`${base}${where}${order}`
-    );
+    )) as Array<{ Id: number; TitleAr: string; TitleEn: string; IsActive: boolean; EmirateId: number }>;
 
     return NextResponse.json({ data: regions, filter: { emirateId } });
   } catch (err) {

@@ -37,16 +37,16 @@ export async function GET(req: Request) {
 
     if (isAbuDhabi) {
       // direct filter on ZoneId
-      rows = await prisma.$queryRaw<AreaRow[]>(
+      rows = (await prisma.$queryRaw(
         Prisma.sql`SELECT Id, TitleAr, TitleEn, IsActive, ZoneId, ManhalCode
                    FROM Areas
                    WHERE IsActive = 1 AND ZoneId = ${zoneId}
                    ORDER BY TitleAr ASC`
-      );
+      )) as AreaRow[];
     } else {
       // match EF: Areas where Area.IsActive and Area.Zone.Region.Emirate.Id == zoneId
       // Joins: Areas -> Zones (on Areas.ZoneId = Zones.Id), Zones -> Regions (Regions.Id = Zones.RegionId), Regions -> Emirates (Emirates.Id = Regions.EmirateId)
-      rows = await prisma.$queryRaw<AreaRow[]>(
+      rows = (await prisma.$queryRaw(
         Prisma.sql`SELECT A.Id, A.TitleAr, A.TitleEn, A.IsActive, A.ZoneId, A.ManhalCode
                    FROM Areas A
                    INNER JOIN Zones Z ON Z.Id = A.ZoneId
@@ -54,7 +54,7 @@ export async function GET(req: Request) {
                    INNER JOIN Emirates E ON E.Id = R.EmirateId
                    WHERE A.IsActive = 1 AND E.Id = ${zoneId}
                    ORDER BY A.TitleAr ASC`
-      );
+      )) as AreaRow[];
     }
 
     return NextResponse.json({
