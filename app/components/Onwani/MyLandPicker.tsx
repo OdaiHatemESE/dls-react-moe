@@ -74,6 +74,7 @@ export default function MyLandPicker({
   const gisInfoRef = React.useRef<unknown>(undefined);
   const lastCoordsRef = React.useRef<{ lng: string; lat: string } | undefined>(undefined);
   const userInteractedRef = React.useRef<boolean>(false); // Track if user manually changed dropdown
+  const isApplyingMapDataRef = React.useRef<boolean>(false); // Prevent loops when applying map data
 
   const iframeRef = React.useRef<HTMLIFrameElement>(null);
 
@@ -433,6 +434,12 @@ export default function MyLandPicker({
           const d = data as Record<string, unknown>;
           const addressType = typeof d.AddressType === "string" ? (d.AddressType as string) : undefined;
           if (addressType === "Onwani" || addressType === "Plot") {
+            console.log("📍 Map pin placed - applying address data:", d);
+            
+            // Mark that we're applying map data to prevent loops
+            isApplyingMapDataRef.current = true;
+            userInteractedRef.current = false; // Map action, not user
+            
             const addrEn = typeof d.AddressValue_EN === "string" ? (d.AddressValue_EN as string) : "";
             const parts = addrEn.split(",").map((s) => s.trim()).filter(Boolean);
             const municipalityName = parts[parts.length - 1] ?? "";
@@ -486,8 +493,16 @@ export default function MyLandPicker({
               plot: plotNo,
             };
 
+            console.log("📦 Pending selections queued:", pendingRef.current);
+
             // Kick off cascade by setting municipality
             setMunicipality(m);
+            
+            // Reset flag after cascade completes (allow time for all effects to run)
+            setTimeout(() => {
+              isApplyingMapDataRef.current = false;
+              console.log("✅ Map data application complete - ready for user interaction");
+            }, 100);
           }
         }
       } catch {
@@ -513,26 +528,31 @@ export default function MyLandPicker({
 
   // Handlers for user interactions - these set the flag to allow smart resets
   const handleMunicipalityChange = (v: Municipality) => {
+    console.log("👤 User changed municipality to:", v);
     userInteractedRef.current = true;
     setMunicipality(v);
   };
 
   const handleDistrictChange = (v: string | undefined) => {
+    console.log("👤 User changed district to:", v);
     userInteractedRef.current = true;
     setDistrict(v);
   };
 
   const handleCommunityChange = (v: string | undefined) => {
+    console.log("👤 User changed community to:", v);
     userInteractedRef.current = true;
     setCommunity(v);
   };
 
   const handleRoadChange = (v: string | undefined) => {
+    console.log("👤 User changed road to:", v);
     userInteractedRef.current = true;
     setRoadId(v);
   };
 
   const handlePlotChange = (v: string) => {
+    console.log("👤 User changed plot to:", v);
     userInteractedRef.current = true;
     setPlot(v);
   };
@@ -597,12 +617,16 @@ export default function MyLandPicker({
   // MAP TRIGGER (OUTBOUND): When municipality changes, inform iframe (region)
   React.useEffect(() => {
     if (!municipality) return;
+    // Don't send to map if we're currently applying map data (prevent loop)
+    if (isApplyingMapDataRef.current) return;
     sendToIframe({ set: "region", municipality });
   }, [municipality, sendToIframe]);
 
   // MAP TRIGGER (OUTBOUND): When district changes, inform iframe (district)
   React.useEffect(() => {
     if (!district) return;
+    // Don't send to map if we're currently applying map data (prevent loop)
+    if (isApplyingMapDataRef.current) return;
     sendToIframe({ set: "district", municipality, district });
   }, [district, municipality, sendToIframe]);
 
@@ -614,6 +638,8 @@ export default function MyLandPicker({
       setPlot("");
       setPlotOptions([]);
     }
+    // Don't send to map if we're currently applying map data (prevent loop)
+    if (isApplyingMapDataRef.current) return;
     sendToIframe({ set: "community", municipality, district, community });
     sendToIframe({
       type: "request-plots",
@@ -630,6 +656,8 @@ export default function MyLandPicker({
       setPlot("");
       setPlotOptions([]);
     }
+    // Don't send to map if we're currently applying map data (prevent loop)
+    if (isApplyingMapDataRef.current) return;
     // Ask iframe to refresh plots for selected road
     sendToIframe({
       type: "request-plots",
@@ -641,6 +669,9 @@ export default function MyLandPicker({
   React.useEffect(() => {
     if (!plot) return;
     if (!district || !community) return;
+    // Don't send to map if we're currently applying map data (prevent loop)
+    if (isApplyingMapDataRef.current) return;
+    
     const selected = plotOptions.find((o) => o.value === plot || o.label === plot);
     const gisid = selected?.gisid;
     // Inform viewers: focus and set plot
@@ -684,33 +715,57 @@ export default function MyLandPicker({
   React.useEffect(() => {
     const p = pendingRef.current;
     if (p.district && districts.some((o) => o.value === p.district)) {
+      console.log("🔄 Applying pending district:", p.district);
+      isApplyingMapDataRef.current = true; // Start applying map data
       userInteractedRef.current = false; // Map triggered this, not user
       setDistrict(p.district);
       p.district = undefined;
+      // Reset flag after state update completes
+      setTimeout(() => {
+        isApplyingMapDataRef.current = false;
+      }, 0);
     }
   }, [districts]);
   React.useEffect(() => {
     const p = pendingRef.current;
     if (p.community && communities.some((o) => o.value === p.community)) {
+      console.log("🔄 Applying pending community:", p.community);
+      isApplyingMapDataRef.current = true; // Start applying map data
       userInteractedRef.current = false; // Map triggered this, not user
       setCommunity(p.community);
       p.community = undefined;
+      // Reset flag after state update completes
+      setTimeout(() => {
+        isApplyingMapDataRef.current = false;
+      }, 0);
     }
   }, [communities]);
   React.useEffect(() => {
     const p = pendingRef.current;
     if (p.roadId && roads.includes(p.roadId)) {
+      console.log("🔄 Applying pending road:", p.roadId);
+      isApplyingMapDataRef.current = true; // Start applying map data
       userInteractedRef.current = false; // Map triggered this, not user
       setRoadId(p.roadId);
       p.roadId = undefined;
+      // Reset flag after state update completes
+      setTimeout(() => {
+        isApplyingMapDataRef.current = false;
+      }, 0);
     }
   }, [roads]);
   React.useEffect(() => {
     const p = pendingRef.current;
     if (p.plot && plotOptions.some((o) => o.value === p.plot || o.label === p.plot)) {
+      console.log("🔄 Applying pending plot:", p.plot);
+      isApplyingMapDataRef.current = true; // Start applying map data
       userInteractedRef.current = false; // Map triggered this, not user
       setPlot(p.plot);
       p.plot = undefined;
+      // Reset flag after state update completes
+      setTimeout(() => {
+        isApplyingMapDataRef.current = false;
+      }, 0);
     }
   }, [plotOptions]);
 
