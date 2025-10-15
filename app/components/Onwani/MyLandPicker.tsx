@@ -376,6 +376,97 @@ export default function MyLandPicker({
     };
   }, [municipality, district, community, roadId, extractPlotsFromAPI, mergePlotOptions]);
 
+  const tryApplyPending = React.useCallback(() => {
+    const pending = pendingRef.current;
+    const normalize = (val?: string) => (val ?? "").trim().toLowerCase();
+
+    if (pending.district) {
+      const target = normalize(pending.district);
+      const match = districts.find((o) => {
+        const valueMatch = normalize(o.value) === target;
+        const enMatch = normalize(o.en) === target;
+        const arMatch = typeof o.ar === "string" && normalize(o.ar) === target;
+        return valueMatch || enMatch || arMatch;
+      });
+      if (!match) return;
+      if (normalize(district) !== target) {
+        console.log("🔄 Applying pending district:", match.value);
+        isApplyingMapDataRef.current = true;
+        userInteractedRef.current = false;
+        setDistrict(match.value);
+        pending.district = undefined;
+        setTimeout(() => {
+          isApplyingMapDataRef.current = false;
+        }, 0);
+        return;
+      }
+      pending.district = undefined;
+    }
+
+    if (pending.community) {
+      const target = normalize(pending.community);
+      const match = communities.find((o) => {
+        const valueMatch = normalize(o.value) === target;
+        const enMatch = normalize(o.en) === target;
+        const arMatch = typeof o.ar === "string" && normalize(o.ar) === target;
+        return valueMatch || enMatch || arMatch;
+      });
+      if (!match) return;
+      if (normalize(community) !== target) {
+        console.log("🔄 Applying pending community:", match.value);
+        isApplyingMapDataRef.current = true;
+        userInteractedRef.current = false;
+        setCommunity(match.value);
+        pending.community = undefined;
+        setTimeout(() => {
+          isApplyingMapDataRef.current = false;
+        }, 0);
+        return;
+      }
+      pending.community = undefined;
+    }
+
+    if (pending.roadId) {
+      const target = normalize(pending.roadId);
+      const match = roads.find((r) => normalize(r) === target);
+      if (!match) return;
+      if (normalize(roadId) !== target) {
+        console.log("🔄 Applying pending road:", match);
+        isApplyingMapDataRef.current = true;
+        userInteractedRef.current = false;
+        setRoadId(match);
+        pending.roadId = undefined;
+        setTimeout(() => {
+          isApplyingMapDataRef.current = false;
+        }, 0);
+        return;
+      }
+      pending.roadId = undefined;
+    }
+
+    if (pending.plot) {
+      const target = normalize(pending.plot);
+      const match = plotOptions.find((o) => {
+        const valueMatch = normalize(o.value) === target;
+        const labelMatch = normalize(o.label) === target;
+        return valueMatch || labelMatch;
+      });
+      if (!match) return;
+      if (normalize(plot) !== target) {
+        console.log("🔄 Applying pending plot:", match.value);
+        isApplyingMapDataRef.current = true;
+        userInteractedRef.current = false;
+        setPlot(match.value);
+        pending.plot = undefined;
+        setTimeout(() => {
+          isApplyingMapDataRef.current = false;
+        }, 0);
+        return;
+      }
+      pending.plot = undefined;
+    }
+  }, [districts, communities, roads, plotOptions, district, community, roadId, plot]);
+
   // MAP TRIGGER (INBOUND): postMessage handler with origin check + preselection
   // - Receives messages from MyLand iframe and applies state based on payload
   React.useEffect(() => {
@@ -386,8 +477,27 @@ export default function MyLandPicker({
       // { type: "plot-selected", payload: { plot: string } }
       // Or Angular-like payload with AddressType: 'Onwani' | 'Plot'
       try {
-        const data = ev.data as unknown;
-   
+        let data = ev.data as unknown;
+        if (typeof data === "string") {
+          const trimmed = data.trim();
+          if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+            try {
+              data = JSON.parse(trimmed) as unknown;
+            } catch {
+              // leave as string if JSON.parse fails
+            }
+          } else if (trimmed.includes("{")) {
+            const start = trimmed.indexOf("{");
+            const maybeJson = trimmed.slice(start);
+            try {
+              data = JSON.parse(maybeJson) as unknown;
+            } catch {
+              // not JSON, keep original string
+            }
+          }
+        }
+
+        console.log("📩 MyLand message received", data);
 
         if (
           typeof data === "object" &&
@@ -433,7 +543,9 @@ export default function MyLandPicker({
         } else if (typeof data === "object" && data !== null && (data as Record<string, unknown>)["AddressType"]) {
           const d = data as Record<string, unknown>;
           const addressType = typeof d.AddressType === "string" ? (d.AddressType as string) : undefined;
-          if (addressType === "Onwani" || addressType === "Plot") {
+          const normalizedType = addressType?.toLowerCase();
+          const handledTypes = ["onwani", "plot", "pin", "pindrop", "coordinates", "coordinate"];
+          if (normalizedType && handledTypes.includes(normalizedType)) {
             console.log("📍 Map pin placed - applying address data:", d);
             
             // Mark that we're applying map data to prevent loops
@@ -443,21 +555,33 @@ export default function MyLandPicker({
             const addrEn = typeof d.AddressValue_EN === "string" ? (d.AddressValue_EN as string) : "";
             const parts = addrEn.split(",").map((s) => s.trim()).filter(Boolean);
             const municipalityName = parts[parts.length - 1] ?? "";
-            const districtUpper = (parts[parts.length - 2] ?? "").toUpperCase();
-            const onwaniAddr = (d.OnwaniAddress as Record<string, unknown> | undefined) || undefined;
-            const plotAddr = (d.PlotAddress as Record<string, unknown> | undefined) || undefined;
-            const communityEn =
-              typeof onwaniAddr?.COMMUNITYENG === "string"
-                ? (onwaniAddr.COMMUNITYENG as string)
-                : typeof plotAddr?.COMMUNITYENG === "string"
-                ? (plotAddr.COMMUNITYENG as string)
-                : undefined;
+            const onwaniAddr = isRecord(d.OnwaniAddress) ? (d.OnwaniAddress as Record<string, unknown>) : undefined;
+            const plotAddr = isRecord(d.PlotAddress) ? (d.PlotAddress as Record<string, unknown>) : undefined;
+
+            const municipalityCandidate =
+              toStringIfScalar(onwaniAddr?.MUNICIPALITYENG) ||
+              toStringIfScalar(plotAddr?.MUNICIPALITYENG) ||
+              municipalityName;
+            const toMunicipalityCode = (input?: string): Municipality => {
+              const val = (input ?? "").toLowerCase().replace(/\s+/g, " ").trim();
+              if (val.includes("abu dhabi")) return "ADM";
+              if (val.includes("al ain") || val === "ain" || val === "alain") return "AAM";
+              if (val.includes("dhaf") || val.includes("western")) return "WRM";
+              return "ADM";
+            };
+
+            const districtCandidate =
+              toStringIfScalar(onwaniAddr?.DISTRICTENG) ||
+              toStringIfScalar(plotAddr?.DISTRICTENG) ||
+              (parts.length > 1 ? parts[parts.length - 2] : undefined);
+            const communityCandidate =
+              toStringIfScalar(onwaniAddr?.COMMUNITYENG) ||
+              toStringIfScalar(plotAddr?.COMMUNITYENG) ||
+              (parts.length > 2 ? parts[parts.length - 3] : undefined);
             const plotNo =
-              typeof onwaniAddr?.GISID === "string"
-                ? (onwaniAddr.GISID as string)
-                : typeof plotAddr?.GISID === "string"
-                ? (plotAddr.GISID as string)
-                : undefined;
+              toStringIfScalar(onwaniAddr?.GISID) ||
+              toStringIfScalar(plotAddr?.GISID) ||
+              getScalar(plotAddr, ["PLOTNUMBER", "plotNumber", "PLOT_NUMBER", "PLOTNUM", "Plot", "plot"]);
 
             // Capture coordinates for fallback use
             const inputCoords = isRecord(d["InputCoordinates"]) ? (d["InputCoordinates"] as Record<string, unknown>) : undefined;
@@ -468,36 +592,44 @@ export default function MyLandPicker({
             }
 
             // Map municipality text to code
-            const m: Municipality = municipalityName.includes("Abu Dhabi")
-              ? "ADM"
-              : municipalityName.includes("Al Ain")
-              ? "AAM"
-              : "WRM";
+            const m: Municipality = municipalityCandidate ? toMunicipalityCode(municipalityCandidate) : municipality;
 
             // Derive AAM road id
             let derivedRoad: string | undefined;
             if (m === "AAM") {
-              if (addressType === "Onwani" && typeof onwaniAddr?.PlotAddress === "string") {
+              if (normalizedType === "onwani" && typeof onwaniAddr?.PlotAddress === "string") {
                 const segs = (onwaniAddr.PlotAddress as string).split("-");
                 derivedRoad = segs.length >= 2 ? segs[segs.length - 2] : undefined;
-              } else if (typeof plotAddr?.ROADID === "string") {
-                derivedRoad = plotAddr.ROADID as string;
+              }
+              if (!derivedRoad) {
+                derivedRoad = getScalar(plotAddr, ["ROADID", "RoadId", "roadId"]);
               }
             }
 
             // Store pending to apply once lists are ready
             pendingRef.current = {
-              district: districtUpper || undefined,
-              community: communityEn || undefined,
-              roadId: derivedRoad,
-              plot: plotNo,
+              district: districtCandidate?.trim() || undefined,
+              community: communityCandidate?.trim() || undefined,
+              roadId: derivedRoad?.trim() || undefined,
+              plot: plotNo?.trim(),
             };
+
+            if (plotNo) {
+              const normalizedPlot = plotNo.trim();
+              setPlot(normalizedPlot);
+              setPlotOptions((prev) => mergePlotOptions(prev, [{ label: normalizedPlot, value: normalizedPlot }]));
+            }
 
             console.log("📦 Pending selections queued:", pendingRef.current);
 
-            // Kick off cascade by setting municipality
-            setMunicipality(m);
-            
+            // Kick off cascade by setting municipality (forces district refetch when it changes)
+            if (municipality !== m) {
+              setMunicipality(m);
+            }
+
+            // Attempt immediate application using current option lists
+            tryApplyPending();
+
             // Reset flag after cascade completes (allow time for all effects to run)
             setTimeout(() => {
               isApplyingMapDataRef.current = false;
@@ -511,7 +643,7 @@ export default function MyLandPicker({
     }
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
-  }, [getScalar]);
+  }, [getScalar, municipality, mergePlotOptions, tryApplyPending]);
 
   // MAP TRIGGER (OUTBOUND): helper to send messages to the MyLand iframe safely
   const sendToIframe = React.useCallback(
@@ -713,61 +845,8 @@ export default function MyLandPicker({
 
   // Apply pending selections when options arrive
   React.useEffect(() => {
-    const p = pendingRef.current;
-    if (p.district && districts.some((o) => o.value === p.district)) {
-      console.log("🔄 Applying pending district:", p.district);
-      isApplyingMapDataRef.current = true; // Start applying map data
-      userInteractedRef.current = false; // Map triggered this, not user
-      setDistrict(p.district);
-      p.district = undefined;
-      // Reset flag after state update completes
-      setTimeout(() => {
-        isApplyingMapDataRef.current = false;
-      }, 0);
-    }
-  }, [districts]);
-  React.useEffect(() => {
-    const p = pendingRef.current;
-    if (p.community && communities.some((o) => o.value === p.community)) {
-      console.log("🔄 Applying pending community:", p.community);
-      isApplyingMapDataRef.current = true; // Start applying map data
-      userInteractedRef.current = false; // Map triggered this, not user
-      setCommunity(p.community);
-      p.community = undefined;
-      // Reset flag after state update completes
-      setTimeout(() => {
-        isApplyingMapDataRef.current = false;
-      }, 0);
-    }
-  }, [communities]);
-  React.useEffect(() => {
-    const p = pendingRef.current;
-    if (p.roadId && roads.includes(p.roadId)) {
-      console.log("🔄 Applying pending road:", p.roadId);
-      isApplyingMapDataRef.current = true; // Start applying map data
-      userInteractedRef.current = false; // Map triggered this, not user
-      setRoadId(p.roadId);
-      p.roadId = undefined;
-      // Reset flag after state update completes
-      setTimeout(() => {
-        isApplyingMapDataRef.current = false;
-      }, 0);
-    }
-  }, [roads]);
-  React.useEffect(() => {
-    const p = pendingRef.current;
-    if (p.plot && plotOptions.some((o) => o.value === p.plot || o.label === p.plot)) {
-      console.log("🔄 Applying pending plot:", p.plot);
-      isApplyingMapDataRef.current = true; // Start applying map data
-      userInteractedRef.current = false; // Map triggered this, not user
-      setPlot(p.plot);
-      p.plot = undefined;
-      // Reset flag after state update completes
-      setTimeout(() => {
-        isApplyingMapDataRef.current = false;
-      }, 0);
-    }
-  }, [plotOptions]);
+    tryApplyPending();
+  }, [districts, communities, roads, plotOptions, tryApplyPending]);
 
   return (
     <Card className={cn("w-full border shadow-lg bg-card", className)}>
