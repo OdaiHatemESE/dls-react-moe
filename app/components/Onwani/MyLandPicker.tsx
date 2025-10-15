@@ -73,6 +73,7 @@ export default function MyLandPicker({
   const pendingRef = React.useRef<{ district?: string; community?: string; roadId?: string; plot?: string }>({});
   const gisInfoRef = React.useRef<unknown>(undefined);
   const lastCoordsRef = React.useRef<{ lng: string; lat: string } | undefined>(undefined);
+  const userInteractedRef = React.useRef<boolean>(false); // Track if user manually changed dropdown
 
   const iframeRef = React.useRef<HTMLIFrameElement>(null);
 
@@ -198,13 +199,16 @@ export default function MyLandPicker({
   React.useEffect(() => {
     let cancelled = false;
     setLoading((l) => ({ ...l, districts: true }));
-    setDistrict(undefined);
-    setCommunities([]);
-    setCommunity(undefined);
-    setRoads([]);
-    setRoadId(undefined);
-    setPlot("");
-    setPlotOptions([]);
+    // Only reset downstream if user changed municipality manually
+    if (userInteractedRef.current) {
+      setDistrict(undefined);
+      setCommunities([]);
+      setCommunity(undefined);
+      setRoads([]);
+      setRoadId(undefined);
+      setPlot("");
+      setPlotOptions([]);
+    }
     getDistricts(municipality)
       .then((data) => {
         if (cancelled) return;
@@ -244,11 +248,14 @@ export default function MyLandPicker({
     let cancelled = false;
     setLoading((l) => ({ ...l, communities: true }));
     setCommunities([]);
-    setCommunity(undefined);
-    setRoads([]);
-    setRoadId(undefined);
-    setPlot("");
-    setPlotOptions([]);
+    // Only reset downstream if user changed district manually
+    if (userInteractedRef.current) {
+      setCommunity(undefined);
+      setRoads([]);
+      setRoadId(undefined);
+      setPlot("");
+      setPlotOptions([]);
+    }
     getCommunities(municipality, district)
       .then((data) => {
         if (cancelled) return;
@@ -285,9 +292,12 @@ export default function MyLandPicker({
     let cancelled = false;
     setLoading((l) => ({ ...l, roads: true }));
     setRoads([]);
-    setRoadId(undefined);
-    setPlot("");
-    setPlotOptions([]);
+    // Only reset downstream if user changed community manually
+    if (userInteractedRef.current) {
+      setRoadId(undefined);
+      setPlot("");
+      setPlotOptions([]);
+    }
     getRoadIds(district!, community!)
       .then((data) => {
         if (cancelled) return;
@@ -501,6 +511,52 @@ export default function MyLandPicker({
 
   const canSubmit = municipality && district && community && (municipality !== "AAM" || roadId) && plot.trim().length > 0 && !submitting;
 
+  // Handlers for user interactions - these set the flag to allow smart resets
+  const handleMunicipalityChange = (v: Municipality) => {
+    userInteractedRef.current = true;
+    setMunicipality(v);
+  };
+
+  const handleDistrictChange = (v: string | undefined) => {
+    userInteractedRef.current = true;
+    setDistrict(v);
+  };
+
+  const handleCommunityChange = (v: string | undefined) => {
+    userInteractedRef.current = true;
+    setCommunity(v);
+  };
+
+  const handleRoadChange = (v: string | undefined) => {
+    userInteractedRef.current = true;
+    setRoadId(v);
+  };
+
+  const handlePlotChange = (v: string) => {
+    userInteractedRef.current = true;
+    setPlot(v);
+  };
+
+  const handleReset = () => {
+    userInteractedRef.current = true;
+    // Reset to initial state - clear all data and selections
+    setMunicipality(defaultMunicipality);
+    setDistricts([]); // Clear districts data
+    setDistrict(undefined);
+    setCommunities([]); // Clear communities data
+    setCommunity(undefined);
+    setRoads([]); // Clear roads data
+    setRoadId(undefined);
+    setPlot("");
+    setPlotOptions([]); // Clear plot options
+    setShape(undefined); // Clear shape data
+    pendingRef.current = {};
+    lastCoordsRef.current = undefined;
+    gisInfoRef.current = undefined;
+    // Notify map to reset/clear
+    sendToIframe({ type: "reset", action: "clear" });
+  };
+
   const handleOk = async () => {
     if (!canSubmit) return;
     setSubmitting(true);
@@ -553,9 +609,11 @@ export default function MyLandPicker({
   // MAP TRIGGER (OUTBOUND): When community changes, set community and request plots
   React.useEffect(() => {
     if (!community) return;
-    // Reset plot choices for new context
-    setPlot("");
-    setPlotOptions([]);
+    // Reset plot choices for new context only if user changed community
+    if (userInteractedRef.current) {
+      setPlot("");
+      setPlotOptions([]);
+    }
     sendToIframe({ set: "community", municipality, district, community });
     sendToIframe({
       type: "request-plots",
@@ -567,9 +625,11 @@ export default function MyLandPicker({
   React.useEffect(() => {
     if (municipality !== "AAM") return;
     if (!community) return;
-    // Clear current plot state when switching roads
-    setPlot("");
-    setPlotOptions([]);
+    // Clear current plot state when switching roads only if user changed road
+    if (userInteractedRef.current) {
+      setPlot("");
+      setPlotOptions([]);
+    }
     // Ask iframe to refresh plots for selected road
     sendToIframe({
       type: "request-plots",
@@ -624,6 +684,7 @@ export default function MyLandPicker({
   React.useEffect(() => {
     const p = pendingRef.current;
     if (p.district && districts.some((o) => o.value === p.district)) {
+      userInteractedRef.current = false; // Map triggered this, not user
       setDistrict(p.district);
       p.district = undefined;
     }
@@ -631,6 +692,7 @@ export default function MyLandPicker({
   React.useEffect(() => {
     const p = pendingRef.current;
     if (p.community && communities.some((o) => o.value === p.community)) {
+      userInteractedRef.current = false; // Map triggered this, not user
       setCommunity(p.community);
       p.community = undefined;
     }
@@ -638,6 +700,7 @@ export default function MyLandPicker({
   React.useEffect(() => {
     const p = pendingRef.current;
     if (p.roadId && roads.includes(p.roadId)) {
+      userInteractedRef.current = false; // Map triggered this, not user
       setRoadId(p.roadId);
       p.roadId = undefined;
     }
@@ -645,6 +708,7 @@ export default function MyLandPicker({
   React.useEffect(() => {
     const p = pendingRef.current;
     if (p.plot && plotOptions.some((o) => o.value === p.plot || o.label === p.plot)) {
+      userInteractedRef.current = false; // Map triggered this, not user
       setPlot(p.plot);
       p.plot = undefined;
     }
@@ -656,7 +720,7 @@ export default function MyLandPicker({
         <CardTitle className="flex items-center justify-between">
           <span className="text-lg font-semibold">{isAr ? "اختيار العنوان (Onwani)" : "Onwani Address Picker"}</span>
           <div className="flex gap-2">
-            <Select value={municipality} onValueChange={(v) => setMunicipality(v as Municipality)}>
+            <Select value={municipality} onValueChange={handleMunicipalityChange}>
               <SelectTrigger className="w-[140px] bg-background">
                 <SelectValue placeholder="Municipality" />
               </SelectTrigger>
@@ -666,6 +730,15 @@ export default function MyLandPicker({
                 <SelectItem value="WRM">{isAr ? "الغربية" : "Al Dhafra"}</SelectItem>
               </SelectContent>
             </Select>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={handleReset}
+              className="min-w-[80px]"
+              title={isAr ? "إعادة تعيين الكل" : "Reset all"}
+            >
+              {isAr ? "إعادة تعيين" : "Reset"}
+            </Button>
           </div>
         </CardTitle>
       </CardHeader>
@@ -681,7 +754,7 @@ export default function MyLandPicker({
                 searchTerms: isAr ? d.en : d.ar // Allow searching in the other language
               }))}
               value={district}
-              onValueChange={(v) => setDistrict(v)}
+              onValueChange={handleDistrictChange}
               disabled={loading.districts}
               placeholder={loading.districts ? (isAr ? "جارٍ التحميل.." : "Loading...") : isAr ? "اختر المنطقة" : "Select district"}
               searchPlaceholder={isAr ? "ابحث عن المنطقة..." : "Search district..."}
@@ -698,7 +771,7 @@ export default function MyLandPicker({
                 searchTerms: isAr ? c.en : c.ar // Allow searching in the other language
               }))}
               value={community}
-              onValueChange={(v) => setCommunity(v)}
+              onValueChange={handleCommunityChange}
               disabled={!district || loading.communities}
               placeholder={!district ? (isAr ? "اختر المنطقة أولاً" : "Pick district first") : loading.communities ? (isAr ? "جارٍ التحميل.." : "Loading...") : isAr ? "اختر المجتمع" : "Select community"}
               searchPlaceholder={isAr ? "ابحث عن المجتمع..." : "Search community..."}
@@ -712,7 +785,7 @@ export default function MyLandPicker({
               <Combobox
                 options={roads.map((r) => ({ value: r, label: r }))}
                 value={roadId}
-                onValueChange={(v) => setRoadId(v)}
+                onValueChange={handleRoadChange}
                 disabled={!community || loading.roads}
                 placeholder={!community ? (isAr ? "اختر المجتمع أولاً" : "Pick community first") : loading.roads ? (isAr ? "جارٍ التحميل.." : "Loading...") : isAr ? "اختر رقم الطريق" : "Select road id"}
                 searchPlaceholder={isAr ? "ابحث عن رقم الطريق..." : "Search road..."}
@@ -726,7 +799,7 @@ export default function MyLandPicker({
             <Combobox
               options={plotOptions.map((p) => ({ value: p.value, label: p.label }))}
               value={plot}
-              onValueChange={(v) => setPlot(v)}
+              onValueChange={handlePlotChange}
               disabled={!community}
               placeholder={!community
                 ? (isAr ? "اختر المجتمع أولاً" : "Pick community first")
