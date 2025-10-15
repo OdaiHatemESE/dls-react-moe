@@ -4,12 +4,30 @@ import * as React from "react";
 import useSWR from "swr";
 import { jsonFetcher } from "@/lib/swr";
 import { cn } from "@/lib/utils";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { useI18n } from "@/app/i18n/I18nProvider";
 
-type Emirate = { Id: number; TitleAr: string; TitleEn: string; IsActive: boolean };
-type Area = { Id: number; TitleAr: string; TitleEn: string; IsActive: boolean; ZoneId: number; ManhalCode: string | null };
+type Emirate = {
+  Id: number;
+  TitleAr: string;
+  TitleEn: string;
+  IsActive: boolean;
+};
+type Area = {
+  Id: number;
+  TitleAr: string;
+  TitleEn: string;
+  IsActive: boolean;
+  ZoneId: number;
+  ManhalCode: string | null;
+};
 
 export type AddressValue = {
   emirateId?: number | null;
@@ -50,10 +68,28 @@ function useEmirates() {
   return useSWR<{ data: Emirate[] }>("/api/db/emirates", jsonFetcher);
 }
 
-type AreasMeta = { zoneId: number; isAbuDhabi: boolean; gradeCode: string | null; genderCode: string | null; count: number };
+type AreasMeta = {
+  zoneId: number;
+  isAbuDhabi: boolean;
+  gradeCode: string | null;
+  genderCode: string | null;
+  count: number;
+};
 
-function useAreas(params: { emirateId?: number | null; isAbuDhabi?: boolean; zoneIdOverride?: number | null; gradeCode?: string; genderCode?: string }) {
-  const { emirateId, isAbuDhabi = false, zoneIdOverride, gradeCode, genderCode } = params;
+function useAreas(params: {
+  emirateId?: number | null;
+  isAbuDhabi?: boolean;
+  zoneIdOverride?: number | null;
+  gradeCode?: string;
+  genderCode?: string;
+}) {
+  const {
+    emirateId,
+    isAbuDhabi = false,
+    zoneIdOverride,
+    gradeCode,
+    genderCode,
+  } = params;
   const key = React.useMemo(() => {
     const idToUse = isAbuDhabi ? zoneIdOverride ?? emirateId : emirateId;
     if (!idToUse) return null;
@@ -96,7 +132,9 @@ export function AddressPicker(props: AddressPickerProps) {
   React.useEffect(() => {
     setLocal((prev) => ({
       emirateId: value?.emirateId ?? prev.emirateId,
-      areaId: value?.areaId ?? (value?.emirateId !== prev.emirateId ? undefined : prev.areaId),
+      areaId:
+        value?.areaId ??
+        (value?.emirateId !== prev.emirateId ? undefined : prev.areaId),
       streetName: value?.streetName ?? prev.streetName,
       houseNumber: value?.houseNumber ?? prev.houseNumber,
     }));
@@ -112,19 +150,57 @@ export function AddressPicker(props: AddressPickerProps) {
   );
 
   const { data: emiratesData, isLoading: emiratesLoading } = useEmirates();
+  // Flatten emirates list early so we can detect Abu Dhabi before areas fetch
+  const emirates = React.useMemo(() => emiratesData?.data ?? [], [emiratesData]);
+
+  // Detect if the currently selected emirate is Abu Dhabi (EN/AR tolerant)
+  const selectedEmirate = React.useMemo(
+    () => emirates.find((e) => e.Id === (local.emirateId ?? -1)),
+    [emirates, local.emirateId]
+  );
+  const isAbuDhabiSelected = React.useMemo(() => {
+    if (!selectedEmirate) return false;
+    const en = (selectedEmirate.TitleEn || "").toLowerCase().replace(/\s+/g, "");
+    const ar = (selectedEmirate.TitleAr || "").replace(/\s+/g, "");
+    // Normalize Arabic (remove tatweel U+0640 and punctuation like ؟ )
+    const arNorm = ar.replace(/[\u0640\u061F]/g, "");
+    const abuDhabiArForms = [
+      "أبوظبي",
+      "ابوظبي",
+      "أبوظبي",
+      "ابو ظبي".replace(/\s+/g, ""),
+      "أبو ظبي".replace(/\s+/g, ""),
+    ];
+    return en.includes("abudhabi") || abuDhabiArForms.some((f) => arNorm.includes(f));
+  }, [selectedEmirate]);
+
+  // When Abu Dhabi is selected, clear dependent fields since a different picker is used elsewhere
+  React.useEffect(() => {
+    if (!isAbuDhabiSelected) return;
+    const needsClear = !!(local.areaId || local.streetName || local.houseNumber);
+    if (needsClear) {
+      emit({ areaId: undefined, streetName: undefined, houseNumber: undefined });
+    }
+    // Also reset touched flags for hidden fields to avoid showing errors upon switch-back
+    setTouched((t) => ({ ...t, areaId: false, streetName: false, houseNumber: false }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAbuDhabiSelected]);
+
+  // Skip areas fetching entirely when Abu Dhabi emirate is selected
   const { data: areasData, isLoading: areasLoading } = useAreas({
-    emirateId: local.emirateId ?? undefined,
+    emirateId: isAbuDhabiSelected ? undefined : local.emirateId ?? undefined,
     isAbuDhabi,
     zoneIdOverride: props.abuDhabiZoneIdOverride ?? null,
     gradeCode,
     genderCode,
   });
 
-  const emirates = emiratesData?.data ?? [];
   const areas = areasData?.data ?? [];
   console.log("Areas data:", areas);
 
-  const [touched, setTouched] = React.useState<{ [K in keyof AddressValue]?: boolean }>({});
+  const [touched, setTouched] = React.useState<{
+    [K in keyof AddressValue]?: boolean;
+  }>({});
 
   const l = {
     emirate: labels?.emirate ?? t.pickLocation.emirate,
@@ -143,17 +219,21 @@ export function AddressPicker(props: AddressPickerProps) {
 
   const emirateError = req.emirate && touched.emirateId && !local.emirateId;
   const areaError = req.area && touched.areaId && !local.areaId;
-  const streetError = req.streetName && touched.streetName && !local.streetName?.trim();
-  const houseError = req.houseNumber && touched.houseNumber && !local.houseNumber?.trim();
+  const streetError =
+    req.streetName && touched.streetName && !local.streetName?.trim();
+  const houseError =
+    req.houseNumber && touched.houseNumber && !local.houseNumber?.trim();
 
-  const isRTL = locale === 'ar';
+  const isRTL = locale === "ar";
 
   const Wrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-    <div 
+    <div
       className={cn(
-        layout === "grid" ? "grid grid-cols-1 gap-4 md:grid-cols-2" : "space-y-4", 
+        layout === "grid"
+          ? "grid grid-cols-1 gap-4 md:grid-cols-2"
+          : "space-y-4",
         className
-      )} 
+      )}
       dir={isRTL ? "rtl" : "ltr"}
     >
       {children}
@@ -181,25 +261,28 @@ export function AddressPicker(props: AddressPickerProps) {
             if (!o) setTouched((t) => ({ ...t, emirateId: true }));
           }}
         >
-          <SelectTrigger 
+          <SelectTrigger
             className={cn(
               "h-11 rounded-lg border-gray-300 bg-white shadow-sm transition-colors",
               "hover:border-primary focus:border-primary focus:ring-2 focus:ring-primary/20",
               "disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed",
               "dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100",
-              emirateError && "border-destructive focus:border-destructive focus:ring-destructive/20"
+              emirateError &&
+                "border-destructive focus:border-destructive focus:ring-destructive/20"
             )}
-          > 
-            <SelectValue placeholder={emiratesLoading ? t.pickLocation.loading : l.emirate} />
+          >
+            <SelectValue
+              placeholder={emiratesLoading ? t.pickLocation.loading : l.emirate}
+            />
           </SelectTrigger>
           <SelectContent className="rounded-lg">
             {emirates.map((e) => (
-              <SelectItem 
-                key={e.Id} 
+              <SelectItem
+                key={e.Id}
                 value={String(e.Id)}
                 className="cursor-pointer hover:bg-primary/10"
-              > 
-                {locale === 'ar' ? e.TitleAr : e.TitleEn}
+              >
+                {locale === "ar" ? e.TitleAr : e.TitleEn}
               </SelectItem>
             ))}
           </SelectContent>
@@ -210,108 +293,119 @@ export function AddressPicker(props: AddressPickerProps) {
           </p>
         )}
       </div>
-      {/* Area select (depends on emirate) */}
-      <div className="flex flex-col gap-2">
-        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-          {l.area}
-          {req.area && <span className="text-destructive"> *</span>}
-        </label>
-        <Select
-          disabled={disabled || !local.emirateId || emiratesLoading || areasLoading}
-          value={local.areaId ? String(local.areaId) : undefined}
-          onValueChange={(v) => emit({ areaId: Number(v) })}
-          onOpenChange={(o) => {
-            if (!o) setTouched((t) => ({ ...t, areaId: true }));
-          }}
-        >
-          <SelectTrigger 
+      {!isAbuDhabiSelected && (
+      <div id="DubaiNorthEmirate">
+        {/* Area select (depends on emirate) */}
+        <div className="flex flex-col gap-2">
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            {l.area}
+            {req.area && <span className="text-destructive"> *</span>}
+          </label>
+          <Select
+            disabled={
+              disabled || !local.emirateId || emiratesLoading || areasLoading
+            }
+            value={local.areaId ? String(local.areaId) : undefined}
+            onValueChange={(v) => emit({ areaId: Number(v) })}
+            onOpenChange={(o) => {
+              if (!o) setTouched((t) => ({ ...t, areaId: true }));
+            }}
+          >
+            <SelectTrigger
+              className={cn(
+                "h-11 rounded-lg border-gray-300 bg-white shadow-sm transition-colors",
+                "hover:border-primary focus:border-primary focus:ring-2 focus:ring-primary/20",
+                "disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed",
+                "dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100",
+                areaError &&
+                  "border-destructive focus:border-destructive focus:ring-destructive/20"
+              )}
+            >
+              <SelectValue
+                placeholder={areasLoading ? t.pickLocation.loading : l.area}
+              />
+            </SelectTrigger>
+            <SelectContent className="rounded-lg">
+              {areas.length === 0 && !areasLoading && (
+                <div className="p-2 text-sm text-gray-500 text-center">
+                  {t.pickLocation.noAreas}
+                </div>
+              )}
+              {areas.map((a) => (
+                <SelectItem
+                  key={a.Id}
+                  value={String(a.Id)}
+                  className="cursor-pointer hover:bg-primary/10"
+                >
+                  {locale === "ar" ? a.TitleAr : a.TitleEn}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {areaError && (
+            <p className="text-xs text-destructive flex items-center gap-1">
+              <span>⚠</span> {l.requiredField}
+            </p>
+          )}
+        </div>
+
+        {/* Street name */}
+        <div className="flex flex-col gap-2">
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            {l.streetName}
+            {req.streetName && <span className="text-destructive"> *</span>}
+          </label>
+          <Input
+            disabled={disabled}
+            value={local.streetName ?? ""}
+            onChange={(e) => emit({ streetName: e.target.value })}
+            onBlur={() => setTouched((t) => ({ ...t, streetName: true }))}
             className={cn(
               "h-11 rounded-lg border-gray-300 bg-white shadow-sm transition-colors",
-              "hover:border-primary focus:border-primary focus:ring-2 focus:ring-primary/20",
+              "hover:border-primary focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20",
               "disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed",
               "dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100",
-              areaError && "border-destructive focus:border-destructive focus:ring-destructive/20"
+              streetError &&
+                "border-destructive focus-visible:border-destructive focus-visible:ring-destructive/20"
             )}
-          > 
-            <SelectValue placeholder={areasLoading ? t.pickLocation.loading : l.area} />
-          </SelectTrigger>
-          <SelectContent className="rounded-lg">
-            {areas.length === 0 && !areasLoading && (
-              <div className="p-2 text-sm text-gray-500 text-center">{t.pickLocation.noAreas}</div>
+            placeholder={l.streetName}
+          />
+          {streetError && (
+            <p className="text-xs text-destructive flex items-center gap-1">
+              <span>⚠</span> {l.requiredField}
+            </p>
+          )}
+        </div>
+
+        {/* House number */}
+        <div className="flex flex-col gap-2">
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            {l.houseNumber}
+            {req.houseNumber && <span className="text-destructive"> *</span>}
+          </label>
+          <Input
+            disabled={disabled}
+            value={local.houseNumber ?? ""}
+            onChange={(e) => emit({ houseNumber: e.target.value })}
+            onBlur={() => setTouched((t) => ({ ...t, houseNumber: true }))}
+            className={cn(
+              "h-11 rounded-lg border-gray-300 bg-white shadow-sm transition-colors",
+              "hover:border-primary focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20",
+              "disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed",
+              "dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100",
+              houseError &&
+                "border-destructive focus-visible:border-destructive focus-visible:ring-destructive/20"
             )}
-            {areas.map((a) => (
-              <SelectItem 
-                key={a.Id} 
-                value={String(a.Id)}
-                className="cursor-pointer hover:bg-primary/10"
-              >
-                {locale === 'ar' ? a.TitleAr : a.TitleEn}  
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        {areaError && (
-          <p className="text-xs text-destructive flex items-center gap-1">
-            <span>⚠</span> {l.requiredField}
-          </p>
-        )}
-      </div>
-
-      {/* Street name */}
-      <div className="flex flex-col gap-2">
-        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-          {l.streetName}
-          {req.streetName && <span className="text-destructive"> *</span>}
-        </label>
-        <Input
-          disabled={disabled}
-          value={local.streetName ?? ""}
-          onChange={(e) => emit({ streetName: e.target.value })}
-          onBlur={() => setTouched((t) => ({ ...t, streetName: true }))}
-          className={cn(
-            "h-11 rounded-lg border-gray-300 bg-white shadow-sm transition-colors",
-            "hover:border-primary focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20",
-            "disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed",
-            "dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100",
-            streetError && "border-destructive focus-visible:border-destructive focus-visible:ring-destructive/20"
+            placeholder={l.houseNumber}
+          />
+          {houseError && (
+            <p className="text-xs text-destructive flex items-center gap-1">
+              <span>⚠</span> {l.requiredField}
+            </p>
           )}
-          placeholder={l.streetName}
-        />
-        {streetError && (
-          <p className="text-xs text-destructive flex items-center gap-1">
-            <span>⚠</span> {l.requiredField}
-          </p>
-        )}
+        </div>
       </div>
-
-      {/* House number */}
-      <div className="flex flex-col gap-2">
-        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-          {l.houseNumber}
-          {req.houseNumber && <span className="text-destructive"> *</span>}
-        </label>
-        <Input
-          disabled={disabled}
-          value={local.houseNumber ?? ""}
-          onChange={(e) => emit({ houseNumber: e.target.value })}
-          onBlur={() => setTouched((t) => ({ ...t, houseNumber: true }))}
-          className={cn(
-            "h-11 rounded-lg border-gray-300 bg-white shadow-sm transition-colors",
-            "hover:border-primary focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20",
-            "disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed",
-            "dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100",
-            houseError && "border-destructive focus-visible:border-destructive focus-visible:ring-destructive/20"
-          )}
-          placeholder={l.houseNumber}
-        />
-        {houseError && (
-          <p className="text-xs text-destructive flex items-center gap-1">
-            <span>⚠</span> {l.requiredField}
-          </p>
-        )}
-      </div>
-
-      
+      )}
     </Wrapper>
   );
 }
