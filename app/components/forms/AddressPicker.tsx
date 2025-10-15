@@ -29,11 +29,38 @@ type Area = {
   ManhalCode: string | null;
 };
 
+type Region = {
+  Id: number;
+  TitleAr: string;
+  TitleEn: string;
+  IsActive: boolean;
+  EmirateId: number;
+};
+
+type Zone = {
+  Id: number;
+  TitleAr: string;
+  TitleEn: string;
+  IsActive: boolean;
+  RegionId: number;
+};
+
+type Plot = {
+  id: number;
+  titleAr: string | null;
+  titleEn: string | null;
+  premisesPlotId: string | null;
+};
+
 export type AddressValue = {
   emirateId?: number | null;
   areaId?: number | null;
   streetName?: string;
   houseNumber?: string;
+  // Abu Dhabi specific fields
+  regionId?: number | null;
+  zoneId?: number | null;
+  plotId?: number | null;
 };
 
 export type AddressPickerProps = {
@@ -66,6 +93,30 @@ export type AddressPickerProps = {
 
 function useEmirates() {
   return useSWR<{ data: Emirate[] }>("/api/db/emirates", jsonFetcher);
+}
+
+function useRegions(emirateId?: number | null) {
+  const key = React.useMemo(() => {
+    if (!emirateId) return null;
+    return `/api/db/regions?emirateId=${emirateId}`;
+  }, [emirateId]);
+  return useSWR<{ data: Region[] }>(key, jsonFetcher);
+}
+
+function useZones(regionId?: number | null) {
+  const key = React.useMemo(() => {
+    if (!regionId) return null;
+    return `/api/db/zones?regionId=${regionId}`;
+  }, [regionId]);
+  return useSWR<{ data: Zone[] }>(key, jsonFetcher);
+}
+
+function usePlots(filter?: string) {
+  const key = React.useMemo(() => {
+    if (!filter || filter.trim() === "") return null;
+    return `/api/db/plots?filter=${encodeURIComponent(filter)}`;
+  }, [filter]);
+  return useSWR<{ data: Plot[] }>(key, jsonFetcher);
 }
 
 type AreasMeta = {
@@ -126,6 +177,9 @@ export function AddressPicker(props: AddressPickerProps) {
     areaId: value?.areaId ?? undefined,
     streetName: value?.streetName ?? "",
     houseNumber: value?.houseNumber ?? "",
+    regionId: value?.regionId ?? undefined,
+    zoneId: value?.zoneId ?? undefined,
+    plotId: value?.plotId ?? undefined,
   }));
 
   // keep in sync with external value
@@ -137,8 +191,11 @@ export function AddressPicker(props: AddressPickerProps) {
         (value?.emirateId !== prev.emirateId ? undefined : prev.areaId),
       streetName: value?.streetName ?? prev.streetName,
       houseNumber: value?.houseNumber ?? prev.houseNumber,
+      regionId: value?.regionId ?? prev.regionId,
+      zoneId: value?.zoneId ?? prev.zoneId,
+      plotId: value?.plotId ?? prev.plotId,
     }));
-  }, [value?.emirateId, value?.areaId, value?.streetName, value?.houseNumber]);
+  }, [value?.emirateId, value?.areaId, value?.streetName, value?.houseNumber, value?.regionId, value?.zoneId, value?.plotId]);
 
   const emit = React.useCallback(
     (next: Partial<AddressValue>) => {
@@ -205,6 +262,26 @@ export function AddressPicker(props: AddressPickerProps) {
     }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAbuDhabiSelected]);
+
+  // Fetch Abu Dhabi hierarchical data
+  const { data: regionsData, isLoading: regionsLoading } = useRegions(
+    isAbuDhabiSelected ? local.emirateId : null
+  );
+  const regions = regionsData?.data ?? [];
+
+  const { data: zonesData, isLoading: zonesLoading } = useZones(
+    isAbuDhabiSelected ? local.regionId : null
+  );
+  const zones = zonesData?.data ?? [];
+
+  // For Abu Dhabi areas, we fetch by zoneId (not emirateId)
+  const { data: abuDhabiAreasData, isLoading: abuDhabiAreasLoading } = useAreas({
+    emirateId: isAbuDhabiSelected ? local.zoneId : null,
+    isAbuDhabi: true,
+    zoneIdOverride: local.zoneId ?? null,
+    gradeCode,
+    genderCode,
+  });
 
   // Skip areas fetching entirely when Abu Dhabi emirate is selected
   const { data: areasData, isLoading: areasLoading } = useAreas({
@@ -424,78 +501,181 @@ export function AddressPicker(props: AddressPickerProps) {
 
       {isAbuDhabiSelected && (
         <>
-        
-            <div className=" mt-5 mb-5">
-             
-
-              <div className="flex flex-col gap-1">
-                <label className="text-sm font-medium text-gray-700">
-                  Inquiry through plot number
-                </label>
-                <select
-                  className="h-11 w-full rounded-lg border border-gray-300 bg-white px-3 shadow-sm
-               hover:border-blue-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
-                >
-                  <option>Inquiry through plot number</option>
-                  <option>Other option</option>
-                </select>
-              </div>
+          {/* Plot number inquiry */}
+          <div className="mt-5 mb-5">
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                {locale === "ar" ? "الاستعلام برقم القطعة" : "Inquiry through plot number"}
+              </label>
+              <Input
+                disabled={disabled}
+                placeholder={locale === "ar" ? "أدخل رقم القطعة" : "Enter plot number"}
+                className={cn(
+                  "h-11 rounded-lg border-gray-300 bg-white shadow-sm transition-colors",
+                  "hover:border-primary focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20",
+                  "disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed",
+                  "dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100"
+                )}
+              />
             </div>
+          </div>
 
-            <p className="text-center text-xs text-gray-500 mb-5">
-              Residential data will be automatically filled
-            </p>
-            <div className="mb-5">
-              <button
-                type="button"
-                className="h-11 w-full rounded-lg bg-emerald-700 px-4 font-medium text-white shadow-sm
-             hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+          <p className="text-center text-xs text-gray-500 dark:text-gray-400 mb-5">
+            {locale === "ar" ? "سيتم ملء البيانات السكنية تلقائياً" : "Residential data will be automatically filled"}
+          </p>
+
+          <div className="mb-5">
+            <button
+              type="button"
+              className="h-11 w-full rounded-lg bg-emerald-700 px-4 font-medium text-white shadow-sm
+                hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30
+                disabled:bg-gray-400 disabled:cursor-not-allowed"
+              disabled={disabled}
+            >
+              {locale === "ar" ? "اختر من الخريطة" : "Select From Map"}
+            </button>
+          </div>
+
+          {/* Region select */}
+          <div className="flex flex-col gap-2 mb-5">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              {locale === "ar" ? "المنطقة" : "Region"}
+              <span className="text-destructive"> *</span>
+            </label>
+            <Select
+              disabled={disabled || regionsLoading}
+              value={local.regionId ? String(local.regionId) : undefined}
+              onValueChange={(v) => {
+                const id = Number(v);
+                emit({ regionId: id, zoneId: undefined, areaId: undefined });
+              }}
+              onOpenChange={(o) => {
+                if (!o) setTouched((t) => ({ ...t, regionId: true }));
+              }}
+            >
+              <SelectTrigger
+                className={cn(
+                  "h-11 rounded-lg border-gray-300 bg-white shadow-sm transition-colors",
+                  "hover:border-primary focus:border-primary focus:ring-2 focus:ring-primary/20",
+                  "disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed",
+                  "dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100"
+                )}
               >
-                Select From Map
-              </button>
-            </div>
+                <SelectValue
+                  placeholder={regionsLoading ? t.pickLocation.loading : (locale === "ar" ? "المنطقة" : "Region")}
+                />
+              </SelectTrigger>
+              <SelectContent className="rounded-lg">
+                {regions.length === 0 && !regionsLoading && (
+                  <div className="p-2 text-sm text-gray-500 text-center">
+                    {locale === "ar" ? "لا توجد مناطق" : "No regions available"}
+                  </div>
+                )}
+                {regions.map((r) => (
+                  <SelectItem
+                    key={r.Id}
+                    value={String(r.Id)}
+                    className="cursor-pointer hover:bg-primary/10"
+                  >
+                    {locale === "ar" ? r.TitleAr : r.TitleEn}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-            <div className="">
-              <div className="flex flex-col gap-1 mb-5">
-                <label className="text-sm font-medium text-gray-700">
-                  Region <span className="text-red-600">*</span>
-                </label>
-                <select
-                  disabled
-                  className="h-11 w-full rounded-lg border border-gray-300 bg-gray-50 px-3 text-gray-500 shadow-sm
-               cursor-not-allowed"
-                >
-                  <option>region</option>
-                </select>
-              </div>
+          {/* Zone select */}
+          <div className="flex flex-col gap-2 mb-5">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              {locale === "ar" ? "النطاق" : "Zone"}
+              <span className="text-destructive"> *</span>
+            </label>
+            <Select
+              disabled={disabled || !local.regionId || zonesLoading}
+              value={local.zoneId ? String(local.zoneId) : undefined}
+              onValueChange={(v) => {
+                const id = Number(v);
+                emit({ zoneId: id, areaId: undefined });
+              }}
+              onOpenChange={(o) => {
+                if (!o) setTouched((t) => ({ ...t, zoneId: true }));
+              }}
+            >
+              <SelectTrigger
+                className={cn(
+                  "h-11 rounded-lg border-gray-300 bg-white shadow-sm transition-colors",
+                  "hover:border-primary focus:border-primary focus:ring-2 focus:ring-primary/20",
+                  "disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed",
+                  "dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100"
+                )}
+              >
+                <SelectValue
+                  placeholder={zonesLoading ? t.pickLocation.loading : (locale === "ar" ? "النطاق" : "Zone")}
+                />
+              </SelectTrigger>
+              <SelectContent className="rounded-lg">
+                {zones.length === 0 && !zonesLoading && (
+                  <div className="p-2 text-sm text-gray-500 text-center">
+                    {locale === "ar" ? "لا توجد نطاقات" : "No zones available"}
+                  </div>
+                )}
+                {zones.map((z) => (
+                  <SelectItem
+                    key={z.Id}
+                    value={String(z.Id)}
+                    className="cursor-pointer hover:bg-primary/10"
+                  >
+                    {locale === "ar" ? z.TitleAr : z.TitleEn}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-              <div className="flex flex-col gap-1 mb-5">
-                <label className="text-sm font-medium text-gray-700">
-                  Zone <span className="text-red-600">*</span>
-                </label>
-                <select
-                  disabled
-                  className="h-11 w-full rounded-lg border border-gray-300 bg-gray-50 px-3 text-gray-500 shadow-sm
-               cursor-not-allowed"
-                >
-                  <option>Zone</option>
-                </select>
-              </div>
-                 <div className="flex flex-col gap-1 mb-5">
-                <label className="text-sm font-medium text-gray-700">
-                  Area <span className="text-red-600">*</span>
-                </label>
-                <select
-                  disabled
-                  className="h-11 w-full rounded-lg border border-gray-300 bg-gray-50 px-3 text-gray-500 shadow-sm
-               cursor-not-allowed"
-                >
-                  <option>Area</option>
-                </select>
-              </div>
-            </div>
- 
-           
+          {/* Area select for Abu Dhabi */}
+          <div className="flex flex-col gap-2 mb-5">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              {l.area}
+              <span className="text-destructive"> *</span>
+            </label>
+            <Select
+              disabled={disabled || !local.zoneId || abuDhabiAreasLoading}
+              value={local.areaId ? String(local.areaId) : undefined}
+              onValueChange={(v) => emit({ areaId: Number(v) })}
+              onOpenChange={(o) => {
+                if (!o) setTouched((t) => ({ ...t, areaId: true }));
+              }}
+            >
+              <SelectTrigger
+                className={cn(
+                  "h-11 rounded-lg border-gray-300 bg-white shadow-sm transition-colors",
+                  "hover:border-primary focus:border-primary focus:ring-2 focus:ring-primary/20",
+                  "disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed",
+                  "dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100"
+                )}
+              >
+                <SelectValue
+                  placeholder={abuDhabiAreasLoading ? t.pickLocation.loading : l.area}
+                />
+              </SelectTrigger>
+              <SelectContent className="rounded-lg">
+                {(abuDhabiAreasData?.data ?? []).length === 0 && !abuDhabiAreasLoading && (
+                  <div className="p-2 text-sm text-gray-500 text-center">
+                    {t.pickLocation.noAreas}
+                  </div>
+                )}
+                {(abuDhabiAreasData?.data ?? []).map((a) => (
+                  <SelectItem
+                    key={a.Id}
+                    value={String(a.Id)}
+                    className="cursor-pointer hover:bg-primary/10"
+                  >
+                    {locale === "ar" ? a.TitleAr : a.TitleEn}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </>
       )}
     </Wrapper>
