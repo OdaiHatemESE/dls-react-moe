@@ -24,7 +24,14 @@
  * - showOverlayShape: whether to fetch and attach a community GeoJSON shape
  * - onOk: called with the final selection (and optional DB response)
  * - onCancel: caller-provided cancel handler
- */
+ *
+ * Quick edit hints (line ~numbers)
+ * - Dropdown defaults and cascading selections → Selection state block (~55)
+ * - API fetching for districts/communities/plots → useEffect cascade (~110-220)
+ * - Map inbound message parsing → window message handler (~260-420)
+ * - Map outbound messaging helpers → sendToIframe + effects (~430-560)
+ * - Reset + submission payload tweaks → handlers and handleOk (~600-740)
+ */ 
 
 import * as React from "react";
 import { useI18n } from "@/app/i18n/I18nProvider";
@@ -44,6 +51,8 @@ type Props = {
   onCancel?: () => void;
 };
 
+type NamedOption = { value: string; en: string; ar?: string };
+type PlotOption = { label: string; value: string; gisid?: string };
 
 const MYLAND_ALLOWED_ORIGIN = "https://myland.dmt.gov.ae";
 export default function MyLandPicker({
@@ -53,11 +62,16 @@ export default function MyLandPicker({
   onOk,
   onCancel,
 }: Props) {
+  // ---------------------------------------------------------------------------
+  // Locale awareness
+  // ---------------------------------------------------------------------------
   const { locale } = useI18n();
   const isAr = locale === "ar";
 
+  // ---------------------------------------------------------------------------
+  // Selection state
+  // ---------------------------------------------------------------------------
   const [municipality, setMunicipality] = React.useState<Municipality>(defaultMunicipality);
-  type NamedOption = { value: string; en: string; ar?: string };
   const [districts, setDistricts] = React.useState<NamedOption[]>([]);
   const [district, setDistrict] = React.useState<string | undefined>(undefined);
   const [communities, setCommunities] = React.useState<NamedOption[]>([]);
@@ -65,11 +79,14 @@ export default function MyLandPicker({
   const [roads, setRoads] = React.useState<string[]>([]);
   const [roadId, setRoadId] = React.useState<string | undefined>(undefined);
   const [plot, setPlot] = React.useState<string>("");
-  type PlotOption = { label: string; value: string; gisid?: string };
   const [plotOptions, setPlotOptions] = React.useState<PlotOption[]>([]);
   const [shape, setShape] = React.useState<unknown>(undefined);
   const [submitting, setSubmitting] = React.useState<boolean>(false);
   const [loading, setLoading] = React.useState<{ districts?: boolean; communities?: boolean; roads?: boolean; shape?: boolean }>({});
+
+  // ---------------------------------------------------------------------------
+  // Internal refs for async coordination and map sync
+  // ---------------------------------------------------------------------------
   const pendingRef = React.useRef<{ district?: string; community?: string; roadId?: string; plot?: string }>({});
   const gisInfoRef = React.useRef<unknown>(undefined);
   const lastCoordsRef = React.useRef<{ lng: string; lat: string } | undefined>(undefined);
@@ -79,7 +96,9 @@ export default function MyLandPicker({
 
   const iframeRef = React.useRef<HTMLIFrameElement>(null);
 
-  // Type guards and helpers
+  // ---------------------------------------------------------------------------
+  // Type guards and shape helpers
+  // ---------------------------------------------------------------------------
   // Narrowing helper: ensure runtime object checks before plucking fields
   const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null;
   const toStringIfScalar = (v: unknown): string | undefined =>
@@ -304,9 +323,7 @@ export default function MyLandPicker({
       .then((data) => {
         if (cancelled) return;
         const list = Array.isArray(data) ? data : (isRecord(data) && Array.isArray((data as { data?: unknown[] }).data) ? ((data as { data?: unknown[] }).data as unknown[]) : []);
-        const keys = [
-            "ROADID",
-        ];
+        const keys = ["ROADID"];
         const ids = (list as unknown[])
           .map((item) => {
             // Handle scalar arrays (string/number) as well as object records
@@ -683,11 +700,11 @@ export default function MyLandPicker({
     setDistricts([]);
     setCommunities([]);
     setCommunity(undefined);
-  setRoads([]);
-  setRoadId(undefined);
-  setPlot("");
-  setPlotOptions([]);
-  setShape(undefined);
+    setRoads([]);
+    setRoadId(undefined);
+    setPlot("");
+    setPlotOptions([]);
+    setShape(undefined);
   };
 
   const handleDistrictChange = (v: string | undefined) => {
@@ -746,10 +763,10 @@ export default function MyLandPicker({
     setPlot("");
     setPlotOptions([]); // Clear plot options
     setShape(undefined); // Clear shape data
-  pendingRef.current = {};
-  mapSelectionActiveRef.current = false;
-  lastCoordsRef.current = undefined;
-  gisInfoRef.current = undefined;
+    pendingRef.current = {};
+    mapSelectionActiveRef.current = false;
+    lastCoordsRef.current = undefined;
+    gisInfoRef.current = undefined;
     // Notify map to reset/clear
     sendToIframe({ type: "reset", action: "clear" });
   };
