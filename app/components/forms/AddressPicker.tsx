@@ -12,7 +12,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { useI18n } from "@/app/i18n/I18nProvider";
+import MyLandPicker from "@/app/components/Onwani/MyLandPicker";
+import type { OnwaniSelection } from "@/types";
 
 type Emirate = {
   Id: number;
@@ -43,13 +54,6 @@ type Zone = {
   TitleEn: string;
   IsActive: boolean;
   RegionId: number;
-};
-
-type Plot = {
-  id: number;
-  titleAr: string | null;
-  titleEn: string | null;
-  premisesPlotId: string | null;
 };
 
 export type AddressValue = {
@@ -109,14 +113,6 @@ function useZones(regionId?: number | null) {
     return `/api/db/zones?regionId=${regionId}`;
   }, [regionId]);
   return useSWR<{ data: Zone[] }>(key, jsonFetcher);
-}
-
-function usePlots(filter?: string) {
-  const key = React.useMemo(() => {
-    if (!filter || filter.trim() === "") return null;
-    return `/api/db/plots?filter=${encodeURIComponent(filter)}`;
-  }, [filter]);
-  return useSWR<{ data: Plot[] }>(key, jsonFetcher);
 }
 
 type AreasMeta = {
@@ -182,6 +178,11 @@ export function AddressPicker(props: AddressPickerProps) {
     plotId: value?.plotId ?? undefined,
   }));
 
+  // Dialog state for MyLandPicker
+  const [isMapDialogOpen, setIsMapDialogOpen] = React.useState(false);
+  const [pendingSelection, setPendingSelection] = React.useState<OnwaniSelection | null>(null);
+  const [hasMapSelection, setHasMapSelection] = React.useState(false);
+
   // keep in sync with external value
   React.useEffect(() => {
     setLocal((prev) => ({
@@ -205,6 +206,21 @@ export function AddressPicker(props: AddressPickerProps) {
     },
     [local, onChange]
   );
+
+  // Handler for MyLandPicker selection
+  const handleMapSelection = React.useCallback(
+    (selection: OnwaniSelection) => {
+      console.log("Map selection received:", selection);
+      setPendingSelection(selection);
+    },
+    []
+  );
+
+  // Handler to cancel map selection
+  const handleCancelMapSelection = React.useCallback(() => {
+    setIsMapDialogOpen(false);
+    setPendingSelection(null);
+  }, []);
 
   const { data: emiratesData, isLoading: emiratesLoading } = useEmirates();
   // Flatten emirates list early so we can detect Abu Dhabi before areas fetch
@@ -263,16 +279,22 @@ export function AddressPicker(props: AddressPickerProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAbuDhabiSelected]);
 
+  React.useEffect(() => {
+    if (!isAbuDhabiSelected && hasMapSelection) {
+      setHasMapSelection(false);
+    }
+  }, [isAbuDhabiSelected, hasMapSelection]);
+
   // Fetch Abu Dhabi hierarchical data
   const { data: regionsData, isLoading: regionsLoading } = useRegions(
     isAbuDhabiSelected ? local.emirateId : null
   );
-  const regions = regionsData?.data ?? [];
+  const regions = React.useMemo(() => regionsData?.data ?? [], [regionsData]);
 
   const { data: zonesData, isLoading: zonesLoading } = useZones(
     isAbuDhabiSelected ? local.regionId : null
   );
-  const zones = zonesData?.data ?? [];
+  const zones = React.useMemo(() => zonesData?.data ?? [], [zonesData]);
 
   // For Abu Dhabi areas, we fetch by zoneId (not emirateId)
   const { data: abuDhabiAreasData, isLoading: abuDhabiAreasLoading } = useAreas({
@@ -292,8 +314,17 @@ export function AddressPicker(props: AddressPickerProps) {
     genderCode,
   });
 
-  const areas = areasData?.data ?? [];
-  console.log("Areas data:", areas);
+  const areas = React.useMemo(() => areasData?.data ?? [], [areasData]);
+
+  // Handler to confirm and apply the map selection
+  const handleConfirmSelection = React.useCallback(async () => {
+    if (!pendingSelection) return;
+
+      debugger;
+ 
+    console.log("Applying map selection:", pendingSelection.dbPlotResponse.data);
+   
+  }, [pendingSelection, emit]);
 
   const [touched, setTouched] = React.useState<{
     [K in keyof AddressValue]?: boolean;
@@ -322,6 +353,7 @@ export function AddressPicker(props: AddressPickerProps) {
     req.houseNumber && touched.houseNumber && !local.houseNumber?.trim();
 
   const isRTL = locale === "ar";
+  const lockAbuDhabiFields = isAbuDhabiSelected && hasMapSelection;
 
   const Wrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
     <div
@@ -588,22 +620,37 @@ export function AddressPicker(props: AddressPickerProps) {
               </div>
             </div>
 
-            <button
+            <Button
               type="button"
+              onClick={() => setIsMapDialogOpen(true)}
               className={cn(
                 "h-12 w-full rounded-xl font-medium shadow-sm transition-all duration-200",
-                "bg-aegreen-600 text-white hover:bg-aegreen-700 active:scale-[0.98]",
+                hasMapSelection 
+                  ? "bg-aegreen-600/20 text-aegreen-700 border-2 border-aegreen-600/50 hover:bg-aegreen-600/30 hover:border-aegreen-600/60" 
+                  : "bg-aegreen-600 text-white hover:bg-aegreen-700",
+                "active:scale-[0.98]",
                 "focus:outline-none focus:ring-4 focus:ring-aegreen-500/30",
                 "disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-60",
                 "flex items-center justify-center gap-2"
               )}
               disabled={disabled}
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-              </svg>
-              {locale === "ar" ? "اختر من الخريطة" : "Select From Map"}
-            </button>
+              {hasMapSelection ? (
+                <>
+                  <svg className="w-5 h-5 animate-in zoom-in duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  {locale === "ar" ? "تم اختيار الموقع من الخريطة" : "Location Selected from Map"}
+                </>
+              ) : (
+                <>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                  </svg>
+                  {locale === "ar" ? "اختر من الخريطة" : "Select From Map"}
+                </>
+              )}
+            </Button>
 
             <p className="text-center text-xs text-muted-foreground mt-3 flex items-center justify-center gap-1.5">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -624,7 +671,7 @@ export function AddressPicker(props: AddressPickerProps) {
             </label>
             <Select
               dir={isRTL ? "rtl" : "ltr"}
-              disabled={disabled || regionsLoading}
+                disabled={disabled || regionsLoading || lockAbuDhabiFields}
               value={local.regionId ? String(local.regionId) : undefined}
               onValueChange={(v) => {
                 const id = Number(v);
@@ -684,7 +731,12 @@ export function AddressPicker(props: AddressPickerProps) {
             </label>
             <Select
               dir={isRTL ? "rtl" : "ltr"}
-              disabled={disabled || !local.regionId || zonesLoading}
+              disabled={
+                disabled ||
+                !local.regionId ||
+                zonesLoading ||
+                lockAbuDhabiFields
+              }
               value={local.zoneId ? String(local.zoneId) : undefined}
               onValueChange={(v) => {
                 const id = Number(v);
@@ -743,7 +795,12 @@ export function AddressPicker(props: AddressPickerProps) {
             </label>
             <Select
               dir={isRTL ? "rtl" : "ltr"}
-              disabled={disabled || !local.zoneId || abuDhabiAreasLoading}
+              disabled={
+                disabled ||
+                !local.zoneId ||
+                abuDhabiAreasLoading ||
+                lockAbuDhabiFields
+              }
               value={local.areaId ? String(local.areaId) : undefined}
               onValueChange={(v) => emit({ areaId: Number(v) })}
               onOpenChange={(o) => {
@@ -789,6 +846,142 @@ export function AddressPicker(props: AddressPickerProps) {
           </div>
         </div>
       )}
+
+      {/* MyLand Map Picker Dialog */}
+      <Dialog open={isMapDialogOpen} onOpenChange={setIsMapDialogOpen}>
+        <DialogContent 
+          className={cn(
+            "max-w-[95vw] w-full h-[90vh] p-0 gap-0 flex flex-col",
+            "bg-gradient-to-br from-background via-background to-primary/5",
+            isRTL ? "rtl" : "ltr"
+          )}
+        >
+          <DialogHeader className="px-6 pt-6 pb-4 border-b border-border/50 bg-card/50 backdrop-blur-sm shrink-0">
+            <DialogTitle className="flex items-center gap-3 text-xl font-bold">
+              <div className="p-2 rounded-xl bg-aegreen-600/10 text-aegreen-600">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                </svg>
+              </div>
+              <span className="bg-gradient-to-r from-aegreen-600 to-aegreen-700 bg-clip-text text-transparent">
+                {locale === "ar" ? "اختر موقعك من الخريطة" : "Select Your Location from Map"}
+              </span>
+            </DialogTitle>
+            <DialogDescription className="text-sm text-muted-foreground flex items-center gap-2 mt-2">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              {locale === "ar" 
+                ? "استخدم خريطة MyLand للعثور على قطعة أرضك وتحديد موقعك بدقة" 
+                : "Use MyLand map to find your plot and pinpoint your location accurately"}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex-1 overflow-auto relative min-h-0">
+            {/* Decorative elements */}
+            <div className="absolute top-0 left-0 w-32 h-32 bg-aegreen-600/5 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute bottom-0 right-0 w-40 h-40 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
+            
+            {/* MyLandPicker component */}
+            <div className="relative w-full p-6" style={{ minHeight: '600px' }}>
+              <MyLandPicker
+                defaultMunicipality="ADM"
+                showOverlayShape={true}
+                onOk={handleMapSelection}
+                onCancel={handleCancelMapSelection}
+                className="w-full"
+              />
+            </div>
+          </div>
+
+          {/* Selection Summary & Actions Footer */}
+          {pendingSelection && (
+            <DialogFooter className="px-6 py-4 border-t border-border/50 bg-card/50 backdrop-blur-sm shrink-0">
+              <div className="w-full flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+                {/* Selection Summary Card */}
+                <div className="flex-1 p-4 rounded-xl bg-gradient-to-br from-aegreen-600/10 to-aegreen-600/5 border border-aegreen-600/20">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 rounded-lg bg-aegreen-600/20 text-aegreen-600 shrink-0">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
+                        <span>{locale === "ar" ? "الموقع المحدد" : "Selected Location"}</span>
+                      </h4>
+                      <div className="space-y-1 text-xs text-muted-foreground">
+                        <p className="flex items-center gap-2">
+                          <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                          </svg>
+                          <span className="font-medium text-foreground">{pendingSelection.districtEn}</span>
+                        </p>
+                        <p className="flex items-center gap-2">
+                          <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                          </svg>
+                          <span className="font-medium text-foreground">{pendingSelection.communityEn}</span>
+                        </p>
+                        {pendingSelection.roadId && (
+                          <p className="flex items-center gap-2">
+                            <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                            </svg>
+                            <span>{locale === "ar" ? "الطريق:" : "Road:"} <span className="font-medium text-foreground">{pendingSelection.roadId}</span></span>
+                          </p>
+                        )}
+                        {pendingSelection.plot && (
+                          <p className="flex items-center gap-2">
+                            <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                            </svg>
+                            <span>{locale === "ar" ? "القطعة:" : "Plot:"} <span className="font-medium text-foreground">{pendingSelection.plot}</span></span>
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-3 sm:flex-col sm:justify-center">
+                  <button
+                    type="button"
+                    onClick={handleCancelMapSelection}
+                    className={cn(
+                      "flex-1 sm:flex-none px-6 py-2.5 rounded-xl font-medium text-sm transition-all duration-200",
+                      "bg-muted hover:bg-muted/80 text-foreground",
+                      "border border-border hover:border-border/80",
+                      "focus:outline-none focus:ring-4 focus:ring-primary/20",
+                      "active:scale-[0.98]"
+                    )}
+                  >
+                    {locale === "ar" ? "إلغاء" : "Cancel"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleConfirmSelection}
+                    className={cn(
+                      "flex-1 sm:flex-none px-6 py-2.5 rounded-xl font-medium text-sm transition-all duration-200",
+                      "bg-aegreen-600 hover:bg-aegreen-700 text-white",
+                      "shadow-lg shadow-aegreen-600/25 hover:shadow-xl hover:shadow-aegreen-600/30",
+                      "focus:outline-none focus:ring-4 focus:ring-aegreen-500/30",
+                      "active:scale-[0.98]",
+                      "flex items-center justify-center gap-2"
+                    )}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    {locale === "ar" ? "تأكيد الاختيار" : "Confirm Selection"}
+                  </button>
+                </div>
+              </div>
+            </DialogFooter>
+          )}
+        </DialogContent>
+      </Dialog>
     </Wrapper>
   );
 }

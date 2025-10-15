@@ -345,9 +345,10 @@ export interface StreamGrade {
 
 // --- Onwani/MyLand selection types ---
 export type Municipality = "ADM" | "AAM" | "WRM";
-
+ 
 export interface OnwaniSelection {
   municipality: Municipality;
+ 
   districtEn: string;
   communityEn: string;
   // Only applicable for AAM municipality
