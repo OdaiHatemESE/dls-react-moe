@@ -291,26 +291,32 @@ export default function MyLandPicker({
     getRoadIds(district!, community!)
       .then((data) => {
         if (cancelled) return;
-        const list = Array.isArray(data) ? data : data?.data ?? [];
-        const ids = (list as Array<Record<string, unknown>>)
-          .map((r) => {
-            const v =
-              (typeof r["ROAD_ID"] === "string" && (r["ROAD_ID"] as string)) ||
-              (typeof r["road_id"] === "string" && (r["road_id"] as string)) ||
-              (typeof r["roadId"] === "string" && (r["roadId"] as string)) ||
-              (typeof r["ROADID"] === "string" && (r["ROADID"] as string)) ||
-              undefined;
-            return v;
+        const list = Array.isArray(data) ? data : (isRecord(data) && Array.isArray((data as { data?: unknown[] }).data) ? ((data as { data?: unknown[] }).data as unknown[]) : []);
+        const keys = [
+            "ROADID",
+        ];
+        const ids = (list as unknown[])
+          .map((item) => {
+            // Handle scalar arrays (string/number) as well as object records
+            if (typeof item === "string" || typeof item === "number") {
+              return String(item);
+            }
+            if (isRecord(item)) {
+              const v = getScalar(item, keys);
+              return v ?? undefined;
+            }
+            return undefined;
           })
-          .filter((v): v is string => typeof v === "string");
-        setRoads(ids);
+          .filter((v): v is string => typeof v === "string" && v.length > 0);
+        const uniqueSorted = Array.from(new Set(ids)).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+        setRoads(uniqueSorted);
       })
       .catch(() => setRoads([]))
       .finally(() => !cancelled && setLoading((l) => ({ ...l, roads: false })));
     return () => {
       cancelled = true;
     };
-  }, [municipality, district, community]);
+  }, [municipality, district, community, getScalar]);
 
   // Optional: community shape
   React.useEffect(() => {
@@ -342,7 +348,8 @@ export default function MyLandPicker({
   React.useEffect(() => {
     if (!municipality || !district || !community) return;
     let cancelled = false;
-    getPlotNumbers(municipality, district, community)
+    // For AAM, include roadId if selected to filter plots
+    getPlotNumbers(municipality, district, community, municipality === "AAM" ? roadId : undefined)
       .then((data) => {
         if (cancelled) return;
         const apiOptions = extractPlotsFromAPI(data);
@@ -356,7 +363,7 @@ export default function MyLandPicker({
     return () => {
       cancelled = true;
     };
-  }, [municipality, district, community, extractPlotsFromAPI, mergePlotOptions]);
+  }, [municipality, district, community, roadId, extractPlotsFromAPI, mergePlotOptions]);
 
   // MAP TRIGGER (INBOUND): postMessage handler with origin check + preselection
   // - Receives messages from MyLand iframe and applies state based on payload
@@ -369,7 +376,7 @@ export default function MyLandPicker({
       // Or Angular-like payload with AddressType: 'Onwani' | 'Plot'
       try {
         const data = ev.data as unknown;
-        debugger;
+   
 
         if (
           typeof data === "object" &&
@@ -555,6 +562,20 @@ export default function MyLandPicker({
       payload: { municipality, districtEn: district!, communityEn: community!, roadId },
     });
   }, [community, municipality, district, roadId, sendToIframe]);
+
+  // When roadId changes (AAM), clear plot selection and re-request plots
+  React.useEffect(() => {
+    if (municipality !== "AAM") return;
+    if (!community) return;
+    // Clear current plot state when switching roads
+    setPlot("");
+    setPlotOptions([]);
+    // Ask iframe to refresh plots for selected road
+    sendToIframe({
+      type: "request-plots",
+      payload: { municipality, districtEn: district!, communityEn: community!, roadId },
+    });
+  }, [municipality, district, community, roadId, sendToIframe]);
 
   // MAP TRIGGER (OUTBOUND): Focus/zoom map after a plot is selected and set address coordinates
   React.useEffect(() => {

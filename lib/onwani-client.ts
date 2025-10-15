@@ -57,13 +57,17 @@ export async function getCommunityShape(
 export async function getPlotNumbers(
   municipality: Municipality,
   districtNameEn: string,
-  communityNameEn: string
+  communityNameEn: string,
+  roadId?: string
 ) {
-  const url = `https://onwani.abudhabi.ae/tamm/api/getplotnumbers?municipality=${encodeURIComponent(
-    municipality
-  )}&DISTRICT_NAME_EN=${encodeURIComponent(districtNameEn)}&COMMUNITY_NAME_EN=${encodeURIComponent(
-    communityNameEn
-  )}`;
+  const qs = new URLSearchParams({
+    municipality,
+    DISTRICT_NAME_EN: districtNameEn,
+    COMMUNITY_NAME_EN: communityNameEn,
+  });
+  // Road filter (AAM): API supports filtering plot numbers by road
+  if (roadId) qs.append("roadId", roadId);
+  const url = `https://onwani.abudhabi.ae/tamm/api/getplotnumbers?${qs.toString()}`;
   const res = await fetch(url, { cache: "no-store" });
   if (!res.ok) throw new Error(`Onwani plot numbers error ${res.status}`);
   return res.json();
