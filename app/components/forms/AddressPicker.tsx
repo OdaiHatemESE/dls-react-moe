@@ -332,35 +332,38 @@ export function AddressPicker(props: AddressPickerProps) {
       return;
     }
 
-    const updates: Partial<AddressValue> = {};
-
-    const emirateId = record.hierarchy.region.emirateId;
-    const regionId = record.hierarchy.region.id;
-    const zoneId = record.hierarchy.zone.id;
-    const areaId = record.identifiers.areaId ?? record.hierarchy.area.id;
-    const plotId = record.identifiers.plotId ?? record.plot.id;
-
-    if (emirateId !== null && emirateId !== undefined) updates.emirateId = emirateId;
-    if (regionId !== null && regionId !== undefined) updates.regionId = regionId;
-    if (zoneId !== null && zoneId !== undefined) updates.zoneId = zoneId;
-    if (areaId !== null && areaId !== undefined) updates.areaId = areaId;
-    if (plotId !== null && plotId !== undefined) updates.plotId = plotId;
-
+    const emirateId = record.hierarchy.region.emirateId ?? null;
+    const regionId = record.hierarchy.region.id ?? null;
+    const zoneId = record.hierarchy.zone.id ?? null;
+    const areaId = record.identifiers.areaId ?? record.hierarchy.area.id ?? null;
+    const plotId = record.identifiers.plotId ?? record.plot.id ?? null;
     const streetName = record.location.roadNumber ?? pendingSelection.roadId;
-    if (streetName && streetName.trim()) {
-      updates.streetName = streetName.trim();
-    }
-
     const houseNumberSource = pendingSelection.plot?.trim() || record.identifiers.mainPlotId || record.plot.titles.en;
-    if (houseNumberSource && houseNumberSource.trim()) {
-      updates.houseNumber = houseNumberSource.trim();
+
+    const updates: Partial<AddressValue> = {
+      emirateId: emirateId ?? local.emirateId,
+      areaId: areaId ?? local.areaId,
+    };
+
+    if (isAbuDhabiSelected) {
+      updates.regionId = regionId ?? undefined;
+      updates.zoneId = zoneId ?? undefined;
+      updates.plotId = plotId ?? undefined;
+      updates.streetName = undefined;
+      updates.houseNumber = undefined;
+    } else {
+      updates.regionId = undefined;
+      updates.zoneId = undefined;
+      updates.plotId = undefined;
+      updates.streetName = streetName?.trim() || undefined;
+      updates.houseNumber = houseNumberSource?.trim() || undefined;
     }
 
     emit(updates);
     setHasMapSelection(true);
     setIsMapDialogOpen(false);
     setPendingSelection(null);
-  }, [pendingSelection, emit, setHasMapSelection, setIsMapDialogOpen, setPendingSelection]);
+  }, [pendingSelection, emit, isAbuDhabiSelected, local.areaId, local.emirateId, setHasMapSelection, setIsMapDialogOpen, setPendingSelection]);
 
   const [touched, setTouched] = React.useState<{
     [K in keyof AddressValue]?: boolean;
