@@ -3,6 +3,7 @@
 
 export async function jsonFetcher<T = unknown>(input: string, init?: RequestInit): Promise<T> {
   const res = await fetch(input, init);
+
   if (!res.ok) {
     let errorObj: any = { status: res.status, statusText: res.statusText };
     try {

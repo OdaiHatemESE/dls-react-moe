@@ -256,6 +256,16 @@ export const en = {
     plot_number: "Plot Number",
     no_address_available: "No address available",
   },
+  pickLocation: {
+    title: "Pick Location",
+    emirate: "Emirate",
+    area: "Area",
+    streetName: "Street name / number",
+    houseNumber: "House number",
+    requiredField: "This field is required",
+    loading: "Loading...",
+    noAreas: "No areas available",
+  },
 };
 
 export type Messages = typeof en;

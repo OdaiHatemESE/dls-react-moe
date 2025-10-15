@@ -255,6 +255,16 @@ export const ar = {
     assignmentsTitle: "الواجبات",
     assignmentsSubtitle: "جميع الواجبات مع تواريخ الاستحقاق والحالة",
   },
+  pickLocation: {
+    title: "اختر الموقع",
+    emirate: "الإمارة",
+    area: "المنطقة",
+    streetName: "رقم / اسم الشارع",
+    houseNumber: "رقم المنزل",
+    requiredField: "الحقل مطلوب",
+    loading: "جاري التحميل...",
+    noAreas: "لا توجد مناطق متاحة",
+  },
 };
 
 export type Messages = typeof ar;

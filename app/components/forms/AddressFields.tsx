@@ -83,7 +83,7 @@ export function AddressFields(props: AddressFieldsProps) {
     layout = "grid",
   } = props;
 
-  const { locale } = useI18n();
+  const { locale, t } = useI18n();
 
   const [local, setLocal] = React.useState<AddressValue>(() => ({
     emirateId: value?.emirateId ?? undefined,
@@ -122,15 +122,16 @@ export function AddressFields(props: AddressFieldsProps) {
 
   const emirates = emiratesData?.data ?? [];
   const areas = areasData?.data ?? [];
+  console.log("Areas data:", areas);
 
   const [touched, setTouched] = React.useState<{ [K in keyof AddressValue]?: boolean }>({});
 
   const l = {
-    emirate: labels?.emirate ?? "الإمارة",
-    area: labels?.area ?? "المنطقة",
-    streetName: labels?.streetName ?? "رقم / اسم الشارع",
-    houseNumber: labels?.houseNumber ?? "رقم المنزل",
-    requiredField: labels?.requiredField ?? "الحقل مطلوب",
+    emirate: labels?.emirate ?? t.pickLocation.emirate,
+    area: labels?.area ?? t.pickLocation.area,
+    streetName: labels?.streetName ?? t.pickLocation.streetName,
+    houseNumber: labels?.houseNumber ?? t.pickLocation.houseNumber,
+    requiredField: labels?.requiredField ?? t.pickLocation.requiredField,
   };
 
   const req = {
@@ -161,53 +162,8 @@ export function AddressFields(props: AddressFieldsProps) {
 
   return (
     <Wrapper>
-      {/* Area select (depends on emirate) */}
-      <div className="flex flex-col gap-2">
-        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-          {l.area}
-          {req.area && <span className="text-destructive"> *</span>}
-        </label>
-        <Select
-          disabled={disabled || !local.emirateId || emiratesLoading || areasLoading}
-          value={local.areaId ? String(local.areaId) : undefined}
-          onValueChange={(v) => emit({ areaId: Number(v) })}
-          onOpenChange={(o) => {
-            if (!o) setTouched((t) => ({ ...t, areaId: true }));
-          }}
-        >
-          <SelectTrigger 
-            className={cn(
-              "h-11 rounded-lg border-gray-300 bg-white shadow-sm transition-colors",
-              "hover:border-primary focus:border-primary focus:ring-2 focus:ring-primary/20",
-              "disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed",
-              "dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100",
-              areaError && "border-destructive focus:border-destructive focus:ring-destructive/20"
-            )}
-          > 
-            <SelectValue placeholder={areasLoading ? "جاري التحميل..." : l.area} />
-          </SelectTrigger>
-          <SelectContent className="rounded-lg">
-            {areas.length === 0 && !areasLoading && (
-              <div className="p-2 text-sm text-gray-500 text-center">لا توجد مناطق متاحة</div>
-            )}
-            {areas.map((a) => (
-              <SelectItem 
-                key={a.Id} 
-                value={String(a.Id)}
-                className="cursor-pointer hover:bg-primary/10"
-              >
-                {locale === 'ar' ? a.TitleAr : a.TitleEn}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        {areaError && (
-          <p className="text-xs text-destructive flex items-center gap-1">
-            <span>⚠</span> {l.requiredField}
-          </p>
-        )}
-      </div>
-
+      {/* Section title for accessibility */}
+      <h3 className="sr-only">{t.pickLocation.title}</h3>
       {/* Emirate select */}
       <div className="flex flex-col gap-2">
         <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -234,7 +190,7 @@ export function AddressFields(props: AddressFieldsProps) {
               emirateError && "border-destructive focus:border-destructive focus:ring-destructive/20"
             )}
           > 
-            <SelectValue placeholder={emiratesLoading ? "جاري التحميل..." : l.emirate} />
+            <SelectValue placeholder={emiratesLoading ? t.pickLocation.loading : l.emirate} />
           </SelectTrigger>
           <SelectContent className="rounded-lg">
             {emirates.map((e) => (
@@ -242,13 +198,86 @@ export function AddressFields(props: AddressFieldsProps) {
                 key={e.Id} 
                 value={String(e.Id)}
                 className="cursor-pointer hover:bg-primary/10"
-              >
+              > 
                 {locale === 'ar' ? e.TitleAr : e.TitleEn}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
         {emirateError && (
+          <p className="text-xs text-destructive flex items-center gap-1">
+            <span>⚠</span> {l.requiredField}
+          </p>
+        )}
+      </div>
+      {/* Area select (depends on emirate) */}
+      <div className="flex flex-col gap-2">
+        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+          {l.area}
+          {req.area && <span className="text-destructive"> *</span>}
+        </label>
+        <Select
+          disabled={disabled || !local.emirateId || emiratesLoading || areasLoading}
+          value={local.areaId ? String(local.areaId) : undefined}
+          onValueChange={(v) => emit({ areaId: Number(v) })}
+          onOpenChange={(o) => {
+            if (!o) setTouched((t) => ({ ...t, areaId: true }));
+          }}
+        >
+          <SelectTrigger 
+            className={cn(
+              "h-11 rounded-lg border-gray-300 bg-white shadow-sm transition-colors",
+              "hover:border-primary focus:border-primary focus:ring-2 focus:ring-primary/20",
+              "disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed",
+              "dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100",
+              areaError && "border-destructive focus:border-destructive focus:ring-destructive/20"
+            )}
+          > 
+            <SelectValue placeholder={areasLoading ? t.pickLocation.loading : l.area} />
+          </SelectTrigger>
+          <SelectContent className="rounded-lg">
+            {areas.length === 0 && !areasLoading && (
+              <div className="p-2 text-sm text-gray-500 text-center">{t.pickLocation.noAreas}</div>
+            )}
+            {areas.map((a) => (
+              <SelectItem 
+                key={a.Id} 
+                value={String(a.Id)}
+                className="cursor-pointer hover:bg-primary/10"
+              >
+                {locale === 'ar' ? a.TitleAr : a.TitleEn}  
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {areaError && (
+          <p className="text-xs text-destructive flex items-center gap-1">
+            <span>⚠</span> {l.requiredField}
+          </p>
+        )}
+      </div>
+
+      {/* Street name */}
+      <div className="flex flex-col gap-2">
+        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+          {l.streetName}
+          {req.streetName && <span className="text-destructive"> *</span>}
+        </label>
+        <Input
+          disabled={disabled}
+          value={local.streetName ?? ""}
+          onChange={(e) => emit({ streetName: e.target.value })}
+          onBlur={() => setTouched((t) => ({ ...t, streetName: true }))}
+          className={cn(
+            "h-11 rounded-lg border-gray-300 bg-white shadow-sm transition-colors",
+            "hover:border-primary focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20",
+            "disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed",
+            "dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100",
+            streetError && "border-destructive focus-visible:border-destructive focus-visible:ring-destructive/20"
+          )}
+          placeholder={l.streetName}
+        />
+        {streetError && (
           <p className="text-xs text-destructive flex items-center gap-1">
             <span>⚠</span> {l.requiredField}
           </p>
@@ -282,32 +311,7 @@ export function AddressFields(props: AddressFieldsProps) {
         )}
       </div>
 
-      {/* Street name */}
-      <div className="flex flex-col gap-2">
-        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-          {l.streetName}
-          {req.streetName && <span className="text-destructive"> *</span>}
-        </label>
-        <Input
-          disabled={disabled}
-          value={local.streetName ?? ""}
-          onChange={(e) => emit({ streetName: e.target.value })}
-          onBlur={() => setTouched((t) => ({ ...t, streetName: true }))}
-          className={cn(
-            "h-11 rounded-lg border-gray-300 bg-white shadow-sm transition-colors",
-            "hover:border-primary focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20",
-            "disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed",
-            "dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100",
-            streetError && "border-destructive focus-visible:border-destructive focus-visible:ring-destructive/20"
-          )}
-          placeholder={l.streetName}
-        />
-        {streetError && (
-          <p className="text-xs text-destructive flex items-center gap-1">
-            <span>⚠</span> {l.requiredField}
-          </p>
-        )}
-      </div>
+      
     </Wrapper>
   );
 }
