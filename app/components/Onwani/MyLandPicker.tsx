@@ -5,6 +5,7 @@ import { useI18n } from "@/app/i18n/I18nProvider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Combobox } from "@/components/ui/combobox";
 import { cn } from "@/lib/utils";
 import { getCommunities, getCommunityShape, getDistricts, getRoadIds, getPlotNumbers, getGisIds } from "@/lib/onwani-client";
 import type { Municipality, OnwaniSelection } from "@/types";
@@ -587,115 +588,91 @@ export default function MyLandPicker({
   }, [plotOptions]);
 
   return (
-    <Card className={cn("w-full border-0 shadow-md", className)}>
-      <CardHeader>
+    <Card className={cn("w-full border shadow-lg bg-card", className)}>
+      <CardHeader className="border-b bg-muted/50">
         <CardTitle className="flex items-center justify-between">
-          <span>{isAr ? "اختيار العنوان (Onwani)" : "Onwani Address Picker"}</span>
+          <span className="text-lg font-semibold">{isAr ? "اختيار العنوان (Onwani)" : "Onwani Address Picker"}</span>
           <div className="flex gap-2">
             <Select value={municipality} onValueChange={(v) => setMunicipality(v as Municipality)}>
-              <SelectTrigger className="w-[120px]">
+              <SelectTrigger className="w-[140px] bg-background">
                 <SelectValue placeholder="Municipality" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="ADM">ADM</SelectItem>
-                <SelectItem value="AAM">AAM</SelectItem>
-                <SelectItem value="WRM">WRM</SelectItem>
+                <SelectItem value="ADM">{isAr ? "أبوظبي" : "Abu Dhabi"}</SelectItem>
+                <SelectItem value="AAM">{isAr ? "العين" : "Al Ain"}</SelectItem>
+                <SelectItem value="WRM">{isAr ? "الغربية" : "Al Dhafra"}</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 pt-6">
         {/* Cascading selects */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div className="flex flex-col gap-1">
-            <label className="text-sm text-muted-foreground">{isAr ? "المنطقة" : "District"}</label>
-            <Select
-              disabled={loading.districts}
+            <label className="text-sm font-medium text-foreground/80">{isAr ? "المنطقة" : "District"}</label>
+            <Combobox
+              options={districts.map((d) => ({ 
+                value: d.value, 
+                label: isAr ? d.ar ?? d.en : d.en,
+                searchTerms: isAr ? d.en : d.ar // Allow searching in the other language
+              }))}
               value={district}
               onValueChange={(v) => setDistrict(v)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder={loading.districts ? (isAr ? "جارٍ التحميل.." : "Loading...") : isAr ? "اختر المنطقة" : "Select district"} />
-              </SelectTrigger>
-              <SelectContent>
-                {districts.map((d) => (
-                  <SelectItem key={d.value} value={d.value}>
-                    {isAr ? d.ar ?? d.en : d.en}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              disabled={loading.districts}
+              placeholder={loading.districts ? (isAr ? "جارٍ التحميل.." : "Loading...") : isAr ? "اختر المنطقة" : "Select district"}
+              searchPlaceholder={isAr ? "ابحث عن المنطقة..." : "Search district..."}
+              emptyText={isAr ? "لم يتم العثور على نتائج" : "No results found"}
+            />
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="text-sm text-muted-foreground">{isAr ? "المجتمع" : "Community"}</label>
-            <Select
-              disabled={!district || loading.communities}
+            <label className="text-sm font-medium text-foreground/80">{isAr ? "المجتمع" : "Community"}</label>
+            <Combobox
+              options={communities.map((c) => ({ 
+                value: c.value, 
+                label: isAr ? c.ar ?? c.en : c.en,
+                searchTerms: isAr ? c.en : c.ar // Allow searching in the other language
+              }))}
               value={community}
               onValueChange={(v) => setCommunity(v)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder={!district ? (isAr ? "اختر المنطقة أولاً" : "Pick district first") : loading.communities ? (isAr ? "جارٍ التحميل.." : "Loading...") : isAr ? "اختر المجتمع" : "Select community"} />
-              </SelectTrigger>
-              <SelectContent>
-                {communities.map((c) => (
-                  <SelectItem key={c.value} value={c.value}>
-                    {isAr ? c.ar ?? c.en : c.en}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              disabled={!district || loading.communities}
+              placeholder={!district ? (isAr ? "اختر المنطقة أولاً" : "Pick district first") : loading.communities ? (isAr ? "جارٍ التحميل.." : "Loading...") : isAr ? "اختر المجتمع" : "Select community"}
+              searchPlaceholder={isAr ? "ابحث عن المجتمع..." : "Search community..."}
+              emptyText={isAr ? "لم يتم العثور على نتائج" : "No results found"}
+            />
           </div>
 
           {municipality === "AAM" && (
             <div className="flex flex-col gap-1">
-              <label className="text-sm text-muted-foreground">{isAr ? "رقم الطريق" : "Road ID (AAM)"}</label>
-              <Select
-                disabled={!community || loading.roads}
+              <label className="text-sm font-medium text-foreground/80">{isAr ? "رقم الطريق" : "Road ID (AAM)"}</label>
+              <Combobox
+                options={roads.map((r) => ({ value: r, label: r }))}
                 value={roadId}
                 onValueChange={(v) => setRoadId(v)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={!community ? (isAr ? "اختر المجتمع أولاً" : "Pick community first") : loading.roads ? (isAr ? "جارٍ التحميل.." : "Loading...") : isAr ? "اختر رقم الطريق" : "Select road id"} />
-                </SelectTrigger>
-                <SelectContent>
-                  {roads.map((r) => (
-                    <SelectItem key={r} value={r}>
-                      {r}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                disabled={!community || loading.roads}
+                placeholder={!community ? (isAr ? "اختر المجتمع أولاً" : "Pick community first") : loading.roads ? (isAr ? "جارٍ التحميل.." : "Loading...") : isAr ? "اختر رقم الطريق" : "Select road id"}
+                searchPlaceholder={isAr ? "ابحث عن رقم الطريق..." : "Search road..."}
+                emptyText={isAr ? "لم يتم العثور على نتائج" : "No results found"}
+              />
             </div>
           )}
 
           <div className="flex flex-col gap-1">
-            <label className="text-sm text-muted-foreground">{isAr ? "رقم القطعة" : "Plot"}</label>
-            <Select value={plot || undefined} onValueChange={(v) => setPlot(v)} disabled={!community}>
-              <SelectTrigger>
-                <SelectValue
-                  placeholder={!community
-                    ? (isAr ? "اختر المجتمع أولاً" : "Pick community first")
-                    : plotOptions.length === 0
-                    ? (isAr ? "لا توجد قطع متاحة" : "No plots available")
-                    : (isAr ? "اختر رقم القطعة" : "Select plot")}
-                />
-              </SelectTrigger>
-              <SelectContent>
-                {plotOptions.length === 0 ? (
-                  <SelectItem value="__no_plots__" disabled>
-                    {isAr ? "لا توجد قطع متاحة" : "No plots available"}
-                  </SelectItem>
-                ) : (
-                  plotOptions.map((p) => (
-                    <SelectItem key={p.value} value={p.value}>
-                      {p.label}
-                    </SelectItem>
-                  ))
-                )}
-              </SelectContent>
-            </Select>
+            <label className="text-sm font-medium text-foreground/80">{isAr ? "رقم القطعة" : "Plot"}</label>
+            <Combobox
+              options={plotOptions.map((p) => ({ value: p.value, label: p.label }))}
+              value={plot}
+              onValueChange={(v) => setPlot(v)}
+              disabled={!community}
+              placeholder={!community
+                ? (isAr ? "اختر المجتمع أولاً" : "Pick community first")
+                : plotOptions.length === 0
+                ? (isAr ? "لا توجد قطع متاحة" : "No plots available")
+                : (isAr ? "اختر رقم القطعة" : "Select plot")}
+              searchPlaceholder={isAr ? "ابحث عن رقم القطعة..." : "Search plot..."}
+              emptyText={isAr ? "لم يتم العثور على نتائج" : "No results found"}
+            />
             {community && plotOptions.length === 0 && (
               <p className="text-xs text-muted-foreground mt-1">
                 {isAr ? "لا توجد قطع متاحة لهذه المنطقة" : "No plots found for the selected area"}
@@ -705,18 +682,32 @@ export default function MyLandPicker({
         </div>
 
         {/* MyLand iframe */}
-        <div className="rounded-lg overflow-hidden border">
+        <div className="rounded-lg overflow-hidden border border-border shadow-sm bg-muted/30">
           <iframe
             ref={iframeRef}
             title="MyLand"
             src={isAr ? "https://myland.dmt.gov.ae/myland_lite/tamm/ar/index.html" : "https://myland.dmt.gov.ae/myland_lite/tamm/index.html"}
-            className="w-full h-[480px]"
+            className="w-full h-[480px] bg-background"
           />
         </div>
 
-        <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={onCancel}>{isAr ? "إلغاء" : "Cancel"}</Button>
-          <Button onClick={handleOk} disabled={!canSubmit}>{submitting ? (isAr ? "جارٍ الإرسال..." : "Submitting...") : (isAr ? "موافق" : "OK")}</Button>
+        <div className="flex justify-end gap-3 pt-2">
+          <Button variant="outline" onClick={onCancel} className="min-w-[100px]">
+            {isAr ? "إلغاء" : "Cancel"}
+          </Button>
+          <Button 
+            onClick={handleOk} 
+            disabled={!canSubmit}
+            className="min-w-[100px] bg-primary hover:bg-primary/90"
+          >
+            {submitting ? (
+              <>
+                <span className="animate-pulse">{isAr ? "جارٍ الإرسال..." : "Submitting..."}</span>
+              </>
+            ) : (
+              isAr ? "موافق" : "OK"
+            )}
+          </Button>
         </div>
       </CardContent>
     </Card>
