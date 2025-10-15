@@ -151,7 +151,10 @@ export function AddressPicker(props: AddressPickerProps) {
 
   const { data: emiratesData, isLoading: emiratesLoading } = useEmirates();
   // Flatten emirates list early so we can detect Abu Dhabi before areas fetch
-  const emirates = React.useMemo(() => emiratesData?.data ?? [], [emiratesData]);
+  const emirates = React.useMemo(
+    () => emiratesData?.data ?? [],
+    [emiratesData]
+  );
 
   // Detect if the currently selected emirate is Abu Dhabi (EN/AR tolerant)
   const selectedEmirate = React.useMemo(
@@ -160,7 +163,9 @@ export function AddressPicker(props: AddressPickerProps) {
   );
   const isAbuDhabiSelected = React.useMemo(() => {
     if (!selectedEmirate) return false;
-    const en = (selectedEmirate.TitleEn || "").toLowerCase().replace(/\s+/g, "");
+    const en = (selectedEmirate.TitleEn || "")
+      .toLowerCase()
+      .replace(/\s+/g, "");
     const ar = (selectedEmirate.TitleAr || "").replace(/\s+/g, "");
     // Normalize Arabic (remove tatweel U+0640 and punctuation like ؟ )
     const arNorm = ar.replace(/[\u0640\u061F]/g, "");
@@ -171,18 +176,33 @@ export function AddressPicker(props: AddressPickerProps) {
       "ابو ظبي".replace(/\s+/g, ""),
       "أبو ظبي".replace(/\s+/g, ""),
     ];
-    return en.includes("abudhabi") || abuDhabiArForms.some((f) => arNorm.includes(f));
+    return (
+      en.includes("abudhabi") || abuDhabiArForms.some((f) => arNorm.includes(f))
+    );
   }, [selectedEmirate]);
 
   // When Abu Dhabi is selected, clear dependent fields since a different picker is used elsewhere
   React.useEffect(() => {
     if (!isAbuDhabiSelected) return;
-    const needsClear = !!(local.areaId || local.streetName || local.houseNumber);
+    const needsClear = !!(
+      local.areaId ||
+      local.streetName ||
+      local.houseNumber
+    );
     if (needsClear) {
-      emit({ areaId: undefined, streetName: undefined, houseNumber: undefined });
+      emit({
+        areaId: undefined,
+        streetName: undefined,
+        houseNumber: undefined,
+      });
     }
     // Also reset touched flags for hidden fields to avoid showing errors upon switch-back
-    setTouched((t) => ({ ...t, areaId: false, streetName: false, houseNumber: false }));
+    setTouched((t) => ({
+      ...t,
+      areaId: false,
+      streetName: false,
+      houseNumber: false,
+    }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAbuDhabiSelected]);
 
@@ -228,12 +248,7 @@ export function AddressPicker(props: AddressPickerProps) {
 
   const Wrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
     <div
-      className={cn(
-        layout === "grid"
-          ? "grid grid-cols-1 gap-4 md:grid-cols-2"
-          : "space-y-4",
-        className
-      )}
+      className={cn(layout === "grid" ? "" : "space-y-4", className)}
       dir={isRTL ? "rtl" : "ltr"}
     >
       {children}
@@ -294,117 +309,194 @@ export function AddressPicker(props: AddressPickerProps) {
         )}
       </div>
       {!isAbuDhabiSelected && (
-      <div id="DubaiNorthEmirate">
-        {/* Area select (depends on emirate) */}
-        <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-            {l.area}
-            {req.area && <span className="text-destructive"> *</span>}
-          </label>
-          <Select
-            disabled={
-              disabled || !local.emirateId || emiratesLoading || areasLoading
-            }
-            value={local.areaId ? String(local.areaId) : undefined}
-            onValueChange={(v) => emit({ areaId: Number(v) })}
-            onOpenChange={(o) => {
-              if (!o) setTouched((t) => ({ ...t, areaId: true }));
-            }}
-          >
-            <SelectTrigger
+        <div id="DubaiNorthEmirate">
+          {/* Area select (depends on emirate) */}
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              {l.area}
+              {req.area && <span className="text-destructive"> *</span>}
+            </label>
+            <Select
+              disabled={
+                disabled || !local.emirateId || emiratesLoading || areasLoading
+              }
+              value={local.areaId ? String(local.areaId) : undefined}
+              onValueChange={(v) => emit({ areaId: Number(v) })}
+              onOpenChange={(o) => {
+                if (!o) setTouched((t) => ({ ...t, areaId: true }));
+              }}
+            >
+              <SelectTrigger
+                className={cn(
+                  "h-11 rounded-lg border-gray-300 bg-white shadow-sm transition-colors",
+                  "hover:border-primary focus:border-primary focus:ring-2 focus:ring-primary/20",
+                  "disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed",
+                  "dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100",
+                  areaError &&
+                    "border-destructive focus:border-destructive focus:ring-destructive/20"
+                )}
+              >
+                <SelectValue
+                  placeholder={areasLoading ? t.pickLocation.loading : l.area}
+                />
+              </SelectTrigger>
+              <SelectContent className="rounded-lg">
+                {areas.length === 0 && !areasLoading && (
+                  <div className="p-2 text-sm text-gray-500 text-center">
+                    {t.pickLocation.noAreas}
+                  </div>
+                )}
+                {areas.map((a) => (
+                  <SelectItem
+                    key={a.Id}
+                    value={String(a.Id)}
+                    className="cursor-pointer hover:bg-primary/10"
+                  >
+                    {locale === "ar" ? a.TitleAr : a.TitleEn}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {areaError && (
+              <p className="text-xs text-destructive flex items-center gap-1">
+                <span>⚠</span> {l.requiredField}
+              </p>
+            )}
+          </div>
+
+          {/* Street name */}
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              {l.streetName}
+              {req.streetName && <span className="text-destructive"> *</span>}
+            </label>
+            <Input
+              disabled={disabled}
+              value={local.streetName ?? ""}
+              onChange={(e) => emit({ streetName: e.target.value })}
+              onBlur={() => setTouched((t) => ({ ...t, streetName: true }))}
               className={cn(
                 "h-11 rounded-lg border-gray-300 bg-white shadow-sm transition-colors",
-                "hover:border-primary focus:border-primary focus:ring-2 focus:ring-primary/20",
+                "hover:border-primary focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20",
                 "disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed",
                 "dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100",
-                areaError &&
-                  "border-destructive focus:border-destructive focus:ring-destructive/20"
+                streetError &&
+                  "border-destructive focus-visible:border-destructive focus-visible:ring-destructive/20"
               )}
-            >
-              <SelectValue
-                placeholder={areasLoading ? t.pickLocation.loading : l.area}
-              />
-            </SelectTrigger>
-            <SelectContent className="rounded-lg">
-              {areas.length === 0 && !areasLoading && (
-                <div className="p-2 text-sm text-gray-500 text-center">
-                  {t.pickLocation.noAreas}
-                </div>
+              placeholder={l.streetName}
+            />
+            {streetError && (
+              <p className="text-xs text-destructive flex items-center gap-1">
+                <span>⚠</span> {l.requiredField}
+              </p>
+            )}
+          </div>
+
+          {/* House number */}
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              {l.houseNumber}
+              {req.houseNumber && <span className="text-destructive"> *</span>}
+            </label>
+            <Input
+              disabled={disabled}
+              value={local.houseNumber ?? ""}
+              onChange={(e) => emit({ houseNumber: e.target.value })}
+              onBlur={() => setTouched((t) => ({ ...t, houseNumber: true }))}
+              className={cn(
+                "h-11 rounded-lg border-gray-300 bg-white shadow-sm transition-colors",
+                "hover:border-primary focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20",
+                "disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed",
+                "dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100",
+                houseError &&
+                  "border-destructive focus-visible:border-destructive focus-visible:ring-destructive/20"
               )}
-              {areas.map((a) => (
-                <SelectItem
-                  key={a.Id}
-                  value={String(a.Id)}
-                  className="cursor-pointer hover:bg-primary/10"
+              placeholder={l.houseNumber}
+            />
+            {houseError && (
+              <p className="text-xs text-destructive flex items-center gap-1">
+                <span>⚠</span> {l.requiredField}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {isAbuDhabiSelected && (
+        <>
+        
+            <div className=" mt-5 mb-5">
+             
+
+              <div className="flex flex-col gap-1">
+                <label className="text-sm font-medium text-gray-700">
+                  Inquiry through plot number
+                </label>
+                <select
+                  className="h-11 w-full rounded-lg border border-gray-300 bg-white px-3 shadow-sm
+               hover:border-blue-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
                 >
-                  {locale === "ar" ? a.TitleAr : a.TitleEn}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {areaError && (
-            <p className="text-xs text-destructive flex items-center gap-1">
-              <span>⚠</span> {l.requiredField}
-            </p>
-          )}
-        </div>
+                  <option>Inquiry through plot number</option>
+                  <option>Other option</option>
+                </select>
+              </div>
+            </div>
 
-        {/* Street name */}
-        <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-            {l.streetName}
-            {req.streetName && <span className="text-destructive"> *</span>}
-          </label>
-          <Input
-            disabled={disabled}
-            value={local.streetName ?? ""}
-            onChange={(e) => emit({ streetName: e.target.value })}
-            onBlur={() => setTouched((t) => ({ ...t, streetName: true }))}
-            className={cn(
-              "h-11 rounded-lg border-gray-300 bg-white shadow-sm transition-colors",
-              "hover:border-primary focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20",
-              "disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed",
-              "dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100",
-              streetError &&
-                "border-destructive focus-visible:border-destructive focus-visible:ring-destructive/20"
-            )}
-            placeholder={l.streetName}
-          />
-          {streetError && (
-            <p className="text-xs text-destructive flex items-center gap-1">
-              <span>⚠</span> {l.requiredField}
+            <p className="text-center text-xs text-gray-500 mb-5">
+              Residential data will be automatically filled
             </p>
-          )}
-        </div>
+            <div className="mb-5">
+              <button
+                type="button"
+                className="h-11 w-full rounded-lg bg-emerald-700 px-4 font-medium text-white shadow-sm
+             hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+              >
+                Select From Map
+              </button>
+            </div>
 
-        {/* House number */}
-        <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-            {l.houseNumber}
-            {req.houseNumber && <span className="text-destructive"> *</span>}
-          </label>
-          <Input
-            disabled={disabled}
-            value={local.houseNumber ?? ""}
-            onChange={(e) => emit({ houseNumber: e.target.value })}
-            onBlur={() => setTouched((t) => ({ ...t, houseNumber: true }))}
-            className={cn(
-              "h-11 rounded-lg border-gray-300 bg-white shadow-sm transition-colors",
-              "hover:border-primary focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20",
-              "disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed",
-              "dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100",
-              houseError &&
-                "border-destructive focus-visible:border-destructive focus-visible:ring-destructive/20"
-            )}
-            placeholder={l.houseNumber}
-          />
-          {houseError && (
-            <p className="text-xs text-destructive flex items-center gap-1">
-              <span>⚠</span> {l.requiredField}
-            </p>
-          )}
-        </div>
-      </div>
+            <div className="">
+              <div className="flex flex-col gap-1 mb-5">
+                <label className="text-sm font-medium text-gray-700">
+                  Region <span className="text-red-600">*</span>
+                </label>
+                <select
+                  disabled
+                  className="h-11 w-full rounded-lg border border-gray-300 bg-gray-50 px-3 text-gray-500 shadow-sm
+               cursor-not-allowed"
+                >
+                  <option>region</option>
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-1 mb-5">
+                <label className="text-sm font-medium text-gray-700">
+                  Zone <span className="text-red-600">*</span>
+                </label>
+                <select
+                  disabled
+                  className="h-11 w-full rounded-lg border border-gray-300 bg-gray-50 px-3 text-gray-500 shadow-sm
+               cursor-not-allowed"
+                >
+                  <option>Zone</option>
+                </select>
+              </div>
+                 <div className="flex flex-col gap-1 mb-5">
+                <label className="text-sm font-medium text-gray-700">
+                  Area <span className="text-red-600">*</span>
+                </label>
+                <select
+                  disabled
+                  className="h-11 w-full rounded-lg border border-gray-300 bg-gray-50 px-3 text-gray-500 shadow-sm
+               cursor-not-allowed"
+                >
+                  <option>Area</option>
+                </select>
+              </div>
+            </div>
+ 
+           
+        </>
       )}
     </Wrapper>
   );
