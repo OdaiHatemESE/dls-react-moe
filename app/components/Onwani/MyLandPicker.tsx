@@ -1,5 +1,31 @@
 "use client";
 
+/**
+ * MyLandPicker
+ *
+ * Purpose
+ * - A client component that lets users select an Onwani address (Municipality → District → Community → optional Road (AAM) → Plot).
+ * - Shows the MyLand map (embedded via iframe) and keeps UI and map in sync through postMessage.
+ *
+ * Key data sources
+ * - API helpers from `@/lib/onwani-client`: districts, communities, roads (AAM), plot numbers, and GIS details.
+ * - Optional overlay shape for selected community (for visualization + possible plot extraction).
+ *
+ * MAP TRIGGERS (look for these markers)
+ * - INBOUND: Single event listener that receives messages from the MyLand iframe and applies preselection/state updates.
+ * - OUTBOUND: Several effects and actions post messages to the iframe when:
+ *   1) Municipality/District/Community changes
+ *   2) Plots are requested or a plot is focused/selected
+ *   3) Address coordinates are set
+ *   4) Final selection is confirmed
+ *
+ * Props
+ * - defaultMunicipality: initial municipality (ADM, AAM, WRM)
+ * - showOverlayShape: whether to fetch and attach a community GeoJSON shape
+ * - onOk: called with the final selection (and optional DB response)
+ * - onCancel: caller-provided cancel handler
+ */
+
 import * as React from "react";
 import { useI18n } from "@/app/i18n/I18nProvider";
 import { Button } from "@/components/ui/button";
@@ -20,7 +46,6 @@ type Props = {
 
 
 const MYLAND_ALLOWED_ORIGIN = "https://myland.dmt.gov.ae";
-
 export default function MyLandPicker({
   defaultMunicipality = "ADM",
   showOverlayShape = false,
@@ -52,6 +77,7 @@ export default function MyLandPicker({
   const iframeRef = React.useRef<HTMLIFrameElement>(null);
 
   // Type guards and helpers
+  // Narrowing helper: ensure runtime object checks before plucking fields
   const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null;
   const toStringIfScalar = (v: unknown): string | undefined =>
     typeof v === "string" ? v : typeof v === "number" ? String(v) : undefined;
@@ -65,6 +91,10 @@ export default function MyLandPicker({
     return undefined;
   }, []);
 
+  /**
+   * Attempt to derive plot identifiers from a GeoJSON-like shape payload.
+   * Returns a sorted list of unique plot numbers/GISIDs best-effort.
+   */
   const extractPlotsFromShape = React.useCallback((shapeData: unknown): string[] => {
     // Supports { features: [...] } or { data: { features: [...] } }
     let featuresUnknown: unknown = undefined;
@@ -98,6 +128,10 @@ export default function MyLandPicker({
     return Array.from(plots).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
   }, []);
 
+  /**
+   * Normalize various plot list API responses into {label,value,gisid} options.
+   * Tries to keep the most descriptive label and deduplicate values.
+   */
   const extractPlotsFromAPI = React.useCallback((data: unknown): PlotOption[] => {
     // API may return an array or { data: [...] }
     const root = data as unknown;
@@ -137,6 +171,10 @@ export default function MyLandPicker({
       .filter((opt, idx, arr2) => arr2.findIndex((o) => o.value === opt.value) === idx);
   }, []);
 
+  /**
+   * Merge newly discovered plot options with existing ones while preserving
+   * the option that contains a GISID and the more descriptive label.
+   */
   const mergePlotOptions = React.useCallback((prev: PlotOption[], next: PlotOption[]): PlotOption[] => {
     const map = new Map<string, PlotOption>();
     for (const o of prev) map.set(o.value, o);
@@ -166,7 +204,7 @@ export default function MyLandPicker({
     setRoads([]);
     setRoadId(undefined);
     setPlot("");
-  setPlotOptions([]);
+    setPlotOptions([]);
     getDistricts(municipality)
       .then((data) => {
         if (cancelled) return;
@@ -320,7 +358,8 @@ export default function MyLandPicker({
     };
   }, [municipality, district, community, extractPlotsFromAPI, mergePlotOptions]);
 
-  // postMessage handler with origin check + preselection (Angular-like payload)
+  // MAP TRIGGER (INBOUND): postMessage handler with origin check + preselection
+  // - Receives messages from MyLand iframe and applies state based on payload
   React.useEffect(() => {
     function onMessage(ev: MessageEvent) {
       if (ev.origin !== MYLAND_ALLOWED_ORIGIN) return;
@@ -330,6 +369,8 @@ export default function MyLandPicker({
       // Or Angular-like payload with AddressType: 'Onwani' | 'Plot'
       try {
         const data = ev.data as unknown;
+        debugger;
+
         if (
           typeof data === "object" &&
           data !== null &&
@@ -440,6 +481,7 @@ export default function MyLandPicker({
     return () => window.removeEventListener("message", onMessage);
   }, [getScalar]);
 
+  // MAP TRIGGER (OUTBOUND): helper to send messages to the MyLand iframe safely
   const sendToIframe = React.useCallback(
     (data: unknown) => {
       const frame = iframeRef.current;
@@ -482,26 +524,26 @@ export default function MyLandPicker({
     // Attach raw API response for callers that need it
     payload.dbPlotResponse = dbPayload;
     onOk?.(payload);
-    // Optionally send to iframe
+    // MAP TRIGGER (OUTBOUND): notify iframe of the finalized selection
     sendToIframe({ type: "onwani-selection", payload });
     } finally {
       setSubmitting(false);
     }
   };
 
-  // When municipality changes, inform iframe (region) and fetching happens via getDistricts effect
+  // MAP TRIGGER (OUTBOUND): When municipality changes, inform iframe (region)
   React.useEffect(() => {
     if (!municipality) return;
     sendToIframe({ set: "region", municipality });
   }, [municipality, sendToIframe]);
 
-  // When district changes, inform iframe (district)
+  // MAP TRIGGER (OUTBOUND): When district changes, inform iframe (district)
   React.useEffect(() => {
     if (!district) return;
     sendToIframe({ set: "district", municipality, district });
   }, [district, municipality, sendToIframe]);
 
-  // When community changes, inform iframe (community) and request plots
+  // MAP TRIGGER (OUTBOUND): When community changes, set community and request plots
   React.useEffect(() => {
     if (!community) return;
     // Reset plot choices for new context
@@ -514,7 +556,7 @@ export default function MyLandPicker({
     });
   }, [community, municipality, district, roadId, sendToIframe]);
 
-  // Focus map on plot selection
+  // MAP TRIGGER (OUTBOUND): Focus/zoom map after a plot is selected and set address coordinates
   React.useEffect(() => {
     if (!plot) return;
     if (!district || !community) return;
