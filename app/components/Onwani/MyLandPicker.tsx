@@ -41,7 +41,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Combobox } from "@/components/ui/combobox";
 import { cn } from "@/lib/utils";
 import { getCommunities, getCommunityShape, getDistricts, getRoadIds, getPlotNumbers, getGisIds } from "@/lib/onwani-client";
-import type { Municipality, OnwaniSelection } from "@/types";
+import type { Municipality, OnwaniSelection, PlotLookupResponse } from "@/types";
 
 type Props = {
   defaultMunicipality?: Municipality;
@@ -55,6 +55,14 @@ type NamedOption = { value: string; en: string; ar?: string };
 type PlotOption = { label: string; value: string; gisid?: string };
 
 const MYLAND_ALLOWED_ORIGIN = "https://myland.dmt.gov.ae";
+
+const isPlotLookupResponse = (payload: unknown): payload is PlotLookupResponse => {
+  if (!payload || typeof payload !== "object") {
+    return false;
+  }
+  const candidate = payload as PlotLookupResponse;
+  return Array.isArray(candidate.data);
+};
 export default function MyLandPicker({
   defaultMunicipality = "ADM",
   showOverlayShape = false,
@@ -790,19 +798,21 @@ export default function MyLandPicker({
       if (!res.ok) {
         console.error("GetPlot API error", dbPayload);
       }
-    const payload: OnwaniSelection & { dbPlotResponse?: unknown } = {
-      municipality,
-      districtEn: district!,
-      communityEn: community!,
-      roadId: municipality === "AAM" ? roadId : undefined,
-      plot: plot.trim() || undefined,
-      shapeGeoJSON: shape,
-    };
-    // Attach raw API response for callers that need it
-    payload.dbPlotResponse = dbPayload;
-    onOk?.(payload);
-    // MAP TRIGGER (OUTBOUND): notify iframe of the finalized selection
-    sendToIframe({ type: "onwani-selection", payload });
+      const payload: OnwaniSelection = {
+        municipality,
+        districtEn: district!,
+        communityEn: community!,
+        roadId: municipality === "AAM" ? roadId : undefined,
+        plot: plot.trim() || undefined,
+        shapeGeoJSON: shape,
+      };
+      // Attach typed API payload when available so forms can auto-fill hierarchy data.
+      if (res.ok && isPlotLookupResponse(dbPayload)) {
+        payload.dbPlotResponse = dbPayload;
+      }
+      onOk?.(payload);
+      // MAP TRIGGER (OUTBOUND): notify iframe of the finalized selection
+      sendToIframe({ type: "onwani-selection", payload });
     } finally {
       setSubmitting(false);
     }

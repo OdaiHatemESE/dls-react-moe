@@ -345,10 +345,74 @@ export interface StreamGrade {
 
 // --- Onwani/MyLand selection types ---
 export type Municipality = "ADM" | "AAM" | "WRM";
- 
+
+export type PlotLookupTitles = {
+  ar: string | null;
+  en: string | null;
+};
+
+export type PlotLookupHierarchy = {
+  region: {
+    id: number | null;
+    emirateId: number | null;
+    titles: PlotLookupTitles;
+    isActive: boolean;
+  };
+  zone: {
+    id: number | null;
+    regionId: number | null;
+    titles: PlotLookupTitles;
+    isActive: boolean;
+  };
+  area: {
+    id: number | null;
+    zoneId: number | null;
+    titles: PlotLookupTitles;
+    isActive: boolean;
+    manhalCode: string | null;
+  };
+};
+
+export type PlotLookupRecord = {
+  plot: {
+    id: number | null;
+    titles: PlotLookupTitles;
+    isActive: boolean;
+  };
+  identifiers: {
+    plotId: number | null;
+    areaId: number | null;
+    premisesPlotId: string | null;
+    mainPlotPromiseId: string | null;
+    mainPlotId: string | null;
+  };
+  location: {
+    coordinates: {
+      latitude: string | null;
+      longitude: string | null;
+    };
+    roadNumber: string | null;
+    onwani: {
+      mapMapping: string;
+      legacyKey: string;
+    };
+  };
+  hierarchy: PlotLookupHierarchy;
+};
+
+export type PlotLookupResponse = {
+  data: PlotLookupRecord[];
+  meta: {
+    filter: string;
+    areaId: number | null;
+    count: number;
+    mainPlotPromiseId: string;
+  };
+};
+
 export interface OnwaniSelection {
   municipality: Municipality;
- 
+
   districtEn: string;
   communityEn: string;
   // Only applicable for AAM municipality
@@ -357,4 +421,6 @@ export interface OnwaniSelection {
   plot?: string;
   // Optional overlay geometry returned by the getcommunityshape endpoint
   shapeGeoJSON?: unknown;
+  // Optional backend response attached when map lookup succeeds
+  dbPlotResponse?: PlotLookupResponse;
 }

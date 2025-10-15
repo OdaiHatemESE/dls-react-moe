@@ -21,13 +21,18 @@
  * Response:
  * {
  *   data: Array<{
- *     id, titleAr, titleEn, isActive, roadNumber, longitude, latitude,
- *     premisesPlotId, areaId, onwaniMapMapping,
- *     area: { id, titleAr, titleEn, isActive, zoneId, manhalCode,
- *             zone: { id, titleAr, titleEn, isActive, regionId,
- *                     region: { id, titleAr, titleEn, isActive, emirateId, emirate: null, manhalCode: null },
- *                     manhalCode: null } ,
- *             areaSchool: null }
+ *     plot: { id, titles: { ar, en }, isActive },
+ *     identifiers: { plotId, areaId, premisesPlotId, mainPlotPromiseId, mainPlotId },
+ *     location: {
+ *       coordinates: { latitude, longitude },
+ *       roadNumber,
+ *       onwani: { mapMapping, legacyKey }
+ *     },
+ *     hierarchy: {
+ *       region: { id, emirateId, titles: { ar, en }, isActive },
+ *       zone: { id, regionId, titles: { ar, en }, isActive },
+ *       area: { id, zoneId, titles: { ar, en }, isActive, manhalCode }
+ *     }
  *   }>,
  *   meta: { filter: string | "", areaId: number | null, count: number, mainPlotPromiseId: string }
  * }
@@ -144,53 +149,88 @@ export async function GET(req: Request) {
     }
 
     const toBool = (v: boolean | number | null | undefined): boolean => (typeof v === "number" ? v === 1 : Boolean(v));
+    const mainPlotId = mainPlotPromiseId || "";
+    const mainPlotIdNoPrefix = mainPlotId.replace(/^Plot_/i, "");
+
     const mapped = rows.map((x) => {
-      const base = `${x.RegionId},${(x.ZoneTitleEn || "").toUpperCase()},${x.TitleEn || ""},${(mainPlotPromiseId || "").replace("Plot_", "")},${x.Longitude || ""}-${x.Latitude || ""}`;
-      // Append RoadNumber only for AAM (Al Ain) municipality
+      const base = `${x.RegionId},${(x.ZoneTitleEn || "").toUpperCase()},${x.TitleEn || ""},${mainPlotIdNoPrefix},${x.Longitude || ""}-${x.Latitude || ""}`;
+      // Append RoadNumber only for AAM (Al Ain) municipality to match existing business rules.
       const isAAM = (x.RegionTitleEn || "").toLowerCase().includes("ain");
       const onwani = isAAM && x.RoadNumber ? `${base},${x.RoadNumber}` : base;
 
+      const region = {
+        id: x.RegionId,
+        titles: {
+          ar: x.RegionTitleAr,
+          en: x.RegionTitleEn,
+        },
+        isActive: toBool(x.RegionIsActive),
+        emirateId: x.RegionEmirateId,
+        emirate: null as null,
+        manhalCode: null as string | null,
+      };
+
+      const zone = {
+        id: x.ZoneId,
+        titles: {
+          ar: x.ZoneTitleAr,
+          en: x.ZoneTitleEn,
+        },
+        isActive: toBool(x.ZoneIsActive),
+        regionId: x.RegionId,
+        region,
+        manhalCode: null as string | null,
+      };
+
       const area = {
         id: x.AreaId,
-        titleAr: x.AreaTitleAr,
-        titleEn: x.AreaTitleEn,
-        isActive: toBool(x.AreaIsActive),
-        zoneId: x.AreaZoneId,
-        zone: {
-          id: x.ZoneId,
-          titleAr: x.ZoneTitleAr,
-          titleEn: x.ZoneTitleEn,
-          isActive: toBool(x.ZoneIsActive),
-          regionId: x.RegionId,
-          region: {
-            id: x.RegionId,
-            titleAr: x.RegionTitleAr,
-            titleEn: x.RegionTitleEn,
-            isActive: toBool(x.RegionIsActive),
-            emirateId: x.RegionEmirateId,
-            emirate: null as null,
-            manhalCode: null as string | null,
-          },
-          manhalCode: null as string | null,
+        titles: {
+          ar: x.AreaTitleAr,
+          en: x.AreaTitleEn,
         },
+        isActive: toBool(x.AreaIsActive),
         manhalCode: x.AreaManhalCode,
+        zoneId: x.AreaZoneId,
+        zone,
         areaSchool: null as null,
       };
 
-      return {
-        id: x.Id,
-        titleAr: x.TitleAr,
-        titleEn: x.TitleEn,
-        isActive: toBool(x.IsActive),
-        roadNumber: x.RoadNumber,
-        longitude: x.Longitude,
-        latitude: x.Latitude,
-        premisesPlotId: x.PremisesPlotId,
+      const hierarchy = { region, zone, area };
+
+      const identifiers = {
+        plotId: x.Id,
         areaId: x.AreaId,
-        onwaniMapMapping: onwani,
-        // Keep legacy key for any existing consumers
-        OnwaniMapMapping: onwani,
-        area,
+        premisesPlotId: x.PremisesPlotId,
+        mainPlotPromiseId,
+        mainPlotId: mainPlotIdNoPrefix,
+      };
+
+      const plot = {
+        id: x.Id,
+        titles: {
+          ar: x.TitleAr,
+          en: x.TitleEn,
+        },
+        isActive: toBool(x.IsActive),
+      };
+
+      const location = {
+        coordinates: {
+          latitude: x.Latitude,
+          longitude: x.Longitude,
+        },
+        roadNumber: x.RoadNumber,
+        onwani: {
+          mapMapping: onwani,
+          legacyKey: onwani,
+        },
+      };
+
+      return {
+        plot,
+        identifiers,
+        location,
+        hierarchy,
       };
     });
 

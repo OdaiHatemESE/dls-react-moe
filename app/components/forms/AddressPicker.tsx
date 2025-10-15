@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/dialog";
 import { useI18n } from "@/app/i18n/I18nProvider";
 import MyLandPicker from "@/app/components/Onwani/MyLandPicker";
-import type { OnwaniSelection } from "@/types";
+import type { OnwaniSelection, PlotLookupResponse } from "@/types";
 
 type Emirate = {
   Id: number;
@@ -317,14 +317,50 @@ export function AddressPicker(props: AddressPickerProps) {
   const areas = React.useMemo(() => areasData?.data ?? [], [areasData]);
 
   // Handler to confirm and apply the map selection
-  const handleConfirmSelection = React.useCallback(async () => {
+  const handleConfirmSelection = React.useCallback(() => {
     if (!pendingSelection) return;
 
-      debugger;
- 
-    console.log("Applying map selection:", pendingSelection.dbPlotResponse.data);
-   
-  }, [pendingSelection, emit]);
+    const plotResponse: PlotLookupResponse | undefined = pendingSelection.dbPlotResponse;
+    if (!plotResponse || !Array.isArray(plotResponse.data) || plotResponse.data.length === 0) {
+      console.warn("AddressPicker: No plot data available for the selected location", plotResponse);
+      return;
+    }
+
+  const [record] = plotResponse.data;
+    if (!record) {
+      console.warn("AddressPicker: Plot response was empty", plotResponse);
+      return;
+    }
+
+    const updates: Partial<AddressValue> = {};
+
+    const emirateId = record.hierarchy.region.emirateId;
+    const regionId = record.hierarchy.region.id;
+    const zoneId = record.hierarchy.zone.id;
+    const areaId = record.identifiers.areaId ?? record.hierarchy.area.id;
+    const plotId = record.identifiers.plotId ?? record.plot.id;
+
+    if (emirateId !== null && emirateId !== undefined) updates.emirateId = emirateId;
+    if (regionId !== null && regionId !== undefined) updates.regionId = regionId;
+    if (zoneId !== null && zoneId !== undefined) updates.zoneId = zoneId;
+    if (areaId !== null && areaId !== undefined) updates.areaId = areaId;
+    if (plotId !== null && plotId !== undefined) updates.plotId = plotId;
+
+    const streetName = record.location.roadNumber ?? pendingSelection.roadId;
+    if (streetName && streetName.trim()) {
+      updates.streetName = streetName.trim();
+    }
+
+    const houseNumberSource = pendingSelection.plot?.trim() || record.identifiers.mainPlotId || record.plot.titles.en;
+    if (houseNumberSource && houseNumberSource.trim()) {
+      updates.houseNumber = houseNumberSource.trim();
+    }
+
+    emit(updates);
+    setHasMapSelection(true);
+    setIsMapDialogOpen(false);
+    setPendingSelection(null);
+  }, [pendingSelection, emit, setHasMapSelection, setIsMapDialogOpen, setPendingSelection]);
 
   const [touched, setTouched] = React.useState<{
     [K in keyof AddressValue]?: boolean;
