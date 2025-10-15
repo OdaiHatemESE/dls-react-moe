@@ -75,6 +75,7 @@ export default function MyLandPicker({
   const lastCoordsRef = React.useRef<{ lng: string; lat: string } | undefined>(undefined);
   const userInteractedRef = React.useRef<boolean>(false); // Track if user manually changed dropdown
   const isApplyingMapDataRef = React.useRef<boolean>(false); // Prevent loops when applying map data
+  const mapSelectionActiveRef = React.useRef<boolean>(false); // Track if current state mirrors a map pin
 
   const iframeRef = React.useRef<HTMLIFrameElement>(null);
 
@@ -551,6 +552,7 @@ export default function MyLandPicker({
             // Mark that we're applying map data to prevent loops
             isApplyingMapDataRef.current = true;
             userInteractedRef.current = false; // Map action, not user
+            mapSelectionActiveRef.current = true;
             
             const addrEn = typeof d.AddressValue_EN === "string" ? (d.AddressValue_EN as string) : "";
             const parts = addrEn.split(",").map((s) => s.trim()).filter(Boolean);
@@ -656,41 +658,83 @@ export default function MyLandPicker({
     []
   );
 
+  const clearMapSelection = React.useCallback(() => {
+    const wasActive = mapSelectionActiveRef.current;
+    mapSelectionActiveRef.current = false;
+    isApplyingMapDataRef.current = false;
+    pendingRef.current = {};
+    gisInfoRef.current = undefined;
+    lastCoordsRef.current = undefined;
+    if (wasActive) {
+      sendToIframe({ type: "reset-selection" });
+      sendToIframe({ type: "reset", action: "clear-selection" });
+    }
+  }, [sendToIframe]);
+
   const canSubmit = municipality && district && community && (municipality !== "AAM" || roadId) && plot.trim().length > 0 && !submitting;
 
   // Handlers for user interactions - these set the flag to allow smart resets
   const handleMunicipalityChange = (v: Municipality) => {
     console.log("👤 User changed municipality to:", v);
     userInteractedRef.current = true;
+    clearMapSelection();
     setMunicipality(v);
+    setDistrict(undefined);
+    setDistricts([]);
+    setCommunities([]);
+    setCommunity(undefined);
+  setRoads([]);
+  setRoadId(undefined);
+  setPlot("");
+  setPlotOptions([]);
+  setShape(undefined);
   };
 
   const handleDistrictChange = (v: string | undefined) => {
     console.log("👤 User changed district to:", v);
     userInteractedRef.current = true;
+    clearMapSelection();
     setDistrict(v);
+    setCommunity(undefined);
+    setCommunities([]);
+    setRoads([]);
+    setRoadId(undefined);
+    setPlot("");
+    setPlotOptions([]);
+    setShape(undefined);
   };
 
   const handleCommunityChange = (v: string | undefined) => {
     console.log("👤 User changed community to:", v);
     userInteractedRef.current = true;
+    clearMapSelection();
     setCommunity(v);
+    setRoads([]);
+    setRoadId(undefined);
+    setPlot("");
+    setPlotOptions([]);
+    setShape(undefined);
   };
 
   const handleRoadChange = (v: string | undefined) => {
     console.log("👤 User changed road to:", v);
     userInteractedRef.current = true;
+    clearMapSelection();
     setRoadId(v);
+    setPlot("");
+    setPlotOptions([]);
   };
 
   const handlePlotChange = (v: string) => {
     console.log("👤 User changed plot to:", v);
     userInteractedRef.current = true;
+    clearMapSelection();
     setPlot(v);
   };
 
   const handleReset = () => {
     userInteractedRef.current = true;
+    clearMapSelection();
     // Reset to initial state - clear all data and selections
     setMunicipality(defaultMunicipality);
     setDistricts([]); // Clear districts data
@@ -702,9 +746,10 @@ export default function MyLandPicker({
     setPlot("");
     setPlotOptions([]); // Clear plot options
     setShape(undefined); // Clear shape data
-    pendingRef.current = {};
-    lastCoordsRef.current = undefined;
-    gisInfoRef.current = undefined;
+  pendingRef.current = {};
+  mapSelectionActiveRef.current = false;
+  lastCoordsRef.current = undefined;
+  gisInfoRef.current = undefined;
     // Notify map to reset/clear
     sendToIframe({ type: "reset", action: "clear" });
   };
