@@ -31,9 +31,10 @@ export default function MyLandPicker({
   const isAr = locale === "ar";
 
   const [municipality, setMunicipality] = React.useState<Municipality>(defaultMunicipality);
-  const [districts, setDistricts] = React.useState<string[]>([]);
+  type NamedOption = { value: string; en: string; ar?: string };
+  const [districts, setDistricts] = React.useState<NamedOption[]>([]);
   const [district, setDistrict] = React.useState<string | undefined>(undefined);
-  const [communities, setCommunities] = React.useState<string[]>([]);
+  const [communities, setCommunities] = React.useState<NamedOption[]>([]);
   const [community, setCommunity] = React.useState<string | undefined>(undefined);
   const [roads, setRoads] = React.useState<string[]>([]);
   const [roadId, setRoadId] = React.useState<string | undefined>(undefined);
@@ -172,16 +173,24 @@ export default function MyLandPicker({
           ? data
           : // some endpoints wrap in object
             (data?.data ?? []);
-        const names = (list as Array<Record<string, unknown>>)
-          .map((d) =>
-            typeof d["DISTRICT_NAME_EN"] === "string"
-              ? (d["DISTRICT_NAME_EN"] as string)
-              : typeof d["district_name_en"] === "string"
-              ? (d["district_name_en"] as string)
-              : undefined
-          )
-          .filter((v): v is string => typeof v === "string");
-        setDistricts(names);
+        const opts: NamedOption[] = (list as Array<Record<string, unknown>>)
+          .map((d: Record<string, unknown>) => {
+            const en =
+              toStringIfScalar(d["DISTRICT_NAME_EN"]) ||
+              toStringIfScalar(d["district_name_en"]) ||
+              toStringIfScalar(d["DISTRICTENG"]) ||
+              undefined;
+            const ar =
+              toStringIfScalar(d["DISTRICT_NAME_AR"]) ||
+              toStringIfScalar(d["district_name_ar"]) ||
+              toStringIfScalar(d["DISTRICTAR"]) ||
+              toStringIfScalar(d["DISTRICT_NAME_ARABIC"]) ||
+              undefined;
+            if (!en) return undefined;
+            return { value: en, en, ar } as NamedOption;
+          })
+          .filter((v: NamedOption | undefined): v is NamedOption => !!v);
+        setDistricts(opts);
       })
       .catch(() => setDistricts([]))
       .finally(() => !cancelled && setLoading((l) => ({ ...l, districts: false })));
@@ -205,16 +214,24 @@ export default function MyLandPicker({
       .then((data) => {
         if (cancelled) return;
         const list = Array.isArray(data) ? data : data?.data ?? [];
-        const names = (list as Array<Record<string, unknown>>)
-          .map((c) =>
-            typeof c["COMMUNITY_NAME_EN"] === "string"
-              ? (c["COMMUNITY_NAME_EN"] as string)
-              : typeof c["community_name_en"] === "string"
-              ? (c["community_name_en"] as string)
-              : undefined
-          )
-          .filter((v): v is string => typeof v === "string");
-        setCommunities(names);
+        const opts: NamedOption[] = (list as Array<Record<string, unknown>>)
+          .map((c: Record<string, unknown>) => {
+            const en =
+              toStringIfScalar(c["COMMUNITY_NAME_EN"]) ||
+              toStringIfScalar(c["community_name_en"]) ||
+              toStringIfScalar(c["COMMUNITYENG"]) ||
+              undefined;
+            const ar =
+              toStringIfScalar(c["COMMUNITY_NAME_AR"]) ||
+              toStringIfScalar(c["community_name_ar"]) ||
+              toStringIfScalar(c["COMMUNITYAR"]) ||
+              toStringIfScalar(c["COMMUNITY_NAME_ARABIC"]) ||
+              undefined;
+            if (!en) return undefined;
+            return { value: en, en, ar } as NamedOption;
+          })
+          .filter((v: NamedOption | undefined): v is NamedOption => !!v);
+        setCommunities(opts);
       })
       .catch(() => setCommunities([]))
       .finally(() => !cancelled && setLoading((l) => ({ ...l, communities: false })));
@@ -542,14 +559,14 @@ export default function MyLandPicker({
   // Apply pending selections when options arrive
   React.useEffect(() => {
     const p = pendingRef.current;
-    if (p.district && districts.includes(p.district)) {
+    if (p.district && districts.some((o) => o.value === p.district)) {
       setDistrict(p.district);
       p.district = undefined;
     }
   }, [districts]);
   React.useEffect(() => {
     const p = pendingRef.current;
-    if (p.community && communities.includes(p.community)) {
+    if (p.community && communities.some((o) => o.value === p.community)) {
       setCommunity(p.community);
       p.community = undefined;
     }
@@ -603,8 +620,8 @@ export default function MyLandPicker({
               </SelectTrigger>
               <SelectContent>
                 {districts.map((d) => (
-                  <SelectItem key={d} value={d}>
-                    {d}
+                  <SelectItem key={d.value} value={d.value}>
+                    {isAr ? d.ar ?? d.en : d.en}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -623,8 +640,8 @@ export default function MyLandPicker({
               </SelectTrigger>
               <SelectContent>
                 {communities.map((c) => (
-                  <SelectItem key={c} value={c}>
-                    {c}
+                  <SelectItem key={c.value} value={c.value}>
+                    {isAr ? c.ar ?? c.en : c.en}
                   </SelectItem>
                 ))}
               </SelectContent>
