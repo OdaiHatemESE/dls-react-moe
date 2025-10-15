@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import AddressFields, { AddressValue } from "@/app/components/forms/AddressFields";
+import AddressPicker, { AddressValue } from "@/app/components/forms/AddressPicker";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -41,7 +41,7 @@ export default function AddressDemoPage() {
           </CardHeader>
           <CardContent className="p-6">
             <form onSubmit={handleSubmit} className="space-y-6">
-              <AddressFields
+              <AddressPicker
                 value={val}
                 onChange={setVal}
                 required={{ emirate: true, area: true, streetName: true, houseNumber: true }}

@@ -18,7 +18,7 @@ export type AddressValue = {
   houseNumber?: string;
 };
 
-export type AddressFieldsProps = {
+export type AddressPickerProps = {
   value?: AddressValue;
   onChange?: (next: AddressValue) => void;
   disabled?: boolean;
@@ -69,7 +69,7 @@ function useAreas(params: { emirateId?: number | null; isAbuDhabi?: boolean; zon
   return useSWR<{ data: Area[]; meta: AreasMeta }>(key, jsonFetcher);
 }
 
-export function AddressFields(props: AddressFieldsProps) {
+export function AddressPicker(props: AddressPickerProps) {
   const {
     value,
     onChange,
@@ -316,4 +316,4 @@ export function AddressFields(props: AddressFieldsProps) {
   );
 }
 
-export default AddressFields;
+export default AddressPicker;
