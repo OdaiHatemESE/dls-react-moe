@@ -23,4 +23,5 @@ model UpdateInformationRequests {
   updateAt                 DateTime? @db.DateTime
 
   @@id([Id, studentPersonId], map: "PK_UpdateInformationRequests")
+  @@unique([studentPersonId], map: "UQ_UpdateInformationRequests_studentPersonId")
 }
