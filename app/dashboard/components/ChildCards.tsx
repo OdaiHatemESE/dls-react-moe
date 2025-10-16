@@ -3,16 +3,14 @@
 import React from "react";
 import { useChildren } from "@/lib/hooks/useChildren";
 import type { Person } from "@/types";
-import Link from "next/link";
-import { Card, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  ChevronRightIcon,
-} from "@/app/components/icons";
+// Icons no longer used in actions; keep available imports minimal
 import { useI18n } from "@/app/i18n/I18nProvider";
 import { useSession } from "next-auth/react";
 import { Skeleton } from "@/components/ui/skeleton";
 import clsx from "clsx";
+import ChildActions from "./ChildActions";
 
 // Helper function to calculate age from birth date
 const calculateAge = (birthDate: string): number => {
@@ -253,28 +251,8 @@ export default function ChildCards() {
                     />
                   </div>
 
-                  {/* Action Button */}
-                  <Link
-                    href={`/child/${child.sourcedId}`}
-                    className={clsx(
-                      "flex items-center justify-center gap-2 w-full px-3 py-2 text-xs font-semibold",
-                      "bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary",
-                      "text-primary-foreground rounded-xl shadow-md hover:shadow-lg",
-                      "transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/20",
-                      "active:scale-95 touch-manipulation",
-                      locale === 'ar' && 'flex-row-reverse'
-                    )}
-                  >
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
-                    <span>{locale === 'ar' ? 'عرض الملف' : 'View Profile'}</span>
-                    <ChevronRightIcon className={clsx(
-                      "w-3 h-3 transition-transform",
-                      locale === 'ar' ? 'rotate-180' : ''
-                    )} />
-                  </Link>
+                  {/* Actions based on Parent-Portal flags */}
+                  <ChildActions studentPersonId={child.sourcedId} className="w-full justify-center" />
                 </div>
               </div>
             </Card>
@@ -505,28 +483,7 @@ export default function ChildCards() {
 
                     {/* Enhanced Actions */}
                     <td className="px-6 py-6">
-                      <Link
-                        href={`/child/${child.sourcedId}`}
-                        className={clsx(
-                          "inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold",
-                          "bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary",
-                          "text-primary-foreground rounded-xl shadow-md hover:shadow-lg",
-                          "transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:ring-offset-2",
-                          "hover:scale-105 group/button transform",
-                          locale === 'ar' && 'flex-row-reverse'
-                        )}
-                        aria-label={`${t.student?.viewDetails || (locale === 'ar' ? 'عرض التفاصيل' : 'View Details')} ${displayName}`}
-                      >
-                        <svg className="w-3 h-3 transition-transform group-hover/button:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                        </svg>
-                        <span className="font-bold">{locale === 'ar' ? 'عرض الملف' : 'View Profile'}</span>
-                        <ChevronRightIcon className={clsx(
-                          "w-3 h-3 transition-all duration-200 group-hover/button:scale-110",
-                          locale === 'ar' ? 'rotate-180 group-hover/button:-translate-x-1' : 'group-hover/button:translate-x-1'
-                        )} />
-                      </Link>
+                      <ChildActions studentPersonId={child.sourcedId} compact />
                     </td>
                   </tr>
                 );

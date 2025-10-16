@@ -1,11 +1,10 @@
-# POST /api/parent/update-information-requests
+# /api/parent/update-information-requests
 
-Creates a row in the Parent-Portal DB table `UpdateInformationRequests` for a given `studentPersonId` using the parent Prisma client.
+Endpoints for interacting with the Parent-Portal DB table `UpdateInformationRequests` using the parent Prisma client.
 
-- If a row for the `studentPersonId` already exists, the API returns it without creating a duplicate.
 - Uses the separate Prisma client from `@/lib/prisma-parent` (mapped to `@prisma/client-parent-portal`).
 
-## Request
+## POST (create if missing)
 
 Method: POST
 
@@ -41,3 +40,22 @@ Content-Type: application/json
 - The model allows multiple records per `studentPersonId`; this endpoint chooses to avoid duplicates by checking `findFirst` before insert.
 - If stricter uniqueness is desired, add a unique index on `studentPersonId` in the Prisma schema and switch to `upsert`.
 - Timestamps `createAt` and `updateAt` are set by the route.
+
+## GET (retrieve/upsert by studentPersonId)
+
+Method: GET
+
+Query params:
+
+- studentPersonId (string, required)
+- parentPersonId (string, optional; will be linked on first creation or updated if missing)
+- studentEmirateId (string, optional)
+
+Behavior:
+
+- Requires authentication (401 otherwise).
+- Upserts a record by `studentPersonId` so the caller can rely on a row existing.
+- Returns current flags like `isInfoUpdateRequested` and `isConductAgreementSigned`.
+
+Response 200 OK
+{ "ok": true, "data": { ...row } }
