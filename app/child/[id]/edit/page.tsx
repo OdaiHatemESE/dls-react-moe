@@ -254,7 +254,7 @@ export default function EditChildPage() {
 
         {/* Data Confirmation Alert */}
         {needsUpdate === null && (
-          <Card className="border-2 border-blue-500 shadow-lg bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900">
+          <Card className="border-2 border-blue-500 shadow-lg bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 mb-6 sticky top-20 z-20">
             <CardContent className="p-6 md:p-8">
               <div className="flex items-start gap-4 mb-6">
                 <div className="flex-shrink-0">
@@ -270,17 +270,30 @@ export default function EditChildPage() {
                     locale === 'ar' && 'text-right'
                   )}>
                     {locale === 'ar' 
-                      ? 'مراجعة وتأكيد البيانات' 
-                      : 'Review and Confirm Student Information'}
+                      ? 'مراجعة وتأكيد البيانات - مهم جداً' 
+                      : 'Review and Confirm Student Information - Very Important'}
                   </h3>
                   <p className={clsx(
                     "text-sm md:text-base text-gray-700 dark:text-gray-300 mb-4",
                     locale === 'ar' && 'text-right leading-relaxed'
                   )}>
                     {locale === 'ar'
-                      ? 'يرجى مراجعة معلومات الطالب أدناه بعناية. هل المعلومات الموضحة صحيحة ومحدثة؟'
-                      : 'Please carefully review the student information below. Is all the displayed information correct and up to date?'}
+                      ? 'يرجى مراجعة معلومات الطالب أدناه بعناية. هذه المعلومات ضرورية للتواصل معكم وحفظ حقوق الطالب. هل المعلومات الموضحة صحيحة ومحدثة؟'
+                      : 'Please carefully review the student information below. This information is essential for contacting you and protecting student rights. Is all the displayed information correct and up to date?'}
                   </p>
+                  <div className={clsx(
+                    "bg-yellow-100 dark:bg-yellow-900/30 border border-yellow-300 dark:border-yellow-700 rounded-lg p-3 mb-4",
+                    locale === 'ar' && 'text-right'
+                  )}>
+                    <p className="text-xs md:text-sm text-yellow-800 dark:text-yellow-200 font-medium">
+                      <svg className="w-4 h-4 inline-block me-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                      </svg>
+                      {locale === 'ar'
+                        ? 'تنبيه: لا يمكنك التوقيع على اتفاقية قواعد السلوك إلا بعد تأكيد أو تحديث هذه المعلومات.'
+                        : 'Notice: You cannot sign the Code of Conduct agreement until you confirm or update this information.'}
+                    </p>
+                  </div>
                   
                   <div className="flex flex-col sm:flex-row gap-3">
                     <Button
@@ -318,7 +331,7 @@ export default function EditChildPage() {
 
         {/* Success Confirmation Message */}
         {needsUpdate === false && (
-          <Card className="border-2 border-green-500 shadow-lg bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900">
+          <Card className="border-2 border-green-500 shadow-lg bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 mb-6 sticky top-20 z-20">
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
                 <div className="flex-shrink-0">
@@ -337,6 +350,14 @@ export default function EditChildPage() {
                       ? 'شكراً لتأكيدك! تم تسجيل أن المعلومات صحيحة.'
                       : 'Thank you for confirming! We have recorded that the information is correct.'}
                   </p>
+                  <p className={clsx(
+                    "text-sm text-green-700 dark:text-green-300 mt-2",
+                    locale === 'ar' && 'text-right'
+                  )}>
+                    {locale === 'ar'
+                      ? 'يمكنك الآن المتابعة والتوقيع على اتفاقية قواعد السلوك.'
+                      : 'You can now proceed to sign the Code of Conduct agreement.'}
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -345,7 +366,7 @@ export default function EditChildPage() {
 
         {/* Update Instructions */}
         {needsUpdate === true && (
-          <Card className="border-2 border-orange-500 shadow-lg bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-950 dark:to-orange-900">
+          <Card className="border-2 border-orange-500 shadow-lg bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-950 dark:to-orange-900 mb-6 sticky top-20 z-20">
             <CardContent className="p-6">
               <div className="flex items-start gap-4">
                 <div className="flex-shrink-0">
@@ -365,13 +386,23 @@ export default function EditChildPage() {
                       : 'You can now update the information'}
                   </p>
                   <p className={clsx(
-                    "text-sm text-orange-700 dark:text-orange-300",
+                    "text-sm text-orange-700 dark:text-orange-300 mb-3",
                     locale === 'ar' && 'text-right'
                   )}>
                     {locale === 'ar'
-                      ? 'انقر على زر "تمكين التعديل" في أي قسم لتحديث المعلومات الموجودة فيه.'
-                      : 'Click the "Enable Editing" button in any section to update its information.'}
+                      ? 'انقر على زر "تمكين التعديل" في أي قسم لتحديث المعلومات الموجودة فيه. يرجى التأكد من صحة جميع المعلومات حيث أنها مهمة للتواصل معكم.'
+                      : 'Click the "Enable Editing" button in any section to update its information. Please ensure all information is accurate as it is essential for contacting you.'}
                   </p>
+                  <div className={clsx(
+                    "bg-orange-200 dark:bg-orange-800/50 rounded-md p-2",
+                    locale === 'ar' && 'text-right'
+                  )}>
+                    <p className="text-xs text-orange-900 dark:text-orange-100 font-medium">
+                      {locale === 'ar'
+                        ? 'تذكير: لا يمكنك التوقيع على اتفاقية قواعد السلوك حتى تقوم بحفظ المعلومات المحدثة.'
+                        : 'Reminder: You cannot sign the Code of Conduct agreement until you save the updated information.'}
+                    </p>
+                  </div>
                 </div>
               </div>
             </CardContent>
