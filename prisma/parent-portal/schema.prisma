@@ -1,0 +1,20 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlserver"
+  url      = env("DATABASE_URL")
+}
+
+model StudentUpdateInfoRequest {
+  studentPersonId            Int      @id
+  parentPersonId             Int
+  isInfoUpdateRequested      Boolean  @default(false)
+  infoUpdateRequestStatus    String?  @db.VarChar(20) // APPROVED | RETURNED | REJECTED
+  isConductAgreementSigned   Boolean  @default(false)
+  conductAgreementStatus     String?  @db.VarChar(20) // APPROVED | RETURNED | REJECTED
+  createdAt                  DateTime @default(now())
+  updatedAt                  DateTime @updatedAt
+}
+
