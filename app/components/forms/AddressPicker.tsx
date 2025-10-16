@@ -180,6 +180,8 @@ export function AddressPicker(props: AddressPickerProps) {
   const [isMapDialogOpen, setIsMapDialogOpen] = React.useState(false);
   const [pendingSelection, setPendingSelection] = React.useState<OnwaniSelection | null>(null);
   const [hasMapSelection, setHasMapSelection] = React.useState(false);
+  // Store the last confirmed selection to reload when reopening the dialog
+  const [lastConfirmedSelection, setLastConfirmedSelection] = React.useState<OnwaniSelection | null>(null);
 
   // keep in sync with external value
   React.useEffect(() => {
@@ -218,6 +220,15 @@ export function AddressPicker(props: AddressPickerProps) {
   const handleCancelMapSelection = React.useCallback(() => {
     setIsMapDialogOpen(false);
     setPendingSelection(null);
+  }, []);
+
+  // Handler for dialog open/close state changes
+  const handleDialogOpenChange = React.useCallback((open: boolean) => {
+    setIsMapDialogOpen(open);
+    // Clear pending selection when closing the dialog
+    if (!open) {
+      setPendingSelection(null);
+    }
   }, []);
 
   const { data: emiratesData, isLoading: emiratesLoading } = useEmirates();
@@ -359,6 +370,7 @@ export function AddressPicker(props: AddressPickerProps) {
 
     emit(updates);
     setHasMapSelection(true);
+    setLastConfirmedSelection(pendingSelection); // Store for reopening
     setIsMapDialogOpen(false);
     setPendingSelection(null);
   }, [pendingSelection, emit, isAbuDhabiSelected, local.areaId, local.emirateId, setHasMapSelection, setIsMapDialogOpen, setPendingSelection]);
@@ -885,7 +897,7 @@ export function AddressPicker(props: AddressPickerProps) {
       )}
 
       {/* MyLand Map Picker Dialog - Two Column Layout */}
-      <Dialog open={isMapDialogOpen} onOpenChange={setIsMapDialogOpen}>
+      <Dialog open={isMapDialogOpen} onOpenChange={handleDialogOpenChange}>
         <DialogContent 
           className={cn(
             "max-w-[98vw] w-full h-[96vh] p-0 gap-0 flex flex-col overflow-hidden",
@@ -927,6 +939,7 @@ export function AddressPicker(props: AddressPickerProps) {
                   onOk={handleMapSelection}
                   onCancel={handleCancelMapSelection}
                   className="w-full h-full"
+                  initialSelection={lastConfirmedSelection ?? undefined}
                 />
               </div>
 

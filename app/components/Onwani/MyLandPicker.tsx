@@ -49,6 +49,8 @@ type Props = {
   className?: string;
   onOk?: (sel: OnwaniSelection) => void;
   onCancel?: () => void;
+  // Initial selection to preload when reopening
+  initialSelection?: Partial<OnwaniSelection>;
 };
 
 type NamedOption = { value: string; en: string; ar?: string };
@@ -69,6 +71,7 @@ export default function MyLandPicker({
   className,
   onOk,
   onCancel,
+  initialSelection,
 }: Props) {
   // ---------------------------------------------------------------------------
   // Locale awareness
@@ -79,16 +82,24 @@ export default function MyLandPicker({
   // ---------------------------------------------------------------------------
   // Selection state
   // ---------------------------------------------------------------------------
-  const [municipality, setMunicipality] = React.useState<Municipality>(defaultMunicipality);
+  const [municipality, setMunicipality] = React.useState<Municipality>(
+    initialSelection?.municipality ?? defaultMunicipality
+  );
   const [districts, setDistricts] = React.useState<NamedOption[]>([]);
-  const [district, setDistrict] = React.useState<string | undefined>(undefined);
+  const [district, setDistrict] = React.useState<string | undefined>(
+    initialSelection?.districtEn ?? undefined
+  );
   const [communities, setCommunities] = React.useState<NamedOption[]>([]);
-  const [community, setCommunity] = React.useState<string | undefined>(undefined);
+  const [community, setCommunity] = React.useState<string | undefined>(
+    initialSelection?.communityEn ?? undefined
+  );
   const [roads, setRoads] = React.useState<string[]>([]);
-  const [roadId, setRoadId] = React.useState<string | undefined>(undefined);
-  const [plot, setPlot] = React.useState<string>("");
+  const [roadId, setRoadId] = React.useState<string | undefined>(
+    initialSelection?.roadId ?? undefined
+  );
+  const [plot, setPlot] = React.useState<string>(initialSelection?.plot ?? "");
   const [plotOptions, setPlotOptions] = React.useState<PlotOption[]>([]);
-  const [shape, setShape] = React.useState<unknown>(undefined);
+  const [shape, setShape] = React.useState<unknown>(initialSelection?.shapeGeoJSON ?? undefined);
   const [submitting, setSubmitting] = React.useState<boolean>(false);
   const [loading, setLoading] = React.useState<{ districts?: boolean; communities?: boolean; roads?: boolean; shape?: boolean }>({});
 
