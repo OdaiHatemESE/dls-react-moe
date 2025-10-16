@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useParams } from 'next/navigation';
-import useSWR, { mutate } from 'swr';
+import useSWR from 'swr';
 import clsx from 'clsx';
 import Link from 'next/link';
 
@@ -49,22 +49,24 @@ export default function ChildDetailPage() {
   }
   if (error) {
     // If the error object contains a warning from the API, show it
-    if (error.warning) {
+    const errorWarning = (error as { warning?: string }).warning;
+    if (errorWarning) {
       return (
         <div className="text-center py-10">
           <div className="mb-4 text-destructive bg-destructive/10 border border-destructive/20 rounded p-4">
-            {error.warning}
+            {errorWarning}
           </div>
         </div>
       );
     }
     return <div className="text-center py-10 text-destructive">{t.child.error_loading_child_data}</div>;
   }
-  if (data && (data as any).warning) {
+  const responseWithWarning = data as { warning?: string } | undefined;
+  if (responseWithWarning?.warning) {
     return (
       <div className="text-center py-10">
         <div className="mb-4 text-destructive bg-destructive/10 border border-destructive/20 rounded p-4">
-          {(data as any).warning}
+          {responseWithWarning.warning}
         </div>
       </div>
     );
@@ -221,23 +223,41 @@ export default function ChildDetailPage() {
 
                 {/* Parent Actions Section - Mobile Optimized */}
                 <div className="flex-shrink-0 w-full sm:w-auto">
-                  <div className="bg-card/80 backdrop-blur-sm rounded-xl border border-border/80 p-3 md:p-4 shadow-sm touch-manipulation">
-                    <div className="flex items-center gap-2 md:gap-3 mb-2 md:mb-3">
-                      <div className="p-1.5 md:p-2 bg-primary/10 rounded-lg">
-                        <svg className="w-3 h-3 md:w-4 md:h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
+                  <div className="bg-card/80 backdrop-blur-sm rounded-xl border border-border/80 p-3 md:p-4 shadow-sm touch-manipulation space-y-3">
+                    {/* Edit Profile Button */}
+                    <Link 
+                      href={`/child/${person.sourcedId}/edit`}
+                      className={clsx(
+                        "w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm transition-all duration-200",
+                        "bg-primary text-primary-foreground hover:bg-primary/90 active:scale-95",
+                        "focus:outline-none focus:ring-2 focus:ring-primary/20 touch-manipulation shadow-sm"
+                      )}
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                      <span>{locale === 'ar' ? 'تعديل الملف الشخصي' : 'Edit Profile'}</span>
+                    </Link>
+
+                    {/* Documents Section */}
+                    <div>
+                      <div className="flex items-center gap-2 md:gap-3 mb-2">
+                        <div className="p-1.5 md:p-2 bg-primary/10 rounded-lg">
+                          <svg className="w-3 h-3 md:w-4 md:h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="text-xs font-semibold text-foreground">
+                            {locale === 'ar' ? 'إجراءات ولي الأمر' : 'Parent Actions'}
+                          </h3>
+                          <p className="text-xs text-muted-foreground hidden md:block">
+                            {locale === 'ar' ? 'طباعة وتوقيع الوثائق' : 'Print & sign documents'}
+                          </p>
+                        </div>
                       </div>
-                      <div className="flex-1">
-                        <h3 className="text-xs font-semibold text-foreground">
-                          {locale === 'ar' ? 'إجراءات ولي الأمر' : 'Parent Actions'}
-                        </h3>
-                        <p className="text-xs text-muted-foreground hidden md:block">
-                          {locale === 'ar' ? 'طباعة وتوقيع الوثائق' : 'Print & sign documents'}
-                        </p>
-                      </div>
+                      <SignConductSection locale={locale} studentId={person.sourcedId} />
                     </div>
-                    <SignConductSection locale={locale} studentId={person.sourcedId} />
                   </div>
                 </div>
               </div>
