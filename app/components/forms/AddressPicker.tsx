@@ -19,7 +19,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import { useI18n } from "@/app/i18n/I18nProvider";
 import MyLandPicker from "@/app/components/Onwani/MyLandPicker";
@@ -886,139 +885,461 @@ export function AddressPicker(props: AddressPickerProps) {
         </div>
       )}
 
-      {/* MyLand Map Picker Dialog */}
+      {/* MyLand Map Picker Dialog - Enhanced UX/UI */}
       <Dialog open={isMapDialogOpen} onOpenChange={setIsMapDialogOpen}>
         <DialogContent 
           className={cn(
-            "max-w-[95vw] w-full h-[90vh] p-0 gap-0 flex flex-col",
-            "bg-gradient-to-br from-background via-background to-primary/5",
+            "max-w-[96vw] w-full h-[95vh] p-0 gap-0 flex flex-col overflow-hidden",
+            "bg-background border-2 shadow-2xl",
             isRTL ? "rtl" : "ltr"
           )}
         >
-          <DialogHeader className="px-6 pt-6 pb-4 border-b border-border/50 bg-card/50 backdrop-blur-sm shrink-0">
-            <DialogTitle className="flex items-center gap-3 text-xl font-bold">
-              <div className="p-2 rounded-xl bg-aegreen-600/10 text-aegreen-600">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-                </svg>
-              </div>
-              <span className="bg-gradient-to-r from-aegreen-600 to-aegreen-700 bg-clip-text text-transparent">
-                {locale === "ar" ? "اختر موقعك من الخريطة" : "Select Your Location from Map"}
-              </span>
-            </DialogTitle>
-            <DialogDescription className="text-sm text-muted-foreground flex items-center gap-2 mt-2">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              {locale === "ar" 
-                ? "استخدم خريطة MyLand للعثور على قطعة أرضك وتحديد موقعك بدقة" 
-                : "Use MyLand map to find your plot and pinpoint your location accurately"}
-            </DialogDescription>
+          {/* Compact Header */}
+          <DialogHeader className="px-4 py-3 border-b bg-gradient-to-r from-aegreen-50 to-aegreen-100/50 dark:from-aegreen-950/30 dark:to-aegreen-900/20 shrink-0">
+            <div className="flex items-center justify-between">
+              <DialogTitle className="flex items-center gap-2 text-base font-semibold">
+                <div className="p-1.5 rounded-lg bg-aegreen-600 text-white">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                  </svg>
+                </div>
+                <span className="text-aegreen-900 dark:text-aegreen-100">
+                  {locale === "ar" ? "اختر موقعك" : "Select Location"}
+                </span>
+              </DialogTitle>
+              <DialogDescription className="text-xs text-muted-foreground hidden sm:block">
+                {locale === "ar" ? "انقر على الخريطة لتحديد الموقع" : "Click on map to select location"}
+              </DialogDescription>
+            </div>
           </DialogHeader>
           
-          <div className="flex-1 overflow-auto relative min-h-0">
-            {/* Decorative elements */}
-            <div className="absolute top-0 left-0 w-32 h-32 bg-aegreen-600/5 rounded-full blur-3xl pointer-events-none" />
-            <div className="absolute bottom-0 right-0 w-40 h-40 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
-            
-            {/* MyLandPicker component */}
-            <div className="relative w-full p-6" style={{ minHeight: '600px' }}>
+          {/* Map Container - Full Height */}
+          <div className="flex-1 relative min-h-0 bg-muted/20">
+            {/* MyLandPicker - No padding, full width/height */}
+            <div className="absolute inset-0 w-full h-full">
               <MyLandPicker
                 defaultMunicipality="ADM"
                 showOverlayShape={true}
                 onOk={handleMapSelection}
                 onCancel={handleCancelMapSelection}
-                className="w-full"
+                className="w-full h-full"
               />
             </div>
-          </div>
 
-          {/* Selection Summary & Actions Footer */}
-          {pendingSelection && (
-            <DialogFooter className="px-6 py-4 border-t border-border/50 bg-card/50 backdrop-blur-sm shrink-0">
-              <div className="w-full flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
-                {/* Selection Summary Card */}
-                <div className="flex-1 p-4 rounded-xl bg-gradient-to-br from-aegreen-600/10 to-aegreen-600/5 border border-aegreen-600/20">
-                  <div className="flex items-start gap-3">
-                    <div className="p-2 rounded-lg bg-aegreen-600/20 text-aegreen-600 shrink-0">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
-                        <span>{locale === "ar" ? "الموقع المحدد" : "Selected Location"}</span>
-                      </h4>
-                      <div className="space-y-1 text-xs text-muted-foreground">
-                        <p className="flex items-center gap-2">
-                          <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            {/* Floating Selection Info - Only show if selection exists */}
+            {pendingSelection && (() => {
+              const plotData = pendingSelection.dbPlotResponse?.data?.[0];
+              const hasDetailedData = !!plotData;
+              
+              return (
+                <div className="absolute top-4 left-4 right-4 sm:left-auto sm:right-4 sm:max-w-lg z-10 animate-in slide-in-from-top-2 duration-300 max-h-[calc(100vh-200px)] overflow-y-auto">
+                  <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl border-2 border-aegreen-600/40 overflow-hidden backdrop-blur-sm bg-opacity-98 dark:bg-opacity-98">
+                    {/* Header */}
+                    <div className="bg-gradient-to-r from-aegreen-600 to-aegreen-700 px-4 py-2.5 sticky top-0 z-10">
+                      <div className="flex items-center gap-2">
+                        <div className="p-1 rounded bg-white/20">
+                          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                           </svg>
-                          <span className="font-medium text-foreground">{pendingSelection.districtEn}</span>
-                        </p>
-                        <p className="flex items-center gap-2">
-                          <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                          </svg>
-                          <span className="font-medium text-foreground">{pendingSelection.communityEn}</span>
-                        </p>
-                        {pendingSelection.roadId && (
-                          <p className="flex items-center gap-2">
-                            <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-                            </svg>
-                            <span>{locale === "ar" ? "الطريق:" : "Road:"} <span className="font-medium text-foreground">{pendingSelection.roadId}</span></span>
-                          </p>
-                        )}
-                        {pendingSelection.plot && (
-                          <p className="flex items-center gap-2">
-                            <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                            </svg>
-                            <span>{locale === "ar" ? "القطعة:" : "Plot:"} <span className="font-medium text-foreground">{pendingSelection.plot}</span></span>
-                          </p>
+                        </div>
+                        <h4 className="text-sm font-bold text-white">
+                          {locale === "ar" ? "الموقع المحدد" : "Selected Location"}
+                        </h4>
+                        {hasDetailedData && (
+                          <span className="ms-auto text-[10px] bg-white/20 px-2 py-0.5 rounded-full text-white font-medium">
+                            {locale === "ar" ? "بيانات كاملة" : "Full Details"}
+                          </span>
                         )}
                       </div>
                     </div>
+
+                    {/* Content */}
+                    <div className="p-4 space-y-3">
+                      {/* Basic Selection Info */}
+                      <div className="space-y-2.5">
+                        {/* District */}
+                        <div className="flex items-start gap-2">
+                          <svg className="w-4 h-4 text-aegreen-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                              {locale === "ar" ? "المنطقة" : "District"}
+                            </p>
+                            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 break-words">
+                              {pendingSelection.districtEn}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Community */}
+                        <div className="flex items-start gap-2">
+                          <svg className="w-4 h-4 text-aegreen-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                          </svg>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                              {locale === "ar" ? "المجمع السكني" : "Community"}
+                            </p>
+                            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 break-words">
+                              {pendingSelection.communityEn}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Detailed Database Plot Response */}
+                      {hasDetailedData && (
+                        <>
+                          <div className="border-t border-gray-200 dark:border-gray-700 pt-3">
+                            <h5 className="text-xs font-bold text-gray-700 dark:text-gray-300 mb-2.5 flex items-center gap-1.5">
+                              <svg className="w-3.5 h-3.5 text-aegreen-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                              </svg>
+                              {locale === "ar" ? "تفاصيل القطعة الكاملة" : "Complete Plot Details"}
+                            </h5>
+                          </div>
+
+                          {/* Plot Information - Emphasized */}
+                          <div className="bg-aegreen-50 dark:bg-aegreen-950/30 rounded-lg p-3 border border-aegreen-200/50 dark:border-aegreen-800/50 space-y-2">
+                            <div className="flex items-center gap-2">
+                              <svg className="w-4 h-4 text-aegreen-700 dark:text-aegreen-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                              </svg>
+                              <h6 className="text-xs font-bold text-aegreen-900 dark:text-aegreen-300">
+                                {locale === "ar" ? "معلومات القطعة" : "Plot Information"}
+                              </h6>
+                            </div>
+                            
+                            {plotData.plot?.titles && (
+                              <div className="grid grid-cols-2 gap-2 text-xs">
+                                {plotData.plot.titles.en && (
+                                  <div>
+                                    <p className="text-[10px] text-aegreen-700 dark:text-aegreen-400 uppercase tracking-wide">
+                                      {locale === "ar" ? "الاسم (EN)" : "Name (EN)"}
+                                    </p>
+                                    <p className="font-semibold text-aegreen-900 dark:text-aegreen-200 break-words">{plotData.plot.titles.en}</p>
+                                  </div>
+                                )}
+                                {plotData.plot.titles.ar && (
+                                  <div>
+                                    <p className="text-[10px] text-aegreen-700 dark:text-aegreen-400 uppercase tracking-wide">
+                                      {locale === "ar" ? "الاسم (AR)" : "Name (AR)"}
+                                    </p>
+                                    <p className="font-semibold text-aegreen-900 dark:text-aegreen-200 break-words">{plotData.plot.titles.ar}</p>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
+                            {plotData.plot?.id && (
+                              <div>
+                                <p className="text-[10px] text-aegreen-700 dark:text-aegreen-400 uppercase tracking-wide">
+                                  {locale === "ar" ? "معرف القطعة" : "Plot ID"}
+                                </p>
+                                <p className="font-bold text-base text-aegreen-900 dark:text-aegreen-200">{plotData.plot.id}</p>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Identifiers */}
+                          {plotData.identifiers && (
+                            <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-3 border border-blue-200/50 dark:border-blue-800/50 space-y-2">
+                              <div className="flex items-center gap-2">
+                                <svg className="w-4 h-4 text-blue-700 dark:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                                </svg>
+                                <h6 className="text-xs font-bold text-blue-900 dark:text-blue-300">
+                                  {locale === "ar" ? "المعرفات" : "Identifiers"}
+                                </h6>
+                              </div>
+                              <div className="grid grid-cols-2 gap-2 text-xs">
+                                {plotData.identifiers.plotId && (
+                                  <div>
+                                    <p className="text-[10px] text-blue-700 dark:text-blue-400 uppercase">Plot ID</p>
+                                    <p className="font-semibold text-blue-900 dark:text-blue-200">{plotData.identifiers.plotId}</p>
+                                  </div>
+                                )}
+                                {plotData.identifiers.areaId && (
+                                  <div>
+                                    <p className="text-[10px] text-blue-700 dark:text-blue-400 uppercase">Area ID</p>
+                                    <p className="font-semibold text-blue-900 dark:text-blue-200">{plotData.identifiers.areaId}</p>
+                                  </div>
+                                )}
+                                {plotData.identifiers.mainPlotId && (
+                                  <div>
+                                    <p className="text-[10px] text-blue-700 dark:text-blue-400 uppercase">Main Plot</p>
+                                    <p className="font-semibold text-blue-900 dark:text-blue-200">{plotData.identifiers.mainPlotId}</p>
+                                  </div>
+                                )}
+                                {plotData.identifiers.premisesPlotId && (
+                                  <div>
+                                    <p className="text-[10px] text-blue-700 dark:text-blue-400 uppercase">Premises</p>
+                                    <p className="font-semibold text-blue-900 dark:text-blue-200">{plotData.identifiers.premisesPlotId}</p>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Hierarchy */}
+                          {plotData.hierarchy && (
+                            <div className="bg-purple-50 dark:bg-purple-950/30 rounded-lg p-3 border border-purple-200/50 dark:border-purple-800/50 space-y-2">
+                              <div className="flex items-center gap-2">
+                                <svg className="w-4 h-4 text-purple-700 dark:text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                                </svg>
+                                <h6 className="text-xs font-bold text-purple-900 dark:text-purple-300">
+                                  {locale === "ar" ? "التسلسل الهرمي" : "Hierarchy"}
+                                </h6>
+                              </div>
+                              
+                              {/* Region */}
+                              {plotData.hierarchy.region && (
+                                <div className="border-s-2 border-purple-300 dark:border-purple-700 ps-2">
+                                  <p className="text-[10px] text-purple-700 dark:text-purple-400 uppercase font-semibold">
+                                    {locale === "ar" ? "المنطقة" : "Region"}
+                                  </p>
+                                  <p className="text-xs font-semibold text-purple-900 dark:text-purple-200">
+                                    {locale === "ar" ? plotData.hierarchy.region.titles.ar || plotData.hierarchy.region.titles.en : plotData.hierarchy.region.titles.en || plotData.hierarchy.region.titles.ar}
+                                  </p>
+                                  {plotData.hierarchy.region.id && (
+                                    <p className="text-[10px] text-purple-600 dark:text-purple-400">ID: {plotData.hierarchy.region.id}</p>
+                                  )}
+                                </div>
+                              )}
+
+                              {/* Zone */}
+                              {plotData.hierarchy.zone && (
+                                <div className="border-s-2 border-purple-300 dark:border-purple-700 ps-2">
+                                  <p className="text-[10px] text-purple-700 dark:text-purple-400 uppercase font-semibold">
+                                    {locale === "ar" ? "النطاق" : "Zone"}
+                                  </p>
+                                  <p className="text-xs font-semibold text-purple-900 dark:text-purple-200">
+                                    {locale === "ar" ? plotData.hierarchy.zone.titles.ar || plotData.hierarchy.zone.titles.en : plotData.hierarchy.zone.titles.en || plotData.hierarchy.zone.titles.ar}
+                                  </p>
+                                  {plotData.hierarchy.zone.id && (
+                                    <p className="text-[10px] text-purple-600 dark:text-purple-400">ID: {plotData.hierarchy.zone.id}</p>
+                                  )}
+                                </div>
+                              )}
+
+                              {/* Area */}
+                              {plotData.hierarchy.area && (
+                                <div className="border-s-2 border-purple-300 dark:border-purple-700 ps-2">
+                                  <p className="text-[10px] text-purple-700 dark:text-purple-400 uppercase font-semibold">
+                                    {locale === "ar" ? "المنطقة السكنية" : "Area"}
+                                  </p>
+                                  <p className="text-xs font-semibold text-purple-900 dark:text-purple-200">
+                                    {locale === "ar" ? plotData.hierarchy.area.titles.ar || plotData.hierarchy.area.titles.en : plotData.hierarchy.area.titles.en || plotData.hierarchy.area.titles.ar}
+                                  </p>
+                                  <div className="flex gap-3 text-[10px] text-purple-600 dark:text-purple-400">
+                                    {plotData.hierarchy.area.id && <span>ID: {plotData.hierarchy.area.id}</span>}
+                                    {plotData.hierarchy.area.manhalCode && <span>Manhal: {plotData.hierarchy.area.manhalCode}</span>}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Location & Coordinates */}
+                          {plotData.location && (
+                            <div className="bg-orange-50 dark:bg-orange-950/30 rounded-lg p-3 border border-orange-200/50 dark:border-orange-800/50 space-y-2">
+                              <div className="flex items-center gap-2">
+                                <svg className="w-4 h-4 text-orange-700 dark:text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                </svg>
+                                <h6 className="text-xs font-bold text-orange-900 dark:text-orange-300">
+                                  {locale === "ar" ? "الموقع والإحداثيات" : "Location & Coordinates"}
+                                </h6>
+                              </div>
+                              
+                              {plotData.location.roadNumber && (
+                                <div>
+                                  <p className="text-[10px] text-orange-700 dark:text-orange-400 uppercase">
+                                    {locale === "ar" ? "رقم الطريق" : "Road Number"}
+                                  </p>
+                                  <p className="text-xs font-semibold text-orange-900 dark:text-orange-200">{plotData.location.roadNumber}</p>
+                                </div>
+                              )}
+                              
+                              {plotData.location.coordinates && (plotData.location.coordinates.latitude || plotData.location.coordinates.longitude) && (
+                                <div className="grid grid-cols-2 gap-2 text-xs">
+                                  {plotData.location.coordinates.latitude && (
+                                    <div>
+                                      <p className="text-[10px] text-orange-700 dark:text-orange-400 uppercase">Latitude</p>
+                                      <p className="font-mono font-semibold text-orange-900 dark:text-orange-200 text-[10px]">{plotData.location.coordinates.latitude}</p>
+                                    </div>
+                                  )}
+                                  {plotData.location.coordinates.longitude && (
+                                    <div>
+                                      <p className="text-[10px] text-orange-700 dark:text-orange-400 uppercase">Longitude</p>
+                                      <p className="font-mono font-semibold text-orange-900 dark:text-orange-200 text-[10px]">{plotData.location.coordinates.longitude}</p>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+
+                              {plotData.location.onwani && (
+                                <div className="text-[10px] text-orange-600 dark:text-orange-400 space-y-0.5">
+                                  {plotData.location.onwani.mapMapping && <p>Map: {plotData.location.onwani.mapMapping}</p>}
+                                  {plotData.location.onwani.legacyKey && <p>Legacy: {plotData.location.onwani.legacyKey}</p>}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </>
+                      )}
+
+                      {/* Simple data when no detailed plot response */}
+                      {!hasDetailedData && (
+                        <>
+                          {pendingSelection.plot && (
+                            <div className="flex items-start gap-2 bg-aegreen-50 dark:bg-aegreen-950/30 rounded-lg p-2.5 border border-aegreen-200/50 dark:border-aegreen-800/50">
+                              <svg className="w-4 h-4 text-aegreen-700 dark:text-aegreen-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                              </svg>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-[10px] text-aegreen-700 dark:text-aegreen-400 uppercase tracking-wide font-semibold">
+                                  {locale === "ar" ? "رقم القطعة" : "Plot Number"}
+                                </p>
+                                <p className="text-base font-bold text-aegreen-900 dark:text-aegreen-300 break-words">
+                                  {pendingSelection.plot}
+                                </p>
+                              </div>
+                            </div>
+                          )}
+
+                          {pendingSelection.roadId && (
+                            <div className="flex items-start gap-2">
+                              <svg className="w-4 h-4 text-aegreen-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                              </svg>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                                  {locale === "ar" ? "الطريق" : "Road"}
+                                </p>
+                                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 break-words">
+                                  {pendingSelection.roadId}
+                                </p>
+                              </div>
+                            </div>
+                          )}
+
+                          <div className="flex items-start gap-2">
+                            <svg className="w-4 h-4 text-aegreen-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                            </svg>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                                {locale === "ar" ? "البلدية" : "Municipality"}
+                              </p>
+                              <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                                {pendingSelection.municipality === "ADM" 
+                                  ? (locale === "ar" ? "بلدية أبوظبي" : "Abu Dhabi Municipality")
+                                  : pendingSelection.municipality}
+                              </p>
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </div>
+
+                    {/* Confirmation Hint */}
+                    <div className="px-4 py-2.5 bg-amber-50 dark:bg-amber-950/30 border-t border-amber-200/50 dark:border-amber-800/50 sticky bottom-0">
+                      <p className="text-[11px] text-amber-800 dark:text-amber-300 flex items-center gap-1.5 font-medium">
+                        <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        {locale === "ar" 
+                          ? "تأكد من صحة جميع البيانات قبل الاستمرار" 
+                          : "Verify all details are correct before confirming"}
+                      </p>
+                    </div>
                   </div>
                 </div>
+              );
+            })()}
 
-                {/* Action Buttons */}
-                <div className="flex gap-3 sm:flex-col sm:justify-center">
-                  <button
-                    type="button"
-                    onClick={handleCancelMapSelection}
-                    className={cn(
-                      "flex-1 sm:flex-none px-6 py-2.5 rounded-xl font-medium text-sm transition-all duration-200",
-                      "bg-muted hover:bg-muted/80 text-foreground",
-                      "border border-border hover:border-border/80",
-                      "focus:outline-none focus:ring-4 focus:ring-primary/20",
-                      "active:scale-[0.98]"
-                    )}
-                  >
-                    {locale === "ar" ? "إلغاء" : "Cancel"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleConfirmSelection}
-                    className={cn(
-                      "flex-1 sm:flex-none px-6 py-2.5 rounded-xl font-medium text-sm transition-all duration-200",
-                      "bg-aegreen-600 hover:bg-aegreen-700 text-white",
-                      "shadow-lg shadow-aegreen-600/25 hover:shadow-xl hover:shadow-aegreen-600/30",
-                      "focus:outline-none focus:ring-4 focus:ring-aegreen-500/30",
-                      "active:scale-[0.98]",
-                      "flex items-center justify-center gap-2"
-                    )}
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    {locale === "ar" ? "تأكيد الاختيار" : "Confirm Selection"}
-                  </button>
+            {/* Floating Help Tip - Show only when no selection */}
+            {!pendingSelection && (
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 animate-in fade-in duration-500">
+                <div className="bg-gray-900/90 dark:bg-gray-800/90 text-white rounded-full px-4 py-2 text-xs font-medium shadow-lg backdrop-blur-sm flex items-center gap-2">
+                  <svg className="w-3.5 h-3.5 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
+                  </svg>
+                  {locale === "ar" ? "انقر على الخريطة لتحديد موقعك" : "Click on the map to select your location"}
                 </div>
               </div>
-            </DialogFooter>
-          )}
+            )}
+          </div>
+
+          {/* Compact Action Footer - Always Visible */}
+          <div className="px-4 py-3 border-t bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 backdrop-blur-sm shrink-0">
+            <div className="flex items-center justify-between gap-3">
+              {/* Info text when no selection */}
+              {!pendingSelection && (
+                <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  {locale === "ar" ? "حدد موقعك أولاً" : "Select location first"}
+                </p>
+              )}
+              
+              {/* Selection count when selected */}
+              {pendingSelection && (
+                <div className="flex items-center gap-1.5 text-xs font-medium text-aegreen-700 dark:text-aegreen-400">
+                  <div className="w-2 h-2 rounded-full bg-aegreen-600 animate-pulse"></div>
+                  {locale === "ar" ? "جاهز للتأكيد" : "Ready to confirm"}
+                </div>
+              )}
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleCancelMapSelection}
+                  className={cn(
+                    "px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200",
+                    "bg-transparent hover:bg-gray-100 dark:hover:bg-gray-700/50",
+                    "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200",
+                    "border border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500",
+                    "focus:outline-none focus:ring-2 focus:ring-gray-400/30",
+                    "active:scale-95"
+                  )}
+                >
+                  {locale === "ar" ? "إلغاء" : "Cancel"}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmSelection}
+                  disabled={!pendingSelection}
+                  className={cn(
+                    "px-6 py-2.5 rounded-lg font-bold text-sm transition-all duration-200",
+                    "flex items-center justify-center gap-2 min-w-[140px]",
+                    pendingSelection
+                      ? "bg-gradient-to-r from-aegreen-600 to-aegreen-700 hover:from-aegreen-700 hover:to-aegreen-800 text-white shadow-lg shadow-aegreen-600/40 hover:shadow-xl hover:shadow-aegreen-600/50 scale-105 hover:scale-110"
+                      : "bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed opacity-60",
+                    "focus:outline-none focus:ring-4 focus:ring-aegreen-500/40",
+                    "active:scale-100",
+                    "disabled:active:scale-100 disabled:hover:scale-100",
+                    "relative overflow-hidden"
+                  )}
+                >
+                  {pendingSelection && (
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer"></div>
+                  )}
+                  <svg className={cn("w-5 h-5", pendingSelection && "animate-bounce")} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span className="relative">
+                    {locale === "ar" ? "تأكيد الاختيار" : "Confirm Selection"}
+                  </span>
+                </button>
+              </div>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </Wrapper>
