@@ -1,5 +1,8 @@
 generator client {
   provider = "prisma-client-js"
+  // Generate a separate client so it doesn't conflict with the default @prisma/client
+  // This allows importing via: import { PrismaClient } from "@prisma/client-parent-portal";
+  output   = "../../node_modules/@prisma/client-parent-portal"
 }
 
 datasource db {
@@ -7,14 +10,17 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model StudentUpdateInfoRequest {
-  studentPersonId            Int      @id
-  parentPersonId             Int
-  isInfoUpdateRequested      Boolean  @default(false)
-  infoUpdateRequestStatus    String?  @db.VarChar(20) // APPROVED | RETURNED | REJECTED
-  isConductAgreementSigned   Boolean  @default(false)
-  conductAgreementStatus     String?  @db.VarChar(20) // APPROVED | RETURNED | REJECTED
-  createdAt                  DateTime @default(now())
-  updatedAt                  DateTime @updatedAt
-}
+model UpdateInformationRequests {
+  Id                       Int       @default(autoincrement())
+  studentPersonId          String    @db.VarChar(64)
+  parentPersonId           String?   @db.VarChar(64)
+  isInfoUpdateRequested    Boolean?  @default(false, map: "DEFAULT_UpdateInformationRequests_isInfoUpdateRequested")
+  infoUpdateRequestStatus  String?   @db.VarChar(50)
+  isConductAgreementSigned Boolean?  @default(false, map: "DEFAULT_UpdateInformationRequests_isConductAgreementSigned")
+  conductAgreementStatus   String?   @db.NVarChar(50)
+  studentEmirateId         String?   @db.VarChar(64)
+  createAt                 DateTime? @db.DateTime
+  updateAt                 DateTime? @db.DateTime
 
+  @@id([Id, studentPersonId], map: "PK_UpdateInformationRequests")
+}
