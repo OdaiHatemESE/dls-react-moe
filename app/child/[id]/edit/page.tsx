@@ -254,7 +254,7 @@ export default function EditChildPage() {
 
         {/* Data Confirmation Alert */}
         {needsUpdate === null && (
-          <Card className="border-2 border-blue-500 shadow-lg bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 mb-6 sticky top-20 z-20">
+          <Card className="border-2 border-blue-500 shadow-lg bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 mb-6">
             <CardContent className="p-6 md:p-8">
               <div className="flex items-start gap-4 mb-6">
                 <div className="flex-shrink-0">
@@ -331,7 +331,7 @@ export default function EditChildPage() {
 
         {/* Success Confirmation Message */}
         {needsUpdate === false && (
-          <Card className="border-2 border-green-500 shadow-lg bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 mb-6 sticky top-20 z-20">
+          <Card className="border-2 border-green-500 shadow-lg bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 mb-6">
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
                 <div className="flex-shrink-0">
@@ -366,7 +366,7 @@ export default function EditChildPage() {
 
         {/* Update Instructions */}
         {needsUpdate === true && (
-          <Card className="border-2 border-orange-500 shadow-lg bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-950 dark:to-orange-900 mb-6 sticky top-20 z-20">
+          <Card className="border-2 border-orange-500 shadow-lg bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-950 dark:to-orange-900 mb-6">
             <CardContent className="p-6">
               <div className="flex items-start gap-4">
                 <div className="flex-shrink-0">
