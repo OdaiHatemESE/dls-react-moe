@@ -101,6 +101,46 @@ function pickRole(fullPersonArr: unknown[]): string | undefined {
       : String(roleCandidate); 
 } 
 
+// Try to locate a person's national identifier (EID) from a tolerant vendor payload
+function pickIdentifier(fullPersonArr: unknown[]): string | undefined {
+  const node = isRecord(fullPersonArr?.[0]) ? (fullPersonArr[0] as Record<string, unknown>) : undefined;
+  let p: Record<string, unknown> | undefined;
+  const persons = getProp(node, "persons");
+  if (Array.isArray(persons)) {
+    p = isRecord(persons[0]) ? (persons[0] as Record<string, unknown>) : undefined;
+  } else if (isRecord(persons)) {
+    p = persons as Record<string, unknown>;
+  } else {
+    p = node;
+  }
+
+  const direct = getProp(p, "identifier");
+  if (typeof direct === "string" && direct.trim().length > 0) return direct.trim();
+
+  const meta = isRecord(p) ? (getProp(p, "metadata") as Record<string, unknown> | undefined) : undefined;
+  const metaId = isRecord(meta) ? getProp(meta, "identifier") : undefined;
+  if (typeof metaId === "string" && metaId.trim().length > 0) return metaId.trim();
+
+  return undefined;
+}
+
+// Try to locate a student's sourcedId from a tolerant vendor payload
+function pickSourcedId(fullPersonArr: unknown[]): string | undefined {
+  const node = isRecord(fullPersonArr?.[0]) ? (fullPersonArr[0] as Record<string, unknown>) : undefined;
+  let p: Record<string, unknown> | undefined;
+  const persons = getProp(node, "persons");
+  if (Array.isArray(persons)) {
+    p = isRecord(persons[0]) ? (persons[0] as Record<string, unknown>) : undefined;
+  } else if (isRecord(persons)) {
+    p = persons as Record<string, unknown>;
+  } else {
+    p = node;
+  }
+
+  const sid = getProp(p, "sourcedId");
+  return typeof sid === "string" && sid.trim().length > 0 ? sid.trim() : undefined;
+}
+
 // ──────────────────────────────────────────────────────────────────────────────
 // Route handler
 // ──────────────────────────────────────────────────────────────────────────────
@@ -117,7 +157,6 @@ export async function GET(req: Request) {
   try { 
     let person: { sourcedId: string }; 
     let personIdentifier: string; 
-    let identifierType: string; 
 
     if (typeof sourcedId === "string" && sourcedId) { 
       if (!eid) { 
@@ -168,7 +207,7 @@ export async function GET(req: Request) {
 
       person = { sourcedId }; 
       personIdentifier = sourcedId; 
-      identifierType = "sourcedId"; 
+      
 
   // [NEW-Cache] call cached person fetch with nocache
   const parentOrStudentFullWrap = await getFullPersonById(personIdentifier, true, noCache);         // [NEW-Cache]
@@ -178,6 +217,28 @@ export async function GET(req: Request) {
       if (!role.includes("student")) { 
         return NextResponse.json({ error: "Not a student record" }, { status: 400 }); 
       } 
+ 
+      // Create/update a parent-driven "update information" request for this student
+      let updateReqMeta: unknown = null;
+      try {
+        const origin = new URL(req.url).origin;
+        const studentEmirateId = pickIdentifier(parentOrStudentFull) || null;
+        const resp = await fetch(`${origin}/api/parent/update-information-requests`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          cache: "no-store",
+          body: JSON.stringify({
+            studentPersonId: person.sourcedId,
+            parentPersonId: foundParent.sourcedId,
+            studentEmirateId,
+          }),
+        });
+        updateReqMeta = await resp.json().catch(() => ({ ok: false, error: "Invalid JSON from update-information-requests" }));
+        console.log("Update information request response:", updateReqMeta);
+      } catch (e) {
+        updateReqMeta = { ok: false, error: e instanceof Error ? e.message : String(e) };
+         console.log("Update information request response:", updateReqMeta);
+      }
 
       return NextResponse.json({ 
         meta: { 
@@ -191,6 +252,7 @@ export async function GET(req: Request) {
               .filter((x): x is string => typeof x === "string")
               .sort((a, b) => Date.parse(b) - Date.parse(a))[0] ?? null,
           },
+          updateInformationRequest: updateReqMeta,
         }, 
         parent: parentOrStudentFull, 
         children: [], 
@@ -202,14 +264,37 @@ export async function GET(req: Request) {
       } 
       person = { sourcedId: foundPerson.sourcedId }; 
       personIdentifier = eid; 
-      identifierType = "eid"; 
+      
 
   // [NEW-Cache] cached parent record (with nocache)
-  const parentOrStudentFullWrap = await getFullPersonById(personIdentifier, false, noCache);        // [NEW-Cache]
+  const parentOrStudentFullWrap = await getFullPersonById(personIdentifier, false, noCache);
+  console.log(parentOrStudentFullWrap.data);       // [NEW-Cache]
   const parentOrStudentFull = parentOrStudentFullWrap.data;
       const role = pickRole(parentOrStudentFull)?.toString().toLowerCase() || ""; 
 
       if (role.includes("student")) { 
+        // If the logged-in identity itself is a student, optionally create/update a self-driven request
+        let updateReqMeta: unknown = null;
+        try {
+          const origin = new URL(req.url).origin;
+          const studentEmirateId = pickIdentifier(parentOrStudentFull) || null;
+          const resp = await fetch(`${origin}/api/parent/update-information-requests`, {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            cache: "no-store",
+            body: JSON.stringify({
+              studentPersonId: person.sourcedId,
+              parentPersonId: null,
+              studentEmirateId,
+            }),
+          });
+          updateReqMeta = await resp.json().catch(() => ({ ok: false, error: "Invalid JSON from update-information-requests" }));
+          console.debug(updateReqMeta)
+        } catch (e) {
+          updateReqMeta = { ok: false, error: e instanceof Error ? e.message : String(e) };
+            console.debug(updateReqMeta)
+        }
+
         return NextResponse.json({ 
           meta: { 
             eid: personIdentifier, 
@@ -220,6 +305,7 @@ export async function GET(req: Request) {
               source: parentOrStudentFullWrap.source,
               lastUpdated: parentOrStudentFullWrap.fetchedAt,
             },
+            updateInformationRequest: updateReqMeta,
           }, 
           parent: parentOrStudentFull, 
           children: [], 
@@ -279,12 +365,47 @@ export async function GET(req: Request) {
           childrenFetchedAt = new Date().toISOString();
           childrenSource = "upstream";
           await cacheSetJSON<Wrapped<unknown[]>>(childrenKey, { data: childrenFull, fetchedAt: childrenFetchedAt }, { ttlSeconds: TTL.CHILDREN });
-        } catch (e) {
+        } catch {
           // On failure, do not hard-fail the entire endpoint. Return empty children with a cache hint.
           childrenFull = [];
           childrenFetchedAt = null;
           childrenSource = "upstream";
         }
+      }
+
+      // After we have the student IDs (and optionally their full payloads), create/update update-information-requests rows
+      try {
+        const origin = new URL(req.url).origin;
+        // Build a lookup from sourcedId -> emiratesId if available from childrenFull
+        const idToEid: Record<string, string | null> = {};
+        for (const entry of childrenFull) {
+          try {
+            const sid = pickSourcedId([entry]);
+            if (!sid) continue;
+            const eid = pickIdentifier([entry]) || null;
+            idToEid[sid] = eid;
+          } catch {
+            // ignore parse errors for individual entries
+          }
+        }
+
+        await Promise.allSettled(
+          studentIds.map(async (sid) => {
+            const studentEmirateId = idToEid[sid] ?? null;
+            await fetch(`${origin}/api/parent/update-information-requests`, {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              cache: "no-store",
+              body: JSON.stringify({
+                studentPersonId: sid,
+                parentPersonId: person.sourcedId,
+                studentEmirateId,
+              }),
+            }).catch(() => undefined);
+          })
+        );
+      } catch {
+        // Soft-fail: do not block the response if background creation fails
       }
 
       return NextResponse.json({ 
