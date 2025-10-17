@@ -12,9 +12,11 @@
     "prisma:pull": "prisma db pull",
     "prisma:migrate": "prisma migrate dev",
     "prisma:pp:push": "prisma db push --schema=prisma/parent-portal/schema.prisma",
-        "prisma:pp:pull": "prisma db pull --schema=prisma/parent-portal/schema.prisma",
-    "prisma:pp:generate": "prisma generate --schema=prisma/parent-portal/schema.prisma"
-   },
+    "prisma:pp:pull": "prisma db pull --schema=prisma/parent-portal/schema.prisma",
+    "prisma:pp:generate": "prisma generate --schema=prisma/parent-portal/schema.prisma",
+    "prisma:sr:generate": "prisma generate --schema=prisma/student-registration/schema.prisma",
+    "prisma:gen:all": "npm run prisma:pp:generate && npm run prisma:sr:generate"
+  },
   "dependencies": {
     "@aegov/design-system": "^2.2.10",
     "@fontsource/noto-kufi-arabic": "^5.2.9",
