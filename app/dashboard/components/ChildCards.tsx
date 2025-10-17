@@ -10,7 +10,7 @@ import { useI18n } from "@/app/i18n/I18nProvider";
 import { useSession } from "next-auth/react";
 import { Skeleton } from "@/components/ui/skeleton";
 import clsx from "clsx";
-import ChildActions from "./ChildActions";
+import ChildActions, { ChildStatusBadge } from "./ChildActions";
 
 // Helper function to calculate age from birth date
 const calculateAge = (birthDate: string): number => {
@@ -207,6 +207,7 @@ export default function ChildCards() {
                         <Badge className="text-xs px-2 py-1">
                           {child.sourcedId.slice(-6)}
                         </Badge>
+                        <ChildStatusBadge studentPersonId={child.sourcedId} variant="mobile" />
                         {child.status === 'active' && (
                           <div className="flex items-center gap-1">
                             <div className="w-1.5 h-1.5 bg-green-500 rounded-full" />
@@ -416,8 +417,11 @@ export default function ChildCards() {
                           <div className={`${locale === 'ar' ? 'text-sm font-semibold' : 'text-base font-bold'} text-foreground group-hover:text-primary transition-colors`}>
                             {displayName}
                           </div>
-                          <div className={`${locale === 'ar' ? 'text-xs' : 'text-xs'} text-muted-foreground mt-1 font-medium`}>
-                            ID: {child.sourcedId?.slice(-8) || '—'}
+                          <div className="flex items-center gap-2 mt-1">
+                            <Badge className="text-xs px-2 py-1">
+                              {child.sourcedId?.slice(-6) || '—'}
+                            </Badge>
+                            <ChildStatusBadge studentPersonId={child.sourcedId} />
                           </div>
                         </div>
                       </div>
