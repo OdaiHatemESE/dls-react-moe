@@ -159,42 +159,6 @@ export default function EditChildPage() {
 
   const primaryAddress = formData.metadata?.addresses?.[0];
 
-  const getCompletionPercentage = () => {
-    let completed = 0;
-    let total = 0;
-    
-    // Basic Info fields
-    const basicFields = [
-      formData.givenName, formData.familyName, formData.email, formData.phone,
-      formData.metadata?.englishFirstName, formData.metadata?.englishFamilyName
-    ];
-    basicFields.forEach(field => {
-      total++;
-      if (field && field.trim()) completed++;
-    });
-    
-    // Demographics fields
-    const demoFields = [
-      formData.metadata?.gender, formData.metadata?.birthDate,
-      formData.metadata?.nationality
-    ];
-    demoFields.forEach(field => {
-      total++;
-      if (field && field.trim()) completed++;
-    });
-    
-    // Address fields
-    const addressFields = [
-      primaryAddress?.country, primaryAddress?.city, primaryAddress?.addressLine1
-    ];
-    addressFields.forEach(field => {
-      total++;
-      if (field && field.trim()) completed++;
-    });
-    
-    return total > 0 ? Math.round((completed / total) * 100) : 0;
-  };
-
   return (
     <div className={clsx("min-h-screen bg-gradient-to-br from-slate-50/50 via-background to-slate-50/50 dark:from-slate-950/50 dark:via-background dark:to-slate-950/50", locale === 'ar' && 'direction-rtl')}>
       {/* Enhanced Header with Progress */}
@@ -250,16 +214,6 @@ export default function EditChildPage() {
                 </span>
               </div>
             </nav>
-            
-            {/* Completion Badge */}
-            <div className="flex items-center gap-2">
-              <Badge variant="secondary" className="hidden md:flex items-center gap-1.5 px-3 py-1.5">
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span className="text-xs font-semibold">{getCompletionPercentage()}%</span>
-              </Badge>
-            </div>
           </div>
         </div>
       </div>
@@ -300,21 +254,9 @@ export default function EditChildPage() {
                         {locale === 'ar' ? 'نشط' : 'Active'}
                       </Badge>
                     </div>
-                    <p className="text-muted-foreground font-semibold text-sm md:text-base mb-2">
+                    <p className="text-muted-foreground font-semibold text-sm md:text-base">
                       {displayName}
                     </p>
-                    {/* Progress bar */}
-                    <div className="flex items-center gap-3 mt-3">
-                      <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-gradient-to-r from-primary to-primary/80 transition-all duration-500 rounded-full"
-                          style={{ width: `${getCompletionPercentage()}%` }}
-                        />
-                      </div>
-                      <span className="text-xs font-semibold text-muted-foreground min-w-[3rem] text-right">
-                        {getCompletionPercentage()}% {locale === 'ar' ? 'مكتمل' : 'complete'}
-                      </span>
-                    </div>
                   </div>
                 </div>
               </div>
@@ -324,7 +266,7 @@ export default function EditChildPage() {
 
         {/* Enhanced Data Confirmation Alert */}
         {needsUpdate === null && (
-          <Card className="relative border-2 border-blue-500/50 shadow-2xl bg-gradient-to-br from-blue-50/80 via-blue-50/50 to-blue-100/80 dark:from-blue-950/80 dark:via-blue-950/50 dark:to-blue-900/80 backdrop-blur-sm overflow-hidden">
+          <Card className="relative border-2 border-blue-500/50   bg-gradient-to-br from-blue-50/80 via-blue-50/50 to-blue-100/80 dark:from-blue-950/80 dark:via-blue-950/50 dark:to-blue-900/80 backdrop-blur-sm overflow-hidden">
             {/* Animated background effect */}
             <div className="absolute inset-0 bg-gradient-to-r from-blue-400/0 via-blue-400/10 to-blue-400/0 animate-pulse" />
             
@@ -1232,19 +1174,7 @@ export default function EditChildPage() {
           {(needsUpdate === false || (needsUpdate === true && (enabledSections.basicInfo || enabledSections.demographics || enabledSections.address))) && (
             <div className="sticky bottom-0 z-10 bg-gradient-to-t from-background via-background/98 to-background/95 backdrop-blur-xl border-t border-border/80 shadow-2xl -mx-3 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8">
               <div className="max-w-7xl mx-auto py-4 md:py-6">
-                <div className="flex flex-col-reverse sm:flex-row items-center gap-3 sm:gap-4 justify-between">
-                  {/* Progress Info */}
-                  <div className="hidden md:flex items-center gap-3 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                      <span className="font-medium">
-                        {locale === 'ar' 
-                          ? `${getCompletionPercentage()}% من الحقول مكتملة` 
-                          : `${getCompletionPercentage()}% fields complete`}
-                      </span>
-                    </div>
-                  </div>
-                  
+                <div className="flex flex-col-reverse sm:flex-row items-center gap-3 sm:gap-4 justify-end">
                   {/* Action Buttons */}
                   <div className="flex flex-col-reverse sm:flex-row gap-3 w-full sm:w-auto">
                     <Button
