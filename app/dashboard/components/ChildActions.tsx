@@ -113,7 +113,7 @@ export function ChildActions({ studentPersonId, parentPersonId, studentEmirateId
   if (!infoRequested) {
     return (
       <div className={clsx("flex items-center gap-2", className)}>
-        <Btn href={`/child/${studentPersonId}/update-info`}>
+        <Btn href={`/child/${studentPersonId}/edit`}>
           {locale === "ar" ? "تحديث المعلومات" : "Update Information"}
         </Btn>
       </div>
