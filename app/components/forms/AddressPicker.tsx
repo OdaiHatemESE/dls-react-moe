@@ -63,6 +63,21 @@ export type AddressValue = {
   regionId?: number | null;
   zoneId?: number | null;
   plotId?: number | null;
+  longitude?: number | null;
+  latitude?: number | null;
+};
+
+// Normalizes coordinate values returned as strings from the Onwani API
+const toFiniteNumber = (
+  value: string | number | null | undefined
+): number | null => {
+  if (value === null || value === undefined) return null;
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
 };
 
 export type AddressPickerProps = {
@@ -174,6 +189,8 @@ export function AddressPicker(props: AddressPickerProps) {
     regionId: value?.regionId ?? undefined,
     zoneId: value?.zoneId ?? undefined,
     plotId: value?.plotId ?? undefined,
+    longitude: value?.longitude ?? undefined,
+    latitude: value?.latitude ?? undefined,
   }));
 
   // Dialog state for MyLandPicker
@@ -195,8 +212,20 @@ export function AddressPicker(props: AddressPickerProps) {
       regionId: value?.regionId ?? prev.regionId,
       zoneId: value?.zoneId ?? prev.zoneId,
       plotId: value?.plotId ?? prev.plotId,
+      longitude: value?.longitude ?? prev.longitude,
+      latitude: value?.latitude ?? prev.latitude,
     }));
-  }, [value?.emirateId, value?.areaId, value?.streetName, value?.houseNumber, value?.regionId, value?.zoneId, value?.plotId]);
+  }, [
+    value?.emirateId,
+    value?.areaId,
+    value?.streetName,
+    value?.houseNumber,
+    value?.regionId,
+    value?.zoneId,
+    value?.plotId,
+    value?.longitude,
+    value?.latitude,
+  ]);
 
   const emit = React.useCallback(
     (next: Partial<AddressValue>) => {
@@ -348,10 +377,14 @@ export function AddressPicker(props: AddressPickerProps) {
     const plotId = record.identifiers.plotId ?? record.plot.id ?? null;
     const streetName = record.location.roadNumber ?? pendingSelection.roadId;
     const houseNumberSource = pendingSelection.plot?.trim() || record.identifiers.mainPlotId || record.plot.titles.en;
+    const nextLongitude = toFiniteNumber(record.location.coordinates?.longitude);
+    const nextLatitude = toFiniteNumber(record.location.coordinates?.latitude);
 
     const updates: Partial<AddressValue> = {
       emirateId: emirateId ?? local.emirateId,
       areaId: areaId ?? local.areaId,
+      longitude: nextLongitude,
+      latitude: nextLatitude,
     };
 
     if (isAbuDhabiSelected) {
