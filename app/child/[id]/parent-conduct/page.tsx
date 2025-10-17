@@ -16,8 +16,8 @@ export default function ParentConductPage() {
   const [currentStep, setCurrentStep] = React.useState(1);
   // Static data for display
   const formData = {
-    educationAuthority: 'الإدارة العامة للتعليم بمنطقة الرياض',
-    schoolName: 'مدرسة الملك عبدالعزيز الابتدائية',
+    educationAuthority: 'الإدارة العامة للتعليم بمنطقة عجمان',
+    schoolName: 'مدرسة الحكمة  الابتدائية',
     grade: 'الخامس / أ',
     studentName: 'أحمد محمد العلي',
     parentName: 'محمد عبدالله العلي',
@@ -262,7 +262,7 @@ export default function ParentConductPage() {
             ميثاق الشراكة بين المدرسة وولي الأمر
           </CardTitle>
           <p className="text-center text-primary-foreground/80 mt-2 text-sm">
-            وزارة التربية والتعليم - المملكة العربية السعودية
+            وزارة التربية والتعليم - الإمارات العربية المتحدة
           </p>
         </CardHeader>
         <CardContent className="pt-6 text-foreground leading-6">

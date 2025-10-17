@@ -59,7 +59,6 @@ export async function GET(req: Request) {
     console.log("Fetched areas:", rows);
     return NextResponse.json({
       data: rows,
-      odai: "hatem",
       meta: {
         zoneId,
         isAbuDhabi,
