@@ -10,10 +10,10 @@ import { useI18n } from "@/app/i18n/I18nProvider";
 import { useSession } from "next-auth/react";
 import clsx from "clsx";
 import { jsonFetcher } from "@/lib/swr";
-import ChildActions, { ChildStatusBadge } from "./ChildActions";
+import ChildActions from "./ChildActions";
 
 // Avatar with dynamic status indicator based on update information status
-const StatusIndicatorAvatar = ({ studentPersonId, displayName }: { studentPersonId: string; displayName: string }) => {
+const StatusIndicatorAvatar = ({ studentPersonId, displayName, locale }: { studentPersonId: string; displayName: string; locale: string }) => {
   const params = new URLSearchParams({ studentPersonId });
   const { data } = useSWR<{ ok: boolean; data?: { 
     isInfoUpdateRequested?: boolean | null;
@@ -38,6 +38,7 @@ const StatusIndicatorAvatar = ({ studentPersonId, displayName }: { studentPerson
     if (needsUpdate) {
       return {
         bgColor: 'bg-destructive',
+        message: locale === 'ar' ? 'مطلوب تحديث المعلومات' : 'Information Update Required',
         icon: (
           <svg className="w-3.5 h-3.5 text-white animate-pulse" fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M18 10A8 8 0 11.001 10 8 8 0 0118 10zM9 5h2v6H9V5zm0 8h2v2H9v-2z" clipRule="evenodd" />
@@ -48,6 +49,7 @@ const StatusIndicatorAvatar = ({ studentPersonId, displayName }: { studentPerson
     if (inProgress) {
       return {
         bgColor: 'bg-chart-1',
+        message: locale === 'ar' ? 'قيد المراجعة' : 'Under Review',
         icon: (
           <svg className="w-3.5 h-3.5 text-white animate-spin" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -59,6 +61,7 @@ const StatusIndicatorAvatar = ({ studentPersonId, displayName }: { studentPerson
     if (rejected) {
       return {
         bgColor: 'bg-destructive',
+        message: locale === 'ar' ? 'تم الرفض' : 'Rejected',
         icon: (
           <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
@@ -69,6 +72,7 @@ const StatusIndicatorAvatar = ({ studentPersonId, displayName }: { studentPerson
     if (needsConductSign) {
       return {
         bgColor: 'bg-primary',
+        message: locale === 'ar' ? 'يتطلب توقيع اتفاقية السلوك' : 'Conduct Agreement Signature Required',
         icon: (
           <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
@@ -79,6 +83,7 @@ const StatusIndicatorAvatar = ({ studentPersonId, displayName }: { studentPerson
     if (allComplete) {
       return {
         bgColor: 'bg-chart-2',
+        message: locale === 'ar' ? 'مكتمل' : 'Complete',
         icon: (
           <svg className="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
@@ -93,26 +98,39 @@ const StatusIndicatorAvatar = ({ studentPersonId, displayName }: { studentPerson
   const statusConfig = getStatusConfig();
 
   return (
-    <div className="relative flex-shrink-0">
+    <div className="relative flex-shrink-0 group/status">
       <div className="w-20 h-20 bg-gradient-to-br from-primary via-primary/90 to-primary/70 rounded-2xl flex items-center justify-center shadow-xl ring-2 ring-card group-hover:scale-105 transition-transform duration-300">
         <span className="text-2xl font-bold text-primary-foreground">
           {displayName.charAt(0).toUpperCase()}
         </span>
       </div>
       {statusConfig && (
-        <div className={clsx(
-          "absolute -bottom-1 -right-1 w-7 h-7 rounded-full border-3 border-card flex items-center justify-center shadow-lg",
-          statusConfig.bgColor
-        )}>
-          {statusConfig.icon}
-        </div>
+        <>
+          <div className={clsx(
+            "absolute -bottom-1 -right-1 w-7 h-7 rounded-full border-3 border-card flex items-center justify-center shadow-lg",
+            statusConfig.bgColor
+          )}>
+            {statusConfig.icon}
+          </div>
+          {/* Status message tooltip */}
+          <div className={clsx(
+            "absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-lg",
+            "bg-popover text-popover-foreground text-xs font-medium whitespace-nowrap shadow-lg border border-border",
+            "opacity-0 group-hover/status:opacity-100 transition-opacity duration-200 pointer-events-none z-10"
+          )}>
+            {statusConfig.message}
+            <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-px">
+              <div className="border-4 border-transparent border-t-popover" />
+            </div>
+          </div>
+        </>
       )}
     </div>
   );
 };
 
 // Desktop version with smaller size
-const StatusIndicatorAvatarDesktop = ({ studentPersonId, displayName }: { studentPersonId: string; displayName: string }) => {
+const StatusIndicatorAvatarDesktop = ({ studentPersonId, displayName, locale }: { studentPersonId: string; displayName: string; locale: string }) => {
   const params = new URLSearchParams({ studentPersonId });
   const { data } = useSWR<{ ok: boolean; data?: { 
     isInfoUpdateRequested?: boolean | null;
@@ -137,6 +155,7 @@ const StatusIndicatorAvatarDesktop = ({ studentPersonId, displayName }: { studen
     if (needsUpdate) {
       return {
         bgColor: 'bg-destructive',
+        message: locale === 'ar' ? 'مطلوب تحديث المعلومات' : 'Information Update Required',
         icon: (
           <svg className="w-3 h-3 text-white animate-pulse" fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M18 10A8 8 0 11.001 10 8 8 0 0118 10zM9 5h2v6H9V5zm0 8h2v2H9v-2z" clipRule="evenodd" />
@@ -147,6 +166,7 @@ const StatusIndicatorAvatarDesktop = ({ studentPersonId, displayName }: { studen
     if (inProgress) {
       return {
         bgColor: 'bg-chart-1',
+        message: locale === 'ar' ? 'قيد المراجعة' : 'Under Review',
         icon: (
           <svg className="w-3 h-3 text-white animate-spin" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -158,6 +178,7 @@ const StatusIndicatorAvatarDesktop = ({ studentPersonId, displayName }: { studen
     if (rejected) {
       return {
         bgColor: 'bg-destructive',
+        message: locale === 'ar' ? 'تم الرفض' : 'Rejected',
         icon: (
           <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
@@ -168,6 +189,7 @@ const StatusIndicatorAvatarDesktop = ({ studentPersonId, displayName }: { studen
     if (needsConductSign) {
       return {
         bgColor: 'bg-primary',
+        message: locale === 'ar' ? 'يتطلب توقيع اتفاقية السلوك' : 'Conduct Agreement Signature Required',
         icon: (
           <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
@@ -178,6 +200,7 @@ const StatusIndicatorAvatarDesktop = ({ studentPersonId, displayName }: { studen
     if (allComplete) {
       return {
         bgColor: 'bg-chart-2',
+        message: locale === 'ar' ? 'مكتمل' : 'Complete',
         icon: (
           <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
@@ -199,50 +222,120 @@ const StatusIndicatorAvatarDesktop = ({ studentPersonId, displayName }: { studen
         </span>
       </div>
       {statusConfig && (
-        <div className={clsx(
-          "absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-3 border-card flex items-center justify-center shadow-lg",
-          statusConfig.bgColor
-        )}>
-          {statusConfig.icon}
-        </div>
+        <>
+          <div className={clsx(
+            "absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-3 border-card flex items-center justify-center shadow-lg",
+            statusConfig.bgColor
+          )}>
+            {statusConfig.icon}
+          </div>
+          {/* Status message tooltip */}
+          <div className={clsx(
+            "absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-lg",
+            "bg-popover text-popover-foreground text-xs font-medium whitespace-nowrap shadow-lg border border-border",
+            "opacity-0 group-hover/avatar:opacity-100 transition-opacity duration-200 pointer-events-none z-10"
+          )}>
+            {statusConfig.message}
+            <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-px">
+              <div className="border-4 border-transparent border-t-popover" />
+            </div>
+          </div>
+        </>
       )}
     </div>
   );
 };
 
-// Enhanced helper components for clean UI with theme-aware colors - Mobile Optimized
-const InfoItem = ({ label, value, icon, locale }: { label: string; value: string; icon?: React.ReactNode; locale?: string }) => (
-  <div className={clsx(
-    "group/info flex items-center justify-between py-3 px-4 rounded-xl transition-all duration-300",
-    "bg-gradient-to-r from-muted/60 to-muted/40 backdrop-blur-sm border border-border/50",
-    "hover:from-primary/5 hover:to-primary/10 hover:border-primary/20 hover:shadow-md",
-    "touch-manipulation active:scale-[0.98]",
-    locale === 'ar' ? 'flex-row-reverse' : ''
-  )}>
-    <div className={clsx(
-      "flex items-center gap-2.5",
-      locale === 'ar' ? 'flex-row-reverse' : ''
-    )}>
-      {icon && (
-        <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary group-hover/info:bg-primary/20 transition-colors">
-          {icon}
-        </div>
+// Status Message Badge Component - displays clear status text
+const StatusMessageBadge = ({ studentPersonId, locale }: { studentPersonId: string; locale: string }) => {
+  const params = new URLSearchParams({ studentPersonId });
+  const { data } = useSWR<{ ok: boolean; data?: { 
+    isInfoUpdateRequested?: boolean | null;
+    infoUpdateRequestStatus?: number | null;
+    isConductAgreementSigned?: boolean | null;
+  } }>(
+    `/api/parent/update-information-requests?${params.toString()}`,
+    jsonFetcher
+  );
+
+  const row = data?.data;
+  const needsUpdate = !row?.isInfoUpdateRequested;
+  const status = row?.infoUpdateRequestStatus ?? null;
+  const inProgress = status === 1 || status === 2;
+  const approved = status === 3;
+  const rejected = status === 4;
+  const needsConductSign = approved && !row?.isConductAgreementSigned;
+  const allComplete = approved && row?.isConductAgreementSigned;
+
+  // Get status config
+  const getStatusConfig = () => {
+    if (needsUpdate) {
+      return {
+        message: locale === 'ar' ? 'مطلوب تحديث المعلومات' : 'Information Update Required',
+        bgColor: 'bg-destructive/10',
+        textColor: 'text-destructive',
+        borderColor: 'border-destructive/30',
+        icon: '❗'
+      };
+    }
+    if (inProgress) {
+      return {
+        message: locale === 'ar' ? 'قيد المراجعة' : 'Under Review',
+        bgColor: 'bg-chart-1/10',
+        textColor: 'text-chart-1',
+        borderColor: 'border-chart-1/30',
+        icon: '⏳'
+      };
+    }
+    if (rejected) {
+      return {
+        message: locale === 'ar' ? 'تم الرفض' : 'Rejected',
+        bgColor: 'bg-destructive/10',
+        textColor: 'text-destructive',
+        borderColor: 'border-destructive/30',
+        icon: '❌'
+      };
+    }
+    if (needsConductSign) {
+      return {
+        message: locale === 'ar' ? 'يتطلب توقيع اتفاقية السلوك' : 'Conduct Agreement Signature Required',
+        bgColor: 'bg-primary/10',
+        textColor: 'text-primary',
+        borderColor: 'border-primary/30',
+        icon: '✍️'
+      };
+    }
+    if (allComplete) {
+      return {
+        message: locale === 'ar' ? 'مكتمل' : 'Complete',
+        bgColor: 'bg-chart-2/10',
+        textColor: 'text-chart-2',
+        borderColor: 'border-chart-2/30',
+        icon: '✅'
+      };
+    }
+    return null;
+  };
+
+  const statusConfig = getStatusConfig();
+  
+  if (!statusConfig) return null;
+
+  return (
+    <Badge 
+      className={clsx(
+        "inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 border shadow-sm rounded-lg",
+        statusConfig.bgColor,
+        statusConfig.textColor,
+        statusConfig.borderColor,
+        locale === 'ar' && 'font-bold flex-row-reverse'
       )}
-      <span className={clsx(
-        "text-muted-foreground font-medium text-sm group-hover/info:text-foreground transition-colors",
-        locale === 'ar' && 'font-semibold'
-      )}>
-        {label}
-      </span>
-    </div>
-    <span className={clsx(
-      "font-bold text-sm text-foreground",
-      locale === 'ar' && 'text-base'
-    )}>
-      {value}
-    </span>
-  </div>
-);
+    >
+      <span className="text-sm">{statusConfig.icon}</span>
+      <span>{statusConfig.message}</span>
+    </Badge>
+  );
+};
 
 export default function ChildCards() {
   const { t, locale } = useI18n();
@@ -271,12 +364,6 @@ export default function ChildCards() {
               <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/20 to-transparent" />
             </div>
           </div>
-        </div>
-      </td>
-      {/* Gender */}
-      <td className="px-6 py-6">
-        <div className="relative h-7 w-24 rounded-full bg-muted overflow-hidden">
-          <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/20 to-transparent" />
         </div>
       </td>
       {/* Actions */}
@@ -353,17 +440,6 @@ export default function ChildCards() {
           const displayName = locale === 'ar'
             ? [child.givenName, child.middleName, child.familyName].filter(Boolean).join(' ')
             : [child.metadata?.englishFirstName, child.metadata?.englishSecondName, child.metadata?.englishThirdName, child.metadata?.englishFamilyName].filter(Boolean).join(' ');
-          const gender = child.metadata?.gender || '';
-
-          const genderLabel = (() => {
-            const g = gender?.toLowerCase();
-            if (g === 'm' || g === 'male' || g === 'ذكر') {
-              return t.student?.male || (locale === 'ar' ? 'ذكر' : 'Male');
-            } else if (g === 'f' || g === 'female' || g === 'أنثى') {
-              return t.student?.female || (locale === 'ar' ? 'أنثى' : 'Female');
-            }
-            return gender || '—';
-          })();
 
           return (
             <Card 
@@ -382,13 +458,14 @@ export default function ChildCards() {
                 {/* Student Header */}
                 <div className="flex items-center gap-4 mb-5">
                   {/* Avatar with status indicator */}
-                  <StatusIndicatorAvatar studentPersonId={child.sourcedId} displayName={displayName} />
+                  <StatusIndicatorAvatar studentPersonId={child.sourcedId} displayName={displayName} locale={locale} />
 
                   {/* Student Info */}
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-base font-bold text-foreground truncate mb-2 group-hover:text-primary transition-colors">
+                    <h3 className="text-lg font-bold text-foreground truncate mb-3 group-hover:text-primary transition-colors">
                       {displayName}
                     </h3>
+                    {/* ID and Status Badge on same line */}
                     <div className="flex flex-wrap items-center gap-2">
                       <Badge variant="outline" className="text-xs px-2.5 py-1 font-medium bg-muted/50 border-border/70">
                         <svg className={clsx("w-3 h-3", locale === 'ar' ? 'ml-1' : 'mr-1')} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -396,27 +473,13 @@ export default function ChildCards() {
                         </svg>
                         {child.sourcedId.slice(-6)}
                       </Badge>
-                      <ChildStatusBadge studentPersonId={child.sourcedId} variant="mobile" />
+                      <StatusMessageBadge studentPersonId={child.sourcedId} locale={locale} />
                     </div>
                   </div>
                 </div>
 
-                {/* Student Info Section */}
-                <div className="space-y-3 mb-5">
-                  <InfoItem
-                    label={t.student?.gender || (locale === 'ar' ? 'الجنس' : 'Gender')}
-                    value={genderLabel}
-                    icon={
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                      </svg>
-                    }
-                    locale={locale}
-                  />
-                </div>
-
-                {/* Actions Section */}
-                <div className="pt-4 border-t border-border/50">
+                {/* Actions Section - Simplified */}
+                <div className="mt-4 pt-4 border-t border-border/50">
                   <ChildActions studentPersonId={child.sourcedId} className="w-full" />
                 </div>
               </div>
@@ -449,20 +512,6 @@ export default function ChildCards() {
                       </svg>
                     </div>
                     <span>{locale === 'ar' ? 'الطالب' : 'Student'}</span>
-                  </div>
-                </th>
-                <th className={clsx(
-                  "px-8 py-5 text-left uppercase tracking-wide",
-                  locale === 'ar' ? 'text-right' : '',
-                  "text-sm font-bold text-foreground"
-                )}>
-                  <div className={clsx("flex items-center gap-3", locale === 'ar' && 'flex-row-reverse')}>
-                    <div className="p-2 bg-chart-2/20 rounded-xl shadow-sm">
-                      <svg className="w-5 h-5 text-chart-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1z" />
-                      </svg>
-                    </div>
-                    <span>{t.student?.gender || (locale === 'ar' ? 'الجنس' : 'Gender')}</span>
                   </div>
                 </th>
                 <th className={clsx(
@@ -522,18 +571,6 @@ export default function ChildCards() {
                 const displayName = locale === 'ar'
                   ? [child.givenName, child.middleName, child.familyName].filter(Boolean).join(' ')
                   : [child.metadata?.englishFirstName, child.metadata?.englishSecondName, child.metadata?.englishThirdName, child.metadata?.englishFamilyName].filter(Boolean).join(' ');
-                const gender = child.metadata?.gender || '';
-
-                const genderLabel = (() => {
-                  const g = gender?.toLowerCase();
-                  if (g === 'm' || g === 'male' || g === 'ذكر') {
-                    return t.student?.male || (locale === 'ar' ? 'ذكر' : 'Male');
-                  } else if (g === 'f' || g === 'female' || g === 'أنثى') {
-                    return t.student?.female || (locale === 'ar' ? 'أنثى' : 'Female');
-                  } else {
-                    return gender || "—";
-                  }
-                })();
 
                 return (
                   <tr 
@@ -543,45 +580,29 @@ export default function ChildCards() {
                     {/* Enhanced Student Name & Avatar */}
                     <td className="px-8 py-6">
                       <div className={clsx("flex items-center gap-5", locale === 'ar' && 'flex-row-reverse')}>
-                        <StatusIndicatorAvatarDesktop studentPersonId={child.sourcedId} displayName={displayName} />
-                        <div>
+                        <StatusIndicatorAvatarDesktop studentPersonId={child.sourcedId} displayName={displayName} locale={locale} />
+                        <div className="flex-1 min-w-0">
                           <div className={clsx(
-                            "font-bold text-foreground group-hover:text-primary transition-colors mb-2",
-                            locale === 'ar' ? 'text-base' : 'text-lg'
+                            "font-bold text-foreground group-hover:text-primary transition-colors mb-3",
+                            locale === 'ar' ? 'text-lg' : 'text-xl'
                           )}>
                             {displayName}
                           </div>
-                          <div className="flex items-center gap-2.5">
+                          {/* ID and Status Badge on same line */}
+                          <div className="flex flex-wrap items-center gap-2.5">
                             <Badge variant="outline" className="text-xs px-2.5 py-1 font-medium bg-muted/50 border-border/70">
                               <svg className={clsx("w-3 h-3", locale === 'ar' ? 'ml-1' : 'mr-1')} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
                               </svg>
                               {child.sourcedId?.slice(-6) || '—'}
                             </Badge>
-                            <ChildStatusBadge studentPersonId={child.sourcedId} />
+                            <StatusMessageBadge studentPersonId={child.sourcedId} locale={locale} />
                           </div>
                         </div>
                       </div>
                     </td>
 
-                    {/* Enhanced Gender Badge */}
-                    <td className="px-8 py-6">
-                      <Badge 
-                        className={clsx(
-                          "text-sm font-semibold px-4 py-2 transition-all duration-200 shadow-sm hover:shadow-md",
-                          genderLabel.toLowerCase().includes('male') || genderLabel.includes('ذكر')
-                            ? 'bg-primary/15 border-primary/30 text-primary hover:bg-primary/25' 
-                            : 'bg-secondary/15 border-secondary/30 text-secondary-foreground hover:bg-secondary/25'
-                        )}
-                      >
-                        <svg className={clsx("w-3.5 h-3.5", locale === 'ar' ? 'ml-1.5' : 'mr-1.5')} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                        </svg>
-                        {genderLabel}
-                      </Badge>
-                    </td>
-
-                    {/* Enhanced Actions with Status */}
+                    {/* Enhanced Actions */}
                     <td className="px-8 py-6">
                       <div className="flex items-center justify-center">
                         <ChildActions studentPersonId={child.sourcedId} compact />
