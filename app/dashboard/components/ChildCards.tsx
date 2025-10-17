@@ -12,48 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import clsx from "clsx";
 import ChildActions, { ChildStatusBadge } from "./ChildActions";
 
-// Helper function to calculate age from birth date
-const calculateAge = (birthDate: string): number => {
-  if (!birthDate) return 0;
-
-  try {
-    const today = new Date();
-    const birth = new Date(birthDate);
-
-    // Check if birth date is valid
-    if (isNaN(birth.getTime()) || birth > today) {
-      return 0;
-    }
-
-    let age = today.getFullYear() - birth.getFullYear();
-    const monthDiff = today.getMonth() - birth.getMonth();
-
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-      age--;
-    }
-
-    // Return 0 for negative ages (shouldn't happen with valid data)
-    return Math.max(0, age);
-  } catch {
-    return 0;
-  }
-};
-
-
-// Helper function to format date based on locale
-const formatDate = (dateString: string, locale: string): string => {
-  if (!dateString) return "";
-  try {
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat(locale === 'ar' ? 'ar-AE' : 'en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    }).format(date);
-  } catch {
-    return dateString;
-  }
-};
+// (Removed age and date helpers as the UI no longer displays them)
 
 // Enhanced helper components for clean UI with theme-aware colors - Mobile Optimized
 const InfoItem = ({ label, value, icon, locale }: { label: string; value: string; icon?: React.ReactNode; locale?: string }) => (
@@ -82,6 +41,7 @@ export default function ChildCards() {
 
   const SkeletonTableRow = () => (
     <tr className="animate-pulse border-b border-border hover:bg-muted/50">
+      {/* Student */}
       <td className="px-6 py-6">
         <div className="flex items-center gap-4">
           <Skeleton className="w-14 h-14 rounded-xl bg-gradient-to-br from-muted to-muted/70" />
@@ -91,29 +51,13 @@ export default function ChildCards() {
           </div>
         </div>
       </td>
+      {/* Gender */}
       <td className="px-6 py-6">
         <Skeleton className="h-6 w-20 rounded-full bg-muted" />
       </td>
+      {/* Actions */}
       <td className="px-6 py-6">
-        <div className="flex items-center gap-3">
-          <Skeleton className="w-10 h-10 rounded-xl bg-muted" />
-          <Skeleton className="h-4 w-16 bg-muted" />
-        </div>
-      </td>
-      <td className="px-6 py-6">
-        <div className="flex items-center gap-3">
-          <Skeleton className="w-8 h-8 rounded-lg bg-muted" />
-          <Skeleton className="h-4 w-24 bg-muted" />
-        </div>
-      </td>
-      <td className="px-6 py-6">
-        <div className="flex items-center gap-3">
-          <Skeleton className="w-8 h-8 rounded-lg bg-muted" />
-          <Skeleton className="h-4 w-20 bg-muted" />
-        </div>
-      </td>
-      <td className="px-6 py-6">
-        <Skeleton className="h-12 w-32 rounded-xl bg-gradient-to-r from-muted to-muted/70" />
+        <Skeleton className="h-8 w-28 rounded-xl bg-gradient-to-r from-muted to-muted/70" />
       </td>
     </tr>
   );
@@ -167,13 +111,7 @@ export default function ChildCards() {
           const displayName = locale === 'ar'
             ? [child.givenName, child.middleName, child.familyName].filter(Boolean).join(' ')
             : [child.metadata?.englishFirstName, child.metadata?.englishSecondName, child.metadata?.englishThirdName, child.metadata?.englishFamilyName].filter(Boolean).join(' ');
-          const displayNationality = locale === 'ar'
-            ? child.metadata?.nationalityArabic || child.metadata?.nationality || ''
-            : child.metadata?.nationality || '';
           const gender = child.metadata?.gender || '';
-          const birthDate = child.metadata?.birthDate || '';
-          const age = calculateAge(birthDate);
-          const formattedBirthDate = formatDate(birthDate, locale);
 
           const genderLabel = (() => {
             const g = gender?.toLowerCase();
@@ -220,34 +158,12 @@ export default function ChildCards() {
                     </div>
                   </div>
 
-                  {/* Student Info Grid */}
+                  {/* Student Info (Gender only) */}
                   <div className="space-y-3 mb-4">
-                    <div className="grid grid-cols-2 gap-3">
-                      <InfoItem
-                        label={t.student?.age || (locale === 'ar' ? 'العمر' : 'Age')}
-                        value={age > 0 ? `${age} ${t.student?.years || (locale === 'ar' ? 'سنة' : 'yrs')}` : '—'}
-                        icon={<svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>}
-                        locale={locale}
-                      />
-                      <InfoItem
-                        label={t.student?.gender || (locale === 'ar' ? 'الجنس' : 'Gender')}
-                        value={genderLabel}
-                        icon={<svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1z" /></svg>}
-                        locale={locale}
-                      />
-                    </div>
-                    
                     <InfoItem
-                      label={t.student?.nationality || (locale === 'ar' ? 'الجنسية' : 'Nationality')}
-                      value={displayNationality || '—'}
-                      icon={<svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
-                      locale={locale}
-                    />
-                    
-                    <InfoItem
-                      label={t.student?.birthDate || (locale === 'ar' ? 'تاريخ الميلاد' : 'Birth Date')}
-                      value={formattedBirthDate || '—'}
-                      icon={<svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>}
+                      label={t.student?.gender || (locale === 'ar' ? 'الجنس' : 'Gender')}
+                      value={genderLabel}
+                      icon={<svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1z" /></svg>}
                       locale={locale}
                     />
                   </div>
@@ -293,36 +209,6 @@ export default function ChildCards() {
                     <span className="font-bold">{t.student?.gender || (locale === 'ar' ? 'الجنس' : 'Gender')}</span>
                   </div>
                 </th>
-                <th className={`px-6 py-6 text-left ${locale === 'ar' ? 'text-right text-sm font-semibold' : 'text-sm font-bold'} text-foreground uppercase tracking-wider`}>
-                  <div className="flex items-center gap-3">
-                    <div className="p-1.5 bg-chart-3/20 rounded-lg">
-                      <svg className="w-4 h-4 text-chart-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                    </div>
-                    <span className="font-bold">{t.student?.age || (locale === 'ar' ? 'العمر' : 'Age')}</span>
-                  </div>
-                </th>
-                <th className={`px-6 py-6 text-left ${locale === 'ar' ? 'text-right text-sm font-semibold' : 'text-sm font-bold'} text-foreground uppercase tracking-wider`}>
-                  <div className="flex items-center gap-3">
-                    <div className="p-1.5 bg-chart-4/20 rounded-lg">
-                      <svg className="w-4 h-4 text-chart-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
-                    <span className="font-bold">{t.student?.nationality || (locale === 'ar' ? 'الجنسية' : 'Nationality')}</span>
-                  </div>
-                </th>
-                <th className={`px-6 py-6 text-left ${locale === 'ar' ? 'text-right text-sm font-semibold' : 'text-sm font-bold'} text-foreground uppercase tracking-wider`}>
-                  <div className="flex items-center gap-3">
-                    <div className="p-1.5 bg-chart-5/20 rounded-lg">
-                      <svg className="w-4 h-4 text-chart-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                    </div>
-                    <span className="font-bold">{t.student?.birthDate || (locale === 'ar' ? 'تاريخ الميلاد' : 'Birth Date')}</span>
-                  </div>
-                </th>
                 <th className={`px-6 py-6 text-center ${locale === 'ar' ? 'text-sm font-semibold' : 'text-sm font-bold'} text-foreground uppercase tracking-wider`}>
                   <div className="flex items-center justify-center gap-3">
                     <div className="p-1.5 bg-secondary/20 rounded-lg">
@@ -349,7 +235,7 @@ export default function ChildCards() {
               {/* Professional Error State */}
               {error && (
                 <tr>
-                  <td colSpan={6} className="px-6 py-16 text-center">
+                  <td colSpan={3} className="px-6 py-16 text-center">
                     <div className="flex flex-col items-center gap-6">
                       <div className="w-20 h-20 bg-gradient-to-br from-destructive/10 to-destructive/20 rounded-2xl flex items-center justify-center shadow-sm">
                         <svg className="w-10 h-10 text-destructive" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -374,13 +260,7 @@ export default function ChildCards() {
                 const displayName = locale === 'ar'
                   ? [child.givenName, child.middleName, child.familyName].filter(Boolean).join(' ')
                   : [child.metadata?.englishFirstName, child.metadata?.englishSecondName, child.metadata?.englishThirdName, child.metadata?.englishFamilyName].filter(Boolean).join(' ');
-                const displayNationality = locale === 'ar'
-                  ? child.metadata?.nationalityArabic || child.metadata?.nationality || ''
-                  : child.metadata?.nationality || '';
                 const gender = child.metadata?.gender || '';
-                const birthDate = child.metadata?.birthDate || '';
-                const age = calculateAge(birthDate);
-                const formattedBirthDate = formatDate(birthDate, locale);
 
                 const genderLabel = (() => {
                   const g = gender?.toLowerCase();
@@ -441,49 +321,6 @@ export default function ChildCards() {
                       </Badge>
                     </td>
 
-                    {/* Enhanced Age */}
-                    <td className="px-6 py-6">
-                      {age > 0 ? (
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-gradient-to-br from-chart-3/20 to-chart-3/30 rounded-xl flex items-center justify-center shadow-sm">
-                            <span className="text-base font-bold text-chart-3">{age}</span>
-                          </div>
-                          <span className={`${locale === 'ar' ? 'text-xs' : 'text-xs'} text-muted-foreground font-medium`}>
-                            {t.student?.years || (locale === 'ar' ? 'سنة' : 'years')}
-                          </span>
-                        </div>
-                      ) : (
-                        <span className="text-muted-foreground font-medium">—</span>
-                      )}
-                    </td>
-
-                    {/* Enhanced Nationality */}
-                    <td className="px-6 py-6">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-chart-4/20 rounded-lg">
-                          <svg className="w-4 h-4 text-chart-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                        </div>
-                        <span className={`${locale === 'ar' ? 'text-xs' : 'text-xs'} text-foreground font-medium truncate max-w-32`}>
-                          {displayNationality || '—'}
-                        </span>
-                      </div>
-                    </td>
-
-                    {/* Enhanced Birth Date */}
-                    <td className="px-6 py-6">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-chart-5/20 rounded-lg">
-                          <svg className="w-4 h-4 text-chart-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                          </svg>
-                        </div>
-                        <span className={`${locale === 'ar' ? 'text-xs' : 'text-xs'} text-foreground font-medium`}>
-                          {formattedBirthDate || '—'}
-                        </span>
-                      </div>
-                    </td>
 
                     {/* Enhanced Actions */}
                     <td className="px-6 py-6">
