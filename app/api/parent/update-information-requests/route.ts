@@ -31,7 +31,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: true, alreadyExists: true, data: existing }, { status: 200 });
     }
 
-    // Create a new row
+    // Create a new row (return only safe fields to avoid potential type mapping issues)
     const now = new Date();
     const created = await prismaParent.updateInformationRequests.create({
       data: {
@@ -41,6 +41,18 @@ export async function POST(req: Request) {
         // Defaults for flags and statuses are handled by the DB defaults/schema
         createAt: now,
         updateAt: now,
+      },
+      select: {
+        Id: true,
+        studentPersonId: true,
+        parentPersonId: true,
+        isInfoUpdateRequested: true,
+        infoUpdateRequestStatus: true,
+        isConductAgreementSigned: true,
+        conductAgreementStatus: true,
+        studentEmirateId: true,
+        createAt: true,
+        updateAt: true,
       },
     });
 
@@ -68,27 +80,70 @@ export async function GET(req: Request) {
       return NextResponse.json({ ok: false, error: "studentPersonId is required" }, { status: 400 });
     }
 
-    // Upsert by unique studentPersonId to ensure a row always exists
-    const now = new Date();
-    const row = await prismaParent.updateInformationRequests.upsert({
+    // Read-only behavior to avoid type conversion errors during upsert
+    // Try to find an existing record and only return safe fields
+    const existing = await prismaParent.updateInformationRequests.findFirst({
       where: { studentPersonId },
-      create: {
-        studentPersonId,
-        parentPersonId,
-        studentEmirateId,
-        createAt: now,
-        updateAt: now,
-        // Other fields rely on DB defaults
-      },
-      update: {
-        updateAt: now,
-        // Optionally link parent if not set yet
-        ...(parentPersonId ? { parentPersonId } : {}),
-        ...(studentEmirateId ? { studentEmirateId } : {}),
+      select: {
+        Id: true,
+        studentPersonId: true,
+        parentPersonId: true,
+        isInfoUpdateRequested: true,
+        infoUpdateRequestStatus: true,
+        isConductAgreementSigned: true,
+        conductAgreementStatus: true,
+        studentEmirateId: true,
+        createAt: true,
+        updateAt: true,
       },
     });
 
-    return NextResponse.json({ ok: true, data: row });
+    // If we found a row and caller passed identifiers, attempt a minimal update without touching status fields
+    if (existing && (parentPersonId || studentEmirateId)) {
+      const now = new Date();
+      const updated = await prismaParent.updateInformationRequests.update({
+        where: { studentPersonId },
+        data: {
+          updateAt: now,
+          ...(parentPersonId ? { parentPersonId } : {}),
+          ...(studentEmirateId ? { studentEmirateId } : {}),
+        },
+        select: {
+          Id: true,
+          studentPersonId: true,
+          parentPersonId: true,
+          isInfoUpdateRequested: true,
+          infoUpdateRequestStatus: true,
+          isConductAgreementSigned: true,
+          conductAgreementStatus: true,
+          studentEmirateId: true,
+          createAt: true,
+          updateAt: true,
+        },
+      });
+      return NextResponse.json({ ok: true, data: updated });
+    }
+
+    if (existing) {
+      return NextResponse.json({ ok: true, data: existing });
+    }
+
+    // No existing row: return a synthesized default payload (do not create here)
+    const now = new Date();
+    const synthetic = {
+      Id: 0,
+      studentPersonId,
+      parentPersonId,
+      isInfoUpdateRequested: false,
+      infoUpdateRequestStatus: null,
+      isConductAgreementSigned: false,
+      conductAgreementStatus: null,
+      studentEmirateId,
+      createAt: now,
+      updateAt: now,
+    } as const;
+
+    return NextResponse.json({ ok: true, data: synthetic });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unknown error";
     return NextResponse.json({ ok: false, error: message }, { status: 500 });
