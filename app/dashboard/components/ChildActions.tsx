@@ -6,6 +6,7 @@ import Link from "next/link";
 import clsx from "clsx";
 import { useI18n } from "@/app/i18n/I18nProvider";
 import { jsonFetcher } from "@/lib/swr";
+import { stat } from "fs";
 
 export type UpdateInfoRow = {
   Id: number;
@@ -72,6 +73,7 @@ export function ChildActions({ studentPersonId, parentPersonId, studentEmirateId
   const infoRequested = !!row.isInfoUpdateRequested;
   const status = row.infoUpdateRequestStatus ?? null; // 1,2=in progress; 3=approved; 4=rejected
   const conductSigned = !!row.isConductAgreementSigned;
+  console.log("ChildActions:", { infoRequested, status, conductSigned });
 
   // Decision matrix from user:
   // - if isInfoUpdateRequested == false -> show "Update Information"
@@ -107,6 +109,7 @@ export function ChildActions({ studentPersonId, parentPersonId, studentEmirateId
 
   // Render based on matrix
   // Case 1: No info requested yet
+   
   if (!infoRequested) {
     return (
       <div className={clsx("flex items-center gap-2", className)}>
@@ -116,7 +119,7 @@ export function ChildActions({ studentPersonId, parentPersonId, studentEmirateId
       </div>
     );
   }
-
+  
   // Case 2: Requested and status is 1 or 2 => in progress, show message only
   if (status === 1 || status === 2) {
     return (

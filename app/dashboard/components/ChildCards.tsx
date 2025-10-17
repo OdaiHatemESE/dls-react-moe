@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import useSWR from "swr";
 import { useChildren } from "@/lib/hooks/useChildren";
 import type { Person } from "@/types";
 import { Card } from "@/components/ui/card";
@@ -8,7 +9,206 @@ import { Badge } from "@/components/ui/badge";
 import { useI18n } from "@/app/i18n/I18nProvider";
 import { useSession } from "next-auth/react";
 import clsx from "clsx";
+import { jsonFetcher } from "@/lib/swr";
 import ChildActions, { ChildStatusBadge } from "./ChildActions";
+
+// Avatar with dynamic status indicator based on update information status
+const StatusIndicatorAvatar = ({ studentPersonId, displayName }: { studentPersonId: string; displayName: string }) => {
+  const params = new URLSearchParams({ studentPersonId });
+  const { data } = useSWR<{ ok: boolean; data?: { 
+    isInfoUpdateRequested?: boolean | null;
+    infoUpdateRequestStatus?: number | null;
+    isConductAgreementSigned?: boolean | null;
+  } }>(
+    `/api/parent/update-information-requests?${params.toString()}`,
+    jsonFetcher
+  );
+
+  const row = data?.data;
+  const needsUpdate = !row?.isInfoUpdateRequested;
+  const status = row?.infoUpdateRequestStatus ?? null;
+  const inProgress = status === 1 || status === 2;
+  const approved = status === 3;
+  const rejected = status === 4;
+  const needsConductSign = approved && !row?.isConductAgreementSigned;
+  const allComplete = approved && row?.isConductAgreementSigned;
+
+  // Determine status indicator color and icon
+  const getStatusConfig = () => {
+    if (needsUpdate) {
+      return {
+        bgColor: 'bg-destructive',
+        icon: (
+          <svg className="w-3.5 h-3.5 text-white animate-pulse" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M18 10A8 8 0 11.001 10 8 8 0 0118 10zM9 5h2v6H9V5zm0 8h2v2H9v-2z" clipRule="evenodd" />
+          </svg>
+        )
+      };
+    }
+    if (inProgress) {
+      return {
+        bgColor: 'bg-chart-1',
+        icon: (
+          <svg className="w-3.5 h-3.5 text-white animate-spin" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+        )
+      };
+    }
+    if (rejected) {
+      return {
+        bgColor: 'bg-destructive',
+        icon: (
+          <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        )
+      };
+    }
+    if (needsConductSign) {
+      return {
+        bgColor: 'bg-primary',
+        icon: (
+          <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+          </svg>
+        )
+      };
+    }
+    if (allComplete) {
+      return {
+        bgColor: 'bg-chart-2',
+        icon: (
+          <svg className="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+          </svg>
+        )
+      };
+    }
+    // Default - no indicator
+    return null;
+  };
+
+  const statusConfig = getStatusConfig();
+
+  return (
+    <div className="relative flex-shrink-0">
+      <div className="w-20 h-20 bg-gradient-to-br from-primary via-primary/90 to-primary/70 rounded-2xl flex items-center justify-center shadow-xl ring-2 ring-card group-hover:scale-105 transition-transform duration-300">
+        <span className="text-2xl font-bold text-primary-foreground">
+          {displayName.charAt(0).toUpperCase()}
+        </span>
+      </div>
+      {statusConfig && (
+        <div className={clsx(
+          "absolute -bottom-1 -right-1 w-7 h-7 rounded-full border-3 border-card flex items-center justify-center shadow-lg",
+          statusConfig.bgColor
+        )}>
+          {statusConfig.icon}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Desktop version with smaller size
+const StatusIndicatorAvatarDesktop = ({ studentPersonId, displayName }: { studentPersonId: string; displayName: string }) => {
+  const params = new URLSearchParams({ studentPersonId });
+  const { data } = useSWR<{ ok: boolean; data?: { 
+    isInfoUpdateRequested?: boolean | null;
+    infoUpdateRequestStatus?: number | null;
+    isConductAgreementSigned?: boolean | null;
+  } }>(
+    `/api/parent/update-information-requests?${params.toString()}`,
+    jsonFetcher
+  );
+
+  const row = data?.data;
+  const needsUpdate = !row?.isInfoUpdateRequested;
+  const status = row?.infoUpdateRequestStatus ?? null;
+  const inProgress = status === 1 || status === 2;
+  const approved = status === 3;
+  const rejected = status === 4;
+  const needsConductSign = approved && !row?.isConductAgreementSigned;
+  const allComplete = approved && row?.isConductAgreementSigned;
+
+  // Determine status indicator color and icon
+  const getStatusConfig = () => {
+    if (needsUpdate) {
+      return {
+        bgColor: 'bg-destructive',
+        icon: (
+          <svg className="w-3 h-3 text-white animate-pulse" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M18 10A8 8 0 11.001 10 8 8 0 0118 10zM9 5h2v6H9V5zm0 8h2v2H9v-2z" clipRule="evenodd" />
+          </svg>
+        )
+      };
+    }
+    if (inProgress) {
+      return {
+        bgColor: 'bg-chart-1',
+        icon: (
+          <svg className="w-3 h-3 text-white animate-spin" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+        )
+      };
+    }
+    if (rejected) {
+      return {
+        bgColor: 'bg-destructive',
+        icon: (
+          <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        )
+      };
+    }
+    if (needsConductSign) {
+      return {
+        bgColor: 'bg-primary',
+        icon: (
+          <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+          </svg>
+        )
+      };
+    }
+    if (allComplete) {
+      return {
+        bgColor: 'bg-chart-2',
+        icon: (
+          <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+          </svg>
+        )
+      };
+    }
+    // Default - no indicator
+    return null;
+  };
+
+  const statusConfig = getStatusConfig();
+
+  return (
+    <div className="relative flex-shrink-0 group/avatar">
+      <div className="w-16 h-16 bg-gradient-to-br from-primary via-primary/90 to-primary/70 rounded-2xl flex items-center justify-center shadow-lg group-hover/avatar:shadow-2xl transition-all duration-300 group-hover:scale-110 ring-2 ring-card">
+        <span className="text-2xl font-bold text-primary-foreground">
+          {displayName.charAt(0).toUpperCase()}
+        </span>
+      </div>
+      {statusConfig && (
+        <div className={clsx(
+          "absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-3 border-card flex items-center justify-center shadow-lg",
+          statusConfig.bgColor
+        )}>
+          {statusConfig.icon}
+        </div>
+      )}
+    </div>
+  );
+};
 
 // Enhanced helper components for clean UI with theme-aware colors - Mobile Optimized
 const InfoItem = ({ label, value, icon, locale }: { label: string; value: string; icon?: React.ReactNode; locale?: string }) => (
@@ -182,21 +382,7 @@ export default function ChildCards() {
                 {/* Student Header */}
                 <div className="flex items-center gap-4 mb-5">
                   {/* Avatar with status indicator */}
-                  <div className="relative flex-shrink-0">
-                    <div className="w-20 h-20 bg-gradient-to-br from-primary via-primary/90 to-primary/70 rounded-2xl flex items-center justify-center shadow-xl ring-2 ring-card group-hover:scale-105 transition-transform duration-300">
-                      <span className="text-2xl font-bold text-primary-foreground">
-                        {displayName.charAt(0).toUpperCase()}
-                      </span>
-                    </div>
-                    {/* Active status indicator */}
-                    {child.status === 'active' && (
-                      <div className="absolute -bottom-1 -right-1 w-7 h-7 bg-chart-2 rounded-full border-3 border-card flex items-center justify-center shadow-lg">
-                        <svg className="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                      </div>
-                    )}
-                  </div>
+                  <StatusIndicatorAvatar studentPersonId={child.sourcedId} displayName={displayName} />
 
                   {/* Student Info */}
                   <div className="flex-1 min-w-0">
@@ -357,21 +543,7 @@ export default function ChildCards() {
                     {/* Enhanced Student Name & Avatar */}
                     <td className="px-8 py-6">
                       <div className={clsx("flex items-center gap-5", locale === 'ar' && 'flex-row-reverse')}>
-                        <div className="relative flex-shrink-0 group/avatar">
-                          <div className="w-16 h-16 bg-gradient-to-br from-primary via-primary/90 to-primary/70 rounded-2xl flex items-center justify-center shadow-lg group-hover/avatar:shadow-2xl transition-all duration-300 group-hover:scale-110 ring-2 ring-card">
-                            <span className="text-2xl font-bold text-primary-foreground">
-                              {displayName.charAt(0).toUpperCase()}
-                            </span>
-                          </div>
-                          {/* Active status indicator */}
-                          {child.status === 'active' && (
-                            <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-chart-2 rounded-full border-3 border-card flex items-center justify-center shadow-lg">
-                              <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                              </svg>
-                            </div>
-                          )}
-                        </div>
+                        <StatusIndicatorAvatarDesktop studentPersonId={child.sourcedId} displayName={displayName} />
                         <div>
                           <div className={clsx(
                             "font-bold text-foreground group-hover:text-primary transition-colors mb-2",
