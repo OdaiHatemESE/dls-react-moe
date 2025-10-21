@@ -9,6 +9,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { Separator } from '@/components/ui/separator';
 import { jsonFetcher } from '@/lib/swr';
 import { useI18n } from '@/app/i18n/I18nProvider';
+import { generatePDF, downloadBase64PDF, type PdfFormData } from '@/lib/pdf-generator';
 import type {
   Person,
   PersonAddress,
@@ -531,11 +532,54 @@ export default function ParentConductPage() {
     if (currentStep > 1) setCurrentStep(currentStep - 1);
   };
 
-  const handleSign = () => {
+  const handleSign = async () => {
     if (isAgreed) {
       setIsSigned(true);
-      // TODO: Implement sign functionality
-      alert('Charter signed successfully!');
+      try {
+        // Generate PDF after signing
+        await handleGeneratePDF(true);
+      } catch (error) {
+        console.error('Error generating PDF:', error);
+        alert('Charter signed successfully, but PDF generation failed. You can download it later.');
+      }
+    }
+  };
+
+  const handleGeneratePDF = async (autoDownload: boolean = false) => {
+    try {
+      // Prepare PDF form data
+      const pdfData: PdfFormData = {
+        SchoolName: schoolName !== PLACEHOLDER ? schoolName : '',
+        SchoolAddress: schoolAddress !== PLACEHOLDER ? schoolAddress : '',
+        SchoolPhone: schoolContact.phone || '',
+        Name: studentFullName !== PLACEHOLDER ? studentFullName : '',
+        StudentEmiratesID: studentNationalId !== PLACEHOLDER ? studentNationalId : '',
+        ParentName: parentFullName !== PLACEHOLDER ? parentFullName : '',
+        ParentEmiratesID: parentEid !== PLACEHOLDER ? parentEid : '',
+        Phone: parentContacts.phone || '',
+        Address: parentAddress !== PLACEHOLDER ? parentAddress : '',
+        SignDate: today,
+      };
+
+      // Determine template path based on student nationality or default to UAE
+      const templatePath = '/pdf/ConsentUAE_2025.pdf';
+      const fontPath = '/fonts/Alexandria-font.ttf';
+
+      // Generate PDF with base64 output
+      const base64Pdf = await generatePDF(pdfData, templatePath, fontPath, autoDownload);
+      
+      console.log('PDF generated successfully. Base64 length:', base64Pdf.length);
+      
+      if (!autoDownload) {
+        // If not auto-downloading, offer manual download
+        downloadBase64PDF(base64Pdf, `${studentFullName}_ParentConduct.pdf`);
+      }
+      
+      return base64Pdf;
+    } catch (error) {
+      console.error('Failed to generate PDF:', error);
+      alert('Failed to generate PDF. Please try again.');
+      throw error;
     }
   };
 
@@ -808,12 +852,12 @@ export default function ParentConductPage() {
                     </label>
                   </div>
 
-                  <div className="mt-4">
+                  <div className="mt-4 flex flex-col sm:flex-row gap-3">
                     <button
                       type="button"
                       onClick={handleSign}
                       disabled={!isAgreed || isSigned}
-                      className={`w-full md:w-auto px-6 py-3 rounded-lg font-medium transition-all ${
+                      className={`w-full sm:w-auto px-6 py-3 rounded-lg font-medium transition-all ${
                         !isAgreed || isSigned
                           ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                           : 'bg-primary hover:bg-primary/90 text-primary-foreground shadow-md hover:shadow-lg'
@@ -823,7 +867,21 @@ export default function ParentConductPage() {
                         ? (locale === 'ar' ? '✓ تم التوقيع' : '✓ Signed')
                         : (locale === 'ar' ? 'توقيع الميثاق' : 'Sign Charter')}
                     </button>
-                    {!isAgreed && (
+                    
+                    {isSigned && (
+                      <button
+                        type="button"
+                        onClick={() => handleGeneratePDF(false)}
+                        className="w-full sm:w-auto px-6 py-3 rounded-lg font-medium transition-all bg-secondary hover:bg-secondary/90 text-secondary-foreground shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        {locale === 'ar' ? 'تحميل PDF' : 'Download PDF'}
+                      </button>
+                    )}
+                    
+                    {!isAgreed && !isSigned && (
                       <p className="text-xs text-muted-foreground mt-2">
                         {locale === 'ar' 
                           ? 'يرجى الموافقة على الشروط للمتابعة'
