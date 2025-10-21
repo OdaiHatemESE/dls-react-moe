@@ -9,6 +9,15 @@ type Body = {
   studentPersonId?: string;
   parentPersonId?: string | null;
   studentEmirateId?: string | null;
+  // Optional for PATCH updates
+  isConductAgreementSigned?: boolean;
+  conductAgreementStatus?: number | null;
+  pdfBase64?: string | null;
+  citizenship?: string | null;
+  // Chunked upload support
+  chunk?: string | null;
+  chunkIndex?: number | null;
+  totalChunks?: number | null;
 };
 
 export async function POST(req: Request) {
@@ -25,6 +34,20 @@ export async function POST(req: Request) {
     // Check if a row already exists for this studentPersonId
     const existing = await prismaParent.updateInformationRequests.findFirst({
       where: { studentPersonId },
+      select: {
+        Id: true,
+        studentPersonId: true,
+        parentPersonId: true,
+        isInfoUpdateRequested: true,
+        infoUpdateRequestStatus: true,
+        isConductAgreementSigned: true,
+        conductAgreementStatus: true,
+        studentEmirateId: true,
+        pdfBase64: true,
+        citizenship: true,
+        createAt: true,
+        updateAt: true,
+      },
     });
 
     if (existing) {
@@ -51,6 +74,8 @@ export async function POST(req: Request) {
         isConductAgreementSigned: true,
         conductAgreementStatus: true,
         studentEmirateId: true,
+        pdfBase64: true,
+        citizenship: true,
         createAt: true,
         updateAt: true,
       },
@@ -93,6 +118,8 @@ export async function GET(req: Request) {
         isConductAgreementSigned: true,
         conductAgreementStatus: true,
         studentEmirateId: true,
+        pdfBase64: true,
+        citizenship: true,
         createAt: true,
         updateAt: true,
       },
@@ -117,6 +144,8 @@ export async function GET(req: Request) {
           isConductAgreementSigned: true,
           conductAgreementStatus: true,
           studentEmirateId: true,
+          pdfBase64: true,
+          citizenship: true,
           createAt: true,
           updateAt: true,
         },
@@ -139,11 +168,189 @@ export async function GET(req: Request) {
       isConductAgreementSigned: false,
       conductAgreementStatus: null,
       studentEmirateId,
+      pdfBase64: null,
+      citizenship: null,
       createAt: now,
       updateAt: now,
     } as const;
 
     return NextResponse.json({ ok: true, data: synthetic });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    return NextResponse.json({ ok: false, error: message }, { status: 500 });
+  }
+}
+
+export async function PATCH(req: Request) {
+  try {
+    const body = (await req.json()) as Body;
+    const studentPersonId = body?.studentPersonId?.trim();
+    if (!studentPersonId) {
+      return NextResponse.json({ ok: false, error: "studentPersonId is required" }, { status: 400 });
+    }
+
+    const now = new Date();
+    const useChunks = typeof body.chunk === "string" && typeof body.chunkIndex === "number" && typeof body.totalChunks === "number";
+
+    if (useChunks) {
+      const chunk = body.chunk as string;
+      const chunkIndex = body.chunkIndex as number;
+      // If first chunk, create or reset record with initial chunk
+      if (chunkIndex === 0) {
+        // Try update first, fallback to create if not found
+        let updated;
+        try {
+          updated = await prismaParent.updateInformationRequests.update({
+            where: { studentPersonId },
+            data: {
+              updateAt: now,
+              isConductAgreementSigned: true,
+              conductAgreementStatus: 1,
+              pdfBase64: chunk,
+              ...(typeof body.citizenship === "string" ? { citizenship: body.citizenship } : {}),
+              ...(typeof body.parentPersonId === "string" ? { parentPersonId: body.parentPersonId } : {}),
+              ...(typeof body.studentEmirateId === "string" ? { studentEmirateId: body.studentEmirateId } : {}),
+            },
+            select: {
+              Id: true,
+              studentPersonId: true,
+              parentPersonId: true,
+              isInfoUpdateRequested: true,
+              infoUpdateRequestStatus: true,
+              isConductAgreementSigned: true,
+              conductAgreementStatus: true,
+              studentEmirateId: true,
+              pdfBase64: true,
+              citizenship: true,
+              createAt: true,
+              updateAt: true,
+            },
+          });
+        } catch (e) {
+          // If update failed (likely not found), create
+          updated = await prismaParent.updateInformationRequests.create({
+            data: {
+              studentPersonId,
+              parentPersonId: body?.parentPersonId ?? null,
+              studentEmirateId: body?.studentEmirateId ?? null,
+              isConductAgreementSigned: true,
+              conductAgreementStatus: 1,
+              pdfBase64: chunk,
+              citizenship: body?.citizenship ?? null,
+              createAt: now,
+              updateAt: now,
+            },
+            select: {
+              Id: true,
+              studentPersonId: true,
+              parentPersonId: true,
+              isInfoUpdateRequested: true,
+              infoUpdateRequestStatus: true,
+              isConductAgreementSigned: true,
+              conductAgreementStatus: true,
+              studentEmirateId: true,
+              pdfBase64: true,
+              citizenship: true,
+              createAt: true,
+              updateAt: true,
+            },
+          });
+        }
+        return NextResponse.json({ ok: true, data: updated, chunkAccepted: true }, { status: 200 });
+      }
+
+      // For subsequent chunks: read current, append, and save
+      const current = await prismaParent.updateInformationRequests.findFirst({
+        where: { studentPersonId },
+        select: { pdfBase64: true },
+      });
+      const newPdfBase64 = `${current?.pdfBase64 ?? ""}${chunk}`;
+      const updated = await prismaParent.updateInformationRequests.update({
+        where: { studentPersonId },
+        data: { pdfBase64: newPdfBase64, updateAt: now },
+        select: {
+          Id: true,
+          studentPersonId: true,
+          parentPersonId: true,
+          isInfoUpdateRequested: true,
+          infoUpdateRequestStatus: true,
+          isConductAgreementSigned: true,
+          conductAgreementStatus: true,
+          studentEmirateId: true,
+          pdfBase64: true,
+          citizenship: true,
+          createAt: true,
+          updateAt: true,
+        },
+      });
+      return NextResponse.json({ ok: true, data: updated, chunkAccepted: true }, { status: 200 });
+    }
+
+    // Replace upsert with update-then-create fallback to avoid runtime upsert issues
+    let updated;
+    try {
+      updated = await prismaParent.updateInformationRequests.update({
+        where: { studentPersonId },
+        data: {
+          updateAt: now,
+          ...(typeof body.isConductAgreementSigned === "boolean"
+            ? { isConductAgreementSigned: body.isConductAgreementSigned }
+            : {}),
+          ...(typeof body.conductAgreementStatus === "number"
+            ? { conductAgreementStatus: body.conductAgreementStatus }
+            : {}),
+          ...(typeof body.pdfBase64 === "string" ? { pdfBase64: body.pdfBase64 } : {}),
+          ...(typeof body.citizenship === "string" ? { citizenship: body.citizenship } : {}),
+          ...(typeof body.parentPersonId === "string" ? { parentPersonId: body.parentPersonId } : {}),
+          ...(typeof body.studentEmirateId === "string" ? { studentEmirateId: body.studentEmirateId } : {}),
+        },
+        select: {
+          Id: true,
+          studentPersonId: true,
+          parentPersonId: true,
+          isInfoUpdateRequested: true,
+          infoUpdateRequestStatus: true,
+          isConductAgreementSigned: true,
+          conductAgreementStatus: true,
+          studentEmirateId: true,
+          pdfBase64: true,
+          citizenship: true,
+          createAt: true,
+          updateAt: true,
+        },
+      });
+    } catch (e) {
+      // If update failed (likely not found), create a new record
+      updated = await prismaParent.updateInformationRequests.create({
+        data: {
+          studentPersonId,
+          parentPersonId: body?.parentPersonId ?? null,
+          studentEmirateId: body?.studentEmirateId ?? null,
+          isConductAgreementSigned: body?.isConductAgreementSigned ?? true,
+          conductAgreementStatus: body?.conductAgreementStatus ?? 1,
+          pdfBase64: body?.pdfBase64 ?? null,
+          citizenship: body?.citizenship ?? null,
+          createAt: now,
+          updateAt: now,
+        },
+        select: {
+          Id: true,
+          studentPersonId: true,
+          parentPersonId: true,
+          isInfoUpdateRequested: true,
+          infoUpdateRequestStatus: true,
+          isConductAgreementSigned: true,
+          conductAgreementStatus: true,
+          studentEmirateId: true,
+          pdfBase64: true,
+          citizenship: true,
+          createAt: true,
+          updateAt: true,
+        },
+      });
+    }
+
+    return NextResponse.json({ ok: true, data: updated }, { status: 200 });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unknown error";
     return NextResponse.json({ ok: false, error: message }, { status: 500 });

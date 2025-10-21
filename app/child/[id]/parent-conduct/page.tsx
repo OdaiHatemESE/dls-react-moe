@@ -131,6 +131,21 @@ function formatOrgAddress(org?: Org | null): string {
   return parts;
 }
 
+function extractCitizenship(person?: Person | null): string | undefined {
+  if (!person) return undefined;
+  const meta: any = person.metadata ?? {};
+  return (
+    preferValue(
+      // Common fields we might see
+      meta?.nationality,
+      meta?.nationalityEn,
+      meta?.nationalityEnglish,
+      meta?.nationalityArabic,
+      (person as any)?.nationality,
+    ) || undefined
+  );
+}
+
 function findContactValue(
   contacts: PersonContact[] | undefined,
   keywords: string[],
@@ -390,7 +405,8 @@ export default function ParentConductPage() {
   } = useSWR<SchoolEnrollmentResponse>(enrollmentKey, jsonFetcher);
 
   const isLoading = (resolvedStudentId ? studentLoading || enrollmentLoading : false) || parentLoading;
-  const fetchError = studentError || enrollmentError || parentError;
+  const hasFetchError = Boolean(studentError || enrollmentError || parentError);
+  const firstError: unknown = studentError ?? enrollmentError ?? parentError ?? null;
 
   const studentPerson = React.useMemo(() => pickPrimaryPerson(studentInfo), [studentInfo]);
   const parentPerson = React.useMemo(() => pickPrimaryPerson(parentInfo), [parentInfo]);
@@ -496,11 +512,9 @@ export default function ParentConductPage() {
     );
   }
 
-  if (fetchError) {
-    const message =
-      fetchError instanceof Error
-        ? fetchError.message
-        : t.parentConduct.errorLoading;
+  if (hasFetchError) {
+    const err = firstError as unknown;
+    const message = err instanceof Error ? err.message : t.parentConduct.errorLoading;
     return (
       <div className="max-w-xl mx-auto py-10 text-center text-destructive">
         {message}
@@ -537,7 +551,55 @@ export default function ParentConductPage() {
       setIsSigned(true);
       try {
         // Generate PDF after signing
-        await handleGeneratePDF(true);
+        const base64 = await handleGeneratePDF(true);
+        // After PDF generated, update backend record with flags and PDF base64
+        try {
+          const payload = {
+            studentPersonId: resolvedStudentId,
+            parentPersonId: parentPerson?.sourcedId ?? null,
+            studentEmirateId: studentNationalId !== PLACEHOLDER ? studentNationalId : null,
+            isConductAgreementSigned: true,
+            conductAgreementStatus: 1,
+            pdfBase64: base64,
+            citizenship: extractCitizenship(studentPerson) ?? null,
+          };
+          let res = await fetch('/api/parent/update-information-requests', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+
+          if (!res.ok) {
+            // Fallback to chunked upload if the single request fails (likely due to size limits)
+            const CHUNK_SIZE = 500_000; // 500 KB per chunk (base64 chars)
+            const totalChunks = Math.ceil(base64.length / CHUNK_SIZE);
+            for (let i = 0; i < totalChunks; i++) {
+              const chunk = base64.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
+              const chunkPayload = {
+                studentPersonId: resolvedStudentId,
+                parentPersonId: parentPerson?.sourcedId ?? null,
+                studentEmirateId: studentNationalId !== PLACEHOLDER ? studentNationalId : null,
+                citizenship: extractCitizenship(studentPerson) ?? null,
+                chunk,
+                chunkIndex: i,
+                totalChunks,
+              };
+              const r = await fetch('/api/parent/update-information-requests', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(chunkPayload),
+              });
+              if (!r.ok) {
+                const err = await r.json().catch(() => ({}));
+                console.error('Chunk upload failed', i, err);
+                throw new Error('Chunk upload failed');
+              }
+            }
+          }
+        } catch (e) {
+          console.error('Error calling update-information-requests API:', e);
+          alert('Signed successfully, but saving the agreement failed. It will retry on next visit.');
+        }
       } catch (error) {
         console.error('Error generating PDF:', error);
         alert('Charter signed successfully, but PDF generation failed. You can download it later.');
