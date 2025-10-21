@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
 import { Separator } from '@/components/ui/separator';
 import { jsonFetcher } from '@/lib/swr';
+import { useI18n } from '@/app/i18n/I18nProvider';
 import type {
   Person,
   PersonAddress,
@@ -59,8 +60,22 @@ function preferValue(...values: Array<string | undefined | null>): string | unde
   return undefined;
 }
 
-function formatPersonName(person?: Person | null): string {
+function formatPersonName(person?: Person | null, locale: 'ar' | 'en' = 'ar'): string {
   if (!person) return '';
+  
+  if (locale === 'en') {
+    const english = [
+      person.metadata?.englishFirstName,
+      person.metadata?.englishSecondName,
+      person.metadata?.englishThirdName,
+      person.metadata?.englishFamilyName,
+    ]
+      .filter((part) => typeof part === 'string' && part.trim().length > 0)
+      .join(' ')
+      .trim();
+    if (english.length > 0) return english;
+  }
+  
   const arabic = [person.givenName, person.middleName, person.familyName]
     .filter((part) => typeof part === 'string' && part.trim().length > 0)
     .join(' ')
@@ -287,6 +302,7 @@ function findLatestEnrollment(enrollments?: SchoolEnrollment[]): SchoolEnrollmen
 function extractStreamGradeName(
   streamGrades: Array<StreamGrade | null> | undefined,
   streamId?: string,
+  locale: 'ar' | 'en' = 'ar',
 ): string {
   if (!streamId || !streamGrades?.length) return '';
   const match = streamGrades
@@ -294,6 +310,18 @@ function extractStreamGradeName(
     .find((item) => item.streamGrade?.sourcedId === streamId);
   if (!match) return '';
   const sg = match.streamGrade;
+  
+  if (locale === 'en') {
+    // Try English name, then title, then name
+    return (
+      preferValue(
+        sg?.title,
+        sg?.name,
+        sg?.metadata?.titleArabic,
+      ) ?? ''
+    );
+  }
+  
   return (
     preferValue(
       sg?.metadata?.titleArabic,
@@ -325,6 +353,7 @@ function InfoField({
 }
 
 export default function ParentConductPage() {
+  const { t, locale } = useI18n();
   const params = useParams();
   const searchParams = useSearchParams();
   const routeChildId = params?.id as string | undefined;
@@ -391,12 +420,13 @@ export default function ParentConductPage() {
       extractStreamGradeName(
         enrollmentInfo?.StreamGrades,
         latestEnrollment?.streamGrade?.sourcedId,
+        locale,
       ),
-    [enrollmentInfo, latestEnrollment],
+    [enrollmentInfo, latestEnrollment, locale],
   );
 
-  const studentFullName = formatPersonName(studentPerson) || PLACEHOLDER;
-  const parentFullName = formatPersonName(parentPerson) || PLACEHOLDER;
+  const studentFullName = formatPersonName(studentPerson, locale) || PLACEHOLDER;
+  const parentFullName = formatPersonName(parentPerson, locale) || PLACEHOLDER;
 
   const studentAddress = formatPersonAddress(studentPerson?.metadata?.addresses) || PLACEHOLDER;
   const parentAddress = formatPersonAddress(parentPerson?.metadata?.addresses) || PLACEHOLDER;
@@ -418,12 +448,20 @@ export default function ParentConductPage() {
       studentPerson?.metadata?.identifier as string | undefined,
     ) ?? PLACEHOLDER;
 
-  const schoolName =
-    preferValue(
+  const schoolName = React.useMemo(() => {
+    if (locale === 'en') {
+      return preferValue(
+        latestSchool?.metadata?.englishName,
+        latestSchool?.name,
+        latestSchool?.metadata?.shortName,
+      ) ?? PLACEHOLDER;
+    }
+    return preferValue(
       latestSchool?.name,
       latestSchool?.metadata?.englishName,
       latestSchool?.metadata?.shortName,
     ) ?? PLACEHOLDER;
+  }, [latestSchool, locale]);
 
   const schoolAddress = formatOrgAddress(latestSchool) || PLACEHOLDER;
 
@@ -433,16 +471,17 @@ export default function ParentConductPage() {
 
   const today = React.useMemo(() => {
     try {
-      return new Date().toLocaleDateString('ar-SA');
+      const localeString = locale === 'ar' ? 'ar-SA' : 'en-US';
+      return new Date().toLocaleDateString(localeString);
     } catch {
       return new Date().toLocaleDateString();
     }
-  }, []);
+  }, [locale]);
 
   if (!resolvedStudentId) {
     return (
       <div className="max-w-xl mx-auto py-10 text-center text-destructive">
-        لا يمكن عرض الصفحة بدون معرف الطالب.
+        {t.parentConduct.noStudentId}
       </div>
     );
   }
@@ -450,7 +489,7 @@ export default function ParentConductPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <Spinner variant="education" text="جاري تحميل بيانات الميثاق..." />
+        <Spinner variant="education" text={t.parentConduct.loading} />
       </div>
     );
   }
@@ -459,7 +498,7 @@ export default function ParentConductPage() {
     const message =
       fetchError instanceof Error
         ? fetchError.message
-        : 'تعذر تحميل البيانات المطلوبة.';
+        : t.parentConduct.errorLoading;
     return (
       <div className="max-w-xl mx-auto py-10 text-center text-destructive">
         {message}
@@ -481,179 +520,7 @@ export default function ParentConductPage() {
     );
   }
 
-  const conductTerms = {
-    validityPeriod: 'سنة دراسية واحدة تبدأ من تاريخ الإقرار على الميثاق.',
-    schoolCommitments: {
-      title: 'التزامات المدرسة',
-      sections: [
-        {
-          title: 'المتطلبات الأساسية',
-          items: [
-            'ضمان بيئة مدرسية قائمة على المساواة وتكافؤ الفرص بين الطلبة كافة.',
-            'اطلاع أولياء الأمور على نتائج التقييمات والإجراءات المعتمدة لرفع مستوى أداء أبنائهم.',
-            'إبلاغ أولياء الأمور عن سلوكيات أبنائهم الإيجابية، بالإضافة إلى مخالفاتهم السلوكية.',
-            'تعريف أولياء أمور الطلبة من فئة أصحاب الهمم بحقوقهم وواجباتهم وتوفير بيئة تعليمية غنية وداعمة ومرافق مجهزة ومعدلة تلائم احتياجاتهم.',
-            'ضمان توفير بيئة مدرسية آمنة وشاملة تضمن سلامة الطلبة.',
-            'وضع الإرشادات الخاصة بصحة الطلبة وتوعيتهم بأهمية تبني عادات وأنماط الحياة الصحية.',
-            'بناء قنوات تواصل فعالة مع أولياء الأمور لإبلاغهم بالمستجدات من التعليمات أو الإجراءات أو اللوائح ومشاركتهم بالمعلومات المهمة بالإضافة إلى اطلاعهم على أخبار المدرسة.',
-            'الشفافية والعدالة في تنفيذ الإجراءات والسياسات مع الحفاظ على سرية المعلومات وبيانات الطلبة.'
-          ]
-        },
-        {
-          title: 'السلوك والانضباط',
-          items: [
-            'تطبيق القرار الوزاري رقم (851) لسنة 2018 بشأن لائحة إدارة سلوك الطلبة في مؤسسات التعليم العام الطلبة بعدالة وشفافية، مع توعية الطلبة وأولياء أمورهم بالعواقب المترتبة على المخالفات.',
-            'متابعة انتظام الطلبة في الحضور والانصراف وفق المواعيد الرسمية والأدلة الإجرائية، واتخاذ الإجراءات المناسبة عند وجود تأخير أو غياب غير مبرر.',
-            'الالتزام باحترام أولياء الأمور، وبناء قنوات تواصل فعّالة معهم لإبلاغهم بالمستجدات المتعلقة بالتعليمات والإجراءات واللوائح، ومشاركتهم بالمعلومات المهمة، وإطلاعهم على أخبار المدرسة بانتظام.'
-          ]
-        },
-        {
-          title: 'جودة حياة الطلبة / الصحة والسلامة',
-          items: [
-            'توفير بيئة مدرسية صحية وآمنة تتوافق مع معايير الامن والسلامة.',
-            'تنظيم برامج توعية لتعزيز النظافة الشخصية والصحة العامة للطلبة.',
-            'حفظ السجلات الطبية الخاصة بالطلبة والتنسيق مع أولياء الأمور بشأن أي حالات صحية.'
-          ]
-        },
-        {
-          title: 'المواطنة الإيجابية والهوية الوطنية',
-          items: [
-            'تنظيم فعاليات لتعزيز قيم المواطنة الصالحة والمسؤولية الاجتماعية لدى الطلبة.',
-            'غرس الاعتزاز بالهوية الوطنية والقيم الإنسانية مثل الاحترام والتسامح والتعايش المشترك من خلال الأنشطة المختلفة.'
-          ]
-        },
-        {
-          title: 'التحصيل الدراسي والمناهج والبرامج التعليمية',
-          items: [
-            'تحديث بيانات الطلبة بشكل دوري في أنظمة الوزارة.',
-            'متابعة الأداء الأكاديمي للطلبة بانتظام، وإشراك أولياء الأمور في نتائج التقييمات والإجراءات المعتمدة لرفع مستوى أبنائهم.',
-            'إعداد وتنفيذ خطط تربوية فردية للطلبة من أصحاب الهمم بالتعاون مع أسرهم.',
-            'الشفافية والعدالة في تنفيذ الإجراءات والسياسات مع الحفاظ على سرية المعلومات وبيانات الطلبة.'
-          ]
-        },
-        {
-          title: 'التقييم والامتحانات',
-          items: [
-            'تطبيق سياسة التقييم المعتمدة والالتزام بالمواعيد الرسمية للتقييمات والامتحانات.',
-            'متابعة نتائج الطلبة بشكل مستمر وتقديم التغذية الراجعة.',
-            'ضمان جاهزية بيئة الامتحانات وتوفير الأدوات والأجهزة اللازمة.',
-            'منع أي ممارسات تتعلق بالغش أو تسريب الأسئلة، واتخاذ الإجراءات الرادعة عند وقوعها.'
-          ]
-        },
-        {
-          title: 'الأنشطة والرعاية الطلابية',
-          items: [
-            'توفير أنشطة صفية ولاصفية متنوعة لاكتشاف وتنمية مهارات الطلبة.',
-            'تشجيع الطلبة على المشاركة في المبادرات الوطنية والبرامج التطوعية وخدمة المجتمع.'
-          ]
-        },
-        {
-          title: 'المواصلات',
-          items: [
-            'الإشراف على خدمات النقل المدرسي الخاصة بالمدرسة وضمان الالتزام بمعايير السلامة.',
-            'متابعة سلوك الطلبة في الحافلات واتخاذ الإجراءات التربوية عند حدوث مخالفات.'
-          ]
-        },
-        {
-          title: 'الزي المدرسي',
-          items: [
-            'توعية أولياء الأمور بدليل الزي المدرسي وقنوات البيع الرسمية للزي المدرسي الموحد.',
-            'متابعة التزام الطلبة بالزي والمظهر اللائق أثناء الدوام المدرسي.'
-          ]
-        },
-        {
-          title: 'الممتلكات العامة بالمدرسة',
-          items: [
-            'تعزيز وعي الطلبة بأهمية المحافظة على الممتلكات العامة والمرافق المدرسية.',
-            'مراقبة استخدام الطلبة للمرافق وضمان حمايتها من العبث أو التخريب.',
-            'تطبيق الإجراءات المناسبة في حال حدوث أضرار، بالتنسيق مع أولياء الأمور.'
-          ]
-        }
-      ]
-    },
-    parentCommitments: {
-      title: 'التزامات ولي الأمر',
-      sections: [
-        {
-          title: 'السلوك',
-          items: [
-            'تشجيع أبنائهم على تبني القيم الأخلاقية والتربوية وتعزيز السُّلوك الايجابي لديهم وتحفيزهم على التعلم والالتزام بالقوانين واحترام جميع العاملين في المدرسة.',
-            'الاطلاع على لائحة إدارة سلوك الطلبة في مؤسسات التعليم الحكومية الاتحادية المعتمدة، وتوعية وارشاد أبنائهم على ضرورة الالتزام بها والعواقب التي تترتب على مخالفتها.',
-            'حث الطلبة على الالتزام بمواعيد الحضور والانصراف والإلمام بالنتائج المترتبة على التأخير وعدم الغياب دون عذر مقبول بالحضور المبكر للمدرسة وفق المواعيد المحددة والإلمام بعواقب الغياب دون عذر مقبول والتي تتضمن رسوب السنة الدراسية وإعادة السنة كاملة.',
-            'الالتزام بتعليمات المدرسة عند الحضور لطلب خدمة أو لمناقشة مشكلة أو تسوية أية نزاعات.'
-          ]
-        },
-        {
-          title: 'جودة حياة الطلبة / الصحة والسلامة',
-          items: [
-            'توفير بيئة صحية تشمل معايير الأغذية الصحية، وأصناف الطعام والشراب المسموح بها في المدرسة.',
-            'توفير الوقت الكافي للنوم والاسترخاء والراحة النفسية لأبنائهم في بيئة عائلية مستقرة.',
-            'التوعية حول النظافة الشخصية للأبناء.',
-            'التحفيز على ممارسة الأنشطة البدنية من خلال التحرك واللعب.',
-            'تقديم المساعدة والدعم للأبناء في حل المشاكل الشخصية والعاطفية والدراسية.',
-            'توفير كافة التقارير الطبية المتعلقة بالطالب وسيرته المرضية لإدارة المدرسة.',
-            'المشاركة الفعالة من خلال الإجابة على الاستبانات المرسلة من قبل الوزارة أو المدرسة.'
-          ]
-        },
-        {
-          title: 'المواطنة الإيجابية والهوية الوطنية',
-          items: [
-            'الالتزام بتعزيز المواطنة الصالحة والمسؤولية الاجتماعية لدى الأبناء وتحفيزهم على القيام بالواجبات والمسؤوليات الوطنية، وتشجيعهم على المشاركة الفعالة في الحياة الاجتماعية والأعمال الخيرية والتطوعية.',
-            'الالتزام بتحفيز الأبناء على الاعتزاز بهويتهم الوطنية، والتحلّي بالأخلاق والقيم الإنسانية الأساسية كالاحترام والتسامح والتعايش المشترك بين المواطنين والمقيمين.'
-          ]
-        },
-        {
-          title: 'التحصيل الدراسي والمناهج والبرامج التعليمية',
-          items: [
-            'تحديث بيانات الأبناء حسب الإجراءات والشروط والأحكام المعتمدة في الوزارة.',
-            'يلتزم ولي الأمر بتوفير جهاز الحاسب الي حسب الاجراءات المواصفات المعتمدة في الوزارة مع الالتزام بالمعايير والشروط الخاصة بسياسة استخدام الحاسوب.',
-            'التواصل مع إدارة المدرسة لمتابعة أداء أبنائهم في الدراسة وتقديم الدعم لهم.',
-            'تحفيز الأبناء على الدراسة، وتحديد الأهداف الواضحة لهم، وإرشادهم، وإظهار أهمية التعليم في حياتهم المستقبلية.',
-            'تهيئة الجو الأسري وتخصيص الوقت الكافي للدراسة والتحضير والاستعداد للامتحانات مع ضمان الوقت الكافي للراحة.',
-            'متابعة الطلبة من فئة أصحاب الهمم في أداء واجباتهم حسب الخطة التربوية الفردية المعتمدة.'
-          ]
-        },
-        {
-          title: 'التقييم والامتحانات',
-          items: [
-            'الاطلاع على سياسة التقييم المعتمدة والتقيد بما جاء فيها والالتزام بالمواعيد المحددة بالتقييم والامتحانات.',
-            'متابعة التقييمات والامتحانات للأبناء بشكل مستمر لرفع مستوى أدائهم على مدار العام الدراسي.',
-            'التأكد من جاهزية الأبناء لأداء الامتحان (إحضار الأدوات اللازمة، شحن جهاز الحاسب الآلي/اللوحي).',
-            'توعية الطالب بالالتزام بقواعد ولوائح تأدية الامتحان وعدم الغش أو تسريب أسئلة الامتحانات أو المشاركة فيها بأي شكل من الأشكال.'
-          ]
-        },
-        {
-          title: 'الأنشطة والرعاية الطلابية',
-          items: [
-            'تشجيع الأبناء على المشاركة في الأنشطة الصفية واللّاصفية، والفعّاليات، والمبادرات الوطنيّة والعمل التطوعي والخدمة المجتمعية؛ لاكتساب وصقل المهارات العامة.'
-          ]
-        },
-        {
-          title: 'المواصلات',
-          items: [
-            'الالتزام باتباع جميع شروط السلامة والقواعد السلوكية ومواعيد النقل المدرسي التي اعتمدتها المدرسة.',
-            'توجيه الأبناء إلى الالتزام بالسلوك الإيجابي في الحافلات المدرسية.',
-            'الالتزام بتسديد قيمة أي تلفيات تسبب بها أبناؤه في الحافلة المدرسية.'
-          ]
-        },
-        {
-          title: 'الزي المدرسي',
-          items: [
-            'الالتزام بارتداء الأبناء الزّيَّ المدرسي الموحد من قبل الوزارة.',
-            'التزام الأبناء بالمظهر اللائق والأنيق أثناء الدوام المدرسي.'
-          ]
-        },
-        {
-          title: 'الممتلكات العامة بالمدرسة',
-          items: [
-            'تعليم الأبناء قيمة المحافظة على الممتلكات العامة وأهميتها، وتحفيزهم على المحافظة عليها.',
-            'توجيه الأبناء بعدم إلحاق أي أضرار متعمدة أو غير متعمدة بالممتلكات العامة في المدرسة.',
-            'التعهد بالتعويض عن الأضرار الناجمة عن العبث بالممتلكات والمرافق التي قد يحدثها الطالب في المدرسة أو وسائل النقل.'
-          ]
-        }
-      ]
-    }
-  };
+  const conductTerms = t.parentConduct.conductTerms;
 
   const handleNext = () => {
     if (currentStep < 4) setCurrentStep(currentStep + 1);
@@ -664,7 +531,7 @@ export default function ParentConductPage() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 direction-rtl" dir="rtl">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 direction-rtl" dir={locale === 'ar' ? 'rtl' : 'ltr'}>
       {/* Top nav */}
       <div className="mb-6 flex items-center justify-between">
         <Link 
@@ -674,17 +541,17 @@ export default function ParentConductPage() {
           <svg className="w-4 h-4 ml-2 rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
-          الرجوع
+          {t.parentConduct.backButton}
         </Link>
         <div className="text-xs text-muted-foreground">
-          <span>المرحلة: {currentStep} من 4</span>
+          <span>{t.parentConduct.progressLabels.current} {currentStep} {t.parentConduct.progressLabels.of} 4</span>
         </div>
       </div>
 
       {/* Progress Bar */}
       <div className="mb-8">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium text-foreground">التقدم</span>
+          <span className="text-sm font-medium text-foreground">{t.parentConduct.progress}</span>
           <span className="text-sm text-muted-foreground">{Math.round((currentStep / 4) * 100)}%</span>
         </div>
         <div className="w-full bg-muted rounded-full h-2">
@@ -694,10 +561,10 @@ export default function ParentConductPage() {
           ></div>
         </div>
         <div className="flex justify-between mt-2 text-xs text-muted-foreground">
-          <span className={currentStep >= 1 ? 'text-primary font-medium' : ''}>معلومات المدرسة</span>
-          <span className={currentStep >= 2 ? 'text-primary font-medium' : ''}>معلومات ولي الأمر</span>
-          <span className={currentStep >= 3 ? 'text-primary font-medium' : ''}>أحكام الميثاق</span>
-          <span className={currentStep >= 4 ? 'text-primary font-medium' : ''}>التوقيع</span>
+          <span className={currentStep >= 1 ? 'text-primary font-medium' : ''}>{t.parentConduct.steps.schoolInfo}</span>
+          <span className={currentStep >= 2 ? 'text-primary font-medium' : ''}>{t.parentConduct.steps.parentInfo}</span>
+          <span className={currentStep >= 3 ? 'text-primary font-medium' : ''}>{t.parentConduct.steps.terms}</span>
+          <span className={currentStep >= 4 ? 'text-primary font-medium' : ''}>{t.parentConduct.steps.signature}</span>
         </div>
       </div>
 
@@ -705,10 +572,10 @@ export default function ParentConductPage() {
       <Card className="mb-8 border shadow-lg">
         <CardHeader className="bg-gradient-to-r from-primary to-primary/90 text-primary-foreground">
           <CardTitle className="text-center text-lg sm:text-xl font-semibold">
-            ميثاق الشراكة بين المدرسة وولي الأمر
+            {t.parentConduct.title}
           </CardTitle>
           <p className="text-center text-primary-foreground/80 mt-2 text-sm">
-            وزارة التربية والتعليم - الإمارات العربية المتحدة
+            {t.parentConduct.subtitle}
           </p>
         </CardHeader>
         <CardContent className="pt-6 text-foreground leading-6">
@@ -717,15 +584,13 @@ export default function ParentConductPage() {
               <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              مقدمة
+              {t.parentConduct.introduction.title}
             </h3>
             <p className="mb-3 text-muted-foreground text-sm">
-              في إطار تفعيل الشراكة الفاعلة بين المدرسة وولي الأمر وتعزيز دورهما في دعم التحصيل وسلوك أبنائنا الطلبة، يهدف هذا الميثاق إلى توضيح الأدوار
-              والمسؤوليات المتبادلة بين الطرفين بما يضمن توفير بيئة تعليمية آمنة ومحفزة.
+              {t.parentConduct.introduction.paragraph1}
             </p>
             <p className="text-muted-foreground text-sm">
-              ويعد توقيع ولي الأمر على هذا الميثاق إقرارًا بالاطلاع على بنوده وفهمها والالتزام بمقتضاها، كما يمثل اتفاقًا على التعاون البناء مع المدرسة
-              لتحقيق مخرجات تعليمية وسلوكية متميزة لأبنائنا وبناتنا.
+              {t.parentConduct.introduction.paragraph2}
             </p>
           </div>
         </CardContent>
@@ -740,35 +605,35 @@ export default function ParentConductPage() {
                 <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-4m-5 0H3m2 0h3M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 8h1m-1-4h1" />
                 </svg>
-                الجزء الأول: معلومات المدرسة
+                {t.parentConduct.schoolSection.title}
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <InfoField label="اسم المدرسة" value={schoolName} />
+                <InfoField label={t.parentConduct.schoolSection.schoolName} value={schoolName} />
                 <InfoField
-                  label="معرف المدرسة"
+                  label={t.parentConduct.schoolSection.schoolId}
                   value={latestEnrollment?.school?.sourcedId || PLACEHOLDER}
                   mono
                 />
-                <InfoField label="العنوان" value={schoolAddress} span={2} />
-                <InfoField label="رقم الهاتف" value={schoolContact.phone || PLACEHOLDER} />
-                <InfoField label="البريد الإلكتروني" value={schoolContact.email || PLACEHOLDER} />
-                <InfoField label="السنة الدراسية" value={schoolYearLabel} />
-                <InfoField label="الصف الدراسي والشعبة" value={latestStreamGradeName || PLACEHOLDER} />
-                <InfoField label="اسم الطالب/ـة" value={studentFullName} />
+                <InfoField label={t.parentConduct.schoolSection.address} value={schoolAddress} span={2} />
+                <InfoField label={t.parentConduct.schoolSection.phone} value={schoolContact.phone || PLACEHOLDER} />
+                <InfoField label={t.parentConduct.schoolSection.email} value={schoolContact.email || PLACEHOLDER} />
+                <InfoField label={t.parentConduct.schoolSection.schoolYear} value={schoolYearLabel} />
+                <InfoField label={t.parentConduct.schoolSection.gradeClass} value={latestStreamGradeName || PLACEHOLDER} />
+                <InfoField label={t.parentConduct.schoolSection.studentName} value={studentFullName} />
                 <InfoField
-                  label="الرقم الوطني / السجل المدني"
+                  label={t.parentConduct.schoolSection.nationalId}
                   value={studentNationalId}
                   mono
                 />
                 <InfoField
-                  label="معرف الطالب في النظام"
+                  label={t.parentConduct.schoolSection.studentSystemId}
                   value={resolvedStudentId || PLACEHOLDER}
                   mono
                 />
                 <InfoField
-                  label="معرف المسار (Route ID)"
+                  label={t.parentConduct.schoolSection.routeId}
                   value={routeChildId || PLACEHOLDER}
                   mono
                 />
@@ -787,32 +652,32 @@ export default function ParentConductPage() {
                 <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
-                الجزء الثاني: معلومات ولي الأمر
+                {t.parentConduct.parentSection.title}
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-6">
               <div className="space-y-6">
                 <section className="space-y-3">
-                  <h4 className="text-sm font-semibold text-primary-foreground/80">بيانات ولي الأمر</h4>
+                  <h4 className="text-sm font-semibold text-primary-foreground/80">{t.parentConduct.parentSection.parentData}</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <InfoField label="اسم ولي الأمر" value={parentFullName} />
-                    <InfoField label="رقم الهوية الوطنية" value={parentEid} mono />
-                    <InfoField label="العنوان" value={parentAddress} span={2} />
-                    <InfoField label="رقم التواصل" value={parentContacts.phone || PLACEHOLDER} />
-                    <InfoField label="البريد الإلكتروني" value={parentContacts.email || PLACEHOLDER} />
+                    <InfoField label={t.parentConduct.parentSection.parentName} value={parentFullName} />
+                    <InfoField label={t.parentConduct.parentSection.parentNationalId} value={parentEid} mono />
+                    <InfoField label={t.parentConduct.parentSection.parentAddress} value={parentAddress} span={2} />
+                    <InfoField label={t.parentConduct.parentSection.contactNumber} value={parentContacts.phone || PLACEHOLDER} />
+                    <InfoField label={t.parentConduct.parentSection.parentEmail} value={parentContacts.email || PLACEHOLDER} />
                   </div>
                 </section>
 
                 <Separator />
 
                 <section className="space-y-3">
-                  <h4 className="text-sm font-semibold text-primary-foreground/80">بيانات الطالب المرتبطة</h4>
+                  <h4 className="text-sm font-semibold text-primary-foreground/80">{t.parentConduct.parentSection.linkedStudentData}</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <InfoField label="اسم الطالب/ـة الكامل" value={studentFullName} />
-                    <InfoField label="الرقم الوطني / السجل المدني" value={studentNationalId} mono />
-                    <InfoField label="العنوان" value={studentAddress} span={2} />
-                    <InfoField label="رقم التواصل" value={studentContacts.phone || PLACEHOLDER} />
-                    <InfoField label="البريد الإلكتروني" value={studentContacts.email || PLACEHOLDER} />
+                    <InfoField label={t.parentConduct.parentSection.studentFullName} value={studentFullName} />
+                    <InfoField label={t.parentConduct.schoolSection.nationalId} value={studentNationalId} mono />
+                    <InfoField label={t.parentConduct.parentSection.parentAddress} value={studentAddress} span={2} />
+                    <InfoField label={t.parentConduct.parentSection.contactNumber} value={studentContacts.phone || PLACEHOLDER} />
+                    <InfoField label={t.parentConduct.parentSection.parentEmail} value={studentContacts.email || PLACEHOLDER} />
                   </div>
                 </section>
               </div>
@@ -832,7 +697,7 @@ export default function ParentConductPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <div>
-                  <h4 className="font-semibold text-foreground">مدة وصلاحية هذا الميثاق:</h4>
+                  <h4 className="font-semibold text-foreground">{t.parentConduct.termsSection.validityTitle}</h4>
                   <p className="text-muted-foreground">{conductTerms.validityPeriod}</p>
                 </div>
               </div>
@@ -846,7 +711,7 @@ export default function ParentConductPage() {
                 <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-4m-5 0H3m2 0h3M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 8h1m-1-4h1" />
                 </svg>
-                {conductTerms.schoolCommitments.title}
+                {t.parentConduct.termsSection.schoolCommitmentsTitle}
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-4">
@@ -880,7 +745,7 @@ export default function ParentConductPage() {
                 <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
-                {conductTerms.parentCommitments.title}
+                {t.parentConduct.termsSection.parentCommitmentsTitle}
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-4">
@@ -918,18 +783,18 @@ export default function ParentConductPage() {
                 <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                التوقيع والاعتماد
+                {t.parentConduct.signatureSection.title}
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-6">
               {/* Summary Information */}
               <div className="bg-muted border rounded-lg p-3 mb-4">
-                <h4 className="font-medium text-foreground mb-2 text-sm">ملخص البيانات</h4>
+                <h4 className="font-medium text-foreground mb-2 text-sm">{t.parentConduct.signatureSection.summaryTitle}</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-                  <div><span className="font-medium">المدرسة:</span> {schoolName}</div>
-                  <div><span className="font-medium">الطالب:</span> {studentFullName}</div>
-                  <div><span className="font-medium">ولي الأمر:</span> {parentFullName}</div>
-                  <div><span className="font-medium">الصف:</span> {latestStreamGradeName || PLACEHOLDER}</div>
+                  <div><span className="font-medium">{t.parentConduct.signatureSection.school}</span> {schoolName}</div>
+                  <div><span className="font-medium">{t.parentConduct.signatureSection.student}</span> {studentFullName}</div>
+                  <div><span className="font-medium">{t.parentConduct.signatureSection.parent}</span> {parentFullName}</div>
+                  <div><span className="font-medium">{t.parentConduct.signatureSection.grade}</span> {latestStreamGradeName || PLACEHOLDER}</div>
                 </div>
               </div>
 
@@ -941,9 +806,8 @@ export default function ParentConductPage() {
                     </svg>
                   </div>
                   <div className="text-xs text-muted-foreground leading-relaxed">
-                    <span className="font-medium text-foreground">إقرار ولي الأمر:</span><br />
-                    أقر بأنني اطلعت على جميع بنود ميثاق الشراكة بين المدرسة وولي الأمر، وفهمت محتواها بالكامل، 
-                    وأتعهد بالالتزام بجميع البنود والشروط المذكورة أعلاه، والتعاون مع المدرسة لضمان تحقيق المصلحة الفضلى لابني/ابنتي.
+                    <span className="font-medium text-foreground">{t.parentConduct.signatureSection.parentDeclaration}</span><br />
+                    {t.parentConduct.signatureSection.declarationText}
                   </div>
                 </div>
 
@@ -952,11 +816,11 @@ export default function ParentConductPage() {
                     <svg className="w-8 h-8 text-secondary mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    <div className="text-secondary-foreground text-xs mb-1">ختم وزارة التربية والتعليم</div>
-                    <div className="text-lg font-bold text-secondary-foreground">معتمد</div>
+                    <div className="text-secondary-foreground text-xs mb-1">{t.parentConduct.signatureSection.ministryStamp}</div>
+                    <div className="text-lg font-bold text-secondary-foreground">{t.parentConduct.signatureSection.approved}</div>
                   </div>
                   <div>
-                    <div className="block text-xs font-medium text-foreground mb-2">التاريخ</div>
+                    <div className="block text-xs font-medium text-foreground mb-2">{t.parentConduct.signatureSection.date}</div>
                     <div className="bg-muted text-center font-medium text-sm rounded px-3 py-2">{today}</div>
                   </div>
                 </div>
@@ -975,11 +839,11 @@ export default function ParentConductPage() {
               className="px-4 py-2 border rounded bg-white hover:bg-muted text-foreground"
               onClick={handlePrevious}
             >
-              السابق
+              {t.parentConduct.navigation.previous}
             </button>
           )}
           <Link href={routeChildId ? `/child/${encodeURIComponent(routeChildId)}` : '/dashboard'}>
-            <button className="px-4 py-2 border rounded bg-muted text-foreground" type="button">إغلاق</button>
+            <button className="px-4 py-2 border rounded bg-muted text-foreground" type="button">{t.parentConduct.navigation.close}</button>
           </Link>
         </div>
         <div className="flex gap-3">
@@ -989,7 +853,7 @@ export default function ParentConductPage() {
               className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-2 rounded"
               onClick={handleNext}
             >
-              التالي
+              {t.parentConduct.navigation.next}
             </button>
           )}
         </div>
