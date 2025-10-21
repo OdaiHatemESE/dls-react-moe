@@ -17,6 +17,8 @@ model UpdateInformationRequests {
   isConductAgreementSigned Boolean?  @default(false, map: "DEFAULT_UpdateInformationRequests_isConductAgreementSigned")
   conductAgreementStatus   Int?
   studentEmirateId         String?   @db.VarChar(64)
+  pdfBase64                String?   @db.VarChar(Max)
+  citizenship              String?   @db.VarChar(64)
   createAt                 DateTime? @db.DateTime
   updateAt                 DateTime? @db.DateTime
 
