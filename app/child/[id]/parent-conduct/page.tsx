@@ -1,39 +1,435 @@
 'use client';
 
 import React from 'react';
+import useSWR from 'swr';
 import { useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-// ...existing code...
+import { Spinner } from '@/components/ui/spinner';
+import { Separator } from '@/components/ui/separator';
+import { jsonFetcher } from '@/lib/swr';
+import type {
+  Person,
+  PersonAddress,
+  PersonContact,
+  Org,
+  SchoolEnrollment,
+  StreamGrade,
+} from '@/types';
+
+interface BasicInfoResponse {
+  meta: {
+    eid?: string;
+    parentEid?: string;
+    personSourcedId?: string;
+    role?: string;
+    studentCount?: number;
+    cache?: { source?: 'cache' | 'upstream'; lastUpdated?: string | null };
+  };
+  parent: Person[];
+  children: Person[];
+  warning?: string;
+  error?: string;
+}
+
+interface SchoolEnrollmentResponse {
+  enrollments: SchoolEnrollment[];
+  count: number;
+  studentId: string;
+  schoolYear: string;
+  schoolID?: string | null;
+  schoolInfo?: unknown;
+  schoolInfos?: unknown;
+  StreamGrades?: Array<StreamGrade | null>;
+  meta?: { cache?: { source?: 'cache' | 'upstream'; lastUpdated?: string | null } };
+}
+
+const PLACEHOLDER = '—';
+
+function pickPrimaryPerson(response?: BasicInfoResponse | null): Person | undefined {
+  return response?.parent?.[0] ?? response?.children?.[0];
+}
+
+function preferValue(...values: Array<string | undefined | null>): string | undefined {
+  for (const value of values) {
+    if (typeof value === 'string' && value.trim().length > 0) {
+      return value.trim();
+    }
+  }
+  return undefined;
+}
+
+function formatPersonName(person?: Person | null): string {
+  if (!person) return '';
+  const arabic = [person.givenName, person.middleName, person.familyName]
+    .filter((part) => typeof part === 'string' && part.trim().length > 0)
+    .join(' ')
+    .trim();
+  if (arabic.length > 0) return arabic;
+
+  const english = [
+    person.metadata?.englishFirstName,
+    person.metadata?.englishSecondName,
+    person.metadata?.englishThirdName,
+    person.metadata?.englishFamilyName,
+  ]
+    .filter((part) => typeof part === 'string' && part.trim().length > 0)
+    .join(' ')
+    .trim();
+
+  if (english.length > 0) return english;
+  return person.username ?? person.sourcedId ?? '';
+}
+
+function formatPersonAddress(addresses?: PersonAddress[]): string {
+  if (!addresses?.length) return '';
+  const address = addresses[0];
+  const parts = [
+    address.addressLine1,
+    address.addressLine2,
+    address.addressLine3,
+    address.city,
+    address.state,
+    address.zipCode,
+    address.country,
+  ]
+    .filter((part) => typeof part === 'string' && part.trim().length > 0)
+    .join(', ');
+  return parts;
+}
+
+function formatOrgAddress(org?: Org | null): string {
+  const address = org?.metadata?.addresses?.[0];
+  if (!address) return '';
+  const parts = [
+    address.addressLine1,
+    address.addressLine2,
+    address.addressLine3,
+    address.city,
+    address.state,
+    address.zipCode,
+    address.country,
+  ]
+    .filter((part) => typeof part === 'string' && part.trim().length > 0)
+    .join(', ');
+  return parts;
+}
+
+function findContactValue(
+  contacts: PersonContact[] | undefined,
+  keywords: string[],
+  valuePredicate?: (value: string) => boolean,
+): string | undefined {
+  if (!contacts?.length) return undefined;
+  const loweredKeywords = keywords.map((keyword) => keyword.toLowerCase());
+
+  const scan = (requireKeyword: boolean) => {
+    for (const contact of contacts) {
+      if (!contact) continue;
+      const type = contact.contactType?.toLowerCase?.() ?? '';
+      const matchesKeyword = loweredKeywords.some((keyword) => keyword && type.includes(keyword));
+      if (requireKeyword && !matchesKeyword) {
+        continue;
+      }
+
+      const candidates = new Set<string>();
+      if (typeof contact.value === 'string') candidates.add(contact.value);
+      if (typeof contact.note === 'string') candidates.add(contact.note);
+      for (const entry of Object.values(contact)) {
+        if (typeof entry === 'string') candidates.add(entry);
+      }
+
+      for (const candidate of candidates) {
+        const trimmed = candidate.trim();
+        if (!trimmed) continue;
+        const predicatePassed = valuePredicate ? valuePredicate(trimmed) : true;
+        if (predicatePassed) {
+          return trimmed;
+        }
+      }
+    }
+    return undefined;
+  };
+
+  return scan(true) ?? scan(false);
+}
+
+function extractPersonContact(person?: Person | null): { phone?: string; email?: string } {
+  if (!person) return {};
+  const contacts = person.metadata?.contacts;
+  const email = preferValue(
+    person.email,
+    findContactValue(contacts, ['email'], (value) => value.includes('@')),
+  );
+  const phone = preferValue(
+    person.phone,
+    person.sms,
+    findContactValue(contacts, ['mobile', 'phone', 'tel'], (value) =>
+      /\d{3}/.test(value.replace(/\D/g, '')),
+    ),
+  );
+  return { phone, email };
+}
+
+function isOrg(candidate: unknown): candidate is Org {
+  if (!candidate || typeof candidate !== 'object') return false;
+  const record = candidate as Record<string, unknown>;
+  return (
+    typeof record.sourcedId === 'string' ||
+    typeof record.name === 'string' ||
+    (record.metadata && typeof record.metadata === 'object')
+  );
+}
+
+function extractOrgFromAny(input: unknown): Org | null {
+  if (!input) return null;
+  if (isOrg(input)) return input as Org;
+  if (typeof input === 'object') {
+    const record = input as Record<string, unknown>;
+    if (record.Org) return extractOrgFromAny(record.Org);
+    if (record.org) return extractOrgFromAny(record.org);
+  }
+  return null;
+}
+
+function collectOrgs(...sources: unknown[]): Org[] {
+  const visited = new Set<string>();
+  const results: Org[] = [];
+
+  const visit = (value: unknown) => {
+    if (value === null || value === undefined) return;
+    if (Array.isArray(value)) {
+      value.forEach(visit);
+      return;
+    }
+    const org = extractOrgFromAny(value);
+    if (org) {
+      const key = org.sourcedId ?? JSON.stringify(org);
+      if (!visited.has(key)) {
+        visited.add(key);
+        results.push(org);
+      }
+    }
+  };
+
+  sources.forEach(visit);
+  return results;
+}
+
+function extractSchoolContact(org?: Org | null): { phone?: string; email?: string } {
+  const contacts = org?.metadata?.contacts;
+  if (!Array.isArray(contacts) || contacts.length === 0) {
+    return {};
+  }
+
+  let phone: string | undefined;
+  let email: string | undefined;
+
+  for (const rawContact of contacts) {
+    if (!rawContact || typeof rawContact !== 'object') continue;
+    const contact = rawContact as Record<string, unknown>;
+    const type = String(contact.contactType ?? contact.type ?? '').toLowerCase();
+
+    const values = Object.values(contact)
+      .filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
+      .map((value) => value.trim());
+
+    if (!email) {
+      const candidate =
+        values.find((value) => value.includes('@')) ||
+        (type.includes('email') ? values[0] : undefined);
+      if (candidate) email = candidate;
+    }
+
+    if (!phone) {
+      const candidate =
+        values.find((value) => /\d{3}/.test(value.replace(/\D/g, ''))) ||
+        (type.includes('phone') || type.includes('mobile') || type.includes('tel') ? values[0] : undefined);
+      if (candidate) phone = candidate;
+    }
+
+    if (phone && email) break;
+  }
+
+  return { phone, email };
+}
+
+function toNumber(value: unknown): number {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string') {
+    const parsed = Number.parseInt(value, 10);
+    return Number.isNaN(parsed) ? 0 : parsed;
+  }
+  return 0;
+}
+
+function parseDate(value: unknown): number {
+  if (typeof value !== 'string' || value.trim().length === 0) return 0;
+  const parsed = Date.parse(value);
+  return Number.isNaN(parsed) ? 0 : parsed;
+}
+
+function findLatestEnrollment(enrollments?: SchoolEnrollment[]): SchoolEnrollment | undefined {
+  if (!enrollments?.length) return undefined;
+  return enrollments.reduce<SchoolEnrollment | undefined>((latest, current) => {
+    if (!latest) return current;
+    const currentYear = toNumber(current.schoolYear);
+    const latestYear = toNumber(latest.schoolYear);
+    if (currentYear !== latestYear) {
+      return currentYear > latestYear ? current : latest;
+    }
+    const currentDate = parseDate(current.dateLastModified ?? current.entryDate);
+    const latestDate = parseDate(latest.dateLastModified ?? latest.entryDate);
+    return currentDate >= latestDate ? current : latest;
+  }, undefined);
+}
+
+function extractStreamGradeName(
+  streamGrades: Array<StreamGrade | null> | undefined,
+  streamId?: string,
+): string {
+  if (!streamId || !streamGrades?.length) return '';
+  const match = streamGrades
+    .filter((item): item is StreamGrade => Boolean(item))
+    .find((item) => item.streamGrade?.sourcedId === streamId);
+  if (!match) return '';
+  const sg = match.streamGrade;
+  return (
+    preferValue(
+      sg?.metadata?.titleArabic,
+      sg?.title,
+      sg?.name,
+    ) ?? ''
+  );
+}
+
+function InfoField({
+  label,
+  value,
+  span = 1,
+  mono = false,
+}: {
+  label: string;
+  value?: React.ReactNode;
+  span?: 1 | 2;
+  mono?: boolean;
+}) {
+  return (
+    <div className={`space-y-2 ${span === 2 ? 'md:col-span-2' : ''}`}>
+      <div className="block text-sm font-medium text-foreground mb-1">{label}</div>
+      <div className={`bg-muted rounded px-3 py-2 text-sm ${mono ? 'font-mono' : ''}`}>
+        {value ?? PLACEHOLDER}
+      </div>
+    </div>
+  );
+}
 
 export default function ParentConductPage() {
   const params = useParams();
   const searchParams = useSearchParams();
-  const eid = params?.id as string | undefined; // page context id (existing child route id)
-  const studentId = searchParams.get('studentId') || ''; // real student sourcedId if provided
-
+  const routeChildId = params?.id as string | undefined;
+  const queryStudentId = searchParams.get('studentId') || undefined;
+  const resolvedStudentId = queryStudentId || routeChildId || '';
 
   const [currentStep, setCurrentStep] = React.useState(1);
-  // Static data for display
-  const formData = {
-    educationAuthority: 'الإدارة العامة للتعليم بمنطقة عجمان',
-    schoolName: 'مدرسة الحكمة  الابتدائية',
-    grade: 'الخامس / أ',
-    studentName: 'أحمد محمد العلي',
-    parentName: 'محمد عبدالله العلي',
-    studentId: studentId || '1234567890',
-    parentId: '2987654321',
-    phone: '0551234567',
-    email: 'mohammed.ali@example.com'
-  };
 
-  const handleNext = () => {
-    if (currentStep < 4) setCurrentStep(currentStep + 1);
-  };
+  const studentKey = resolvedStudentId
+    ? `/api/oneroster/basic-info-full?sourcedId=${encodeURIComponent(resolvedStudentId)}`
+    : null;
+  const {
+    data: studentInfo,
+    error: studentError,
+    isLoading: studentLoading,
+  } = useSWR<BasicInfoResponse>(studentKey, jsonFetcher);
 
-  const handlePrevious = () => {
-    if (currentStep > 1) setCurrentStep(currentStep - 1);
-  };
+  const {
+    data: parentInfo,
+    error: parentError,
+    isLoading: parentLoading,
+  } = useSWR<BasicInfoResponse>('/api/oneroster/basic-info-full', jsonFetcher);
+
+  const enrollmentKey = resolvedStudentId
+    ? `/api/oneroster/schoolenrollments?studentId=${encodeURIComponent(resolvedStudentId)}`
+    : null;
+  const {
+    data: enrollmentInfo,
+    error: enrollmentError,
+    isLoading: enrollmentLoading,
+  } = useSWR<SchoolEnrollmentResponse>(enrollmentKey, jsonFetcher);
+
+  const isLoading = (resolvedStudentId ? studentLoading || enrollmentLoading : false) || parentLoading;
+  const fetchError = studentError || enrollmentError || parentError;
+
+  const studentPerson = React.useMemo(() => pickPrimaryPerson(studentInfo), [studentInfo]);
+  const parentPerson = React.useMemo(() => pickPrimaryPerson(parentInfo), [parentInfo]);
+
+  const latestEnrollment = React.useMemo(
+    () => findLatestEnrollment(enrollmentInfo?.enrollments),
+    [enrollmentInfo],
+  );
+
+  const allSchools = React.useMemo(
+    () => collectOrgs(enrollmentInfo?.schoolInfo, enrollmentInfo?.schoolInfos),
+    [enrollmentInfo],
+  );
+
+  const latestSchool = React.useMemo(() => {
+    if (!latestEnrollment) {
+      return allSchools[0];
+    }
+    const schoolId = latestEnrollment.school?.sourcedId;
+    if (!schoolId) {
+      return allSchools[0];
+    }
+    return allSchools.find((org) => org.sourcedId === schoolId) ?? allSchools[0];
+  }, [allSchools, latestEnrollment]);
+
+  const schoolContact = React.useMemo(() => extractSchoolContact(latestSchool), [latestSchool]);
+
+  const latestStreamGradeName = React.useMemo(
+    () =>
+      extractStreamGradeName(
+        enrollmentInfo?.StreamGrades,
+        latestEnrollment?.streamGrade?.sourcedId,
+      ),
+    [enrollmentInfo, latestEnrollment],
+  );
+
+  const studentFullName = formatPersonName(studentPerson) || PLACEHOLDER;
+  const parentFullName = formatPersonName(parentPerson) || PLACEHOLDER;
+
+  const studentAddress = formatPersonAddress(studentPerson?.metadata?.addresses) || PLACEHOLDER;
+  const parentAddress = formatPersonAddress(parentPerson?.metadata?.addresses) || PLACEHOLDER;
+
+  const studentContacts = extractPersonContact(studentPerson);
+  const parentContacts = extractPersonContact(parentPerson);
+
+  const parentEid =
+    preferValue(
+      parentInfo?.meta?.eid,
+      parentInfo?.meta?.parentEid,
+      parentPerson?.identifier,
+      parentPerson?.metadata?.identifier as string | undefined,
+    ) ?? PLACEHOLDER;
+
+  const studentNationalId =
+    preferValue(
+      studentPerson?.identifier,
+      studentPerson?.metadata?.identifier as string | undefined,
+    ) ?? PLACEHOLDER;
+
+  const schoolName =
+    preferValue(
+      latestSchool?.name,
+      latestSchool?.metadata?.englishName,
+      latestSchool?.metadata?.shortName,
+    ) ?? PLACEHOLDER;
+
+  const schoolAddress = formatOrgAddress(latestSchool) || PLACEHOLDER;
+
+  const schoolYearLabel = latestEnrollment?.schoolYear
+    ? String(latestEnrollment.schoolYear)
+    : PLACEHOLDER;
 
   const today = React.useMemo(() => {
     try {
@@ -42,6 +438,48 @@ export default function ParentConductPage() {
       return new Date().toLocaleDateString();
     }
   }, []);
+
+  if (!resolvedStudentId) {
+    return (
+      <div className="max-w-xl mx-auto py-10 text-center text-destructive">
+        لا يمكن عرض الصفحة بدون معرف الطالب.
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Spinner variant="education" text="جاري تحميل بيانات الميثاق..." />
+      </div>
+    );
+  }
+
+  if (fetchError) {
+    const message =
+      fetchError instanceof Error
+        ? fetchError.message
+        : 'تعذر تحميل البيانات المطلوبة.';
+    return (
+      <div className="max-w-xl mx-auto py-10 text-center text-destructive">
+        {message}
+      </div>
+    );
+  }
+
+  const warningMessage =
+    (studentInfo as { warning?: string } | undefined)?.warning ||
+    (parentInfo as { warning?: string } | undefined)?.warning;
+
+  if (warningMessage) {
+    return (
+      <div className="max-w-xl mx-auto py-10 text-center">
+        <div className="text-destructive bg-destructive/10 border border-destructive/20 rounded p-4">
+          {warningMessage}
+        </div>
+      </div>
+    );
+  }
 
   const conductTerms = {
     validityPeriod: 'سنة دراسية واحدة تبدأ من تاريخ الإقرار على الميثاق.',
@@ -217,12 +655,20 @@ export default function ParentConductPage() {
     }
   };
 
+  const handleNext = () => {
+    if (currentStep < 4) setCurrentStep(currentStep + 1);
+  };
+
+  const handlePrevious = () => {
+    if (currentStep > 1) setCurrentStep(currentStep - 1);
+  };
+
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 direction-rtl" dir="rtl">
       {/* Top nav */}
       <div className="mb-6 flex items-center justify-between">
         <Link 
-          href={eid ? `/child/${encodeURIComponent(eid)}` : '/dashboard'}
+          href={routeChildId ? `/child/${encodeURIComponent(routeChildId)}` : '/dashboard'}
           className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
           <svg className="w-4 h-4 ml-2 rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -299,30 +745,33 @@ export default function ParentConductPage() {
             </CardHeader>
             <CardContent className="pt-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <div className="block text-sm font-medium text-foreground mb-2">الإدارة التعليمية</div>
-                  <div className="bg-muted rounded px-3 py-2 text-sm">{formData.educationAuthority}</div>
-                </div>
-                <div className="space-y-2">
-                  <div className="block text-sm font-medium text-foreground mb-2">اسم المدرسة</div>
-                  <div className="bg-muted rounded px-3 py-2 text-sm">{formData.schoolName}</div>
-                </div>
-                <div className="space-y-2">
-                  <div className="block text-sm font-medium text-foreground mb-2">الصف الدراسي والشعبة</div>
-                  <div className="bg-muted rounded px-3 py-2 text-sm">{formData.grade}</div>
-                </div>
-                <div className="space-y-2">
-                  <div className="block text-sm font-medium text-foreground mb-2">اسم الطالب/ـة</div>
-                  <div className="bg-muted rounded px-3 py-2 text-sm">{formData.studentName}</div>
-                </div>
-                <div className="space-y-2">
-                  <div className="block text-sm font-medium text-foreground mb-2">السجل المدني للطالب</div>
-                  <div className="bg-muted rounded px-3 py-2 text-sm font-mono">{formData.studentId}</div>
-                </div>
-                <div className="space-y-2">
-                  <div className="block text-sm font-medium text-foreground mb-2">Route ID (من النظام)</div>
-                  <div className="bg-muted rounded px-3 py-2 text-sm font-mono">{eid || ''}</div>
-                </div>
+                <InfoField label="اسم المدرسة" value={schoolName} />
+                <InfoField
+                  label="معرف المدرسة"
+                  value={latestEnrollment?.school?.sourcedId || PLACEHOLDER}
+                  mono
+                />
+                <InfoField label="العنوان" value={schoolAddress} span={2} />
+                <InfoField label="رقم الهاتف" value={schoolContact.phone || PLACEHOLDER} />
+                <InfoField label="البريد الإلكتروني" value={schoolContact.email || PLACEHOLDER} />
+                <InfoField label="السنة الدراسية" value={schoolYearLabel} />
+                <InfoField label="الصف الدراسي والشعبة" value={latestStreamGradeName || PLACEHOLDER} />
+                <InfoField label="اسم الطالب/ـة" value={studentFullName} />
+                <InfoField
+                  label="الرقم الوطني / السجل المدني"
+                  value={studentNationalId}
+                  mono
+                />
+                <InfoField
+                  label="معرف الطالب في النظام"
+                  value={resolvedStudentId || PLACEHOLDER}
+                  mono
+                />
+                <InfoField
+                  label="معرف المسار (Route ID)"
+                  value={routeChildId || PLACEHOLDER}
+                  mono
+                />
               </div>
             </CardContent>
           </Card>
@@ -342,23 +791,30 @@ export default function ParentConductPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <div className="block text-sm font-medium text-foreground mb-2">اسم ولي الأمر</div>
-                  <div className="bg-muted rounded px-3 py-2 text-sm">{formData.parentName}</div>
-                </div>
-                <div className="space-y-2">
-                  <div className="block text-sm font-medium text-foreground mb-2">رقم الهوية الوطنية</div>
-                  <div className="bg-muted rounded px-3 py-2 text-sm font-mono">{formData.parentId}</div>
-                </div>
-                <div className="space-y-2">
-                  <div className="block text-sm font-medium text-foreground mb-2">رقم التواصل</div>
-                  <div className="bg-muted rounded px-3 py-2 text-sm">{formData.phone}</div>
-                </div>
-                <div className="space-y-2">
-                  <div className="block text-sm font-medium text-foreground mb-2">البريد الإلكتروني</div>
-                  <div className="bg-muted rounded px-3 py-2 text-sm">{formData.email}</div>
-                </div>
+              <div className="space-y-6">
+                <section className="space-y-3">
+                  <h4 className="text-sm font-semibold text-primary-foreground/80">بيانات ولي الأمر</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <InfoField label="اسم ولي الأمر" value={parentFullName} />
+                    <InfoField label="رقم الهوية الوطنية" value={parentEid} mono />
+                    <InfoField label="العنوان" value={parentAddress} span={2} />
+                    <InfoField label="رقم التواصل" value={parentContacts.phone || PLACEHOLDER} />
+                    <InfoField label="البريد الإلكتروني" value={parentContacts.email || PLACEHOLDER} />
+                  </div>
+                </section>
+
+                <Separator />
+
+                <section className="space-y-3">
+                  <h4 className="text-sm font-semibold text-primary-foreground/80">بيانات الطالب المرتبطة</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <InfoField label="اسم الطالب/ـة الكامل" value={studentFullName} />
+                    <InfoField label="الرقم الوطني / السجل المدني" value={studentNationalId} mono />
+                    <InfoField label="العنوان" value={studentAddress} span={2} />
+                    <InfoField label="رقم التواصل" value={studentContacts.phone || PLACEHOLDER} />
+                    <InfoField label="البريد الإلكتروني" value={studentContacts.email || PLACEHOLDER} />
+                  </div>
+                </section>
               </div>
             </CardContent>
           </Card>
@@ -470,10 +926,10 @@ export default function ParentConductPage() {
               <div className="bg-muted border rounded-lg p-3 mb-4">
                 <h4 className="font-medium text-foreground mb-2 text-sm">ملخص البيانات</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-                  <div><span className="font-medium">المدرسة:</span> {formData.schoolName}</div>
-                  <div><span className="font-medium">الطالب:</span> {formData.studentName}</div>
-                  <div><span className="font-medium">ولي الأمر:</span> {formData.parentName}</div>
-                  <div><span className="font-medium">الصف:</span> {formData.grade}</div>
+                  <div><span className="font-medium">المدرسة:</span> {schoolName}</div>
+                  <div><span className="font-medium">الطالب:</span> {studentFullName}</div>
+                  <div><span className="font-medium">ولي الأمر:</span> {parentFullName}</div>
+                  <div><span className="font-medium">الصف:</span> {latestStreamGradeName || PLACEHOLDER}</div>
                 </div>
               </div>
 
@@ -522,7 +978,7 @@ export default function ParentConductPage() {
               السابق
             </button>
           )}
-          <Link href={eid ? `/child/${encodeURIComponent(eid)}` : '/dashboard'}>
+          <Link href={routeChildId ? `/child/${encodeURIComponent(routeChildId)}` : '/dashboard'}>
             <button className="px-4 py-2 border rounded bg-muted text-foreground" type="button">إغلاق</button>
           </Link>
         </div>
