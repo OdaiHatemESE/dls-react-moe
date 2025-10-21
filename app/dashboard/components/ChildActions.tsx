@@ -123,6 +123,7 @@ export function ChildActions({ studentPersonId, parentPersonId, studentEmirateId
   // Case 2: Requested and status is 1 or 2 => in progress, show message only
   if (status === 1 || status === 2) {
     return (
+      <>
       <div className={clsx(
         "inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium transition-all",
         "bg-gradient-to-r from-chart-1/10 to-chart-1/5 border border-chart-1/20",
@@ -136,53 +137,41 @@ export function ChildActions({ studentPersonId, parentPersonId, studentEmirateId
           </svg>
         </div>
         <span className="text-chart-1 font-semibold">
-          {locale === "ar" ? "قيد المعالجة..." : "In Progress..."}
+          {locale === "ar" ? "طلب تحديث البيانات قيد المعالجة": "Update request in Progress..."}
         </span>
       </div>
-    );
-  }
-
-  // Case 3: Requested and status is 4 => rejected
-  if (status === 4) {
-    return (
-      <div className={clsx(
-        "inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium transition-all",
-        "bg-gradient-to-r from-destructive/10 to-destructive/5 border border-destructive/20",
-        compact ? "text-xs" : "text-sm",
-        className
-      )}>
-        <svg className="w-4 h-4 text-destructive" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        <span className="text-destructive font-semibold">
-          {locale === "ar" ? "مرفوض" : "Rejected"}
-        </span>
-      </div>
-    );
-  }
-
-  // Case 4: Requested and status is 3 => approved; then check conduct
-  if (status === 3) {
-    if (!conductSigned) {
-      return (
-        <div className={clsx("flex flex-wrap items-center gap-2", className)}>
+      
+       {!conductSigned && 
+ 
+        <div className={clsx("flex flex-wrap items-center gap-2 mx-3", className)}>
           <Btn href={`/child/${studentPersonId}/conduct`}>
-            {locale === "ar" ? "توقيع السلوك" : "Sign Conduct"}
+            {locale === "ar" ? "توقيع الميثاق" : "Sign Conduct"}
           </Btn>
-          <Btn href={`/child/${studentPersonId}`} variant="secondary">
+          {/* <Btn href={`/child/${studentPersonId}`} variant="secondary">
             {locale === "ar" ? "عرض الملف" : "View Profile"}
-          </Btn>
+          </Btn> */}
         </div>
-      );
+         }
+      
+      </>
+    )
     }
-    // Conduct signed => only view profile
-    return (
-      <div className={clsx("flex items-center gap-2", className)}>
-        <Btn href={`/child/${studentPersonId}`} variant="secondary">
-          {locale === "ar" ? "عرض الملف" : "View Profile"}
-        </Btn>
-      </div>
-    );
+  if(status===3){
+    return(
+      <>
+       {!conductSigned && 
+ 
+        <div className={clsx("flex flex-wrap items-center gap-2 mx-3", className)}>
+          <Btn href={`/child/${studentPersonId}/conduct`}>
+            {locale === "ar" ? "توقيع الميثاق" : "Sign Conduct"}
+          </Btn>
+           <Btn href={`/child/${studentPersonId}`} variant="secondary">
+            {locale === "ar" ? "عرض الملف" : "View Profile"}
+          </Btn> 
+        </div>
+         }
+      </>
+    )
   }
 
   // Fallback
