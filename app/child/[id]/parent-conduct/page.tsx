@@ -361,6 +361,8 @@ export default function ParentConductPage() {
   const resolvedStudentId = queryStudentId || routeChildId || '';
 
   const [currentStep, setCurrentStep] = React.useState(1);
+  const [isAgreed, setIsAgreed] = React.useState(false);
+  const [isSigned, setIsSigned] = React.useState(false);
 
   const studentKey = resolvedStudentId
     ? `/api/oneroster/basic-info-full?sourcedId=${encodeURIComponent(resolvedStudentId)}`
@@ -471,12 +473,11 @@ export default function ParentConductPage() {
 
   const today = React.useMemo(() => {
     try {
-      const localeString = locale === 'ar' ? 'ar-SA' : 'en-US';
-      return new Date().toLocaleDateString(localeString);
+      return new Date().toLocaleDateString('en-US');
     } catch {
       return new Date().toLocaleDateString();
     }
-  }, [locale]);
+  }, []);
 
   if (!resolvedStudentId) {
     return (
@@ -530,8 +531,16 @@ export default function ParentConductPage() {
     if (currentStep > 1) setCurrentStep(currentStep - 1);
   };
 
+  const handleSign = () => {
+    if (isAgreed) {
+      setIsSigned(true);
+      // TODO: Implement sign functionality
+      alert('Charter signed successfully!');
+    }
+  };
+
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 direction-rtl" dir={locale === 'ar' ? 'rtl' : 'ltr'}>
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6" dir={locale === 'ar' ? 'rtl' : 'ltr'}>
       {/* Top nav */}
       <div className="mb-6 flex items-center justify-between">
         <Link 
@@ -611,32 +620,10 @@ export default function ParentConductPage() {
             <CardContent className="pt-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <InfoField label={t.parentConduct.schoolSection.schoolName} value={schoolName} />
-                <InfoField
-                  label={t.parentConduct.schoolSection.schoolId}
-                  value={latestEnrollment?.school?.sourcedId || PLACEHOLDER}
-                  mono
-                />
+                <InfoField label={t.parentConduct.schoolSection.schoolYear} value={schoolYearLabel} />
                 <InfoField label={t.parentConduct.schoolSection.address} value={schoolAddress} span={2} />
                 <InfoField label={t.parentConduct.schoolSection.phone} value={schoolContact.phone || PLACEHOLDER} />
                 <InfoField label={t.parentConduct.schoolSection.email} value={schoolContact.email || PLACEHOLDER} />
-                <InfoField label={t.parentConduct.schoolSection.schoolYear} value={schoolYearLabel} />
-                <InfoField label={t.parentConduct.schoolSection.gradeClass} value={latestStreamGradeName || PLACEHOLDER} />
-                <InfoField label={t.parentConduct.schoolSection.studentName} value={studentFullName} />
-                <InfoField
-                  label={t.parentConduct.schoolSection.nationalId}
-                  value={studentNationalId}
-                  mono
-                />
-                <InfoField
-                  label={t.parentConduct.schoolSection.studentSystemId}
-                  value={resolvedStudentId || PLACEHOLDER}
-                  mono
-                />
-                <InfoField
-                  label={t.parentConduct.schoolSection.routeId}
-                  value={routeChildId || PLACEHOLDER}
-                  mono
-                />
               </div>
             </CardContent>
           </Card>
@@ -799,15 +786,50 @@ export default function ParentConductPage() {
               </div>
 
               <div className="space-y-4">
-                <div className="flex items-start gap-3 p-4 bg-accent/20 border border-accent rounded-lg">
-                  <div className="h-5 w-5 border-border rounded mt-0.5 bg-accent/40 flex items-center justify-center">
-                    <svg className="w-4 h-4 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4" />
-                    </svg>
-                  </div>
-                  <div className="text-xs text-muted-foreground leading-relaxed">
-                    <span className="font-medium text-foreground">{t.parentConduct.signatureSection.parentDeclaration}</span><br />
+                <div className="p-4 bg-accent/20 border border-accent rounded-lg">
+                  <div className="text-xs text-muted-foreground leading-relaxed mb-4">
+                    <span className="font-medium text-foreground block mb-2">{t.parentConduct.signatureSection.parentDeclaration}</span>
                     {t.parentConduct.signatureSection.declarationText}
+                  </div>
+                  
+                  <div className="flex items-start gap-3 mt-4 p-3 bg-background rounded border">
+                    <input
+                      type="checkbox"
+                      id="agree-checkbox"
+                      checked={isAgreed}
+                      onChange={(e) => setIsAgreed(e.target.checked)}
+                      className="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                      disabled={isSigned}
+                    />
+                    <label htmlFor="agree-checkbox" className="text-sm text-foreground cursor-pointer">
+                      {locale === 'ar' 
+                        ? 'أوافق على جميع بنود وشروط ميثاق الشراكة بين المدرسة وولي الأمر وأتعهد بالالتزام بها.'
+                        : 'I agree to all terms and conditions of the partnership charter between the school and parent and commit to abide by them.'}
+                    </label>
+                  </div>
+
+                  <div className="mt-4">
+                    <button
+                      type="button"
+                      onClick={handleSign}
+                      disabled={!isAgreed || isSigned}
+                      className={`w-full md:w-auto px-6 py-3 rounded-lg font-medium transition-all ${
+                        !isAgreed || isSigned
+                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                          : 'bg-primary hover:bg-primary/90 text-primary-foreground shadow-md hover:shadow-lg'
+                      }`}
+                    >
+                      {isSigned 
+                        ? (locale === 'ar' ? '✓ تم التوقيع' : '✓ Signed')
+                        : (locale === 'ar' ? 'توقيع الميثاق' : 'Sign Charter')}
+                    </button>
+                    {!isAgreed && (
+                      <p className="text-xs text-muted-foreground mt-2">
+                        {locale === 'ar' 
+                          ? 'يرجى الموافقة على الشروط للمتابعة'
+                          : 'Please agree to the terms to proceed'}
+                      </p>
+                    )}
                   </div>
                 </div>
 
