@@ -1,8 +1,40 @@
+# Parent Portal
+
+A Next.js application built with React, Next.js 15, and the AE Gov Design System. This portal provides authentication and a modern web interface.
+
+## Features
+
+- Built with Next.js 15 and React 19
+- NextAuth for authentication
+- AE Gov Design System integration
+- Tailwind CSS for styling
+- TypeScript support
+- Responsive design with mobile and desktop headers
+
+## Prerequisites
+
+- Node.js 20 or higher
+- npm or yarn package manager
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
 
-First, run the development server:
+First, install the dependencies:
+
+```bash
+npm install
+```
+
+Then, set up your environment variables by copying the example file:
+
+```bash
+cp .env.example .env.local
+```
+
+Edit `.env.local` with your actual configuration values (Auth0/OIDC credentials, NextAuth secret, etc.).
+
+Then, run the development server:
 
 ```bash
 npm run dev
@@ -19,6 +51,55 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+
+## Project Structure
+
+```
+├── app/                    # Next.js app directory
+│   ├── api/               # API routes
+│   ├── components/        # React components
+│   ├── data/              # Data files
+│   ├── login/             # Login page
+│   ├── layout.tsx         # Root layout
+│   └── page.tsx           # Home page
+├── lib/                   # Library files
+├── public/                # Static assets
+├── auth.ts                # Authentication configuration
+├── middleware.ts          # Next.js middleware
+└── tailwind.config.js     # Tailwind CSS configuration
+```
+
+## Available Scripts
+
+- `npm run dev` - Start development server on port 4200
+- `npm run build` - Build production application
+- `npm start` - Start production server on port 4200
+- `npm run lint` - Run ESLint
+
+## Environment Variables
+
+The application requires the following environment variables. See `.env.example` for a template:
+
+- `NEXTAUTH_SECRET` - Secret for NextAuth.js session encryption
+- `NEXTAUTH_URL` - Base URL of your application
+- `OIDC_ISSUER` - Your Auth0/OIDC issuer URL
+- `OIDC_CLIENT_ID` - Your Auth0/OIDC client ID
+- `OIDC_CLIENT_SECRET` - Your Auth0/OIDC client secret (optional for public clients)
+- `OIDC_LOGOUT_URL` - Custom logout URL (optional)
+- `OIDC_LOGOUT_RETURN_TO` - Return URL after logout (optional)
+
+## Technologies Used
+
+- **Next.js 15** - React framework
+- **React 19** - UI library
+- **NextAuth** - Authentication
+- **Tailwind CSS** - Styling
+- **TypeScript** - Type safety
+- **AE Gov Design System** - Government design system components
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Learn More
 
