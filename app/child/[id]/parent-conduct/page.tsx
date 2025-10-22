@@ -9,349 +9,121 @@ import { Spinner } from '@/components/ui/spinner';
 import { Separator } from '@/components/ui/separator';
 import { jsonFetcher } from '@/lib/swr';
 import { useI18n } from '@/app/i18n/I18nProvider';
-import { generatePDF, downloadBase64PDF, type PdfFormData } from '@/lib/pdf-generator';
-import type {
-  Person,
-  PersonAddress,
-  PersonContact,
-  Org,
-  SchoolEnrollment,
-  StreamGrade,
-} from '@/types';
+import { downloadBase64PDF, type PdfFormData } from '@/lib/pdf-generator';
+import {
+  collectOrgs,
+  extractCitizenship,
+  extractPersonContact,
+  extractSchoolContact,
+  extractStreamGradeName,
+  findLatestEnrollment,
+  formatOrgAddress,
+  formatPersonAddress,
+  formatPersonName,
+  getLatestSchool,
+  pickPrimaryPerson,
+  preferValue,
+  type ParentConductAggregatedResponse,
+  type UpdateInfoRow,
+} from '@/lib/parent-conduct';
 
-interface BasicInfoResponse {
-  meta: {
-    eid?: string;
-    parentEid?: string;
-    personSourcedId?: string;
-    role?: string;
-    studentCount?: number;
-    cache?: { source?: 'cache' | 'upstream'; lastUpdated?: string | null };
-  };
-  parent: Person[];
-  children: Person[];
-  warning?: string;
+type AggregatedApiResponse = {
+  ok: boolean;
+  data?: ParentConductAggregatedResponse;
   error?: string;
-}
-
-interface SchoolEnrollmentResponse {
-  enrollments: SchoolEnrollment[];
-  count: number;
-  studentId: string;
-  schoolYear: string;
-  schoolID?: string | null;
-  schoolInfo?: unknown;
-  schoolInfos?: unknown;
-  StreamGrades?: Array<StreamGrade | null>;
-  meta?: { cache?: { source?: 'cache' | 'upstream'; lastUpdated?: string | null } };
-}
-
-// Minimal shape returned from /api/parent/update-information-requests (we only need a few fields)
-type UpdateInfoRow = {
-  isConductAgreementSigned?: boolean | null;
-  conductAgreementStatus?: number | null;
-  pdfBase64?: string | null;
+  meta?: { aggregatedAt: string };
 };
 
 const PLACEHOLDER = '—';
+const CONDUCT_DATA_ENDPOINT = '/api/parent/conduct';
+const GENERATE_CONDUCT_PDF_ENDPOINT = '/api/parent/generate-conduct-pdf';
+const UPDATE_INFORMATION_ENDPOINT = '/api/parent/update-information-requests';
+const PDF_CHUNK_SIZE = 500_000;
 
-function pickPrimaryPerson(response?: BasicInfoResponse | null): Person | undefined {
-  return response?.parent?.[0] ?? response?.children?.[0];
-}
+type PdfRequestBody = PdfFormData & { template?: 'uae' | 'expats' };
 
-function preferValue(...values: Array<string | undefined | null>): string | undefined {
-  for (const value of values) {
-    if (typeof value === 'string' && value.trim().length > 0) {
-      return value.trim();
-    }
+type GeneratePdfResult = {
+  base64: string;
+  filename: string;
+};
+
+type PersistPayload = {
+  studentPersonId: string;
+  parentPersonId?: string | null;
+  studentEmirateId?: string | null;
+  citizenship?: string | null;
+};
+
+async function requestConductPdf(body: PdfRequestBody): Promise<GeneratePdfResult> {
+  const response = await fetch(GENERATE_CONDUCT_PDF_ENDPOINT, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+
+  const json = await response.json().catch(() => null);
+  if (!response.ok || !json || typeof json.base64 !== 'string') {
+    const message = json && typeof json.error === 'string' ? json.error : 'Failed to generate PDF';
+    throw new Error(message);
   }
-  return undefined;
+
+  const filename =
+    typeof json.filename === 'string' && json.filename.trim().length > 0
+      ? json.filename
+      : `${body.Name || 'Document'}_ParentConduct.pdf`;
+
+  return { base64: json.base64, filename };
 }
 
-function formatPersonName(person?: Person | null, locale: 'ar' | 'en' = 'ar'): string {
-  if (!person) return '';
-  
-  if (locale === 'en') {
-    const english = [
-      person.metadata?.englishFirstName,
-      person.metadata?.englishSecondName,
-      person.metadata?.englishThirdName,
-      person.metadata?.englishFamilyName,
-    ]
-      .filter((part) => typeof part === 'string' && part.trim().length > 0)
-      .join(' ')
-      .trim();
-    if (english.length > 0) return english;
-  }
-  
-  const arabic = [person.givenName, person.middleName, person.familyName]
-    .filter((part) => typeof part === 'string' && part.trim().length > 0)
-    .join(' ')
-    .trim();
-  if (arabic.length > 0) return arabic;
+async function persistConductAgreement(basePayload: PersistPayload, base64: string): Promise<void> {
+  if (!base64) return;
 
-  const english = [
-    person.metadata?.englishFirstName,
-    person.metadata?.englishSecondName,
-    person.metadata?.englishThirdName,
-    person.metadata?.englishFamilyName,
-  ]
-    .filter((part) => typeof part === 'string' && part.trim().length > 0)
-    .join(' ')
-    .trim();
-
-  if (english.length > 0) return english;
-  return person.username ?? person.sourcedId ?? '';
-}
-
-function formatPersonAddress(addresses?: PersonAddress[]): string {
-  if (!addresses?.length) return '';
-  const address = addresses[0];
-  const parts = [
-    address.addressLine1,
-    address.addressLine2,
-    address.addressLine3,
-    address.city,
-    address.state,
-    address.zipCode,
-    address.country,
-  ]
-    .filter((part) => typeof part === 'string' && part.trim().length > 0)
-    .join(', ');
-  return parts;
-}
-
-function formatOrgAddress(org?: Org | null): string {
-  const address = org?.metadata?.addresses?.[0];
-  if (!address) return '';
-  const parts = [
-    address.addressLine1,
-    address.addressLine2,
-    address.addressLine3,
-    address.city,
-    address.state,
-    address.zipCode,
-    address.country,
-  ]
-    .filter((part) => typeof part === 'string' && part.trim().length > 0)
-    .join(', ');
-  return parts;
-}
-
-function extractCitizenship(person?: Person | null): string | undefined {
-  if (!person) return undefined;
-  const meta: any = person.metadata ?? {};
-  return (
-    preferValue(
-      // Common fields we might see
-      meta?.nationality,
-      meta?.nationalityEn,
-      meta?.nationalityEnglish,
-      meta?.nationalityArabic,
-      (person as any)?.nationality,
-    ) || undefined
-  );
-}
-
-function findContactValue(
-  contacts: PersonContact[] | undefined,
-  keywords: string[],
-  valuePredicate?: (value: string) => boolean,
-): string | undefined {
-  if (!contacts?.length) return undefined;
-  const loweredKeywords = keywords.map((keyword) => keyword.toLowerCase());
-
-  const scan = (requireKeyword: boolean) => {
-    for (const contact of contacts) {
-      if (!contact) continue;
-      const type = contact.contactType?.toLowerCase?.() ?? '';
-      const matchesKeyword = loweredKeywords.some((keyword) => keyword && type.includes(keyword));
-      if (requireKeyword && !matchesKeyword) {
-        continue;
-      }
-
-      const candidates = new Set<string>();
-      if (typeof contact.value === 'string') candidates.add(contact.value);
-      if (typeof contact.note === 'string') candidates.add(contact.note);
-      for (const entry of Object.values(contact)) {
-        if (typeof entry === 'string') candidates.add(entry);
-      }
-
-      for (const candidate of candidates) {
-        const trimmed = candidate.trim();
-        if (!trimmed) continue;
-        const predicatePassed = valuePredicate ? valuePredicate(trimmed) : true;
-        if (predicatePassed) {
-          return trimmed;
-        }
-      }
-    }
-    return undefined;
+  const baseRequest = {
+    studentPersonId: basePayload.studentPersonId,
+    parentPersonId: basePayload.parentPersonId ?? null,
+    studentEmirateId: basePayload.studentEmirateId ?? null,
+    citizenship: basePayload.citizenship ?? null,
   };
 
-  return scan(true) ?? scan(false);
-}
+  const primaryResponse = await fetch(UPDATE_INFORMATION_ENDPOINT, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      ...baseRequest,
+      isConductAgreementSigned: true,
+      conductAgreementStatus: 1,
+      pdfBase64: base64,
+    }),
+  });
 
-function extractPersonContact(person?: Person | null): { phone?: string; email?: string } {
-  if (!person) return {};
-  const contacts = person.metadata?.contacts;
-  const email = preferValue(
-    person.email,
-    findContactValue(contacts, ['email'], (value) => value.includes('@')),
-  );
-  const phone = preferValue(
-    person.phone,
-    person.sms,
-    findContactValue(contacts, ['mobile', 'phone', 'tel'], (value) =>
-      /\d{3}/.test(value.replace(/\D/g, '')),
-    ),
-  );
-  return { phone, email };
-}
-
-function isOrg(candidate: unknown): candidate is Org {
-  if (!candidate || typeof candidate !== 'object') return false;
-  const record = candidate as Record<string, unknown>;
-  return (
-    typeof record.sourcedId === 'string' ||
-    typeof record.name === 'string' ||
-    (record.metadata && typeof record.metadata === 'object')
-  );
-}
-
-function extractOrgFromAny(input: unknown): Org | null {
-  if (!input) return null;
-  if (isOrg(input)) return input as Org;
-  if (typeof input === 'object') {
-    const record = input as Record<string, unknown>;
-    if (record.Org) return extractOrgFromAny(record.Org);
-    if (record.org) return extractOrgFromAny(record.org);
-  }
-  return null;
-}
-
-function collectOrgs(...sources: unknown[]): Org[] {
-  const visited = new Set<string>();
-  const results: Org[] = [];
-
-  const visit = (value: unknown) => {
-    if (value === null || value === undefined) return;
-    if (Array.isArray(value)) {
-      value.forEach(visit);
-      return;
-    }
-    const org = extractOrgFromAny(value);
-    if (org) {
-      const key = org.sourcedId ?? JSON.stringify(org);
-      if (!visited.has(key)) {
-        visited.add(key);
-        results.push(org);
-      }
-    }
-  };
-
-  sources.forEach(visit);
-  return results;
-}
-
-function extractSchoolContact(org?: Org | null): { phone?: string; email?: string } {
-  const contacts = org?.metadata?.contacts;
-  if (!Array.isArray(contacts) || contacts.length === 0) {
-    return {};
+  if (primaryResponse.ok) {
+    return;
   }
 
-  let phone: string | undefined;
-  let email: string | undefined;
-
-  for (const rawContact of contacts) {
-    if (!rawContact || typeof rawContact !== 'object') continue;
-    const contact = rawContact as Record<string, unknown>;
-    const type = String(contact.contactType ?? contact.type ?? '').toLowerCase();
-
-    const values = Object.values(contact)
-      .filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
-      .map((value) => value.trim());
-
-    if (!email) {
-      const candidate =
-        values.find((value) => value.includes('@')) ||
-        (type.includes('email') ? values[0] : undefined);
-      if (candidate) email = candidate;
-    }
-
-    if (!phone) {
-      const candidate =
-        values.find((value) => /\d{3}/.test(value.replace(/\D/g, ''))) ||
-        (type.includes('phone') || type.includes('mobile') || type.includes('tel') ? values[0] : undefined);
-      if (candidate) phone = candidate;
-    }
-
-    if (phone && email) break;
+  const totalChunks = Math.ceil(base64.length / PDF_CHUNK_SIZE);
+  if (totalChunks <= 1) {
+    const errorText = await primaryResponse.text().catch(() => 'Failed to persist conduct agreement');
+    throw new Error(errorText || 'Failed to persist conduct agreement');
   }
 
-  return { phone, email };
-}
+  for (let index = 0; index < totalChunks; index++) {
+    const chunk = base64.slice(index * PDF_CHUNK_SIZE, (index + 1) * PDF_CHUNK_SIZE);
+    const chunkResponse = await fetch(UPDATE_INFORMATION_ENDPOINT, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ...baseRequest,
+        chunk,
+        chunkIndex: index,
+        totalChunks,
+      }),
+    });
 
-function toNumber(value: unknown): number {
-  if (typeof value === 'number' && Number.isFinite(value)) return value;
-  if (typeof value === 'string') {
-    const parsed = Number.parseInt(value, 10);
-    return Number.isNaN(parsed) ? 0 : parsed;
-  }
-  return 0;
-}
-
-function parseDate(value: unknown): number {
-  if (typeof value !== 'string' || value.trim().length === 0) return 0;
-  const parsed = Date.parse(value);
-  return Number.isNaN(parsed) ? 0 : parsed;
-}
-
-function findLatestEnrollment(enrollments?: SchoolEnrollment[]): SchoolEnrollment | undefined {
-  if (!enrollments?.length) return undefined;
-  return enrollments.reduce<SchoolEnrollment | undefined>((latest, current) => {
-    if (!latest) return current;
-    const currentYear = toNumber(current.schoolYear);
-    const latestYear = toNumber(latest.schoolYear);
-    if (currentYear !== latestYear) {
-      return currentYear > latestYear ? current : latest;
+    if (!chunkResponse.ok) {
+      const errorText = await chunkResponse.text().catch(() => `Chunk upload failed at index ${index}`);
+      throw new Error(errorText || `Chunk upload failed at index ${index}`);
     }
-    const currentDate = parseDate(current.dateLastModified ?? current.entryDate);
-    const latestDate = parseDate(latest.dateLastModified ?? latest.entryDate);
-    return currentDate >= latestDate ? current : latest;
-  }, undefined);
-}
-
-function extractStreamGradeName(
-  streamGrades: Array<StreamGrade | null> | undefined,
-  streamId?: string,
-  locale: 'ar' | 'en' = 'ar',
-): string {
-  if (!streamId || !streamGrades?.length) return '';
-  const match = streamGrades
-    .filter((item): item is StreamGrade => Boolean(item))
-    .find((item) => item.streamGrade?.sourcedId === streamId);
-  if (!match) return '';
-  const sg = match.streamGrade;
-  
-  if (locale === 'en') {
-    // Try English name, then title, then name
-    return (
-      preferValue(
-        sg?.title,
-        sg?.name,
-        sg?.metadata?.titleArabic,
-      ) ?? ''
-    );
   }
-  
-  return (
-    preferValue(
-      sg?.metadata?.titleArabic,
-      sg?.title,
-      sg?.name,
-    ) ?? ''
-  );
 }
 
 function InfoField({
@@ -386,71 +158,50 @@ export default function ParentConductPage() {
   const [currentStep, setCurrentStep] = React.useState(1);
   const [isAgreed, setIsAgreed] = React.useState(false);
   const [isSigned, setIsSigned] = React.useState(false);
+  const [isSigning, setIsSigning] = React.useState(false);
+  const [latestPdfBase64, setLatestPdfBase64] = React.useState<string | null>(null);
 
-  const studentKey = resolvedStudentId
-    ? `/api/oneroster/basic-info-full?sourcedId=${encodeURIComponent(resolvedStudentId)}`
+  const dataKey = resolvedStudentId
+    ? `${CONDUCT_DATA_ENDPOINT}?studentPersonId=${encodeURIComponent(resolvedStudentId)}`
     : null;
   const {
-    data: studentInfo,
-    error: studentError,
-    isLoading: studentLoading,
-  } = useSWR<BasicInfoResponse>(studentKey, jsonFetcher);
+    data: aggregatedResponse,
+    error: aggregatedError,
+    isLoading,
+    mutate,
+  } = useSWR<AggregatedApiResponse>(dataKey, jsonFetcher);
 
-  const {
-    data: parentInfo,
-    error: parentError,
-    isLoading: parentLoading,
-  } = useSWR<BasicInfoResponse>('/api/oneroster/basic-info-full', jsonFetcher);
+  const aggregated = aggregatedResponse?.data ?? null;
+  const apiErrorMessage =
+    aggregatedResponse && aggregatedResponse.ok === false
+      ? aggregatedResponse.error
+      : aggregatedError instanceof Error
+        ? aggregatedError.message
+        : aggregatedError
+          ? String(aggregatedError)
+          : undefined;
+  const hasFetchError = Boolean(apiErrorMessage);
 
-  const enrollmentKey = resolvedStudentId
-    ? `/api/oneroster/schoolenrollments?studentId=${encodeURIComponent(resolvedStudentId)}`
-    : null;
-  const {
-    data: enrollmentInfo,
-    error: enrollmentError,
-    isLoading: enrollmentLoading,
-  } = useSWR<SchoolEnrollmentResponse>(enrollmentKey, jsonFetcher);
-
-  // Fetch update-information-requests row to know if conduct was already signed and stored
-  const updateInfoKey = resolvedStudentId
-    ? `/api/parent/update-information-requests?${new URLSearchParams({ studentPersonId: resolvedStudentId }).toString()}`
-    : null;
-  const {
-    data: updateInfo,
-    isLoading: updateInfoLoading,
-  } = useSWR<{ ok: boolean; data?: UpdateInfoRow }>(updateInfoKey, jsonFetcher);
-
-  const isLoading =
-    (resolvedStudentId ? studentLoading || enrollmentLoading : false) || parentLoading || updateInfoLoading;
-  const hasFetchError = Boolean(studentError || enrollmentError || parentError);
-  const firstError: unknown = studentError ?? enrollmentError ?? parentError ?? null;
+  const studentInfo = aggregated?.studentInfo ?? null;
+  const parentInfo = aggregated?.parentInfo ?? null;
+  const enrollmentInfo = aggregated?.enrollmentInfo ?? null;
+  const updateInfo = aggregated?.updateInfo ?? null;
 
   const studentPerson = React.useMemo(() => pickPrimaryPerson(studentInfo), [studentInfo]);
   const parentPerson = React.useMemo(() => pickPrimaryPerson(parentInfo), [parentInfo]);
-
   const latestEnrollment = React.useMemo(
     () => findLatestEnrollment(enrollmentInfo?.enrollments),
     [enrollmentInfo],
   );
-
   const allSchools = React.useMemo(
     () => collectOrgs(enrollmentInfo?.schoolInfo, enrollmentInfo?.schoolInfos),
     [enrollmentInfo],
   );
-
-  const latestSchool = React.useMemo(() => {
-    if (!latestEnrollment) {
-      return allSchools[0];
-    }
-    const schoolId = latestEnrollment.school?.sourcedId;
-    if (!schoolId) {
-      return allSchools[0];
-    }
-    return allSchools.find((org) => org.sourcedId === schoolId) ?? allSchools[0];
-  }, [allSchools, latestEnrollment]);
-
+  const latestSchool = React.useMemo(
+    () => getLatestSchool(allSchools, latestEnrollment),
+    [allSchools, latestEnrollment],
+  );
   const schoolContact = React.useMemo(() => extractSchoolContact(latestSchool), [latestSchool]);
-
   const latestStreamGradeName = React.useMemo(
     () =>
       extractStreamGradeName(
@@ -463,10 +214,8 @@ export default function ParentConductPage() {
 
   const studentFullName = formatPersonName(studentPerson, locale) || PLACEHOLDER;
   const parentFullName = formatPersonName(parentPerson, locale) || PLACEHOLDER;
-
   const studentAddress = formatPersonAddress(studentPerson?.metadata?.addresses) || PLACEHOLDER;
   const parentAddress = formatPersonAddress(parentPerson?.metadata?.addresses) || PLACEHOLDER;
-
   const studentContacts = extractPersonContact(studentPerson);
   const parentContacts = extractPersonContact(parentPerson);
 
@@ -485,25 +234,42 @@ export default function ParentConductPage() {
     ) ?? PLACEHOLDER;
 
   const schoolName = React.useMemo(() => {
-    if (locale === 'en') {
-      return preferValue(
-        latestSchool?.metadata?.englishName,
-        latestSchool?.name,
-        latestSchool?.metadata?.shortName,
-      ) ?? PLACEHOLDER;
-    }
-    return preferValue(
-      latestSchool?.name,
-      latestSchool?.metadata?.englishName,
-      latestSchool?.metadata?.shortName,
-    ) ?? PLACEHOLDER;
+    if (!latestSchool) return PLACEHOLDER;
+    const resolved =
+      locale === 'en'
+        ? preferValue(
+            latestSchool.metadata?.englishName,
+            latestSchool.name,
+            latestSchool.metadata?.shortName,
+          )
+        : preferValue(
+            latestSchool.name,
+            latestSchool.metadata?.englishName,
+            latestSchool.metadata?.shortName,
+          );
+    return resolved ?? PLACEHOLDER;
   }, [latestSchool, locale]);
 
   const schoolAddress = formatOrgAddress(latestSchool) || PLACEHOLDER;
-
   const schoolYearLabel = latestEnrollment?.schoolYear
     ? String(latestEnrollment.schoolYear)
     : PLACEHOLDER;
+
+  const warningMessage = studentInfo?.warning || parentInfo?.warning;
+
+  const signedRow: UpdateInfoRow | undefined = updateInfo?.ok ? updateInfo.data : undefined;
+  const alreadySigned = Boolean(
+    signedRow?.isConductAgreementSigned &&
+      signedRow?.conductAgreementStatus === 1 &&
+      signedRow?.pdfBase64 &&
+      signedRow.pdfBase64.length > 20,
+  );
+
+  React.useEffect(() => {
+    if (signedRow?.pdfBase64) {
+      setLatestPdfBase64(signedRow.pdfBase64);
+    }
+  }, [signedRow?.pdfBase64]);
 
   const today = React.useMemo(() => {
     try {
@@ -512,6 +278,101 @@ export default function ParentConductPage() {
       return new Date().toLocaleDateString();
     }
   }, []);
+
+  const handleGeneratePDF = React.useCallback(
+    async ({ autoDownload = false }: { autoDownload?: boolean } = {}) => {
+      const pdfData: PdfFormData = {
+        SchoolName: schoolName !== PLACEHOLDER ? schoolName : '',
+        SchoolAddress: schoolAddress !== PLACEHOLDER ? schoolAddress : '',
+        SchoolPhone: schoolContact.phone || '',
+        Name: studentFullName !== PLACEHOLDER ? studentFullName : '',
+        StudentEmiratesID: studentNationalId !== PLACEHOLDER ? studentNationalId : '',
+        ParentName: parentFullName !== PLACEHOLDER ? parentFullName : '',
+        ParentEmiratesID: parentEid !== PLACEHOLDER ? parentEid : '',
+        Phone: parentContacts.phone || '',
+        Address: parentAddress !== PLACEHOLDER ? parentAddress : '',
+        SignDate: today,
+      };
+
+      const template: PdfRequestBody['template'] = 'uae';
+      const { base64, filename } = await requestConductPdf({ ...pdfData, template });
+
+      if (autoDownload) {
+        downloadBase64PDF(base64, filename);
+      }
+
+      return { base64, filename };
+    },
+    [
+      parentAddress,
+      parentContacts.phone,
+      parentEid,
+      parentFullName,
+      schoolAddress,
+      schoolContact.phone,
+      schoolName,
+      studentFullName,
+      studentNationalId,
+      today,
+    ],
+  );
+
+  const handleManualDownload = React.useCallback(async () => {
+    try {
+      if (latestPdfBase64) {
+        downloadBase64PDF(latestPdfBase64, `${studentFullName}_ParentConduct.pdf`);
+        return;
+      }
+
+      const { base64, filename } = await handleGeneratePDF();
+      setLatestPdfBase64(base64);
+      downloadBase64PDF(base64, filename || `${studentFullName}_ParentConduct.pdf`);
+    } catch (error) {
+      console.error('Failed to download PDF:', error);
+      alert('Failed to generate PDF. Please try again.');
+    }
+  }, [handleGeneratePDF, latestPdfBase64, studentFullName]);
+
+  const handleSign = React.useCallback(async () => {
+    if (!resolvedStudentId || !isAgreed || isSigning) return;
+
+    setIsSigning(true);
+    try {
+      const { base64 } = await handleGeneratePDF({ autoDownload: true });
+      setLatestPdfBase64(base64);
+
+      setIsSigned(true);
+      await persistConductAgreement(
+        {
+          studentPersonId: resolvedStudentId,
+          parentPersonId: parentPerson?.sourcedId ?? null,
+          studentEmirateId: studentNationalId !== PLACEHOLDER ? studentNationalId : null,
+          citizenship: extractCitizenship(studentPerson) ?? null,
+        },
+        base64,
+      );
+
+      if (typeof mutate === 'function') {
+        void mutate();
+      }
+    } catch (error) {
+      console.error('Error completing conduct signature:', error);
+      alert(
+        'Charter signed successfully, but saving the agreement failed. It will retry on next visit.',
+      );
+    } finally {
+      setIsSigning(false);
+    }
+  }, [
+    handleGeneratePDF,
+    isAgreed,
+    isSigning,
+    mutate,
+    parentPerson?.sourcedId,
+    resolvedStudentId,
+    studentNationalId,
+    studentPerson,
+  ]);
 
   if (!resolvedStudentId) {
     return (
@@ -530,18 +391,13 @@ export default function ParentConductPage() {
   }
 
   if (hasFetchError) {
-    const err = firstError as unknown;
-    const message = err instanceof Error ? err.message : t.parentConduct.errorLoading;
+    const message = apiErrorMessage ?? t.parentConduct.errorLoading;
     return (
       <div className="max-w-xl mx-auto py-10 text-center text-destructive">
         {message}
       </div>
     );
   }
-
-  const warningMessage =
-    (studentInfo as { warning?: string } | undefined)?.warning ||
-    (parentInfo as { warning?: string } | undefined)?.warning;
 
   if (warningMessage) {
     return (
@@ -553,17 +409,7 @@ export default function ParentConductPage() {
     );
   }
 
-  const conductTerms = t.parentConduct.conductTerms;
-
-  // If already signed in DB and we have a stored PDF, show a completion message and a download button, skip the wizard
-  const signedRow = updateInfo?.ok && updateInfo?.data ? updateInfo.data : undefined;
-  const alreadySigned = Boolean(
-    signedRow?.isConductAgreementSigned &&
-      signedRow?.conductAgreementStatus === 1 &&
-      signedRow?.pdfBase64 && signedRow.pdfBase64.length > 20,
-  );
-
-  if (alreadySigned) {
+  if (alreadySigned && signedRow?.pdfBase64) {
     return (
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10" dir={locale === 'ar' ? 'rtl' : 'ltr'}>
         <Card className="mb-6 border shadow-md">
@@ -579,10 +425,14 @@ export default function ParentConductPage() {
               </svg>
               <div>
                 <div className="text-sm font-medium text-foreground mb-1">
-                  {locale === 'ar' ? 'تم إنجاز عملية التوقيع وحفظ نسخة PDF' : 'The charter has been signed and a PDF copy is stored.'}
+                  {locale === 'ar'
+                    ? 'تم إنجاز عملية التوقيع وحفظ نسخة PDF'
+                    : 'The charter has been signed and a PDF copy is stored.'}
                 </div>
                 <div className="text-xs text-muted-foreground">
-                  {locale === 'ar' ? 'يمكنك تنزيل نسخة الـ PDF في أي وقت.' : 'You can download the PDF copy anytime.'}
+                  {locale === 'ar'
+                    ? 'يمكنك تنزيل نسخة الـ PDF في أي وقت.'
+                    : 'You can download the PDF copy anytime.'}
                 </div>
               </div>
             </div>
@@ -590,7 +440,7 @@ export default function ParentConductPage() {
             <div className="mt-6 flex items-center gap-3">
               <button
                 type="button"
-                onClick={() => downloadBase64PDF(signedRow!.pdfBase64 as string, `${studentFullName}_ParentConduct.pdf`)}
+                onClick={() => downloadBase64PDF(signedRow.pdfBase64 as string, `${studentFullName}_ParentConduct.pdf`)}
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all bg-secondary hover:bg-secondary/90 text-secondary-foreground shadow-md hover:shadow-lg"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -611,111 +461,14 @@ export default function ParentConductPage() {
     );
   }
 
+  const conductTerms = t.parentConduct.conductTerms;
+
   const handleNext = () => {
     if (currentStep < 4) setCurrentStep(currentStep + 1);
   };
 
   const handlePrevious = () => {
     if (currentStep > 1) setCurrentStep(currentStep - 1);
-  };
-
-  const handleSign = async () => {
-    if (isAgreed) {
-      setIsSigned(true);
-      try {
-        // Generate PDF after signing
-        const base64 = await handleGeneratePDF(true);
-        // After PDF generated, update backend record with flags and PDF base64
-        try {
-          const payload = {
-            studentPersonId: resolvedStudentId,
-            parentPersonId: parentPerson?.sourcedId ?? null,
-            studentEmirateId: studentNationalId !== PLACEHOLDER ? studentNationalId : null,
-            isConductAgreementSigned: true,
-            conductAgreementStatus: 1,
-            pdfBase64: base64,
-            citizenship: extractCitizenship(studentPerson) ?? null,
-          };
-          let res = await fetch('/api/parent/update-information-requests', {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload),
-          });
-
-          if (!res.ok) {
-            // Fallback to chunked upload if the single request fails (likely due to size limits)
-            const CHUNK_SIZE = 500_000; // 500 KB per chunk (base64 chars)
-            const totalChunks = Math.ceil(base64.length / CHUNK_SIZE);
-            for (let i = 0; i < totalChunks; i++) {
-              const chunk = base64.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
-              const chunkPayload = {
-                studentPersonId: resolvedStudentId,
-                parentPersonId: parentPerson?.sourcedId ?? null,
-                studentEmirateId: studentNationalId !== PLACEHOLDER ? studentNationalId : null,
-                citizenship: extractCitizenship(studentPerson) ?? null,
-                chunk,
-                chunkIndex: i,
-                totalChunks,
-              };
-              const r = await fetch('/api/parent/update-information-requests', {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(chunkPayload),
-              });
-              if (!r.ok) {
-                const err = await r.json().catch(() => ({}));
-                console.error('Chunk upload failed', i, err);
-                throw new Error('Chunk upload failed');
-              }
-            }
-          }
-        } catch (e) {
-          console.error('Error calling update-information-requests API:', e);
-          alert('Signed successfully, but saving the agreement failed. It will retry on next visit.');
-        }
-      } catch (error) {
-        console.error('Error generating PDF:', error);
-        alert('Charter signed successfully, but PDF generation failed. You can download it later.');
-      }
-    }
-  };
-
-  const handleGeneratePDF = async (autoDownload: boolean = false) => {
-    try {
-      // Prepare PDF form data
-      const pdfData: PdfFormData = {
-        SchoolName: schoolName !== PLACEHOLDER ? schoolName : '',
-        SchoolAddress: schoolAddress !== PLACEHOLDER ? schoolAddress : '',
-        SchoolPhone: schoolContact.phone || '',
-        Name: studentFullName !== PLACEHOLDER ? studentFullName : '',
-        StudentEmiratesID: studentNationalId !== PLACEHOLDER ? studentNationalId : '',
-        ParentName: parentFullName !== PLACEHOLDER ? parentFullName : '',
-        ParentEmiratesID: parentEid !== PLACEHOLDER ? parentEid : '',
-        Phone: parentContacts.phone || '',
-        Address: parentAddress !== PLACEHOLDER ? parentAddress : '',
-        SignDate: today,
-      };
-
-      // Determine template path based on student nationality or default to UAE
-      const templatePath = '/pdf/ConsentUAE_2025.pdf';
-      const fontPath = '/fonts/Alexandria-font.ttf';
-
-      // Generate PDF with base64 output
-      const base64Pdf = await generatePDF(pdfData, templatePath, fontPath, autoDownload);
-      
-      console.log('PDF generated successfully. Base64 length:', base64Pdf.length);
-      
-      if (!autoDownload) {
-        // If not auto-downloading, offer manual download
-        downloadBase64PDF(base64Pdf, `${studentFullName}_ParentConduct.pdf`);
-      }
-      
-      return base64Pdf;
-    } catch (error) {
-      console.error('Failed to generate PDF:', error);
-      alert('Failed to generate PDF. Please try again.');
-      throw error;
-    }
   };
 
   return (
@@ -978,7 +731,7 @@ export default function ParentConductPage() {
                       checked={isAgreed}
                       onChange={(e) => setIsAgreed(e.target.checked)}
                       className="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                      disabled={isSigned}
+                      disabled={isSigned || isSigning}
                     />
                     <label htmlFor="agree-checkbox" className="text-sm text-foreground cursor-pointer">
                       {locale === 'ar' 
@@ -991,22 +744,30 @@ export default function ParentConductPage() {
                     <button
                       type="button"
                       onClick={handleSign}
-                      disabled={!isAgreed || isSigned}
+                      disabled={!isAgreed || isSigned || isSigning}
                       className={`w-full sm:w-auto px-6 py-3 rounded-lg font-medium transition-all ${
-                        !isAgreed || isSigned
+                        !isAgreed || isSigned || isSigning
                           ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                           : 'bg-primary hover:bg-primary/90 text-primary-foreground shadow-md hover:shadow-lg'
                       }`}
                     >
-                      {isSigned 
-                        ? (locale === 'ar' ? '✓ تم التوقيع' : '✓ Signed')
-                        : (locale === 'ar' ? 'توقيع الميثاق' : 'Sign Charter')}
+                      {isSigned
+                        ? locale === 'ar'
+                          ? '✓ تم التوقيع'
+                          : '✓ Signed'
+                        : isSigning
+                          ? locale === 'ar'
+                            ? 'جاري التوقيع...'
+                            : 'Signing...'
+                          : locale === 'ar'
+                            ? 'توقيع الميثاق'
+                            : 'Sign Charter'}
                     </button>
-                    
+
                     {isSigned && (
                       <button
                         type="button"
-                        onClick={() => handleGeneratePDF(false)}
+                        onClick={handleManualDownload}
                         className="w-full sm:w-auto px-6 py-3 rounded-lg font-medium transition-all bg-secondary hover:bg-secondary/90 text-secondary-foreground shadow-md hover:shadow-lg flex items-center justify-center gap-2"
                       >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

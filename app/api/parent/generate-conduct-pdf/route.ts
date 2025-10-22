@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
       templateName,
     );
 
-    const fontPath = join(process.cwd(), 'public', 'fonts', 'Cairo-Regular.ttf');
+    const fontPath = join(process.cwd(), 'public', 'fonts', 'Alexandria-font.ttf');
 
     // Load template and font
     const [templateBytes, fontBytes] = await Promise.all([
