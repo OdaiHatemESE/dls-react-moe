@@ -521,6 +521,12 @@ export const en = {
               "Direct children not to cause any intentional or unintentional damage to public property at school.",
               "Pledge to compensate for damage resulting from tampering with property and facilities that the student may cause at school or on transportation."
             ]
+          },
+          {
+            title: "Tuition Fees: (For Non-Citizen Students)",
+            items: [
+              "Commit to paying the tuition fees due for the children in full at the beginning of the academic year or by installment in three payments to be paid before the start of each semester in accordance with the eligibility conditions approved by the Ministry. In case of non-compliance, the Ministry has the right to withhold interim and final results, suspend school services for the student, and cancel the student's enrollment for the following academic year in accordance with the approved regulations. The guardian bears all consequences regarding the student's right to education."
+            ]
           }
         ]
       }

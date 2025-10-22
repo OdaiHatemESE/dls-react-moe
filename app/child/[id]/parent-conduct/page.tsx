@@ -212,6 +212,27 @@ export default function ParentConductPage() {
     [enrollmentInfo, latestEnrollment, locale],
   );
 
+  // Resolve citizenship once for conditional UI (e.g., expat-specific clauses)
+  const [citizenship, setCitizenship] = React.useState<string | null>(null);
+  React.useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const c = await extractCitizenship(studentPerson);
+        if (mounted) setCitizenship(c ?? null);
+      } catch {
+        if (mounted) setCitizenship(null);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [studentPerson]);
+  const isExpatCitizenship = React.useMemo(() => {
+    const c = (citizenship ?? '').trim().toLowerCase();
+    return c === 'expat arab' || c === 'expat non arab';
+  }, [citizenship]);
+
   const studentFullName = formatPersonName(studentPerson, locale) || PLACEHOLDER;
   const parentFullName = formatPersonName(parentPerson, locale) || PLACEHOLDER;
   const studentAddress = formatPersonAddress(studentPerson?.metadata?.addresses) || PLACEHOLDER;
@@ -471,6 +492,12 @@ export default function ParentConductPage() {
   }
 
   const conductTerms = t.parentConduct.conductTerms;
+  // Only show the last Parent Commitments section (Tuition Fees for Non-Citizens)
+  // when citizenship is Expat Arab or Expat non Arab.
+  const parentSectionsAll = conductTerms.parentCommitments.sections;
+  const parentSections = isExpatCitizenship
+    ? parentSectionsAll
+    : parentSectionsAll.slice(0, Math.max(0, parentSectionsAll.length - 1));
 
   const handleNext = () => {
     if (currentStep < 4) setCurrentStep(currentStep + 1);
@@ -678,7 +705,7 @@ export default function ParentConductPage() {
             </CardHeader>
             <CardContent className="pt-4">
               <div className="max-h-96 overflow-y-auto border rounded-lg p-4 bg-muted/50">
-                {conductTerms.parentCommitments.sections.map((section, sectionIndex) => (
+                {parentSections.map((section, sectionIndex) => (
                   <div key={sectionIndex} className="mb-4 last:mb-0">
                     <h4 className="text-sm font-medium text-foreground mb-2 flex items-center">
                       <span className="w-5 h-5 bg-primary/20 text-primary-foreground rounded-full flex items-center justify-center text-xs font-bold ml-2">
