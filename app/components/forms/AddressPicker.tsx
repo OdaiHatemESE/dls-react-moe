@@ -239,7 +239,6 @@ export function AddressPicker(props: AddressPickerProps) {
   // Handler for MyLandPicker selection
   const handleMapSelection = React.useCallback(
     (selection: OnwaniSelection) => {
-      console.log("Map selection received:", selection);
       setPendingSelection(selection);
     },
     []

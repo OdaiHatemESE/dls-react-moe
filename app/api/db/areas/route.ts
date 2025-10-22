@@ -56,7 +56,7 @@ export async function GET(req: Request) {
                    ORDER BY A.TitleAr ASC`
       )) as AreaRow[];
     }
-    console.log("Fetched areas:", rows);
+  
     return NextResponse.json({
       data: rows,
       meta: {

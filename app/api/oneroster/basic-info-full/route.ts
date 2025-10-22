@@ -234,10 +234,10 @@ export async function GET(req: Request) {
           }),
         });
         updateReqMeta = await resp.json().catch(() => ({ ok: false, error: "Invalid JSON from update-information-requests" }));
-        console.log("Update information request response:", updateReqMeta);
+      
       } catch (e) {
         updateReqMeta = { ok: false, error: e instanceof Error ? e.message : String(e) };
-         console.log("Update information request response:", updateReqMeta);
+        
       }
 
       return NextResponse.json({ 
@@ -268,7 +268,6 @@ export async function GET(req: Request) {
 
   // [NEW-Cache] cached parent record (with nocache)
   const parentOrStudentFullWrap = await getFullPersonById(personIdentifier, false, noCache);
-  console.log(parentOrStudentFullWrap.data);       // [NEW-Cache]
   const parentOrStudentFull = parentOrStudentFullWrap.data;
       const role = pickRole(parentOrStudentFull)?.toString().toLowerCase() || ""; 
 
@@ -289,10 +288,10 @@ export async function GET(req: Request) {
             }),
           });
           updateReqMeta = await resp.json().catch(() => ({ ok: false, error: "Invalid JSON from update-information-requests" }));
-          console.debug(updateReqMeta)
+      
         } catch (e) {
           updateReqMeta = { ok: false, error: e instanceof Error ? e.message : String(e) };
-            console.debug(updateReqMeta)
+            
         }
 
         return NextResponse.json({ 

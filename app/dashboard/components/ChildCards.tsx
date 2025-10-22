@@ -344,7 +344,6 @@ export default function ChildCards() {
   // normalization is handled by useChildren
   const eid = status === "authenticated" ? (session?.user?.emiratesId || '') : undefined;
   const { children, error, isLoading } = useChildren(eid);
-  console.log("Children:", children, error, isLoading);
   const isBusy = status === "loading" || (status === "authenticated" && isLoading);
 
   // Skeleton loaders with shimmer effect

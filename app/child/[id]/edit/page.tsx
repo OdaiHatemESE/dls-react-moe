@@ -124,8 +124,7 @@ export default function EditChildPage() {
 
     try {
       // TODO: Implement API call to update student information
-      console.log('Saving data:', formData);
-      console.log('Data confirmed without changes:', dataConfirmed);
+  
       
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));

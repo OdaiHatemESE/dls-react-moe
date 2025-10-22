@@ -162,7 +162,6 @@ export default function SchoolInfo({ studentId, year }: { studentId: string; yea
   const isAllYears = !year || year === 'all';
   const org = !isAllYears ? normalizeSingleOrg(data.schoolInfo) : undefined;
   const orgs = isAllYears ? normalizeManyOrgs(data.schoolInfos) : (org ? [org] : []);
-  console.log('Rendering SchoolInfo with orgs:', orgs);
   return (
     <div className={clsx('space-y-6', locale === 'ar' && 'direction-rtl')}>
       {/* Freshness bar - Mobile Optimized */}

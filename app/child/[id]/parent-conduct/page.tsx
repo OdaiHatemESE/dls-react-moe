@@ -342,12 +342,13 @@ export default function ParentConductPage() {
       setLatestPdfBase64(base64);
 
       setIsSigned(true);
+      const citizenship = await extractCitizenship(studentPerson);
       await persistConductAgreement(
         {
           studentPersonId: resolvedStudentId,
           parentPersonId: parentPerson?.sourcedId ?? null,
           studentEmirateId: studentNationalId !== PLACEHOLDER ? studentNationalId : null,
-          citizenship: extractCitizenship(studentPerson) ?? null,
+          citizenship: citizenship ?? null,
         },
         base64,
       );

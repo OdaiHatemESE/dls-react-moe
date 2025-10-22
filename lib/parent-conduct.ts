@@ -62,6 +62,71 @@ export function preferValue<T extends string | undefined | null>(
   return undefined;
 }
 
+const citizenshipStatusCache = new Map<string, string | null>();
+
+function extractCitizenshipStatusFromStudentPayload(payload: unknown, seen = new WeakSet<object>()): string | undefined {
+  if (!payload || typeof payload !== "object") {
+    return undefined;
+  }
+
+  if (seen.has(payload as object)) {
+    return undefined;
+  }
+  seen.add(payload as object);
+
+  if (Array.isArray(payload)) {
+    for (const item of payload) {
+      const result = extractCitizenshipStatusFromStudentPayload(item, seen);
+      if (result) return result;
+    }
+    return undefined;
+  }
+
+  const record = payload as Record<string, unknown>;
+
+  const directKeys = [
+    "citizenshipStatus",
+    "citizenship",
+    "nationalityStatus",
+    "nationality",
+  ];
+
+  for (const key of directKeys) {
+    const value = record[key];
+    if (typeof value === "string" && value.trim().length > 0) {
+      return value.trim();
+    }
+  }
+
+  const nestedKeys = [
+    "metadata",
+    "student",
+    "Student",
+    "person",
+    "Person",
+    "data",
+    "payload",
+    "result",
+  ];
+
+  for (const key of nestedKeys) {
+    const value = record[key];
+    if (typeof value === "object" && value !== null) {
+      const nested = extractCitizenshipStatusFromStudentPayload(value, seen);
+      if (nested) return nested;
+    }
+  }
+
+  for (const value of Object.values(record)) {
+    if (typeof value === "object" && value !== null) {
+      const nested = extractCitizenshipStatusFromStudentPayload(value, seen);
+      if (nested) return nested;
+    }
+  }
+
+  return undefined;
+}
+
 export function formatPersonName(person?: Person | null, locale: "ar" | "en" = "ar"): string {
   if (!person) return "";
 
@@ -132,18 +197,49 @@ export function formatOrgAddress(org?: Org | null): string {
   return parts;
 }
 
-export function extractCitizenship(person?: Person | null): string | undefined {
+export async function extractCitizenship(person?: Person | null): Promise<string | undefined> {
   if (!person) return undefined;
-  const meta = person.metadata ?? {};
-  return (
-    preferValue(
-      meta.nationality,
-      meta.nationalityEn as string | undefined,
-      meta.nationalityEnglish as string | undefined,
-      meta.nationalityArabic,
-      (person as unknown as { nationality?: string })?.nationality,
-    ) || undefined
-  );
+
+  const sourcedId = typeof person.sourcedId === "string" && person.sourcedId.trim().length > 0
+    ? person.sourcedId.trim()
+    : undefined;
+  if (!sourcedId) {
+    return undefined;
+  }
+
+  if (citizenshipStatusCache.has(sourcedId)) {
+    const cached = citizenshipStatusCache.get(sourcedId);
+    return cached ?? undefined;
+  }
+
+  if (typeof window === "undefined") {
+    return undefined;
+  }
+
+  try {
+    const res = await fetch(`/api/oneroster/students/${encodeURIComponent(sourcedId)}?fields=citizenshipStatus`, {
+      cache: "no-store",
+    });
+    if (!res.ok) {
+      citizenshipStatusCache.set(sourcedId, null);
+      return undefined;
+    }
+
+    const payload = await res.json().catch(() => null);
+    const remote = extractCitizenshipStatusFromStudentPayload(payload ?? undefined);
+    if (remote && remote.trim().length > 0) {
+      const trimmed = remote.trim();
+      citizenshipStatusCache.set(sourcedId, trimmed);
+      return trimmed;
+    }
+
+    citizenshipStatusCache.set(sourcedId, null);
+    return undefined;
+  } catch (error) {
+    console.warn("Failed to resolve citizenshipStatus", error);
+    citizenshipStatusCache.set(sourcedId, null);
+    return undefined;
+  }
 }
 
 export function findContactValue(
@@ -206,7 +302,7 @@ export function isOrg(candidate: unknown): candidate is Org {
   return (
     typeof record.sourcedId === "string" ||
     typeof record.name === "string" ||
-    (record.metadata && typeof record.metadata === "object")
+    (typeof record.metadata === "object" && record.metadata !== null)
   );
 }
 

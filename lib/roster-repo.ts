@@ -97,8 +97,7 @@ export async function getStudentsFull(ids: string[]): Promise<Person[]> {
   const all: Person[] = [];
 
   for (const id of ids) {
-    console.debug("Fetching full student data for", id);
-    try {
+     try {
       const filter = `sourcedId='${escapeFilterLiteral(id)}'`;
       const data = await orFetch<unknown>(
         `/v1p1/persons?filter=${encodeURIComponent(filter)}`,
@@ -138,8 +137,7 @@ export async function getSchoolEnrollmentsByStudent(
       "read"
     );
 
-    console.debug(data.length, "enrollments fetched for student", studentId);
-    if (!Array.isArray(data)) {
+     if (!Array.isArray(data)) {
       // Handle case where vendor returns a single object or envelope
       return data;    }
 
@@ -162,8 +160,7 @@ export async function getSchoolEnrollmentsByStudent(
 export async function getOrgBySourcedId(id: string): Promise<Org | null> {
   try {
     const data:Org = await orFetch<Org>(`/v1p1/orgs/${encodeURIComponent(id)}?fields=sourcedId,name,metadata.shortName,metadata.englishName,metadata.addresses`, "read");
-    console.debug("Fetched org data for", id, typeof(data));
-    return data as Org;
+     return data as Org;
   } catch (err) {
     console.error("Failed fetching org by id", id, err);
     return null;
@@ -173,7 +170,6 @@ export async function getOrgBySourcedId(id: string): Promise<Org | null> {
 export async function getStreamGradeById(id: string): Promise<StreamGrade | null> {
   try {
     const data:StreamGrade = await orFetch<StreamGrade>(`/v1p1/streamGrades/${encodeURIComponent(id)}`, "read");
-    console.debug("Fetched stream grade data for", id, typeof(data));
     return data as StreamGrade;
   } catch (err) {
     console.error("Failed fetching stream grade by id", id, err);

@@ -65,7 +65,6 @@ export async function GET(req: Request) {
       await cacheSetJSON<Wrapped<Array<any>>>(enrollmentsKey, { data: fresh, fetchedAt }, { ttlSeconds: TTL.ENROLLMENTS });
     }
 
-    console.debug(`Returning ${enrollments.length} enrollments for student ${studentId}`);
 
     // Collect unique school IDs from enrollments
     const schoolIDs = Array.from(

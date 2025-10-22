@@ -144,7 +144,7 @@ export function ChildActions({ studentPersonId, parentPersonId, studentEmirateId
        {!conductSigned && 
  
         <div className={clsx("flex flex-wrap items-center gap-2 mx-3", className)}>
-          <Btn href={`/child/${studentPersonId}/conduct`}>
+          <Btn href={`/child/${studentPersonId}/parent-conduct`}>
             {locale === "ar" ? "توقيع الميثاق" : "Sign Conduct"}
           </Btn>
           {/* <Btn href={`/child/${studentPersonId}`} variant="secondary">
