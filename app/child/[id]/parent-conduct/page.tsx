@@ -294,7 +294,15 @@ export default function ParentConductPage() {
         SignDate: today,
       };
 
-      const template: PdfRequestBody['template'] = 'uae';
+      const citizenship = await extractCitizenship(studentPerson);
+      let templateType: 'uae' | 'expats' = 'uae';
+      if (citizenship == 'Expat Arab' || citizenship == 'Expat non Arab') {
+        templateType = 'expats';
+      } else {
+        templateType = 'uae';
+      }
+
+      const template: PdfRequestBody['template'] = templateType;
       const { base64, filename } = await requestConductPdf({ ...pdfData, template });
 
       if (autoDownload) {
