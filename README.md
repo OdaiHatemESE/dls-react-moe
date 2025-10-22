@@ -26,6 +26,14 @@ First, install the dependencies:
 npm install
 ```
 
+Then, set up your environment variables by copying the example file:
+
+```bash
+cp .env.example .env.local
+```
+
+Edit `.env.local` with your actual configuration values (Auth0/OIDC credentials, NextAuth secret, etc.).
+
 Then, run the development server:
 
 ```bash
@@ -67,6 +75,18 @@ This project uses [`next/font`](https://nextjs.org/docs/app/building-your-applic
 - `npm run build` - Build production application
 - `npm start` - Start production server on port 4200
 - `npm run lint` - Run ESLint
+
+## Environment Variables
+
+The application requires the following environment variables. See `.env.example` for a template:
+
+- `NEXTAUTH_SECRET` - Secret for NextAuth.js session encryption
+- `NEXTAUTH_URL` - Base URL of your application
+- `OIDC_ISSUER` - Your Auth0/OIDC issuer URL
+- `OIDC_CLIENT_ID` - Your Auth0/OIDC client ID
+- `OIDC_CLIENT_SECRET` - Your Auth0/OIDC client secret (optional for public clients)
+- `OIDC_LOGOUT_URL` - Custom logout URL (optional)
+- `OIDC_LOGOUT_RETURN_TO` - Return URL after logout (optional)
 
 ## Technologies Used
 
