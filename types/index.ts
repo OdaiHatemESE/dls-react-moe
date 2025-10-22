@@ -255,6 +255,7 @@ export type SchoolEnrollment = {
     href: string;
     sourcedId: string;
     type: string;
+     educationType?: string;
   };
   schoolYear: number;
   streamGrade: {
