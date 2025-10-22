@@ -46,6 +46,13 @@ interface SchoolEnrollmentResponse {
   meta?: { cache?: { source?: 'cache' | 'upstream'; lastUpdated?: string | null } };
 }
 
+// Minimal shape returned from /api/parent/update-information-requests (we only need a few fields)
+type UpdateInfoRow = {
+  isConductAgreementSigned?: boolean | null;
+  conductAgreementStatus?: number | null;
+  pdfBase64?: string | null;
+};
+
 const PLACEHOLDER = '—';
 
 function pickPrimaryPerson(response?: BasicInfoResponse | null): Person | undefined {
@@ -404,7 +411,17 @@ export default function ParentConductPage() {
     isLoading: enrollmentLoading,
   } = useSWR<SchoolEnrollmentResponse>(enrollmentKey, jsonFetcher);
 
-  const isLoading = (resolvedStudentId ? studentLoading || enrollmentLoading : false) || parentLoading;
+  // Fetch update-information-requests row to know if conduct was already signed and stored
+  const updateInfoKey = resolvedStudentId
+    ? `/api/parent/update-information-requests?${new URLSearchParams({ studentPersonId: resolvedStudentId }).toString()}`
+    : null;
+  const {
+    data: updateInfo,
+    isLoading: updateInfoLoading,
+  } = useSWR<{ ok: boolean; data?: UpdateInfoRow }>(updateInfoKey, jsonFetcher);
+
+  const isLoading =
+    (resolvedStudentId ? studentLoading || enrollmentLoading : false) || parentLoading || updateInfoLoading;
   const hasFetchError = Boolean(studentError || enrollmentError || parentError);
   const firstError: unknown = studentError ?? enrollmentError ?? parentError ?? null;
 
@@ -537,6 +554,62 @@ export default function ParentConductPage() {
   }
 
   const conductTerms = t.parentConduct.conductTerms;
+
+  // If already signed in DB and we have a stored PDF, show a completion message and a download button, skip the wizard
+  const signedRow = updateInfo?.ok && updateInfo?.data ? updateInfo.data : undefined;
+  const alreadySigned = Boolean(
+    signedRow?.isConductAgreementSigned &&
+      signedRow?.conductAgreementStatus === 1 &&
+      signedRow?.pdfBase64 && signedRow.pdfBase64.length > 20,
+  );
+
+  if (alreadySigned) {
+    return (
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10" dir={locale === 'ar' ? 'rtl' : 'ltr'}>
+        <Card className="mb-6 border shadow-md">
+          <CardHeader className="bg-gradient-to-r from-green-600 to-green-500 text-white">
+            <CardTitle className="text-center text-lg sm:text-xl font-semibold">
+              {locale === 'ar' ? 'تم توقيع ميثاق السلوك بنجاح' : 'Parent Conduct Charter Completed'}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <div className="flex items-start gap-3 p-4 bg-green-50 border border-green-200 rounded-lg">
+              <svg className="w-6 h-6 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div>
+                <div className="text-sm font-medium text-foreground mb-1">
+                  {locale === 'ar' ? 'تم إنجاز عملية التوقيع وحفظ نسخة PDF' : 'The charter has been signed and a PDF copy is stored.'}
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {locale === 'ar' ? 'يمكنك تنزيل نسخة الـ PDF في أي وقت.' : 'You can download the PDF copy anytime.'}
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => downloadBase64PDF(signedRow!.pdfBase64 as string, `${studentFullName}_ParentConduct.pdf`)}
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all bg-secondary hover:bg-secondary/90 text-secondary-foreground shadow-md hover:shadow-lg"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                {locale === 'ar' ? 'تحميل PDF' : 'Download PDF'}
+              </button>
+
+              <Link href={routeChildId ? `/child/${encodeURIComponent(routeChildId)}` : '/dashboard'}>
+                <button className="px-6 py-3 rounded-lg border bg-muted text-foreground" type="button">
+                  {t.parentConduct.navigation.close}
+                </button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const handleNext = () => {
     if (currentStep < 4) setCurrentStep(currentStep + 1);
