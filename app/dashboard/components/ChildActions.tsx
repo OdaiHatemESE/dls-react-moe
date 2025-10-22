@@ -17,6 +17,8 @@ export type UpdateInfoRow = {
   isConductAgreementSigned?: boolean | null;
   conductAgreementStatus?: number | null;
   studentEmirateId?: string | null;
+  pdfBase64?: string | null;
+  citizenship?: string | null;
   createAt?: string | null;
   updateAt?: string | null;
 };
@@ -40,6 +42,33 @@ export function ChildActions({ studentPersonId, parentPersonId, studentEmirateId
     `/api/parent/update-information-requests?${params.toString()}`,
     jsonFetcher
   );
+
+  const handleDownloadPdf = () => {
+    if (!data?.data?.pdfBase64) return;
+    
+    try {
+      // Convert base64 to blob
+      const byteCharacters = atob(data.data.pdfBase64);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: 'application/pdf' });
+      
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `conduct-agreement-${studentPersonId}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Failed to download PDF:', err);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -73,7 +102,8 @@ export function ChildActions({ studentPersonId, parentPersonId, studentEmirateId
   const infoRequested = !!row.isInfoUpdateRequested;
   const status = row.infoUpdateRequestStatus ?? null; // 1,2=in progress; 3=approved; 4=rejected
   const conductSigned = !!row.isConductAgreementSigned;
-  console.log("ChildActions:", { infoRequested, status, conductSigned });
+  const hasPdf = !!row.pdfBase64;
+  console.log("ChildActions:", { infoRequested, status, conductSigned, hasPdf });
 
   // Decision matrix from user:
   // - if isInfoUpdateRequested == false -> show "Update Information"
@@ -105,6 +135,27 @@ export function ChildActions({ studentPersonId, parentPersonId, studentEmirateId
       )}
       {children}
     </Link>
+  );
+
+  const DownloadBtn = () => (
+    <button
+      onClick={handleDownloadPdf}
+      disabled={!hasPdf}
+      className={clsx(
+        "group inline-flex items-center justify-center gap-2 font-semibold rounded-xl transition-all duration-200 shadow-md hover:shadow-lg touch-manipulation active:scale-95",
+        compact
+          ? "px-4 py-2 text-xs"
+          : "px-5 py-2.5 text-sm",
+        "bg-gradient-to-r from-chart-2 to-chart-2/90 text-white hover:from-chart-2/90 hover:to-chart-2/80",
+        !hasPdf && "opacity-50 cursor-not-allowed"
+      )}
+      title={hasPdf ? (locale === "ar" ? "تحميل الميثاق" : "Download Conduct") : (locale === "ar" ? "لا يوجد ملف" : "No PDF available")}
+    >
+      <svg className="w-4 h-4 group-hover:translate-y-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      </svg>
+      {locale === "ar" ? "تحميل الميثاق" : "Download Conduct"}
+    </button>
   );
 
   // Render based on matrix
@@ -152,22 +203,41 @@ export function ChildActions({ studentPersonId, parentPersonId, studentEmirateId
           </Btn> */}
         </div>
          }
+
+       {conductSigned && hasPdf && 
+        <div className={clsx("flex flex-wrap items-center gap-2 mx-3", className)}>
+          <DownloadBtn />
+        </div>
+       }
       
       </>
     )
     }
+  // Case 3: Requested and status is 3 => approved
   if(status===3){
     return(
       <>
        {!conductSigned && 
  
         <div className={clsx("flex flex-wrap items-center gap-2 mx-3", className)}>
-          <Btn href={`/child/${studentPersonId}/conduct`}>
+          <Btn href={`/child/${studentPersonId}/sign-conduct`}>
             {locale === "ar" ? "توقيع الميثاق" : "Sign Conduct"}
           </Btn>
            <Btn href={`/child/${studentPersonId}`} variant="secondary">
             {locale === "ar" ? "عرض الملف" : "View Profile"}
           </Btn> 
+        </div>
+         }
+
+         {conductSigned && 
+ 
+          
+        <div className={clsx("flex flex-wrap items-center gap-2 mx-3", className)}>
+          {hasPdf && <DownloadBtn />}
+          <Btn href={`/child/${studentPersonId}`}>
+            {locale === "ar" ? "عرض الملف" : "View Profile"}
+          </Btn>
+         
         </div>
          }
       </>
