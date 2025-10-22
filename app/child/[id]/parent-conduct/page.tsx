@@ -382,6 +382,66 @@ export default function ParentConductPage() {
         base64,
       );
 
+      const notifyParent = async () => {
+        if (!base64) return;
+
+        const emailRecipient = parentContacts.email?.trim();
+        const smsRecipient = parentContacts.phone?.trim();
+
+        const sendEmail = async () => {
+          if (!emailRecipient) return;
+
+          const response = await fetch('/api/notifications/email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+              pdf64: base64,
+              to: emailRecipient,
+            }),
+          });
+
+          if (!response.ok) {
+            const message = await response.text().catch(() => response.statusText);
+            throw new Error(message || 'Email notification failed');
+          }
+        };
+
+        const sendSms = async () => {
+          if (!smsRecipient) return;
+
+          const response = await fetch('/api/notifications/sms', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ recipient: smsRecipient }),
+          });
+
+          if (!response.ok) {
+            const message = await response.text().catch(() => response.statusText);
+            throw new Error(message || 'SMS notification failed');
+          }
+        };
+
+        const tasks: Array<Promise<void>> = [];
+        if (emailRecipient) tasks.push(sendEmail());
+        if (smsRecipient) tasks.push(sendSms());
+
+        if (!tasks.length) {
+          console.warn('No parent contact info available for notifications.');
+          return;
+        }
+
+        const results = await Promise.allSettled(tasks);
+        results.forEach((result) => {
+          if (result.status === 'rejected') {
+            console.error('Parent conduct notification failed:', result.reason);
+          }
+        });
+      };
+
+      await notifyParent();
+
       if (typeof mutate === 'function') {
         void mutate();
       }
@@ -398,6 +458,8 @@ export default function ParentConductPage() {
     isAgreed,
     isSigning,
     mutate,
+    parentContacts.email,
+    parentContacts.phone,
     parentPerson?.sourcedId,
     resolvedStudentId,
     studentNationalId,
