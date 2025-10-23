@@ -1,116 +1,80 @@
-// types/oneroster.ts
+// types/student-profile.v1.ts
 
-export interface StudentProfile {
-  id: string; // OneRoster person/user sourcedId
-  username: string;
-  status: string;
-
-  person: {
-    givenName: string | null;
-    middleName: string | null;
-    familyName: string | null;
-    gender: string | null;
-    birthDate: string | null;
-    religion: string | null;
-  };
-
-  namesEnglish: {
-    first: string | null;
-    second: string | null;
-    third: string | null;
-    fourth: string | null;
-    family: string | null;
-  };
-
-  identifiers: {
-    nationalId: string | null;
-    studentNumber: string | null;
-    userIds: string[];
-  };
-
-  nationality: {
-    en: string | null;
-    ar: string | null;
-    citizenshipStatus?: string | null;
-  };
-
-  birthPlace: {
-    city: { ar: string | null; en: string | null };
-    country: { ar: string | null; en: string | null };
-  };
-
-  contacts: ContactInfo[];
-  addresses: AddressInfo[];
-
-  currentPlacement?: CurrentPlacement;
-
-  flags: {
-    enabledUser: boolean;
-    isSpecialNeed: boolean;
-  };
-
-  metadata: {
-    roleList: string[];
-    sources: {
-      person?: string;
-      enrollment?: string;
-      session?: string;
-      school?: string;
-      streamGrade?: string;
-    };
-    timestamps: {
-      personLastModified?: string | null;
-      enrollmentLastModified?: string | null;
-      studentLastModified?: string | null;
-    };
-  };
-}
-
-export interface ContactInfo {
-  type: "Mobile" | "Email" | "OfficialEmail" | "Other";
+export interface StudentContact {
+  type: "Mobile" | "Email" | "OfficialEmail" | string;
   value: string;
 }
 
-export interface AddressInfo {
+export interface StudentAddress {
   country: string | null;
   state: string | null;
   city: string | null;
   region: string | null;
   verified: boolean;
+  zipCode?: string | null;
+  latitude?: string | null;
+  longitude?: string | null;
+  poBox?: string | null;
+  roadNumber?: string | null;
+  plotId?: string | null;
+  plotNumber?: string | null;
+  addressLine1?: string | null;
+  addressLine2?: string | null;
+  addressLine3?: string | null;
+  sector?: string | null;
 }
 
-export interface CurrentPlacement {
-  school: {
-    id: string;
-    name: string | null;
-  };
-  grade: {
-    id: string;
-    name: string | null;
-  };
-  streamGrade: {
-    id: string;
-    name: string | null;
-    title: { en: string | null; ar: string | null };
-    position: number | null;
-  };
-  educationPathId: string | null;
-  session: {
-    id: string;
-    schoolYear: number | null;
-  };
-  enrollment: EnrollmentInfo;
-}
-
-export interface EnrollmentInfo {
-  id: string;
-  type: string | null;
-  entryType: string | null;
-  entryDate: string | null;
-  exitDate: string | null;
+export interface StudentEnrollment {
+  id: string;                 // OneRoster enrollment sourcedId
+  type: string | null;        // "Enrollment"
+  entryType: string | null;   // e.g., "New Student"
+  entryDate: string | null;   // ISO date (YYYY-MM-DD)
+  exitDate: string | null;    // ISO date (YYYY-MM-DD) or null
   exitType: string | null;
   exitReason: string | null;
   isMandatoryEducation: boolean;
   isSpecialNeed: boolean;
-  status: string | null;
+  educationType: string | null;  // from schools table (private/public)
+  schoolId: string | null;       // your local school key
+  streamGradeId: string | null;  // your local streamGrade key
+}
+
+export interface StudentProfileV1 {
+  id: string;               // SST-1-1-Pers-1687158
+  username: string;
+  status: string;           // "active" | "inactive" | ...
+  role: string;             // "student" (as you set)
+
+  firstNameArabic: string | null;
+  middleNameArabic: string | null;
+  lastNameArabic: string | null;
+
+  gender: string | null;    // consider narrowing to "Male" | "Female" | "Other"
+  dateOfBirth: string | null; // ISO date
+  religion: string | null;
+
+  emirateId: string | null;
+
+  firstNameEnglish: string | null;
+  middleNameEnglish: string | null;
+  thirdNameEnglish: string | null;
+  fourthNameEnglish: string | null;
+  familyNameEnglish: string | null;
+
+  studentNumber: string | null;
+  userIds: string[];
+
+  NationalityAR: string | null;  // e.g., "الأردن"
+  NationalityEN: string | null;  // e.g., "Jordan"
+  CitizenshipStatus: string | null; // e.g., "Expat Arab"
+
+  birthPlaceCityAr: string | null;
+  birthPlaceCityEn: string | null;
+  birthPlaceCountryAr: string | null;
+  birthPlaceCountryEn: string | null;
+
+  contacts: StudentContact[];
+  addresses: StudentAddress[];
+
+  enrollment: StudentEnrollment[]; // array as you modeled
 }
