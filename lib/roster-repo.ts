@@ -132,8 +132,28 @@ export async function getSchoolEnrollmentsByStudent(
  
   try {
     
+    const fields = [
+      "sourcedId",
+      "student",
+      "school",
+      "streamGrade",
+      "session",
+      "schoolYear",
+      "enrollmentType",
+      "entryType",
+      "entryDate",
+      "exitType",
+      "exitDate",
+      "exitReason",
+      "status",
+      "isMandatoryEducation",
+      "isSpecialNeed",
+      "dateLastModified",
+      "createDate",
+    ].join(",");
+
     const data  = await orFetch<SchoolEnrollment[]>(
-      `/v1p1/schoolenrollments?filter=${encodeURIComponent(filter)}&fields=sourcedId,school,streamGrade,schoolYear`,
+      `/v1p1/schoolenrollments?filter=${encodeURIComponent(filter)}&fields=${fields}`,
       "read"
     );
 
