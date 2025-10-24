@@ -8,7 +8,7 @@ import Link from 'next/link';
 
 import { useI18n } from '@/app/i18n/I18nProvider';
 import { jsonFetcher } from '@/lib/swr';
-import { Person } from '@/types';
+import type { StudentProfileV1 } from '@/app/types/studentprofile';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,28 +17,16 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { LoadingSkeleton } from '../components/LoadingSkeleton';
 
-interface BasicInfoResponse {
-  meta: {
-    eid: string;
-    personSourcedId: string;
-    role: string;
-    studentCount: number;
-    cache?: { source?: 'cache' | 'upstream'; lastUpdated?: string | null };
-  };
-  parent: Person[];
-  children: Person[];
-}
-
 export default function EditChildPage() {
   const { t, locale } = useI18n();
   const params = useParams();
   const router = useRouter();
   const sourcedId = params.id as string;
 
-  const swrKey = sourcedId ? `/api/oneroster/basic-info-full?sourcedId=${encodeURIComponent(sourcedId)}` : null;
-  const { data, error, isLoading } = useSWR<BasicInfoResponse>(swrKey, jsonFetcher);
+  const swrKey = sourcedId ? `/api/PP/student/${encodeURIComponent(sourcedId)}` : null;
+  const { data: student, error, isLoading } = useSWR<StudentProfileV1>(swrKey, jsonFetcher);
 
-  const [formData, setFormData] = React.useState<Partial<Person>>({});
+  const [formData, setFormData] = React.useState<Partial<StudentProfileV1>>({});
   const [isSaving, setIsSaving] = React.useState(false);
   const [dataConfirmed, setDataConfirmed] = React.useState(false);
   const [needsUpdate, setNeedsUpdate] = React.useState<boolean | null>(null);
@@ -49,42 +37,35 @@ export default function EditChildPage() {
   });
 
   React.useEffect(() => {
-    if (data) {
-      const person = data.parent?.[0] || data.children?.[0];
-      if (person) {
-        setFormData(person);
-      }
+    if (student) {
+      setFormData(student);
     }
-  }, [data]);
+  }, [student]);
 
   if (isLoading) {
     return <LoadingSkeleton locale={locale} />;
   }
 
   if (error) {
+    const errorMessage = error?.message || String(error);
     return (
       <div className="min-h-screen bg-gradient-to-br from-background/50 via-background to-background/50 flex items-center justify-center p-4">
         <div className="text-center">
           <div className="mb-4 text-destructive bg-destructive/10 border border-destructive/20 rounded p-4">
-            {error.warning || t.child.error_loading_child_data}
+            {errorMessage}
           </div>
         </div>
       </div>
     );
   }
 
-  if (!data) {
+  if (!student) {
     return <div className="text-center py-10">{t.child.no_data_available_for_child}</div>;
   }
 
-  const person = data.parent?.[0] || data.children?.[0];
-  if (!person) {
-    return <div className="text-center py-10">{t.child.child_not_found}</div>;
-  }
-
   const displayName = locale === 'ar'
-    ? [person.givenName, person.middleName, person.familyName].filter(Boolean).join(' ')
-    : [person.metadata?.englishFirstName, person.metadata?.englishSecondName, person.metadata?.englishThirdName, person.metadata?.englishFamilyName].filter(Boolean).join(' ');
+    ? [student.firstNameArabic, student.middleNameArabic, student.lastNameArabic].filter(Boolean).join(' ')
+    : [student.firstNameEnglish, student.middleNameEnglish, student.thirdNameEnglish, student.fourthNameEnglish, student.familyNameEnglish].filter(Boolean).join(' ');
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({
@@ -96,26 +77,23 @@ export default function EditChildPage() {
   const handleMetadataChange = (field: string, value: string) => {
     setFormData(prev => ({
       ...prev,
-      metadata: {
-        ...prev.metadata,
-        [field]: value
-      }
+      [field]: value
     }));
   };
 
   const handleAddressChange = (field: string, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      metadata: {
-        ...prev.metadata,
+    setFormData(prev => {
+      const currentAddress = prev.addresses?.[0] || {};
+      return {
+        ...prev,
         addresses: [
           {
-            ...(prev.metadata?.addresses?.[0] || {}),
-            [field]: value
-          }
+            ...currentAddress,
+            [field]: value || null
+          } as any
         ]
-      }
-    }));
+      };
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -156,7 +134,7 @@ export default function EditChildPage() {
     }));
   };
 
-  const primaryAddress = formData.metadata?.addresses?.[0];
+  const primaryAddress = formData.addresses?.[0];
 
   return (
     <div className={clsx("min-h-screen bg-gradient-to-br from-slate-50/50 via-background to-slate-50/50 dark:from-slate-950/50 dark:via-background dark:to-slate-950/50", locale === 'ar' && 'direction-rtl')}>
@@ -549,14 +527,14 @@ export default function EditChildPage() {
             <CardContent className="p-6 md:p-8">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="givenName" className="text-sm font-semibold flex items-center gap-1">
+                  <Label htmlFor="firstNameArabic" className="text-sm font-semibold flex items-center gap-1">
                     {locale === 'ar' ? 'الاسم الأول (عربي)' : 'Given Name (Arabic)'}
                     <span className="text-destructive">*</span>
                   </Label>
                   <Input
-                    id="givenName"
-                    value={formData.givenName || ''}
-                    onChange={(e) => handleInputChange('givenName', e.target.value)}
+                    id="firstNameArabic"
+                    value={formData.firstNameArabic || ''}
+                    onChange={(e) => handleInputChange('firstNameArabic', e.target.value)}
                     className={clsx(
                       "transition-all duration-200",
                       enabledSections.basicInfo 
@@ -568,13 +546,13 @@ export default function EditChildPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="middleName" className="text-sm font-semibold">
+                  <Label htmlFor="middleNameArabic" className="text-sm font-semibold">
                     {locale === 'ar' ? 'اسم الأب (عربي)' : 'Middle Name (Arabic)'}
                   </Label>
                   <Input
-                    id="middleName"
-                    value={formData.middleName || ''}
-                    onChange={(e) => handleInputChange('middleName', e.target.value)}
+                    id="middleNameArabic"
+                    value={formData.middleNameArabic || ''}
+                    onChange={(e) => handleInputChange('middleNameArabic', e.target.value)}
                     className={clsx(
                       "transition-all duration-200",
                       enabledSections.basicInfo 
@@ -586,14 +564,14 @@ export default function EditChildPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="familyName" className="text-sm font-semibold flex items-center gap-1">
+                  <Label htmlFor="lastNameArabic" className="text-sm font-semibold flex items-center gap-1">
                     {locale === 'ar' ? 'اسم العائلة (عربي)' : 'Family Name (Arabic)'}
                     <span className="text-destructive">*</span>
                   </Label>
                   <Input
-                    id="familyName"
-                    value={formData.familyName || ''}
-                    onChange={(e) => handleInputChange('familyName', e.target.value)}
+                    id="lastNameArabic"
+                    value={formData.lastNameArabic || ''}
+                    onChange={(e) => handleInputChange('lastNameArabic', e.target.value)}
                     className={clsx(
                       "transition-all duration-200",
                       enabledSections.basicInfo 
@@ -605,14 +583,14 @@ export default function EditChildPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="englishFirstName" className="text-sm font-semibold flex items-center gap-1">
+                  <Label htmlFor="firstNameEnglish" className="text-sm font-semibold flex items-center gap-1">
                     {locale === 'ar' ? 'الاسم الأول (إنجليزي)' : 'First Name (English)'}
                     <span className="text-destructive">*</span>
                   </Label>
                   <Input
-                    id="englishFirstName"
-                    value={formData.metadata?.englishFirstName || ''}
-                    onChange={(e) => handleMetadataChange('englishFirstName', e.target.value)}
+                    id="firstNameEnglish"
+                    value={formData.firstNameEnglish || ''}
+                    onChange={(e) => handleMetadataChange('firstNameEnglish', e.target.value)}
                     className={clsx(
                       "transition-all duration-200",
                       enabledSections.basicInfo 
@@ -624,13 +602,13 @@ export default function EditChildPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="englishSecondName" className="text-sm font-semibold">
+                  <Label htmlFor="middleNameEnglish" className="text-sm font-semibold">
                     {locale === 'ar' ? 'الاسم الثاني (إنجليزي)' : 'Second Name (English)'}
                   </Label>
                   <Input
-                    id="englishSecondName"
-                    value={formData.metadata?.englishSecondName || ''}
-                    onChange={(e) => handleMetadataChange('englishSecondName', e.target.value)}
+                    id="middleNameEnglish"
+                    value={formData.middleNameEnglish || ''}
+                    onChange={(e) => handleMetadataChange('middleNameEnglish', e.target.value)}
                     className={clsx(
                       "transition-all duration-200",
                       enabledSections.basicInfo 
@@ -642,14 +620,14 @@ export default function EditChildPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="englishFamilyName" className="text-sm font-semibold flex items-center gap-1">
+                  <Label htmlFor="familyNameEnglish" className="text-sm font-semibold flex items-center gap-1">
                     {locale === 'ar' ? 'اسم العائلة (إنجليزي)' : 'Family Name (English)'}
                     <span className="text-destructive">*</span>
                   </Label>
                   <Input
-                    id="englishFamilyName"
-                    value={formData.metadata?.englishFamilyName || ''}
-                    onChange={(e) => handleMetadataChange('englishFamilyName', e.target.value)}
+                    id="familyNameEnglish"
+                    value={formData.familyNameEnglish || ''}
+                    onChange={(e) => handleMetadataChange('familyNameEnglish', e.target.value)}
                     className={clsx(
                       "transition-all duration-200",
                       enabledSections.basicInfo 
@@ -668,8 +646,17 @@ export default function EditChildPage() {
                   <Input
                     id="email"
                     type="email"
-                    value={formData.email || ''}
-                    onChange={(e) => handleInputChange('email', e.target.value)}
+                    value={formData.contacts?.find(c => c.type === 'Email' || c.type === 'OfficialEmail')?.value || ''}
+                    onChange={(e) => {
+                      const newContacts = [...(formData.contacts || [])];
+                      const emailIndex = newContacts.findIndex(c => c.type === 'Email' || c.type === 'OfficialEmail');
+                      if (emailIndex >= 0) {
+                        newContacts[emailIndex] = { ...newContacts[emailIndex], value: e.target.value };
+                      } else {
+                        newContacts.push({ type: 'Email', value: e.target.value });
+                      }
+                      setFormData(prev => ({ ...prev, contacts: newContacts }));
+                    }}
                     className={clsx(
                       "transition-all duration-200",
                       enabledSections.basicInfo 
@@ -688,8 +675,17 @@ export default function EditChildPage() {
                   <Input
                     id="phone"
                     type="tel"
-                    value={formData.phone || ''}
-                    onChange={(e) => handleInputChange('phone', e.target.value)}
+                    value={formData.contacts?.find(c => c.type === 'Mobile')?.value || ''}
+                    onChange={(e) => {
+                      const newContacts = [...(formData.contacts || [])];
+                      const phoneIndex = newContacts.findIndex(c => c.type === 'Mobile');
+                      if (phoneIndex >= 0) {
+                        newContacts[phoneIndex] = { ...newContacts[phoneIndex], value: e.target.value };
+                      } else {
+                        newContacts.push({ type: 'Mobile', value: e.target.value });
+                      }
+                      setFormData(prev => ({ ...prev, contacts: newContacts }));
+                    }}
                     className={clsx(
                       "transition-all duration-200",
                       enabledSections.basicInfo 
@@ -798,7 +794,7 @@ export default function EditChildPage() {
                   </Label>
                   <Input
                     id="gender"
-                    value={formData.metadata?.gender || ''}
+                    value={formData.gender || ''}
                     onChange={(e) => handleMetadataChange('gender', e.target.value)}
                     className={clsx(
                       "transition-all duration-200",
@@ -811,15 +807,15 @@ export default function EditChildPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="birthDate" className="text-sm font-semibold flex items-center gap-1">
+                  <Label htmlFor="dateOfBirth" className="text-sm font-semibold flex items-center gap-1">
                     {locale === 'ar' ? 'تاريخ الميلاد' : 'Birth Date'}
                     <span className="text-destructive">*</span>
                   </Label>
                   <Input
-                    id="birthDate"
+                    id="dateOfBirth"
                     type="date"
-                    value={formData.metadata?.birthDate || ''}
-                    onChange={(e) => handleMetadataChange('birthDate', e.target.value)}
+                    value={formData.dateOfBirth || ''}
+                    onChange={(e) => handleMetadataChange('dateOfBirth', e.target.value)}
                     className={clsx(
                       "transition-all duration-200",
                       enabledSections.demographics 
@@ -831,14 +827,14 @@ export default function EditChildPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="nationality" className="text-sm font-semibold flex items-center gap-1">
+                  <Label htmlFor="NationalityEN" className="text-sm font-semibold flex items-center gap-1">
                     {locale === 'ar' ? 'الجنسية (إنجليزي)' : 'Nationality (English)'}
                     <span className="text-destructive">*</span>
                   </Label>
                   <Input
-                    id="nationality"
-                    value={formData.metadata?.nationality || ''}
-                    onChange={(e) => handleMetadataChange('nationality', e.target.value)}
+                    id="NationalityEN"
+                    value={formData.NationalityEN || ''}
+                    onChange={(e) => handleMetadataChange('NationalityEN', e.target.value)}
                     className={clsx(
                       "transition-all duration-200",
                       enabledSections.demographics 
@@ -850,13 +846,13 @@ export default function EditChildPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="nationalityArabic" className="text-sm font-semibold">
+                  <Label htmlFor="NationalityAR" className="text-sm font-semibold">
                     {locale === 'ar' ? 'الجنسية (عربي)' : 'Nationality (Arabic)'}
                   </Label>
                   <Input
-                    id="nationalityArabic"
-                    value={formData.metadata?.nationalityArabic || ''}
-                    onChange={(e) => handleMetadataChange('nationalityArabic', e.target.value)}
+                    id="NationalityAR"
+                    value={formData.NationalityAR || ''}
+                    onChange={(e) => handleMetadataChange('NationalityAR', e.target.value)}
                     className={clsx(
                       "transition-all duration-200",
                       enabledSections.demographics 
