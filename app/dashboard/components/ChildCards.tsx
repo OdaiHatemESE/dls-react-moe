@@ -3,7 +3,7 @@
 import React from "react";
 import useSWR from "swr";
 import { useChildren } from "@/lib/hooks/useChildren";
-import type { Person } from "@/types";
+import type { StudentProfileV1 } from "@/app/types/studentprofile";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useI18n } from "@/app/i18n/I18nProvider";
@@ -435,14 +435,14 @@ export default function ChildCards() {
         )}
 
         {/* Mobile Student Cards */}
-        {(children ?? []).map((child: Person) => {
+        {(children ?? []).map((child: StudentProfileV1) => {
           const displayName = locale === 'ar'
-            ? [child.givenName, child.middleName, child.familyName].filter(Boolean).join(' ')
-            : [child.metadata?.englishFirstName, child.metadata?.englishSecondName, child.metadata?.englishThirdName, child.metadata?.englishFamilyName].filter(Boolean).join(' ');
+            ? [child.firstNameArabic, child.middleNameArabic, child.lastNameArabic].filter(Boolean).join(' ')
+            : [child.firstNameEnglish, child.middleNameEnglish, child.thirdNameEnglish, child.fourthNameEnglish, child.familyNameEnglish].filter(Boolean).join(' ');
 
           return (
             <Card 
-              key={child.sourcedId} 
+              key={child.id} 
               className={clsx(
                 "group relative overflow-hidden transition-all duration-300",
                 "border-border/60 shadow-lg hover:shadow-2xl",
@@ -457,7 +457,7 @@ export default function ChildCards() {
                 {/* Student Header */}
                 <div className="flex items-center gap-4 mb-5">
                   {/* Avatar with status indicator */}
-                  <StatusIndicatorAvatar studentPersonId={child.sourcedId} displayName={displayName} locale={locale} />
+                  <StatusIndicatorAvatar studentPersonId={child.id} displayName={displayName} locale={locale} />
 
                   {/* Student Info */}
                   <div className="flex-1 min-w-0">
@@ -470,16 +470,16 @@ export default function ChildCards() {
                         <svg className={clsx("w-3 h-3", locale === 'ar' ? 'ml-1' : 'mr-1')} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
                         </svg>
-                        {child.sourcedId.slice(-6)}
+                        {child.id.slice(-6)}
                       </Badge>
-                      <StatusMessageBadge studentPersonId={child.sourcedId} locale={locale} />
+                      <StatusMessageBadge studentPersonId={child.id} locale={locale} />
                     </div>
                   </div>
                 </div>
 
                 {/* Actions Section - Simplified */}
                 <div className="mt-4 pt-4 border-t border-border/50">
-                  <ChildActions studentPersonId={child.sourcedId} className="w-full" />
+                  <ChildActions studentPersonId={child.id} className="w-full" />
                 </div>
               </div>
             </Card>
@@ -566,20 +566,20 @@ export default function ChildCards() {
               )}
               
               {/* Students Data */}
-              {(children ?? []).map((child: Person) => {
+              {(children ?? []).map((child: StudentProfileV1) => {
                 const displayName = locale === 'ar'
-                  ? [child.givenName, child.middleName, child.familyName].filter(Boolean).join(' ')
-                  : [child.metadata?.englishFirstName, child.metadata?.englishSecondName, child.metadata?.englishThirdName, child.metadata?.englishFamilyName].filter(Boolean).join(' ');
+                  ? [child.firstNameArabic, child.middleNameArabic, child.lastNameArabic].filter(Boolean).join(' ')
+                  : [child.firstNameEnglish, child.middleNameEnglish, child.thirdNameEnglish, child.fourthNameEnglish, child.familyNameEnglish].filter(Boolean).join(' ');
 
                 return (
                   <tr 
-                    key={child.sourcedId}
+                    key={child.id}
                     className="group border-b border-border/40 hover:bg-gradient-to-r hover:from-primary/8 hover:via-primary/5 hover:to-transparent transition-all duration-300"
                   >
                     {/* Enhanced Student Name & Avatar */}
                     <td className="px-8 py-6">
                       <div className={clsx("flex items-center gap-5", locale === 'ar' && '')}>
-                        <StatusIndicatorAvatarDesktop studentPersonId={child.sourcedId} displayName={displayName} locale={locale} />
+                        <StatusIndicatorAvatarDesktop studentPersonId={child.id} displayName={displayName} locale={locale} />
                         <div className="flex-1 min-w-0">
                           <div className={clsx(
                             "font-bold text-foreground group-hover:text-primary transition-colors mb-3",
@@ -593,9 +593,9 @@ export default function ChildCards() {
                               <svg className={clsx("w-3 h-3", locale === 'ar' ? 'ml-1' : 'mr-1')} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
                               </svg>
-                              {child.sourcedId?.slice(-6) || '—'}
+                              {child.id?.slice(-6) || '—'}
                             </Badge>
-                            <StatusMessageBadge studentPersonId={child.sourcedId} locale={locale} />
+                            <StatusMessageBadge studentPersonId={child.id} locale={locale} />
                           </div>
                         </div>
                       </div>
@@ -604,7 +604,7 @@ export default function ChildCards() {
                     {/* Enhanced Actions */}
                     <td className="px-8 py-6">
                       <div className="flex items-center justify-center">
-                        <ChildActions studentPersonId={child.sourcedId} compact />
+                        <ChildActions studentPersonId={child.id} compact />
                       </div>
                     </td>
                   </tr>

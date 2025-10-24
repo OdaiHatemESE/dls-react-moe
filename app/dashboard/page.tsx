@@ -15,8 +15,8 @@ export default function DashboardPage() {
   const { t, locale } = useI18n();
   const { data: session } = useSession();
   const eid = session?.user?.emiratesId as string | undefined;
-  const swrKey = eid ? `/api/oneroster/basic-info-full?eid=${encodeURIComponent(eid)}` : "/api/oneroster/basic-info-full";
-  const { data: parentBasicInfo } = useSWR<any>(swrKey, jsonFetcher);
+  const swrKey = eid ? `/api/PP/ChildList/${encodeURIComponent(eid)}` : null;
+  const { data: childrenData } = useSWR<any>(swrKey, jsonFetcher);
 
  
 
@@ -48,7 +48,7 @@ export default function DashboardPage() {
             <div className="flex items-center gap-1 md:gap-2 min-w-0 overflow-hidden">
               <RefreshBar
                 swrKey={swrKey}
-                meta={parentBasicInfo?.meta}
+                meta={childrenData?.meta}
                 variant="compact"
                 className="flex-shrink-0 min-w-0"
                 labels={{

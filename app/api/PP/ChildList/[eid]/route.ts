@@ -18,12 +18,19 @@ export async function GET(
       return NextResponse.json({ error: 'Emirates ID is required' }, { status: 400 });
     }
 
+    // Check if nocache parameter is present
+    const url = new URL(req.url);
+    const nocache = url.searchParams.get('nocache');
+    const skipCache = nocache === '1' || nocache === 'true';
+
     const cacheKey = `pp:childlist:${eid}`;
     
-    // Check cache first
-    const cached = await cacheGetJSON<StudentProfileV1[]>(cacheKey);
-    if (cached) {
-      return NextResponse.json(cached);
+    // Check cache first (unless nocache is requested)
+    if (!skipCache) {
+      const cached = await cacheGetJSON<StudentProfileV1[]>(cacheKey);
+      if (cached) {
+        return NextResponse.json(cached);
+      }
     }
 
     // Get PP token from our token endpoint
