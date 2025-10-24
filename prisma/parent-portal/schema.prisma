@@ -17,11 +17,118 @@ model UpdateInformationRequests {
   isConductAgreementSigned Boolean?  @default(false, map: "DEFAULT_UpdateInformationRequests_isConductAgreementSigned")
   conductAgreementStatus   Int?
   studentEmirateId         String?   @db.VarChar(64)
-  pdfBase64                String?   @db.VarChar(Max)
-  citizenship              String?   @db.VarChar(64)
   createAt                 DateTime? @db.DateTime
   updateAt                 DateTime? @db.DateTime
+  citizenship              String?   @db.VarChar(64)
+  pdfBase64                String?   @db.VarChar(Max)
 
   @@id([Id, studentPersonId], map: "PK_UpdateInformationRequests")
 }
 
+model ApiKey {
+  id        Int      @id @default(autoincrement())
+  name      String
+  keyHash   String
+  scopes    String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+}
+
+model Student {
+  id                  Int                 @id @default(autoincrement())
+  orSourcedId         String              @unique
+  username            String
+  status              String
+  role                String
+  firstNameArabic     String?
+  middleNameArabic    String?
+  lastNameArabic      String?
+  gender              String?
+  dateOfBirth         DateTime?
+  religion            String?
+  emirateId           String?
+  firstNameEnglish    String?
+  middleNameEnglish   String?
+  thirdNameEnglish    String?
+  fourthNameEnglish   String?
+  familyNameEnglish   String?
+  studentNumber       String?
+  userIds             String?
+  NationalityAR       String?
+  NationalityEN       String?
+  CitizenshipStatus   String?
+  birthPlaceCityAr    String?
+  birthPlaceCityEn    String?
+  birthPlaceCountryAr String?
+  birthPlaceCountryEn String?
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime
+  StudentAddress      StudentAddress[]
+  StudentContact      StudentContact[]
+  StudentEnrollment   StudentEnrollment[]
+}
+
+model StudentAddress {
+  id           Int      @id @default(autoincrement())
+  country      String?
+  state        String?
+  city         String?
+  region       String?
+  verified     Boolean  @default(false)
+  zipCode      String?
+  latitude     String?
+  longitude    String?
+  poBox        String?
+  roadNumber   String?
+  plotId       String?
+  plotNumber   String?
+  addressLine1 String?
+  addressLine2 String?
+  addressLine3 String?
+  sector       String?
+  studentId    Int
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime
+  Student      Student  @relation(fields: [studentId], references: [id])
+}
+
+model StudentContact {
+  id        Int      @id @default(autoincrement())
+  type      String
+  value     String
+  studentId Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  Student   Student  @relation(fields: [studentId], references: [id])
+}
+
+model StudentEnrollment {
+  id                   Int       @id @default(autoincrement())
+  orEnrollmentId       String    @unique
+  type                 String?
+  entryType            String?
+  entryDate            DateTime?
+  exitDate             DateTime?
+  exitType             String?
+  exitReason           String?
+  isMandatoryEducation Boolean   @default(false)
+  isSpecialNeed        Boolean   @default(false)
+  educationType        String?
+  schoolId             String?
+  streamGradeId        String?
+  studentId            Int
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime
+  Student              Student   @relation(fields: [studentId], references: [id])
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  username     String   @unique
+  passwordHash String
+  role         String
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime
+}
