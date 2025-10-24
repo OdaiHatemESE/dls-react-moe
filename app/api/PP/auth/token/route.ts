@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { cacheGetJSON, cacheSetJSON } from '@/lib/cache';
 
 type PPLoginResponse = {
   accessToken?: string;
@@ -7,8 +8,23 @@ type PPLoginResponse = {
   [key: string]: any;
 };
 
+type PPTokenCache = {
+  token: string;
+  exp: number;
+};
+
+const PP_CACHE_KEY = 'pp:auth:token';
+
 export async function GET() {
   try {
+    const now = Math.floor(Date.now() / 1000);
+    
+    // Check cache first
+    const cached = await cacheGetJSON<PPTokenCache>(PP_CACHE_KEY);
+    if (cached && cached.exp - 30 > now) {
+      return NextResponse.json({ accessToken: cached.token });
+    }
+
     const username = process.env.PP_USERNAME;
     const password = process.env.PP_PASSWORD;
     const base = process.env.PP_BASE_URL;
@@ -32,6 +48,14 @@ export async function GET() {
     }
 
     const accessToken = data?.accessToken ?? data?.token ?? data?.access_token ?? data;
+
+    if (!accessToken) {
+      return NextResponse.json({ error: 'No access token in response' }, { status: 500 });
+    }
+
+    // Cache token with 50-minute TTL (similar to OneRoster pattern)
+    const exp = now + 50 * 60;
+    await cacheSetJSON(PP_CACHE_KEY, { token: accessToken, exp }, { ttlSeconds: 50 * 60 });
 
     return NextResponse.json({ accessToken });
   } catch (err: any) {

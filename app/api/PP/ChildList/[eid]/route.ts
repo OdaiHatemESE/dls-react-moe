@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { StudentProfileV1 } from '@/app/types/studentprofile';
+import { cacheGetJSON, cacheSetJSON } from '@/lib/cache';
 
 type PPTokenResponse = {
   accessToken?: string;
@@ -15,6 +16,14 @@ export async function GET(
 
     if (!eid) {
       return NextResponse.json({ error: 'Emirates ID is required' }, { status: 400 });
+    }
+
+    const cacheKey = `pp:childlist:${eid}`;
+    
+    // Check cache first
+    const cached = await cacheGetJSON<StudentProfileV1[]>(cacheKey);
+    if (cached) {
+      return NextResponse.json(cached);
     }
 
     // Get PP token from our token endpoint
@@ -55,6 +64,9 @@ export async function GET(
     }
 
     const studentList: StudentProfileV1[] = await profilesRes.json();
+
+    // Cache the student list for 5 minutes
+    await cacheSetJSON(cacheKey, studentList, { ttlSeconds: 300 });
 
     return NextResponse.json(studentList);
   } catch (err: any) {
