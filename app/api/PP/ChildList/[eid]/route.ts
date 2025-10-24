@@ -25,11 +25,42 @@ export async function GET(
 
     const cacheKey = `pp:childlist:${eid}`;
     
+    // Track cache metadata
+    let source: "cache" | "upstream" = "cache";
+    let lastUpdated: string | null = null;
+    
+    type Wrapped<T> = { data: T; fetchedAt: string };
+    
     // Check cache first (unless nocache is requested)
     if (!skipCache) {
-      const cached = await cacheGetJSON<StudentProfileV1[]>(cacheKey);
-      if (cached) {
-        return NextResponse.json(cached);
+      const cachedAny = await cacheGetJSON<unknown>(cacheKey);
+      if (cachedAny) {
+        // Check if it's the new wrapped format with metadata
+        if (
+          typeof cachedAny === "object" && cachedAny !== null &&
+          "data" in cachedAny && "fetchedAt" in cachedAny
+        ) {
+          const wrapped = cachedAny as Wrapped<StudentProfileV1[]>;
+          return NextResponse.json({
+            students: wrapped.data,
+            meta: {
+              cache: {
+                source: "cache",
+                lastUpdated: wrapped.fetchedAt ?? null,
+              },
+            },
+          });
+        }
+        // Backwards compatibility: old cache format without wrapper
+        return NextResponse.json({
+          students: cachedAny as StudentProfileV1[],
+          meta: {
+            cache: {
+              source: "cache",
+              lastUpdated: null,
+            },
+          },
+        });
       }
     }
 
@@ -72,10 +103,23 @@ export async function GET(
 
     const studentList: StudentProfileV1[] = await profilesRes.json();
 
-    // Cache the student list for 5 minutes
-    await cacheSetJSON(cacheKey, studentList, { ttlSeconds: 300 });
+    // Cache the student list for 5 minutes with metadata
+    const fetchedAt = new Date().toISOString();
+    await cacheSetJSON<Wrapped<StudentProfileV1[]>>(
+      cacheKey,
+      { data: studentList, fetchedAt },
+      { ttlSeconds: 300 }
+    );
 
-    return NextResponse.json(studentList);
+    return NextResponse.json({
+      students: studentList,
+      meta: {
+        cache: {
+          source: "upstream",
+          lastUpdated: fetchedAt,
+        },
+      },
+    });
   } catch (err: any) {
     return NextResponse.json({ error: String(err) }, { status: 500 });
   }

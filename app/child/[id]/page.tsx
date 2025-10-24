@@ -31,6 +31,9 @@ export default function ChildDetailPage() {
   const swrKey = sourcedId ? `/api/PP/student/${encodeURIComponent(sourcedId)}` : null;
   const { data: student, error, isLoading } = useSWR<StudentProfileV1>(swrKey, jsonFetcher);
   const [year, setYear] = React.useState<string>(() => String(new Date().getFullYear()));
+  
+  // Extract meta information for RefreshBar
+  const meta = (student as any)?.meta;
 
   if (isLoading) {
     return <LoadingSkeleton locale={locale} />;
@@ -98,6 +101,7 @@ export default function ChildDetailPage() {
             <div className="flex items-center gap-1 md:gap-2 min-w-0 overflow-hidden">
               <RefreshBar
                 swrKey={swrKey}
+                meta={meta}
                 variant="compact"
                 className="flex-shrink-0 min-w-0"
                 labels={{

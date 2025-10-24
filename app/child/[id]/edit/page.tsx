@@ -16,6 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { LoadingSkeleton } from '../components/LoadingSkeleton';
+import RefreshBar from '@/components/RefreshBar';
 
 export default function EditChildPage() {
   const { t, locale } = useI18n();
@@ -25,6 +26,9 @@ export default function EditChildPage() {
 
   const swrKey = sourcedId ? `/api/PP/student/${encodeURIComponent(sourcedId)}` : null;
   const { data: student, error, isLoading } = useSWR<StudentProfileV1>(swrKey, jsonFetcher);
+  
+  // Extract meta information for RefreshBar
+  const meta = (student as any)?.meta;
 
   const [formData, setFormData] = React.useState<Partial<StudentProfileV1>>({});
   const [isSaving, setIsSaving] = React.useState(false);
@@ -197,6 +201,20 @@ export default function EditChildPage() {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 md:py-8 space-y-6">
+        {/* Refresh Bar */}
+        <RefreshBar
+          swrKey={swrKey}
+          meta={meta}
+          variant="compact"
+          labels={{
+            lastUpdated: locale === 'ar' ? 'آخر تحديث:' : 'Last updated:',
+            confirm: locale === 'ar' ? 'جلب بيانات حديثة؟' : 'Fetch fresh data?',
+            refresh: locale === 'ar' ? 'تحديث' : 'Refresh',
+            refreshing: locale === 'ar' ? 'جاري التحديث…' : 'Refreshing…',
+            unknown: locale === 'ar' ? 'غير معروف' : 'unknown',
+          }}
+        />
+        
         {/* Enhanced Profile Header */}
         <div className="relative">
           <Card className="border-0 shadow-xl bg-gradient-to-br from-card via-card to-card/95 overflow-hidden">

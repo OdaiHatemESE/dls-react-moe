@@ -17,6 +17,9 @@ export default function DashboardPage() {
   const eid = session?.user?.emiratesId as string | undefined;
   const swrKey = eid ? `/api/PP/ChildList/${encodeURIComponent(eid)}` : null;
   const { data: childrenData } = useSWR<any>(swrKey, jsonFetcher);
+  
+  // Extract meta from response
+  const meta = childrenData?.meta;
 
  
 
@@ -48,7 +51,7 @@ export default function DashboardPage() {
             <div className="flex items-center gap-1 md:gap-2 min-w-0 overflow-hidden">
               <RefreshBar
                 swrKey={swrKey}
-                meta={childrenData?.meta}
+                meta={meta}
                 variant="compact"
                 className="flex-shrink-0 min-w-0"
                 labels={{
