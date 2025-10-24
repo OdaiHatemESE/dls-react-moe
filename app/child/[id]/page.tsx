@@ -8,7 +8,7 @@ import Link from 'next/link';
 
 import { useI18n } from '@/app/i18n/I18nProvider';
 import { jsonFetcher } from '@/lib/swr';
-import { Person } from '@/types';
+import type { StudentProfileV1 } from '@/app/types/studentprofile';
 import RefreshBar from '@/components/RefreshBar';
 
 import { Card } from '@/components/ui/card';
@@ -22,67 +22,36 @@ import SignConductSection from './components/SignConductSection';
 import { LoadingSkeleton } from './components/LoadingSkeleton';
 import InfoTab from './components/InfoTab';
 
-interface BasicInfoResponse {
-  meta: {
-    eid: string;
-    personSourcedId: string;
-    role: string;
-    studentCount: number;
-    cache?: { source?: 'cache' | 'upstream'; lastUpdated?: string | null };
-  };
-  parent: Person[];
-  children: Person[];
-}
-
 export default function ChildDetailPage() {
   const { t, locale } = useI18n();
   const params = useParams();
   const sourcedId = params.id as string;
 
-  // Only send sourcedId, do not send eid (parent EID is taken from session on backend)
-  const swrKey = sourcedId ? `/api/oneroster/basic-info-full?sourcedId=${encodeURIComponent(sourcedId)}` : null;
-  const { data, error, isLoading } = useSWR<BasicInfoResponse>(swrKey, jsonFetcher);
+  // Fetch student data from PP API
+  const swrKey = sourcedId ? `/api/PP/student/${encodeURIComponent(sourcedId)}` : null;
+  const { data: student, error, isLoading } = useSWR<StudentProfileV1>(swrKey, jsonFetcher);
   const [year, setYear] = React.useState<string>(() => String(new Date().getFullYear()));
 
   if (isLoading) {
     return <LoadingSkeleton locale={locale} />;
   }
   if (error) {
-    // If the error object contains a warning from the API, show it
-    const errorWarning = (error as { warning?: string }).warning;
-    if (errorWarning) {
-      return (
-        <div className="text-center py-10">
-          <div className="mb-4 text-destructive bg-destructive/10 border border-destructive/20 rounded p-4">
-            {errorWarning}
-          </div>
-        </div>
-      );
-    }
-    return <div className="text-center py-10 text-destructive">{t.child.error_loading_child_data}</div>;
-  }
-  const responseWithWarning = data as { warning?: string } | undefined;
-  if (responseWithWarning?.warning) {
+    const errorMessage = error?.message || String(error);
     return (
       <div className="text-center py-10">
         <div className="mb-4 text-destructive bg-destructive/10 border border-destructive/20 rounded p-4">
-          {responseWithWarning.warning}
+          {errorMessage}
         </div>
       </div>
     );
   }
-  if (!data) {
+  if (!student) {
     return <div className="text-center py-10">{t.child.no_data_available_for_child}</div>;
   }
 
-  const person = data.parent?.[0] || data.children?.[0];
-  if (!person) {
-    return <div className="text-center py-10">{t.child.child_not_found}</div>;
-  }
-
   const displayName = locale === 'ar'
-    ? [person.givenName, person.middleName, person.familyName].filter(Boolean).join(' ')
-    : [person.metadata?.englishFirstName, person.metadata?.englishSecondName, person.metadata?.englishThirdName, person.metadata?.englishFamilyName].filter(Boolean).join(' ');
+    ? [student.firstNameArabic, student.middleNameArabic, student.lastNameArabic].filter(Boolean).join(' ')
+    : [student.firstNameEnglish, student.middleNameEnglish, student.thirdNameEnglish, student.fourthNameEnglish, student.familyNameEnglish].filter(Boolean).join(' ');
 
   return (
     <div className={clsx("min-h-screen bg-gradient-to-br from-background/50 via-background to-background/50", locale === 'ar' && 'direction-rtl')}>
@@ -129,7 +98,6 @@ export default function ChildDetailPage() {
             <div className="flex items-center gap-1 md:gap-2 min-w-0 overflow-hidden">
               <RefreshBar
                 swrKey={swrKey}
-                meta={data.meta}
                 variant="compact"
                 className="flex-shrink-0 min-w-0"
                 labels={{
@@ -166,7 +134,7 @@ export default function ChildDetailPage() {
                     </span>
                   </div>
                   {/* Status Indicator - Mobile Optimized */}
-                  {person.status === 'active' && (
+                  {student.status === 'active' && (
                     <div className="absolute -bottom-0.5 -right-0.5 md:-bottom-1 md:-right-1 w-5 h-5 md:w-6 md:h-6 bg-green-500 rounded-full border-2 md:border-3 border-background flex items-center justify-center">
                       <svg className="w-2.5 h-2.5 md:w-3 md:h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
@@ -195,27 +163,27 @@ export default function ChildDetailPage() {
                       <svg className="w-2 h-2 me-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V4a2 2 0 00-2-2v0a2 2 0 00-2 2v2m4 0a2 2 0 104 0m-4 0a2 2 0 014 0z" />
                       </svg>
-                      <span className="hidden md:inline">ID: </span>{person.sourcedId.slice(-6)}
+                      <span className="hidden md:inline">ID: </span>{student.id.slice(-6)}
                     </Badge>
                     
                     <Badge variant="outline" className="px-2 py-1 border-primary/20 text-primary bg-primary/10 font-medium text-xs">
                       <svg className="w-2 h-2 me-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                       </svg>
-                      {person.role || (locale === 'ar' ? 'طالب' : 'Student')}
+                      {student.role || (locale === 'ar' ? 'طالب' : 'Student')}
                     </Badge>
                     
-                    {person.status && (
+                    {student.status && (
                       <Badge className={clsx(
                         "px-2 py-1 font-medium text-xs",
-                        person.status === 'active' 
+                        student.status === 'active' 
                           ? "bg-green-50 text-green-700 border-green-200 hover:bg-green-100" 
                           : "bg-muted text-muted-foreground border-border"
                       )}>
                         <div className={clsx("w-1.5 h-1.5 rounded-full me-1", 
-                          person.status === 'active' ? 'bg-green-500' : 'bg-muted-foreground'
+                          student.status === 'active' ? 'bg-green-500' : 'bg-muted-foreground'
                         )}></div>
-                        {person.status === 'active' ? (locale === 'ar' ? 'نشط' : 'Active') : person.status}
+                        {student.status === 'active' ? (locale === 'ar' ? 'نشط' : 'Active') : student.status}
                       </Badge>
                     )}
                   </div>
@@ -226,7 +194,7 @@ export default function ChildDetailPage() {
                   <div className="bg-card/80 backdrop-blur-sm rounded-xl border border-border/80 p-3 md:p-4 shadow-sm touch-manipulation space-y-3">
                     {/* Edit Profile Button */}
                     <Link 
-                      href={`/child/${person.sourcedId}/edit`}
+                      href={`/child/${student.id}/edit`}
                       className={clsx(
                         "w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm transition-all duration-200",
                         "bg-primary text-primary-foreground hover:bg-primary/90 active:scale-95",
@@ -256,7 +224,7 @@ export default function ChildDetailPage() {
                           </p>
                         </div>
                       </div>
-                      <SignConductSection locale={locale} studentId={person.sourcedId} />
+                      <SignConductSection locale={locale} studentId={student.id} />
                     </div>
                   </div>
                 </div>
@@ -350,13 +318,13 @@ export default function ChildDetailPage() {
           {/* Tab 1: Student Information - Mobile Optimized */}
           <TabsContent value="info" className={clsx("animate-in fade-in-50 duration-300", locale === 'ar' && 'direction-rtl')}>
             <div className="bg-card rounded-xl shadow-sm border border-border/80 overflow-hidden touch-manipulation">
-              <InfoTab person={person} t={t} locale={locale} />
+              <InfoTab person={student} t={t} locale={locale} />
             </div>
           </TabsContent>
 
           {/* Tab 2: Academic Grades - Mobile Optimized */}
           <TabsContent value="grades" className="animate-in fade-in-50 duration-300">
-            {person?.sourcedId ? (
+            {student?.id ? (
               <div className="bg-card rounded-xl shadow-sm border border-border/80 overflow-hidden touch-manipulation">
                 <div className="border-b border-border/80 bg-gradient-to-r from-secondary/10 to-secondary/5 px-4 py-3 md:px-6 md:py-4">
                   <div className="flex items-center gap-2 md:gap-3">
@@ -376,7 +344,7 @@ export default function ChildDetailPage() {
                   </div>
                 </div>
                 <div className="p-4 md:p-6">
-                  <StreamGrades studentId={person.sourcedId} />
+                  <StreamGrades studentId={student.id} />
                 </div>
               </div>
             ) : (
@@ -527,7 +495,7 @@ export default function ChildDetailPage() {
               </div>
 
               {/* School Information Content */}
-              {person?.sourcedId ? (
+              {student?.id ? (
                 <div className="bg-card rounded-xl shadow-sm border border-border/80 overflow-hidden">
                   <div className="border-b border-border/80 bg-gradient-to-r from-destructive/10 to-destructive/5 px-6 py-4">
                     <div className="flex items-center gap-3">
@@ -547,7 +515,7 @@ export default function ChildDetailPage() {
                     </div>
                   </div>
                   <div className="p-6">
-                    <SchoolInfo studentId={person.sourcedId} year={year} />
+                    <SchoolInfo studentId={student.id} year={year} />
                   </div>
                 </div>
               ) : (

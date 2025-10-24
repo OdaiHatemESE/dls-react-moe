@@ -1,17 +1,21 @@
 'use client';
 
-import { Person } from '@/types';
+import type { StudentProfileV1 } from '@/app/types/studentprofile';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import InfoCard from './InfoCard';
 
 interface InfoTabProps {
-  person: Person;
+  person: StudentProfileV1;
   t: any; // Using 'any' for t function as its type is complex
   locale?: string;
 }
 
 export default function InfoTab({ person, t, locale }: InfoTabProps) {
-  const primaryAddress = person.metadata?.addresses?.[0];
+  const primaryAddress = person.addresses?.[0];
+  
+  // Get primary contact email and phone
+  const primaryEmail = person.contacts?.find(c => c.type === 'Email' || c.type === 'OfficialEmail')?.value || '';
+  const primaryPhone = person.contacts?.find(c => c.type === 'Mobile')?.value || '';
 
   return (
     <div className="space-y-8">
@@ -35,14 +39,14 @@ export default function InfoTab({ person, t, locale }: InfoTabProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <InfoCard 
               label={t.child.given_name} 
-              value={locale === 'ar' ? (person.givenName || '') : (person.metadata?.englishFirstName || '')}
+              value={locale === 'ar' ? (person.firstNameArabic || '') : (person.firstNameEnglish || '')}
               icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>}
               highlight={true}
               locale={locale}
             />
             <InfoCard 
               label={t.child.family_name} 
-              value={locale === 'ar' ? (person.familyName || '') : (person.metadata?.englishFamilyName || '')}
+              value={locale === 'ar' ? (person.lastNameArabic || '') : (person.familyNameEnglish || '')}
               icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>}
               highlight={true}
               locale={locale}
@@ -55,19 +59,19 @@ export default function InfoTab({ person, t, locale }: InfoTabProps) {
             />
             <InfoCard 
               label={t.child.identifier} 
-              value={person.identifier || ''}
+              value={person.emirateId || ''}
               locale={locale}
               icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V4a2 2 0 114 0v2m-4 0a2 2 0 104 0m-4 0V4a2 2 0 014 0v2" /></svg>}
             />
             <InfoCard 
               label={t.child.email} 
-              value={person.email || ''}
+              value={primaryEmail}
               locale={locale}
               icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>}
             />
             <InfoCard 
               label={t.child.phone} 
-              value={person.phone || ''}
+              value={primaryPhone}
               locale={locale}
               icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>}
             />
@@ -85,19 +89,17 @@ export default function InfoTab({ person, t, locale }: InfoTabProps) {
             />
             <InfoCard 
               label={t.child.sourced_id} 
-              value={person.sourcedId} 
+              value={person.id} 
               mono 
               locale={locale}
               icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" /></svg>}
             />
-            {person.dateLastModified && (
-              <InfoCard 
-                label={t.child.last_modified}
-                icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>} 
-                value={new Date(person.dateLastModified).toLocaleDateString()} 
-                locale={locale}
-              />
-            )}
+            <InfoCard 
+              label="Student Number" 
+              value={person.studentNumber || ''}
+              locale={locale}
+              icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" /></svg>}
+            />
           </div>
         </CardContent>
       </Card>
@@ -121,40 +123,52 @@ export default function InfoTab({ person, t, locale }: InfoTabProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <InfoCard 
               label={t.child.gender} 
-              value={person.metadata?.gender || ''}
+              value={person.gender || ''}
               locale={locale}
               icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>}
             />
             <InfoCard 
               label={t.child.birth_date} 
-              value={person.metadata?.birthDate ? new Date(person.metadata.birthDate).toLocaleDateString() : ''}
+              value={person.dateOfBirth ? new Date(person.dateOfBirth).toLocaleDateString() : ''}
               locale={locale}
               icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>}
             />
             <InfoCard 
               label={t.child.nationality_en} 
-              value={person.metadata?.nationality || ''}
+              value={person.NationalityEN || ''}
               locale={locale}
               icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
             />
             <InfoCard 
               label={t.child.nationality_ar} 
-              value={person.metadata?.nationalityArabic || ''}
+              value={person.NationalityAR || ''}
               locale={locale}
               icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
+            />
+            <InfoCard 
+              label="Citizenship Status" 
+              value={person.CitizenshipStatus || ''}
+              locale={locale}
+              icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
+            />
+            <InfoCard 
+              label="Religion" 
+              value={person.religion || ''}
+              locale={locale}
+              icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>}
             />
             <div className="md:col-span-2 lg:col-span-3">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <InfoCard 
                   label={t.child.arabic_name} 
-                  value={[person.givenName, person.middleName, person.familyName].filter(Boolean).join(' ') || ''}
+                  value={[person.firstNameArabic, person.middleNameArabic, person.lastNameArabic].filter(Boolean).join(' ') || ''}
                   icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" /></svg>}
                   highlight={true}
                   locale={locale}
                 />
                 <InfoCard 
                   label={t.child.english_name} 
-                  value={[person.metadata?.englishFirstName, person.metadata?.englishSecondName, person.metadata?.englishThirdName, person.metadata?.englishFourthName, person.metadata?.englishFamilyName].filter(Boolean).join(' ') || ''}
+                  value={[person.firstNameEnglish, person.middleNameEnglish, person.thirdNameEnglish, person.fourthNameEnglish, person.familyNameEnglish].filter(Boolean).join(' ') || ''}
                   icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" /></svg>}
                   highlight={true}
                   locale={locale}
@@ -206,7 +220,7 @@ export default function InfoTab({ person, t, locale }: InfoTabProps) {
               />
               <InfoCard 
                 label={t.child.zip_code} 
-                value={primaryAddress.zipCode || ''}
+                value={primaryAddress.zipCode?.toString() || ''}
                 icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>}
                 mono
               />
