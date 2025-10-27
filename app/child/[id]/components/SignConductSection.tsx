@@ -18,6 +18,14 @@ function SignConductSection({ locale, studentId }: { locale: string; studentId?:
     const [isOpen, setIsOpen] = React.useState(false);
 
     // Simulate actions (replace with real logic as needed)
+    const handleUpdateInfo = () => {
+        if (studentId) {
+            const target = `/child/${encodeURIComponent(studentId)}/update-info`;
+            window.location.href = target;
+        }
+        setIsOpen(false);
+    };
+
     const handlePrintCertification = () => {
         alert(locale === 'ar' ? 'طباعة الشهادة...' : 'Printing certification...');
         setIsOpen(false);
@@ -72,6 +80,37 @@ function SignConductSection({ locale, studentId }: { locale: string; studentId?:
                     </SheetHeader>
 
                     <div className="space-y-3">
+                        {/* Update Information Action */}
+                        <div className="group relative overflow-hidden bg-white rounded-xl border border-blue-200 hover:border-blue-300 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                            <div className="absolute inset-0 bg-gradient-to-r from-blue-50 to-sky-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                            <Button
+                                onClick={handleUpdateInfo}
+                                className="relative w-full justify-start gap-4 h-auto p-6 bg-transparent hover:bg-transparent text-gray-900 border-0 shadow-none"
+                                variant="ghost"
+                            >
+                                <div className="p-3 bg-gradient-to-br from-blue-500 to-sky-600 rounded-xl shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110">
+                                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                </div>
+                                <div className={`flex-1 ${locale === 'ar' ? 'text-right' : 'text-left'}`}>
+                                    <div className={`${locale === 'ar' ? 'font-semibold text-base' : 'font-bold text-lg'} text-gray-900 group-hover:text-blue-700 transition-colors`}>
+                                        {locale === 'ar' ? 'تحديث معلومات الطالب' : 'Update Student Information'}
+                                    </div>
+                                    <div className={`${locale === 'ar' ? 'text-sm' : 'text-base'} text-gray-600 group-hover:text-blue-600 transition-colors mt-1`}>
+                                        {locale === 'ar' ? 'حدِّث أرقام التواصل والعنوان وطريقة المواصلات' : 'Refresh contact, address, and transportation details'}
+                                    </div>
+                                </div>
+                                <div className="flex items-center">
+                                    <div className="w-8 h-8 rounded-full bg-blue-100 group-hover:bg-blue-200 flex items-center justify-center transition-all duration-300">
+                                        <svg className={`w-4 h-4 text-blue-600 group-hover:translate-x-1 transition-transform ${locale === 'ar' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                        </svg>
+                                    </div>
+                                </div>
+                            </Button>
+                        </div>
+
                         {/* Print Certification Action */}
                         <div className="group relative overflow-hidden bg-white rounded-xl border border-gray-200 hover:border-green-300 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
                             <div className="absolute inset-0 bg-gradient-to-r from-green-50 to-emerald-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
