@@ -384,7 +384,7 @@ export default function ChildCards() {
         {isBusy && (!children || children.length === 0) && (
           <>
             {Array.from({ length: 2 }).map((_, i) => (
-              <Card key={`mobile-skeleton-${i}`} className="relative overflow-hidden border-border/50 shadow-lg">
+              <Card key={`mobile-skeleton-${i}`} className="relative overflow-hidden border-border/50 ">
                 <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5" />
                 <div className="relative p-5">
                   <div className="flex items-center gap-4 mb-5">
@@ -416,10 +416,10 @@ export default function ChildCards() {
 
         {/* Error State for Mobile */}
         {error && (
-          <Card className="relative overflow-hidden border-destructive/20 shadow-xl">
+          <Card className="relative overflow-hidden border-destructive/20 ">
             <div className="absolute inset-0 bg-gradient-to-br from-destructive/5 to-destructive/10" />
             <div className="relative p-8 text-center">
-              <div className="w-20 h-20 mx-auto mb-5 bg-gradient-to-br from-destructive/20 to-destructive/30 rounded-3xl flex items-center justify-center shadow-lg ring-4 ring-destructive/10">
+              <div className="w-20 h-20 mx-auto mb-5 bg-gradient-to-br from-destructive/20 to-destructive/30 rounded-3xl flex items-center justify-center  ring-4 ring-destructive/10">
                 <svg className="w-10 h-10 text-destructive" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
@@ -445,7 +445,7 @@ export default function ChildCards() {
               key={child.id} 
               className={clsx(
                 "group relative overflow-hidden transition-all duration-300",
-                "border-border/60 shadow-lg hover:shadow-2xl",
+                "border-border/60  hover:shadow-2xl",
                 "touch-manipulation active:scale-[0.98]"
               )}
             >
@@ -488,7 +488,7 @@ export default function ChildCards() {
       </div>
 
       {/* Desktop Table Layout (Hidden on Mobile) */}
-      <div className="hidden lg:block relative overflow-hidden bg-card rounded-2xl shadow-xl border border-border/50">
+      <div className="hidden lg:block relative !mt-0      ">
         {/* Elegant Background Pattern */}
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-secondary/5" />
         <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-primary/10 to-transparent rounded-full -translate-y-48 translate-x-48 blur-3xl" />

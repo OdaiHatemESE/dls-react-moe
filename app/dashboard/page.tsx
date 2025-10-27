@@ -83,7 +83,7 @@ export default function DashboardPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Professional Welcome Section */}
         <div className="mb-8">
-          <Card className="border-0 shadow-xl bg-card overflow-hidden">
+          <Card className="border-0 ">
             <CardContent className="relative p-6">
               <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
                 <div className="flex-1">
@@ -165,7 +165,7 @@ export default function DashboardPage() {
           </div>
           
           {/* Enhanced Content */}
-          <CardContent className="p-4">
+          <CardContent className="p-0">
             <ChildCards />
           </CardContent>
         </Card>
