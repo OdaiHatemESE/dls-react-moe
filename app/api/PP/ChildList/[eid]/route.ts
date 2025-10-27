@@ -9,10 +9,10 @@ type PPTokenResponse = {
 
 export async function GET(
   req: Request,
-  { params }: { params: { eid: string } }
+  { params }: { params: Promise<{ eid: string }> }
 ) {
   try {
-    const { eid } = params;
+    const { eid } = await params;
 
     if (!eid) {
       return NextResponse.json({ error: 'Emirates ID is required' }, { status: 400 });

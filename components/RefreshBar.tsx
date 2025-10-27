@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import ReactDOM from "react-dom";
 import { Button } from "@/components/ui/button";
 import { RefreshCcw, Clock, Wifi, WifiOff, Download } from "lucide-react";
 import { mutate } from "swr";
@@ -285,12 +286,15 @@ export function RefreshBar<T = any>({
   
   const { date: lastUpdateDate, time: lastUpdateTime } = formatDateTime(displayTime);
 
-  // Loading Overlay Component
+  // Loading Overlay Component - Render as portal to body to escape parent positioning
   const LoadingOverlay = () => {
     if (!showLoadingOverlay) return null;
     
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center">
+    // Use React portal to render outside of parent container
+    if (typeof window === 'undefined') return null;
+    
+    const overlay = (
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center" style={{ position: 'fixed' }}>
         {/* Blur Background */}
         <div className="absolute inset-0 bg-black/20 backdrop-blur-md" onClick={(e) => e.stopPropagation()} />
         
@@ -333,6 +337,11 @@ export function RefreshBar<T = any>({
         </div>
       </div>
     );
+    
+    // Render to document.body to escape any parent positioning/overflow constraints
+    return typeof document !== 'undefined' 
+      ? ReactDOM.createPortal(overlay, document.body)
+      : overlay;
   };
 
   if (variant === "minimal") {
