@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import RefreshBar from '@/components/RefreshBar';
+ 
 
 import { LoadingSkeleton } from '../components/LoadingSkeleton';
 import { AddressPicker, type AddressValue } from '@/app/components/forms/AddressPicker';
@@ -435,38 +435,9 @@ export default function UpdateStudentInfoPage() {
                 <span>{displayName || sourcedId}</span>
               </CardTitle>
             </CardHeader>
-            <CardContent className="grid gap-4 sm:grid-cols-3 text-sm text-muted-foreground">
-              <div>
-                <span className="block text-xs font-medium text-foreground/70 mb-1">
-                  {t.child.sourced_id}
-                </span>
-                <span className="font-mono text-foreground">{student.id}</span>
-              </div>
-              <div>
-                <span className="block text-xs font-medium text-foreground/70 mb-1">
-                  {t.child.status}
-                </span>
-                <span className="capitalize">{student.status || '—'}</span>
-              </div>
-              <div>
-                <span className="block text-xs font-medium text-foreground/70 mb-1">
-                  {t.child.role}
-                </span>
-                <span className="capitalize">{student.role || '—'}</span>
-              </div>
-            </CardContent>
+          
           </Card>
-          <RefreshBar
-            swrKey={swrKey}
-            meta={meta}
-            labels={{
-              lastUpdated: locale === 'ar' ? 'آخر تحديث:' : 'Last updated:',
-              confirm: locale === 'ar' ? 'جلب بيانات حديثة؟' : 'Fetch fresh data?',
-              refresh: locale === 'ar' ? 'تحديث' : 'Refresh',
-              refreshing: locale === 'ar' ? 'جاري التحديث…' : 'Refreshing…',
-              unknown: locale === 'ar' ? 'غير معروف' : 'unknown',
-            }}
-          />
+         
         </div>
 
         {errorMessage && (
