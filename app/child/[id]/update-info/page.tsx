@@ -9,7 +9,7 @@ import useSWR from 'swr';
 import { useI18n } from '@/app/i18n/I18nProvider';
 import { jsonFetcher } from '@/lib/swr';
 import type { StudentAddress, StudentProfileV1 } from '@/app/types/studentprofile';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -118,6 +118,10 @@ export default function UpdateStudentInfoPage() {
   const [addressSaveState, setAddressSaveState] = React.useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const addressSignatureRef = React.useRef<string | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState<boolean>(false);
+  const [showSuccessToast, setShowSuccessToast] = React.useState<boolean>(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = React.useState<boolean>(false);
+  const formRef = React.useRef<HTMLFormElement>(null);
+  const firstErrorRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
     if (!student || contactsInitialized.current) return;
@@ -133,6 +137,39 @@ export default function UpdateStudentInfoPage() {
     }
     contactsInitialized.current = true;
   }, [student]);
+
+  // Track unsaved changes
+  React.useEffect(() => {
+    const initialContacts = (student?.contacts || [])
+      .filter((contact) => contact.type === 'Mobile' && contact.value)
+      .map((contact) => contact.value.trim())
+      .slice(0, 2);
+    
+    const contactsChanged = JSON.stringify(contactNumbers) !== JSON.stringify(initialContacts.length > 0 ? initialContacts : ['']);
+    const hasChanges = contactsChanged || addressChanged || Boolean(transportation);
+    setHasUnsavedChanges(hasChanges);
+  }, [contactNumbers, addressChanged, transportation, student]);
+
+  // Warn before leaving with unsaved changes
+  React.useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges && !isSubmitting) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasUnsavedChanges, isSubmitting]);
+
+  // Scroll to first error on validation failure
+  React.useEffect(() => {
+    if (errorMessage && firstErrorRef.current) {
+      firstErrorRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      firstErrorRef.current.focus();
+    }
+  }, [errorMessage]);
 
   React.useEffect(() => {
     if (!addressChanged) {
@@ -348,12 +385,24 @@ export default function UpdateStudentInfoPage() {
 
       await new Promise((resolve) => setTimeout(resolve, 400));
 
+      setShowSuccessToast(true);
+      setHasUnsavedChanges(false);
+      
+      // Wait for user to see success message
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+
       if (sourcedId) {
         router.push(`/child/${encodeURIComponent(sourcedId)}/parent-conduct?studentId=${encodeURIComponent(sourcedId)}`);
       }
     } catch (submitError) {
       console.error(submitError);
       setErrorMessage(locale === 'ar' ? 'حدث خطأ. يرجى المحاولة مرة أخرى.' : 'Something went wrong. Please try again.');
+      // Announce error to screen readers
+      const errorEl = document.getElementById('form-error-message');
+      if (errorEl) {
+        errorEl.setAttribute('role', 'alert');
+        errorEl.setAttribute('aria-live', 'assertive');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -402,144 +451,312 @@ export default function UpdateStudentInfoPage() {
 
   return (
     <div className={clsx('min-h-screen bg-gradient-to-br from-background/40 via-background to-background/60', locale === 'ar' && 'direction-rtl')}>
-      <div className="border-b bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/75">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-          <div>
+      {/* Skip to main content link for keyboard navigation */}
+      <a
+        href="#main-form"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-primary focus:text-primary-foreground focus:rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+      >
+        {locale === 'ar' ? 'الانتقال إلى المحتوى الرئيسي' : 'Skip to main content'}
+      </a>
+
+      <header className="border-b bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/75" role="banner">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+          <nav aria-label={locale === 'ar' ? 'التنقل' : 'Breadcrumb'} className="mb-3">
             <Link
               href={`/child/${encodeURIComponent(sourcedId)}`}
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:rounded-md px-1"
             >
-              {locale === 'ar' ? 'عودة إلى ملف الطالب' : 'Back to child profile'}
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={locale === 'ar' ? 'M9 5l7 7-7 7' : 'M15 19l-7-7 7-7'} />
+              </svg>
+              <span>{locale === 'ar' ? 'عودة إلى ملف الطالب' : 'Back to child profile'}</span>
             </Link>
-            <h1 className="text-xl sm:text-2xl font-semibold text-foreground mt-2">
-              {updateInfo.title}
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
-              {mode === 'edit' ? updateInfo.intro.edit : updateInfo.intro.init}
-            </p>
+          </nav>
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+            <div className="flex-1">
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground">
+                {updateInfo.title}
+              </h1>
+              <p className="text-sm sm:text-base text-muted-foreground mt-2 max-w-2xl">
+                {mode === 'edit' ? updateInfo.intro.edit : updateInfo.intro.init}
+              </p>
+            </div>
+            <Badge 
+              variant={mode === 'edit' ? 'destructive' : 'secondary'}
+              className="self-start text-xs sm:text-sm px-3 py-1.5"
+            >
+              {mode === 'edit' ? updateInfo.modeLabel.edit : updateInfo.modeLabel.init}
+            </Badge>
           </div>
-          <Badge variant={mode === 'edit' ? 'destructive' : 'secondary'}>
-            {mode === 'edit' ? updateInfo.modeLabel.edit : updateInfo.modeLabel.init}
-          </Badge>
         </div>
-      </div>
+      </header>
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-        <div className="flex flex-col gap-4">
-          <Card className="border border-primary/20 shadow-sm">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-base sm:text-lg flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold">
-                  {displayName.charAt(0).toUpperCase()}
-                </div>
-                <span>{displayName || sourcedId}</span>
-              </CardTitle>
-            </CardHeader>
-          
-          </Card>
-         
-        </div>
+      <main id="main-form" className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6" role="main">
+        {/* Student Info Card */}
+        <Card className="border border-primary/20 shadow-sm">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-base sm:text-lg flex items-center gap-3">
+              <div 
+                className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-lg sm:text-xl"
+                aria-hidden="true"
+              >
+                {displayName.charAt(0).toUpperCase()}
+              </div>
+              <div className="flex-1">
+                <span className="block">{displayName || sourcedId}</span>
+                {meta?.cache?.source && (
+                  <span className="text-xs text-muted-foreground font-normal mt-1 flex items-center gap-1.5">
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    {meta.cache.source === 'cache' 
+                      ? (locale === 'ar' ? 'من الذاكرة المؤقتة' : 'Cached data')
+                      : (locale === 'ar' ? 'بيانات حديثة' : 'Live data')}
+                    {meta.cache.lastUpdated && (
+                      <span className="text-[10px]">
+                        ({new Date(meta.cache.lastUpdated).toLocaleString(locale === 'ar' ? 'ar-AE' : 'en-US')})
+                      </span>
+                    )}
+                  </span>
+                )}
+              </div>
+            </CardTitle>
+          </CardHeader>
+        </Card>
 
-        {errorMessage && (
-          <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-            {errorMessage}
+        {/* Success Toast */}
+        {showSuccessToast && (
+          <div 
+            className="rounded-lg border border-green-500/30 bg-green-500/10 px-4 py-3 text-sm text-green-700 dark:text-green-400 flex items-center gap-3 animate-in slide-in-from-top-2"
+            role="status"
+            aria-live="polite"
+          >
+            <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>{locale === 'ar' ? 'تم حفظ التغييرات بنجاح!' : 'Changes saved successfully!'}</span>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <Card className="shadow-sm border border-border/60">
-            <CardHeader>
-              <CardTitle className="text-lg text-foreground">
-                {updateInfo.contactSection.title}
+        {/* Error Message */}
+        {errorMessage && (
+          <div 
+            id="form-error-message"
+            ref={firstErrorRef}
+            className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive flex items-center gap-3 animate-in slide-in-from-top-2"
+            role="alert"
+            aria-live="assertive"
+            tabIndex={-1}
+          >
+            <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>{errorMessage}</span>
+          </div>
+        )}
+
+        <form 
+          ref={formRef}
+          onSubmit={handleSubmit} 
+          className="space-y-6 sm:space-y-8"
+          aria-label={updateInfo.title}
+          noValidate
+        >
+          {/* Progress Indicator */}
+          <div className="flex items-center justify-between px-1" role="status" aria-live="polite">
+            <span className="text-xs sm:text-sm text-muted-foreground">
+              {locale === 'ar' ? 'التقدم:' : 'Progress:'}
+            </span>
+            <div className="flex items-center gap-2">
+              <div className="h-2 w-24 sm:w-32 bg-muted rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-primary transition-all duration-500"
+                  style={{ 
+                    width: `${((contactNumbers.filter(n => n.trim()).length > 0 ? 33 : 0) + (addressChanged && newAddress ? 33 : 0) + (transportation ? 34 : 0))}%` 
+                  }}
+                  role="progressbar"
+                  aria-valuenow={(contactNumbers.filter(n => n.trim()).length > 0 ? 33 : 0) + (addressChanged && newAddress ? 33 : 0) + (transportation ? 34 : 0)}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-label={locale === 'ar' ? 'نسبة الإكمال' : 'Completion percentage'}
+                />
+              </div>
+              <span className="text-xs font-medium text-foreground tabular-nums">
+                {Math.round((contactNumbers.filter(n => n.trim()).length > 0 ? 33 : 0) + (addressChanged && newAddress ? 33 : 0) + (transportation ? 34 : 0))}%
+              </span>
+            </div>
+          </div>
+
+          <Card className="shadow-md border-2 border-border/40 bg-card/50 backdrop-blur-sm">
+            <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent border-b border-border/40">
+              <CardTitle className="text-lg sm:text-xl text-foreground flex items-center gap-2">
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <svg className="w-5 h-5 sm:w-6 sm:h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                  </svg>
+                </div>
+                <span>{updateInfo.contactSection.title}</span>
               </CardTitle>
-              <p className="text-sm text-muted-foreground mt-1">
+              <CardDescription className="text-sm text-muted-foreground mt-1.5">
                 {updateInfo.contactSection.description}
-              </p>
+              </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              {contactNumbers.map((number, index) => (
-                <div key={index} className="space-y-2">
-                  <Label htmlFor={`contact-${index}`} className="text-sm font-medium">
-                    {index === 0
-                      ? updateInfo.contactSection.primaryLabel
-                      : updateInfo.contactSection.secondaryLabel}
-                  </Label>
-                  <div className="flex gap-3">
-                    <Input
-                      id={`contact-${index}`}
-                      type="tel"
-                      inputMode="tel"
-                      value={number}
-                      onChange={(event) => handleContactChange(index, event.target.value)}
-                      placeholder="05XXXXXXXX"
-                      className="flex-1"
-                    />
-                    {index > 0 && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => handleRemoveContact(index)}
-                      >
-                        {updateInfo.contactSection.removeButton}
-                      </Button>
+            <CardContent className="space-y-4 sm:space-y-5">
+              <fieldset className="space-y-4">
+                <legend className="sr-only">{updateInfo.contactSection.title}</legend>
+                {contactNumbers.map((number, index) => (
+                  <div key={index} className="space-y-2">
+                    <Label htmlFor={`contact-${index}`} className="text-sm font-medium flex items-center gap-2">
+                      <span>
+                        {index === 0
+                          ? updateInfo.contactSection.primaryLabel
+                          : updateInfo.contactSection.secondaryLabel}
+                      </span>
+                      {index === 0 && <span className="text-destructive" aria-label={locale === 'ar' ? 'مطلوب' : 'required'}>*</span>}
+                    </Label>
+                    <div className="flex gap-3">
+                      <Input
+                        id={`contact-${index}`}
+                        type="tel"
+                        inputMode="tel"
+                        value={number}
+                        onChange={(event) => handleContactChange(index, event.target.value)}
+                        placeholder="05XXXXXXXX"
+                        className={clsx(
+                          "flex-1 h-11 bg-background border-2 border-input",
+                          "hover:border-primary/50 focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20",
+                          "transition-all duration-200",
+                          "text-foreground placeholder:text-muted-foreground/60",
+                          isSubmitting && "opacity-50 cursor-not-allowed"
+                        )}
+                        required={index === 0}
+                        aria-required={index === 0}
+                        aria-invalid={index === 0 && errorMessage?.includes('contact')}
+                        aria-describedby={index === 0 ? 'contact-0-help' : undefined}
+                        disabled={isSubmitting}
+                      />
+                      {index > 0 && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => handleRemoveContact(index)}
+                          disabled={isSubmitting}
+                          aria-label={`${updateInfo.contactSection.removeButton} ${index + 1}`}
+                          className={clsx(
+                            "shrink-0 h-11 border-2",
+                            "hover:bg-destructive/10 hover:text-destructive hover:border-destructive/50",
+                            "transition-all duration-200"
+                          )}
+                        >
+                          <span className="hidden sm:inline">{updateInfo.contactSection.removeButton}</span>
+                          <svg className="w-4 h-4 sm:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </Button>
+                      )}
+                    </div>
+                    {index === 0 && (
+                      <p id="contact-0-help" className="text-xs text-muted-foreground">
+                        {locale === 'ar' 
+                          ? 'رقم الهاتف المحمول الرئيسي للتواصل العاجل'
+                          : 'Primary mobile number for urgent contact'}
+                      </p>
                     )}
                   </div>
-                </div>
-              ))}
+                ))}
+              </fieldset>
 
               {contactNumbers.length < 2 && (
-                <Button type="button" variant="secondary" onClick={handleAddContact}>
+                <Button 
+                  type="button" 
+                  variant="secondary" 
+                  onClick={handleAddContact}
+                  disabled={isSubmitting}
+                  className={clsx(
+                    "w-full sm:w-auto h-11 border-2 border-dashed",
+                    "bg-secondary/50 hover:bg-secondary hover:border-primary/50",
+                    "transition-all duration-200"
+                  )}
+                  aria-label={updateInfo.contactSection.addButton}
+                >
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
                   {updateInfo.contactSection.addButton}
                 </Button>
               )}
             </CardContent>
           </Card>
 
-          <Card className="shadow-sm border border-border/60">
-            <CardHeader>
-              <CardTitle className="text-lg text-foreground">
-                {updateInfo.addressSection.title}
+          <Card className="shadow-md border-2 border-border/40 bg-card/50 backdrop-blur-sm">
+            <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent border-b border-border/40">
+              <CardTitle className="text-lg sm:text-xl text-foreground flex items-center gap-2">
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <svg className="w-5 h-5 sm:w-6 sm:h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                </div>
+                <span>{updateInfo.addressSection.title}</span>
               </CardTitle>
-              <p className="text-sm text-muted-foreground mt-1">
+              <CardDescription className="text-sm text-muted-foreground mt-1.5">
                 {updateInfo.addressSection.description}
-              </p>
+              </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 sm:space-y-5">
               <div>
-                <Label className="text-sm font-medium block mb-2">
-                  {updateInfo.addressSection.currentLabel}
+                <Label className="text-sm font-medium block mb-2 flex items-center gap-2">
+                  <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  <span>{updateInfo.addressSection.currentLabel}</span>
                 </Label>
-                <div className="rounded-lg border border-dashed border-border/70 bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
-                  {formattedCurrentAddress || t.child.no_address_available}
+                <div className="rounded-xl border-2 border-dashed border-border/50 bg-muted/30 px-4 py-4 text-sm text-foreground/80 shadow-sm">
+                  <p className="leading-relaxed">{formattedCurrentAddress || t.child.no_address_available}</p>
                 </div>
               </div>
 
-              <label className="flex items-center gap-3 text-sm font-medium text-foreground">
-                <input
-                  type="checkbox"
-                  checked={addressChanged}
-                  onChange={(event) => setAddressChanged(event.target.checked)}
-                  className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                />
-                <span>{updateInfo.addressSection.changeToggle}</span>
-              </label>
+              <div className="bg-primary/5 border-2 border-primary/20 rounded-xl p-4">
+                <label className="flex items-start gap-3 text-sm font-medium text-foreground cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    checked={addressChanged}
+                    onChange={(event) => setAddressChanged(event.target.checked)}
+                    className="h-5 w-5 mt-0.5 rounded border-2 border-primary/40 text-primary focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-all cursor-pointer"
+                    disabled={isSubmitting}
+                    aria-describedby="address-change-help"
+                  />
+                  <div className="flex-1">
+                    <span className="group-hover:text-primary transition-colors block">{updateInfo.addressSection.changeToggle}</span>
+                    <p id="address-change-help" className="text-xs text-muted-foreground mt-1.5">
+                      {locale === 'ar'
+                        ? 'حدد هذا الخيار إذا انتقلت إلى عنوان جديد'
+                        : 'Check this option if you have moved to a new address'}
+                    </p>
+                  </div>
+                </label>
+              </div>
 
               {addressChanged && (
-                <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-4 lg:grid-cols-2 animate-in fade-in-50 duration-300">
                   <div className="space-y-3">
-                    <Label className="text-sm font-medium text-foreground">
-                      {updateInfo.addressSection.newAddressLabel}
+                    <Label className="text-sm font-medium text-foreground flex items-center gap-2">
+                      <span>{updateInfo.addressSection.newAddressLabel}</span>
+                      <span className="text-destructive" aria-label={locale === 'ar' ? 'مطلوب' : 'required'}>*</span>
                     </Label>
                     <AddressPicker
                       value={newAddress ?? undefined}
                       onChange={(value) => setNewAddress(value)}
-                      disabled={!addressChanged}
+                      disabled={!addressChanged || isSubmitting}
                       required={{ emirate: true, area: true }}
                     />
                   </div>
-                  <div className="p-4 rounded-lg border border-border/70 bg-muted/30 h-full">
-                    <div className="text-sm font-medium mb-3">
-                      {updateInfo.addressSection.summaryLabel}
+                  <div className="p-4 sm:p-5 rounded-lg border border-border/70 bg-muted/30 h-full">
+                    <div className="text-sm font-medium mb-3 flex items-center justify-between">
+                      <span>{updateInfo.addressSection.summaryLabel}</span>
+                      <Badge variant={badgeVariant} className="text-xs">
+                        {badgeLabel}
+                      </Badge>
                     </div>
                     <dl className="space-y-2 text-sm text-muted-foreground">
                       {summaryRows.map((row) =>
@@ -561,45 +778,80 @@ export default function UpdateStudentInfoPage() {
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="address-document" className="text-sm font-medium">
-                  {updateInfo.addressSection.documentLabel}
+                <Label htmlFor="address-document" className="text-sm font-medium flex items-center gap-2">
+                  <span>{updateInfo.addressSection.documentLabel}</span>
+                  {addressChanged && <span className="text-destructive" aria-label={locale === 'ar' ? 'مطلوب' : 'required'}>*</span>}
                 </Label>
                 <Input
                   id="address-document"
                   type="file"
                   accept=".pdf,.jpg,.jpeg,.png"
-                  disabled={!addressChanged}
+                  disabled={!addressChanged || isSubmitting}
                   onChange={handleFileChange}
-                  className={clsx('cursor-pointer', !addressChanged && 'opacity-80 cursor-not-allowed')}
+                  className={clsx(
+                    'cursor-pointer transition-colors',
+                    (!addressChanged || isSubmitting) && 'opacity-60 cursor-not-allowed'
+                  )}
+                  required={addressChanged}
+                  aria-required={addressChanged}
+                  aria-describedby="address-document-help address-document-status"
+                  aria-invalid={addressChanged && errorMessage?.includes('document')}
                 />
-                <p className="text-xs text-muted-foreground">
-                  {supportingDocument
-                    ? `${updateInfo.fileNameLabel}: ${supportingDocument.name}`
-                    : updateInfo.noFileSelected}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {updateInfo.addressSection.documentHelper}
-                </p>
+                <div className="space-y-1">
+                  {supportingDocument && (
+                    <p id="address-document-status" className="text-xs font-medium text-green-600 dark:text-green-400 flex items-center gap-1.5">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      {updateInfo.fileNameLabel}: <span className="font-semibold">{supportingDocument.name}</span>
+                      <span className="text-muted-foreground">({(supportingDocument.size / 1024).toFixed(1)} KB)</span>
+                    </p>
+                  )}
+                  {!supportingDocument && addressChanged && (
+                    <p id="address-document-status" className="text-xs text-muted-foreground">
+                      {updateInfo.noFileSelected}
+                    </p>
+                  )}
+                  <p id="address-document-help" className="text-xs text-muted-foreground">
+                    {updateInfo.addressSection.documentHelper}
+                  </p>
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="shadow-sm border border-border/60">
-            <CardHeader>
-              <CardTitle className="text-lg text-foreground">
-                {updateInfo.transportationSection.title}
+          <Card className="shadow-md border-2 border-border/40 bg-card/50 backdrop-blur-sm">
+            <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent border-b border-border/40">
+              <CardTitle className="text-lg sm:text-xl text-foreground flex items-center gap-2">
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <svg className="w-5 h-5 sm:w-6 sm:h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                  </svg>
+                </div>
+                <span>{updateInfo.transportationSection.title}</span>
               </CardTitle>
-              <p className="text-sm text-muted-foreground mt-1">
+              <CardDescription className="text-sm text-muted-foreground mt-1.5">
                 {updateInfo.transportationSection.description}
-              </p>
+              </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 sm:space-y-5">
               <div className="space-y-2">
-                <Label className="text-sm font-medium">
-                  {updateInfo.transportationSection.selectLabel}
+                <Label htmlFor="transportation-method" className="text-sm font-medium flex items-center gap-2">
+                  <span>{updateInfo.transportationSection.selectLabel}</span>
+                  <span className="text-destructive" aria-label={locale === 'ar' ? 'مطلوب' : 'required'}>*</span>
                 </Label>
-                <Select value={transportation} onValueChange={(value) => setTransportation(value)}>
-                  <SelectTrigger>
+                <Select 
+                  value={transportation} 
+                  onValueChange={(value) => setTransportation(value)}
+                  disabled={isSubmitting}
+                  required
+                >
+                  <SelectTrigger 
+                    id="transportation-method"
+                    aria-required="true"
+                    aria-invalid={errorMessage?.includes('transportation')}
+                    className="h-11 border-2 bg-background hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+                  >
                     <SelectValue placeholder={locale === 'ar' ? 'اختر طريقة المواصلات' : 'Select a method'} />
                   </SelectTrigger>
                   <SelectContent>
@@ -612,36 +864,155 @@ export default function UpdateStudentInfoPage() {
               </div>
 
               {transportation === 'other' && (
-                <div className="space-y-2">
-                  <Label htmlFor="other-transportation" className="text-sm font-medium">
-                    {updateInfo.transportationSection.otherLabel}
+                <div className="space-y-2 animate-in fade-in-50 slide-in-from-top-2 duration-300">
+                  <Label htmlFor="other-transportation" className="text-sm font-medium flex items-center gap-2">
+                    <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                    <span>{updateInfo.transportationSection.otherLabel}</span>
+                    <span className="text-destructive" aria-label={locale === 'ar' ? 'مطلوب' : 'required'}>*</span>
                   </Label>
                   <Input
                     id="other-transportation"
                     value={otherTransportation}
                     onChange={(event) => setOtherTransportation(event.target.value)}
                     placeholder={locale === 'ar' ? 'اكتب تفاصيل طريقة المواصلات' : 'Describe the arrangement'}
+                    className="h-11 border-2 bg-background hover:border-primary/50 focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 transition-all duration-200"
+                    required
+                    aria-required="true"
+                    aria-invalid={errorMessage?.includes('otherTransportation')}
+                    disabled={isSubmitting}
+                    maxLength={200}
                   />
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-muted-foreground">
+                      {locale === 'ar' ? 'اكتب وصفاً واضحاً للطريقة' : 'Provide a clear description'}
+                    </p>
+                    <p className={clsx(
+                      "text-xs font-medium tabular-nums",
+                      otherTransportation.length > 180 ? "text-destructive" : "text-muted-foreground"
+                    )}>
+                      {locale === 'ar'
+                        ? `${otherTransportation.length}/200 حرف`
+                        : `${otherTransportation.length}/200 characters`}
+                    </p>
+                  </div>
                 </div>
               )}
             </CardContent>
           </Card>
 
-          <div className="flex flex-col-reverse sm:flex-row items-center justify-between gap-3 border-t border-border/60 pt-4">
+          {/* Important Notice Alert */}
+          <div 
+            className="rounded-xl border-2 border-amber-500/40 bg-gradient-to-r from-amber-50 to-amber-100/50 dark:from-amber-950/30 dark:to-amber-900/20 p-5 sm:p-6 shadow-sm"
+            role="alert"
+            aria-labelledby="important-notice-title"
+          >
+            <div className="flex gap-4">
+              <div className="shrink-0">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-amber-500/20 flex items-center justify-center">
+                  <svg className="w-6 h-6 sm:w-7 sm:h-7 text-amber-600 dark:text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                </div>
+              </div>
+              <div className="flex-1 space-y-3">
+                <h3 id="important-notice-title" className="text-base sm:text-lg font-bold text-amber-900 dark:text-amber-200 flex items-center gap-2">
+                  <span>
+                    {locale === 'ar' 
+                      ? 'تنبيه هام - يرجى القراءة بعناية' 
+                      : 'Important Notice - Please Read Carefully'}
+                  </span>
+                </h3>
+                <div className="space-y-2.5 text-sm sm:text-base text-amber-900/90 dark:text-amber-100/90">
+                  <p className="leading-relaxed font-medium">
+                    {locale === 'ar'
+                      ? 'قبل إرسال هذا النموذج، يرجى التأكد من أن جميع المعلومات المقدمة صحيحة ودقيقة:'
+                      : 'Before submitting this form, please ensure that all the information provided is correct and accurate:'}
+                  </p>
+                  <ul className="space-y-2 mr-4 list-disc list-inside">
+                    <li className="leading-relaxed">
+                      {locale === 'ar'
+                        ? 'تحقق من صحة أرقام الاتصال وإمكانية الوصول إليها'
+                        : 'Verify that contact numbers are correct and reachable'}
+                    </li>
+                    <li className="leading-relaxed">
+                      {locale === 'ar'
+                        ? 'تأكد من دقة العنوان السكني وتطابقه مع المستندات الرسمية'
+                        : 'Ensure the residential address matches official documents'}
+                    </li>
+                    <li className="leading-relaxed">
+                      {locale === 'ar'
+                        ? 'راجع المستند المرفق للتأكد من وضوحه وصحته'
+                        : 'Review uploaded documents for clarity and validity'}
+                    </li>
+                    <li className="leading-relaxed">
+                      {locale === 'ar'
+                        ? 'تأكد من دقة معلومات النقل المدرسي'
+                        : 'Confirm transportation details are accurate'}
+                    </li>
+                  </ul>
+                  <p className="leading-relaxed font-semibold pt-2 border-t border-amber-300/30 dark:border-amber-700/30">
+                    {locale === 'ar'
+                      ? '⚠️ المعلومات غير الصحيحة قد تؤثر على خدمات طفلك المدرسية وقد تتطلب تحديثات لاحقة.'
+                      : '⚠️ Incorrect information may affect your child\'s school services and may require later updates.'}
+                  </p>
+                  <p className="text-xs sm:text-sm text-amber-800/80 dark:text-amber-200/80 italic">
+                    {locale === 'ar'
+                      ? 'بالمتابعة، أقر بأن جميع المعلومات المقدمة صحيحة وكاملة.'
+                      : 'By proceeding, I acknowledge that all information provided is correct and complete.'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col-reverse sm:flex-row items-center justify-between gap-3 border-t border-border/60 pt-6 mt-8">
             <Button
               type="button"
               variant="outline"
-              onClick={() => router.push(`/child/${encodeURIComponent(sourcedId)}`)}
+              onClick={() => {
+                if (hasUnsavedChanges && !window.confirm(locale === 'ar' ? 'لديك تغييرات غير محفوظة. هل أنت متأكد من الرجوع؟' : 'You have unsaved changes. Are you sure you want to go back?')) {
+                  return;
+                }
+                router.push(`/child/${encodeURIComponent(sourcedId)}`);
+              }}
               className="w-full sm:w-auto"
               disabled={isSubmitting}
+              aria-label={updateInfo.submit.cancel}
             >
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={locale === 'ar' ? 'M9 5l7 7-7 7' : 'M15 19l-7-7 7-7'} />
+              </svg>
               {updateInfo.submit.cancel}
             </Button>
-            <Button type="submit" className="w-full sm:w-auto" disabled={isSubmitting}>
-              {isSubmitting ? updateInfo.submit.submitting : updateInfo.submit.continue}
+            <Button 
+              type="submit" 
+              className="w-full sm:w-auto min-w-[200px] relative" 
+              disabled={isSubmitting}
+              aria-label={isSubmitting ? updateInfo.submit.submitting : updateInfo.submit.continue}
+            >
+              {isSubmitting && (
+                <svg className="animate-spin -ml-1 mr-3 h-5 w-5" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              )}
+              {!isSubmitting && (
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              )}
+              <span>{isSubmitting ? updateInfo.submit.submitting : updateInfo.submit.continue}</span>
             </Button>
           </div>
         </form>
+      </main>
+
+      {/* Keyboard Navigation Hints */}
+      <div className="sr-only" role="region" aria-label={locale === 'ar' ? 'تلميحات لوحة المفاتيح' : 'Keyboard hints'}>
+        <p>{locale === 'ar' ? 'استخدم Tab للتنقل بين الحقول' : 'Use Tab to navigate between fields'}</p>
+        <p>{locale === 'ar' ? 'اضغط Enter لإرسال النموذج' : 'Press Enter to submit the form'}</p>
       </div>
     </div>
   );
