@@ -50,6 +50,12 @@ function numberToString(value?: number | null): string | null {
   return typeof value === 'number' && Number.isFinite(value) ? String(value) : null;
 }
 
+function formatCoordinate(value?: number | null): string | null {
+  return typeof value === 'number' && Number.isFinite(value)
+    ? value.toFixed(6)
+    : null;
+}
+
 function localizedName(
   locale: string,
   english?: string | null,
@@ -204,6 +210,26 @@ export default function UpdateStudentInfoPage() {
         key: 'plotNumber',
         label: summaryFields.plotNumber,
         value: numberToString(newAddress.plotId),
+      },
+      {
+        key: 'mainPlotId',
+        label: summaryFields.mainPlot,
+        value: textOrNull(newAddress.mainPlotId),
+      },
+      {
+        key: 'premisesPlotId',
+        label: summaryFields.premises,
+        value: textOrNull(newAddress.premisesPlotId),
+      },
+      {
+        key: 'latitude',
+        label: summaryFields.latitude,
+        value: formatCoordinate(newAddress.latitude),
+      },
+      {
+        key: 'longitude',
+        label: summaryFields.longitude,
+        value: formatCoordinate(newAddress.longitude),
       },
       {
         key: 'areaName',

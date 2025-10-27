@@ -65,6 +65,8 @@ type AddressValue = {
   plotId?: number;
   longitude?: number | null;
   latitude?: number | null;
+  mainPlotId?: string | null;
+  premisesPlotId?: string | null;
   emirateNameEn?: string | null;
   emirateNameAr?: string | null;
   areaNameEn?: string | null;
@@ -282,6 +284,8 @@ export function AddressPicker(props: AddressPickerProps) {
     plotId: value?.plotId ?? undefined,
     longitude: value?.longitude ?? undefined,
     latitude: value?.latitude ?? undefined,
+    mainPlotId: value?.mainPlotId ?? undefined,
+    premisesPlotId: value?.premisesPlotId ?? undefined,
   }));
 
   // Dialog state for MyLandPicker
@@ -346,6 +350,14 @@ export function AddressPicker(props: AddressPickerProps) {
       }
       if (value.latitude !== prev.latitude) {
         next.latitude = value.latitude;
+        hasChanges = true;
+      }
+      if (value.mainPlotId !== prev.mainPlotId) {
+        next.mainPlotId = value.mainPlotId;
+        hasChanges = true;
+      }
+      if (value.premisesPlotId !== prev.premisesPlotId) {
+        next.premisesPlotId = value.premisesPlotId;
         hasChanges = true;
       }
       
@@ -553,17 +565,24 @@ export function AddressPicker(props: AddressPickerProps) {
     const regionId = record.hierarchy.region.id ?? null;
     const zoneId = record.hierarchy.zone.id ?? null;
     const areaId = record.identifiers.areaId ?? record.hierarchy.area.id ?? null;
-    const plotId = record.identifiers.plotId ?? record.plot.id ?? null;
+    const plotId = record.identifiers?.plotId ?? record.plot?.id ?? null;
     const streetName = record.location.roadNumber ?? pendingSelection.roadId;
-    const houseNumberSource = pendingSelection.plot?.trim() || record.identifiers.mainPlotId || record.plot.titles.en;
+    const houseNumberSource = pendingSelection.plot?.trim() || record.identifiers?.mainPlotId || record.plot?.titles?.en;
     const nextLongitude = toFiniteNumber(record.location.coordinates?.longitude);
     const nextLatitude = toFiniteNumber(record.location.coordinates?.latitude);
+    const mainPlotId =
+      record.identifiers?.mainPlotId ??
+      record.identifiers?.mainPlotPromiseId ??
+      null;
+    const premisesPlotId = record.identifiers?.premisesPlotId ?? null;
 
     const updates: Partial<AddressValue> = {
       emirateId: emirateId ?? local.emirateId,
       areaId: areaId ?? local.areaId,
       longitude: nextLongitude,
       latitude: nextLatitude,
+      mainPlotId,
+      premisesPlotId,
     };
 
     const emirateLookup = (emirateId ?? local.emirateId)
@@ -610,6 +629,8 @@ export function AddressPicker(props: AddressPickerProps) {
       updates.zoneNameAr = null;
       updates.streetName = streetName?.trim() || undefined;
       updates.houseNumber = houseNumberSource?.trim() || undefined;
+      updates.mainPlotId = null;
+      updates.premisesPlotId = null;
     }
 
     emit(updates);
