@@ -197,7 +197,7 @@ export default function ChildDetailPage() {
                 <div className="flex-shrink-0 w-full sm:w-auto">
                   <div className="bg-card/80 backdrop-blur-sm rounded-xl border border-border/80 p-3 md:p-4 shadow-sm touch-manipulation space-y-3">
                     {/* Edit Profile Button */}
-                    <Link 
+                    {/* <Link 
                       href={`/child/${student.id}/edit`}
                       className={clsx(
                         "w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm transition-all duration-200",
@@ -209,7 +209,7 @@ export default function ChildDetailPage() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                       </svg>
                       <span>{locale === 'ar' ? 'تعديل الملف الشخصي' : 'Edit Profile'}</span>
-                    </Link>
+                    </Link> */}
 
                     {/* Documents Section */}
                     <div>
