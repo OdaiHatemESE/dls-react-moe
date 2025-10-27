@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
  
 
 import { LoadingSkeleton } from '../components/LoadingSkeleton';
@@ -122,6 +123,8 @@ export default function UpdateStudentInfoPage() {
   const [hasUnsavedChanges, setHasUnsavedChanges] = React.useState<boolean>(false);
   const formRef = React.useRef<HTMLFormElement>(null);
   const firstErrorRef = React.useRef<HTMLDivElement>(null);
+  const [showConfirmDialog, setShowConfirmDialog] = React.useState<boolean>(false);
+  const [preparedPayload, setPreparedPayload] = React.useState<PreparedPayload | null>(null);
 
   React.useEffect(() => {
     if (!student || contactsInitialized.current) return;
@@ -368,20 +371,30 @@ export default function UpdateStudentInfoPage() {
       return;
     }
 
-    setIsSubmitting(true);
-    try {
-      const payload: PreparedPayload = {
-        studentId: sourcedId || '',
-        mode,
-        contactNumbers: sanitizedContacts.slice(0, 2),
-        addressChanged,
-        newAddress: addressChanged ? newAddress : null,
-        documentName: supportingDocument ? supportingDocument.name : null,
-        transportation: transportation === 'other' ? otherTransportation.trim() : transportation,
-      };
+    // Prepare payload and show confirmation dialog
+    const payload: PreparedPayload = {
+      studentId: sourcedId || '',
+      mode,
+      contactNumbers: sanitizedContacts.slice(0, 2),
+      addressChanged,
+      newAddress: addressChanged ? newAddress : null,
+      documentName: supportingDocument ? supportingDocument.name : null,
+      transportation: transportation === 'other' ? otherTransportation.trim() : transportation,
+    };
 
+    setPreparedPayload(payload);
+    setShowConfirmDialog(true);
+  };
+
+  const handleConfirmSubmit = async () => {
+    if (!preparedPayload) return;
+
+    setShowConfirmDialog(false);
+    setIsSubmitting(true);
+    
+    try {
       // Placeholder for future API integration.
-      console.log('Update info submission', payload);
+      console.log('Update info submission', preparedPayload);
 
       await new Promise((resolve) => setTimeout(resolve, 400));
 
@@ -405,6 +418,7 @@ export default function UpdateStudentInfoPage() {
       }
     } finally {
       setIsSubmitting(false);
+      setPreparedPayload(null);
     }
   };
 
@@ -691,7 +705,7 @@ export default function UpdateStudentInfoPage() {
           <Card className="shadow-md border-2 border-border/40 bg-card/50 backdrop-blur-sm">
             <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent border-b border-border/40">
               <CardTitle className="text-lg sm:text-xl text-foreground flex items-center gap-2">
-                <div className="p-2 rounded-lg bg-primary/10">
+                <div className="p-2 rounded-lg bg-primary/10 ">
                   <svg className="w-5 h-5 sm:w-6 sm:h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -699,12 +713,12 @@ export default function UpdateStudentInfoPage() {
                 </div>
                 <span>{updateInfo.addressSection.title}</span>
               </CardTitle>
-              <CardDescription className="text-sm text-muted-foreground mt-1.5">
+              <CardDescription className="text-sm text-muted-foreground  !mt-5">
                 {updateInfo.addressSection.description}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 sm:space-y-5">
-              <div>
+              <div className='my-5'>
                 <Label className="text-sm font-medium block mb-2 flex items-center gap-2">
                   <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -828,18 +842,18 @@ export default function UpdateStudentInfoPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                   </svg>
                 </div>
-                <span>{updateInfo.transportationSection.title}</span>
+                <span className='mb-2'> {updateInfo.transportationSection.title}</span>
               </CardTitle>
-              <CardDescription className="text-sm text-muted-foreground mt-1.5">
+              <CardDescription className="text-sm text-muted-foreground  !mt-5">
                 {updateInfo.transportationSection.description}
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4 sm:space-y-5">
+            <CardContent className="space-y-4 sm:space-y-5 pt-6">
               <div className="space-y-2">
                 <Label htmlFor="transportation-method" className="text-sm font-medium flex items-center gap-2">
                   <span>{updateInfo.transportationSection.selectLabel}</span>
                   <span className="text-destructive" aria-label={locale === 'ar' ? 'مطلوب' : 'required'}>*</span>
-                </Label>
+                </Label> 
                 <Select 
                   value={transportation} 
                   onValueChange={(value) => setTransportation(value)}
@@ -1014,6 +1028,199 @@ export default function UpdateStudentInfoPage() {
         <p>{locale === 'ar' ? 'استخدم Tab للتنقل بين الحقول' : 'Use Tab to navigate between fields'}</p>
         <p>{locale === 'ar' ? 'اضغط Enter لإرسال النموذج' : 'Press Enter to submit the form'}</p>
       </div>
+
+      {/* Confirmation Dialog */}
+      <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader className="space-y-3 pb-2">
+            <DialogTitle className="flex items-center gap-3 text-xl font-bold">
+              <div className="w-12 h-12 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0">
+                <svg className="w-7 h-7 text-amber-600 dark:text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <span>
+                {locale === 'ar' 
+                  ? 'تأكيد التغييرات' 
+                  : 'Confirm Changes'}
+              </span>
+            </DialogTitle>
+            <DialogDescription className="text-base leading-relaxed">
+              {locale === 'ar'
+                ? 'يرجى مراجعة التغييرات التالية قبل المتابعة إلى توقيع ميثاق السلوك:'
+                : 'Please review the following changes before proceeding to sign the conduct charter:'}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-5 py-6">
+            {/* Contact Numbers Summary */}
+            <div className="rounded-lg border-2 border-border/50 bg-card/30 overflow-hidden">
+              <div className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-primary/5 to-transparent border-b border-border/40">
+                <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                  <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                  </svg>
+                </div>
+                <h4 className="font-semibold text-base text-foreground">
+                  {locale === 'ar' ? 'أرقام الاتصال' : 'Contact Numbers'}
+                </h4>
+              </div>
+              <div className="p-4 space-y-3">
+                <div className="flex items-center gap-3">
+                  <Badge variant="secondary" className="shrink-0">
+                    {locale === 'ar' ? 'الأساسي' : 'Primary'}
+                  </Badge>
+                  <span className="font-mono text-base font-medium text-foreground" dir="ltr">
+                    {preparedPayload?.contactNumbers[0] || '—'}
+                  </span>
+                </div>
+                {preparedPayload?.contactNumbers[1] && (
+                  <div className="flex items-center gap-3">
+                    <Badge variant="outline" className="shrink-0">
+                      {locale === 'ar' ? 'الثانوي' : 'Secondary'}
+                    </Badge>
+                    <span className="font-mono text-base font-medium text-foreground" dir="ltr">
+                      {preparedPayload.contactNumbers[1]}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Address Summary */}
+            <div className="rounded-lg border-2 border-border/50 bg-card/30 overflow-hidden">
+              <div className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-primary/5 to-transparent border-b border-border/40">
+                <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                  <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                </div>
+                <h4 className="font-semibold text-base text-foreground">
+                  {locale === 'ar' ? 'العنوان السكني' : 'Residential Address'}
+                </h4>
+              </div>
+              <div className="p-4">
+                {preparedPayload?.addressChanged ? (
+                  <div className="space-y-3">
+                    <Badge variant="default" className="mb-2">
+                      {locale === 'ar' ? 'عنوان جديد' : 'New Address'}
+                    </Badge>
+                    <div className="space-y-2.5 bg-background/50 p-4 rounded-lg border border-border/40">
+                      <div className="flex gap-3">
+                        <span className="font-medium text-muted-foreground min-w-[90px] shrink-0">
+                          {locale === 'ar' ? 'الإمارة:' : 'Emirate:'}
+                        </span>
+                        <span className="text-foreground font-medium">{preparedPayload.newAddress?.emirateName || '—'}</span>
+                      </div>
+                      <div className="flex gap-3">
+                        <span className="font-medium text-muted-foreground min-w-[90px] shrink-0">
+                          {locale === 'ar' ? 'المنطقة:' : 'Area:'}
+                        </span>
+                        <span className="text-foreground font-medium">{preparedPayload.newAddress?.areaName || '—'}</span>
+                      </div>
+                      {preparedPayload.newAddress?.communityName && (
+                        <div className="flex gap-3">
+                          <span className="font-medium text-muted-foreground min-w-[90px] shrink-0">
+                            {locale === 'ar' ? 'المجتمع:' : 'Community:'}
+                          </span>
+                          <span className="text-foreground font-medium">{preparedPayload.newAddress.communityName}</span>
+                        </div>
+                      )}
+                      {preparedPayload.documentName && (
+                        <div className="flex gap-3 pt-3 mt-3 border-t border-border/30">
+                          <span className="font-medium text-muted-foreground min-w-[90px] shrink-0">
+                            {locale === 'ar' ? 'المستند:' : 'Document:'}
+                          </span>
+                          <span className="text-foreground text-sm font-mono truncate flex-1" title={preparedPayload.documentName}>
+                            📄 {preparedPayload.documentName}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-sm text-muted-foreground italic py-2">
+                    {locale === 'ar' ? 'لم يتم تغيير العنوان' : 'No address changes'}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Transportation Summary */}
+            <div className="rounded-lg border-2 border-border/50 bg-card/30 overflow-hidden">
+              <div className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-primary/5 to-transparent border-b border-border/40">
+                <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                  <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                  </svg>
+                </div>
+                <h4 className="font-semibold text-base text-foreground">
+                  {locale === 'ar' ? 'وسيلة النقل' : 'Transportation'}
+                </h4>
+              </div>
+              <div className="p-4">
+                <div className="bg-background/50 px-4 py-3 rounded-lg border border-border/40">
+                  <span className="font-medium text-foreground text-base">
+                    {preparedPayload?.transportation || '—'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Warning Message */}
+            <div className="rounded-lg border-2 border-amber-500/40 bg-gradient-to-r from-amber-50 to-amber-100/50 dark:from-amber-950/30 dark:to-amber-900/20 p-5">
+              <div className="flex gap-4">
+                <svg className="w-6 h-6 text-amber-600 dark:text-amber-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <p className="text-sm text-amber-900 dark:text-amber-100 leading-relaxed font-medium">
+                  {locale === 'ar'
+                    ? 'بالنقر على "تأكيد والمتابعة"، أقر بأن جميع المعلومات المذكورة أعلاه صحيحة وكاملة. سيتم الانتقال إلى صفحة توقيع ميثاق السلوك.'
+                    : 'By clicking "Confirm & Continue", I acknowledge that all information above is correct and complete. You will proceed to sign the conduct charter.'}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-3 pt-4 border-t border-border/30">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setShowConfirmDialog(false)}
+              className="min-w-[120px] h-11"
+            >
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              {locale === 'ar' ? 'إلغاء' : 'Cancel'}
+            </Button>
+            <Button
+              type="button"
+              onClick={handleConfirmSubmit}
+              disabled={isSubmitting}
+              className="min-w-[200px] h-11"
+            >
+              {isSubmitting ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-2 h-5 w-5" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  {locale === 'ar' ? 'جارٍ الحفظ...' : 'Saving...'}
+                </>
+              ) : (
+                <>
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  {locale === 'ar' ? 'تأكيد والمتابعة' : 'Confirm & Continue'}
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
