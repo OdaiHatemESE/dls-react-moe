@@ -464,7 +464,14 @@ export default function UpdateStudentInfoPage() {
         .join(' ');
 
   return (
-    <div className={clsx('min-h-screen bg-gradient-to-br from-background/40 via-background to-background/60', locale === 'ar' && 'direction-rtl')}>
+    <div className={clsx('min-h-screen bg-gradient-to-br from-background/40 via-background to-background/60 relative overflow-hidden', locale === 'ar' && 'direction-rtl')}>
+      {/* Animated Background Elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-20 -left-20 w-72 h-72 bg-primary/5 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '4s' }} />
+        <div className="absolute top-40 -right-20 w-96 h-96 bg-primary/3 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '6s', animationDelay: '1s' }} />
+        <div className="absolute bottom-20 left-1/3 w-80 h-80 bg-primary/4 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '5s', animationDelay: '2s' }} />
+      </div>
+
       {/* Skip to main content link for keyboard navigation */}
       <a
         href="#main-form"
@@ -473,25 +480,25 @@ export default function UpdateStudentInfoPage() {
         {locale === 'ar' ? 'الانتقال إلى المحتوى الرئيسي' : 'Skip to main content'}
       </a>
 
-      <header className="border-b bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/75" role="banner">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+      <header className="border-b bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/75 sticky top-0 z-40 shadow-sm transition-all duration-300 hover:shadow-md" role="banner">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 animate-in fade-in slide-in-from-top-4 duration-700">
           <nav aria-label={locale === 'ar' ? 'التنقل' : 'Breadcrumb'} className="mb-3">
             <Link
               href={`/child/${encodeURIComponent(sourcedId)}`}
-              className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:rounded-md px-1"
+              className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary hover:gap-3 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-ring focus:rounded-md px-1 group"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <svg className="w-4 h-4 group-hover:scale-110 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={locale === 'ar' ? 'M9 5l7 7-7 7' : 'M15 19l-7-7 7-7'} />
               </svg>
-              <span>{locale === 'ar' ? 'عودة إلى ملف الطالب' : 'Back to child profile'}</span>
+              <span className="group-hover:underline decoration-primary decoration-2 underline-offset-4">{locale === 'ar' ? 'عودة إلى ملف الطالب' : 'Back to child profile'}</span>
             </Link>
           </nav>
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div className="flex-1">
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground">
+              <h1 className={clsx("text-xl sm:text-2xl lg:text-3xl font-bold text-foreground", locale === 'ar' && 'text-right')}>
                 {updateInfo.title}
               </h1>
-              <p className="text-sm sm:text-base text-muted-foreground mt-2 max-w-2xl">
+              <p className={clsx("text-sm sm:text-base text-muted-foreground mt-2 max-w-2xl", locale === 'ar' && 'text-right')}>
                 {mode === 'edit' ? updateInfo.intro.edit : updateInfo.intro.init}
               </p>
             </div>
@@ -507,11 +514,11 @@ export default function UpdateStudentInfoPage() {
 
       <main id="main-form" className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6" role="main">
         {/* Student Info Card */}
-        <Card className="border border-primary/20 shadow-sm">
+        <Card className="border border-primary/20 shadow-sm hover:shadow-lg hover:border-primary/40 transition-all duration-500 animate-in fade-in slide-in-from-bottom-4 hover:scale-[1.01]" style={{ animationDelay: '100ms' }}>
           <CardHeader className="pb-4">
             <CardTitle className="text-base sm:text-lg flex items-center gap-3">
               <div 
-                className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-lg sm:text-xl"
+                className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center text-primary font-semibold text-lg sm:text-xl ring-2 ring-primary/20 ring-offset-2 ring-offset-background transition-all duration-300 hover:scale-110 hover:ring-primary/40 hover:shadow-lg"
                 aria-hidden="true"
               >
                 {displayName.charAt(0).toUpperCase()}
@@ -611,7 +618,7 @@ export default function UpdateStudentInfoPage() {
                 </div>
                 <span>{updateInfo.contactSection.title}</span>
               </CardTitle>
-              <CardDescription className="text-sm text-muted-foreground mt-1.5">
+              <CardDescription className={clsx("text-sm text-muted-foreground mt-1.5", locale === 'ar' && 'text-right')}>
                 {updateInfo.contactSection.description}
               </CardDescription>
             </CardHeader>
@@ -620,7 +627,7 @@ export default function UpdateStudentInfoPage() {
                 <legend className="sr-only">{updateInfo.contactSection.title}</legend>
                 {contactNumbers.map((number, index) => (
                   <div key={index} className="space-y-2">
-                    <Label htmlFor={`contact-${index}`} className="text-sm font-medium flex items-center gap-2">
+                    <Label htmlFor={`contact-${index}`} className={clsx("text-sm font-medium flex items-center gap-2", locale === 'ar' && 'flex-row-reverse justify-end')}>
                       <span>
                         {index === 0
                           ? updateInfo.contactSection.primaryLabel
@@ -636,11 +643,13 @@ export default function UpdateStudentInfoPage() {
                         value={number}
                         onChange={(event) => handleContactChange(index, event.target.value)}
                         placeholder="05XXXXXXXX"
+                        dir="ltr"
                         className={clsx(
                           "flex-1 h-11 bg-background border-2 border-input",
                           "hover:border-primary/50 focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20",
                           "transition-all duration-200",
                           "text-foreground placeholder:text-muted-foreground/60",
+                          locale === 'ar' && 'text-right',
                           isSubmitting && "opacity-50 cursor-not-allowed"
                         )}
                         required={index === 0}
@@ -702,10 +711,10 @@ export default function UpdateStudentInfoPage() {
             </CardContent>
           </Card>
 
-          <Card className="shadow-md border-2 border-border/40 bg-card/50 backdrop-blur-sm">
-            <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent border-b border-border/40">
+          <Card className="shadow-md border-2 border-border/40 bg-card/50 backdrop-blur-sm hover:shadow-xl hover:border-primary/30 transition-all duration-500 animate-in fade-in slide-in-from-bottom-4 group" style={{ animationDelay: '300ms' }}>
+            <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent border-b border-border/40 group-hover:from-primary/10 transition-all duration-500">
               <CardTitle className="text-lg sm:text-xl text-foreground flex items-center gap-2">
-                <div className="p-2 rounded-lg bg-primary/10 ">
+                <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 group-hover:scale-110 transition-all duration-300">
                   <svg className="w-5 h-5 sm:w-6 sm:h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -719,19 +728,19 @@ export default function UpdateStudentInfoPage() {
             </CardHeader>
             <CardContent className="space-y-4 sm:space-y-5">
               <div className='my-5'>
-                <Label className="text-sm font-medium block mb-2 flex items-center gap-2">
+                <Label className={clsx("text-sm font-medium block mb-2 flex items-center gap-2", locale === 'ar' && 'flex-row-reverse justify-end')}>
                   <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
                   <span>{updateInfo.addressSection.currentLabel}</span>
                 </Label>
-                <div className="rounded-xl border-2 border-dashed border-border/50 bg-muted/30 px-4 py-4 text-sm text-foreground/80 shadow-sm">
+                <div className={clsx("rounded-xl border-2 border-dashed border-border/50 bg-muted/30 px-4 py-4 text-sm text-foreground/80 shadow-sm", locale === 'ar' && 'text-right')}>
                   <p className="leading-relaxed">{formattedCurrentAddress || t.child.no_address_available}</p>
                 </div>
               </div>
 
               <div className="bg-primary/5 border-2 border-primary/20 rounded-xl p-4">
-                <label className="flex items-start gap-3 text-sm font-medium text-foreground cursor-pointer group">
+                <label className={clsx("flex items-start gap-3 text-sm font-medium text-foreground cursor-pointer group", locale === 'ar' && 'flex-row-reverse text-right')}>
                   <input
                     type="checkbox"
                     checked={addressChanged}
@@ -754,7 +763,7 @@ export default function UpdateStudentInfoPage() {
               {addressChanged && (
                 <div className="grid gap-4 lg:grid-cols-2 animate-in fade-in-50 duration-300">
                   <div className="space-y-3">
-                    <Label className="text-sm font-medium text-foreground flex items-center gap-2">
+                    <Label className={clsx("text-sm font-medium text-foreground flex items-center gap-2", locale === 'ar' && 'flex-row-reverse justify-end')}>
                       <span>{updateInfo.addressSection.newAddressLabel}</span>
                       <span className="text-destructive" aria-label={locale === 'ar' ? 'مطلوب' : 'required'}>*</span>
                     </Label>
@@ -792,7 +801,7 @@ export default function UpdateStudentInfoPage() {
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="address-document" className="text-sm font-medium flex items-center gap-2">
+                <Label htmlFor="address-document" className={clsx("text-sm font-medium flex items-center gap-2", locale === 'ar' && 'flex-row-reverse justify-end')}>
                   <span>{updateInfo.addressSection.documentLabel}</span>
                   {addressChanged && <span className="text-destructive" aria-label={locale === 'ar' ? 'مطلوب' : 'required'}>*</span>}
                 </Label>
@@ -834,10 +843,10 @@ export default function UpdateStudentInfoPage() {
             </CardContent>
           </Card>
 
-          <Card className="shadow-md border-2 border-border/40 bg-card/50 backdrop-blur-sm">
-            <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent border-b border-border/40">
+          <Card className="shadow-md border-2 border-border/40 bg-card/50 backdrop-blur-sm hover:shadow-xl hover:border-primary/30 transition-all duration-500 animate-in fade-in slide-in-from-bottom-4 group" style={{ animationDelay: '400ms' }}>
+            <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent border-b border-border/40 group-hover:from-primary/10 transition-all duration-500">
               <CardTitle className="text-lg sm:text-xl text-foreground flex items-center gap-2">
-                <div className="p-2 rounded-lg bg-primary/10">
+                <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 group-hover:scale-110 transition-all duration-300">
                   <svg className="w-5 h-5 sm:w-6 sm:h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                   </svg>
@@ -850,7 +859,7 @@ export default function UpdateStudentInfoPage() {
             </CardHeader>
             <CardContent className="space-y-4 sm:space-y-5 pt-6">
               <div className="space-y-2">
-                <Label htmlFor="transportation-method" className="text-sm font-medium flex items-center gap-2">
+                <Label htmlFor="transportation-method" className={clsx("text-sm font-medium flex items-center gap-2", locale === 'ar' && 'flex-row-reverse justify-end')}>
                   <span>{updateInfo.transportationSection.selectLabel}</span>
                   <span className="text-destructive" aria-label={locale === 'ar' ? 'مطلوب' : 'required'}>*</span>
                 </Label> 
@@ -864,11 +873,15 @@ export default function UpdateStudentInfoPage() {
                     id="transportation-method"
                     aria-required="true"
                     aria-invalid={errorMessage?.includes('transportation')}
-                    className="h-11 border-2 bg-background hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+                    className={clsx(
+                      "h-11 border-2 bg-background hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200",
+                      locale === 'ar' && 'text-right'
+                    )}
+                    dir={locale === 'ar' ? 'rtl' : 'ltr'}
                   >
                     <SelectValue placeholder={locale === 'ar' ? 'اختر طريقة المواصلات' : 'Select a method'} />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent dir={locale === 'ar' ? 'rtl' : 'ltr'} className={clsx(locale === 'ar' && 'text-right')}>
                     <SelectItem value="car">{updateInfo.transportationSection.options.car}</SelectItem>
                     <SelectItem value="bus">{updateInfo.transportationSection.options.bus}</SelectItem>
                     <SelectItem value="public">{updateInfo.transportationSection.options.public}</SelectItem>
@@ -879,7 +892,7 @@ export default function UpdateStudentInfoPage() {
 
               {transportation === 'other' && (
                 <div className="space-y-2 animate-in fade-in-50 slide-in-from-top-2 duration-300">
-                  <Label htmlFor="other-transportation" className="text-sm font-medium flex items-center gap-2">
+                  <Label htmlFor="other-transportation" className={clsx("text-sm font-medium flex items-center gap-2", locale === 'ar' && 'flex-row-reverse justify-end')}>
                     <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                     </svg>
@@ -918,33 +931,33 @@ export default function UpdateStudentInfoPage() {
 
           {/* Important Notice Alert */}
           <div 
-            className="rounded-xl border-2 border-amber-500/40 bg-gradient-to-r from-amber-50 to-amber-100/50 dark:from-amber-950/30 dark:to-amber-900/20 p-5 sm:p-6 shadow-sm"
+            className="rounded-xl border-2 border-amber-500/40 bg-gradient-to-r from-amber-50 to-amber-100/50 dark:from-amber-950/30 dark:to-amber-900/20 p-5 sm:p-6 shadow-sm hover:shadow-md hover:border-amber-500/60 transition-all duration-500 animate-in fade-in slide-in-from-bottom-4" style={{ animationDelay: '500ms' }}
             role="alert"
             aria-labelledby="important-notice-title"
           >
             <div className="flex gap-4">
               <div className="shrink-0">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-amber-500/20 flex items-center justify-center">
-                  <svg className="w-6 h-6 sm:w-7 sm:h-7 text-amber-600 dark:text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-amber-500/20 flex items-center justify-center animate-pulse" style={{ animationDuration: '3s' }}>
+                  <svg className="w-6 h-6 sm:w-7 sm:h-7 text-amber-600 dark:text-amber-500 animate-bounce" style={{ animationDuration: '2s' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                   </svg>
                 </div>
               </div>
               <div className="flex-1 space-y-3">
-                <h3 id="important-notice-title" className="text-base sm:text-lg font-bold text-amber-900 dark:text-amber-200 flex items-center gap-2">
+                <h3 id="important-notice-title" className={clsx("text-base sm:text-lg font-bold text-amber-900 dark:text-amber-200 flex items-center gap-2", locale === 'ar' && 'text-right')}>
                   <span>
                     {locale === 'ar' 
                       ? 'تنبيه هام - يرجى القراءة بعناية' 
                       : 'Important Notice - Please Read Carefully'}
                   </span>
                 </h3>
-                <div className="space-y-2.5 text-sm sm:text-base text-amber-900/90 dark:text-amber-100/90">
+                <div className={clsx("space-y-2.5 text-sm sm:text-base text-amber-900/90 dark:text-amber-100/90", locale === 'ar' && 'text-right')}>
                   <p className="leading-relaxed font-medium">
                     {locale === 'ar'
                       ? 'قبل إرسال هذا النموذج، يرجى التأكد من أن جميع المعلومات المقدمة صحيحة ودقيقة:'
                       : 'Before submitting this form, please ensure that all the information provided is correct and accurate:'}
                   </p>
-                  <ul className="space-y-2 mr-4 list-disc list-inside">
+                  <ul className={clsx("space-y-2 list-disc", locale === 'ar' ? 'mr-4 list-inside text-right' : 'ml-4 list-inside')}>
                     <li className="leading-relaxed">
                       {locale === 'ar'
                         ? 'تحقق من صحة أرقام الاتصال وإمكانية الوصول إليها'
@@ -981,7 +994,7 @@ export default function UpdateStudentInfoPage() {
             </div>
           </div>
 
-          <div className="flex flex-col-reverse sm:flex-row items-center justify-between gap-3 border-t border-border/60 pt-6 mt-8">
+          <div className="flex flex-col-reverse sm:flex-row items-center justify-between gap-3 border-t border-border/60 pt-6 mt-8 animate-in fade-in slide-in-from-bottom-4" style={{ animationDelay: '600ms' }}>
             <Button
               type="button"
               variant="outline"
@@ -991,7 +1004,7 @@ export default function UpdateStudentInfoPage() {
                 }
                 router.push(`/child/${encodeURIComponent(sourcedId)}`);
               }}
-              className="w-full sm:w-auto"
+              className="w-full sm:w-auto hover:scale-105 transition-transform duration-300"
               disabled={isSubmitting}
               aria-label={updateInfo.submit.cancel}
             >
@@ -1002,7 +1015,7 @@ export default function UpdateStudentInfoPage() {
             </Button>
             <Button 
               type="submit" 
-              className="w-full sm:w-auto min-w-[200px] relative" 
+              className="w-full sm:w-auto min-w-[200px] relative hover:scale-105 hover:shadow-lg transition-all duration-300 group" 
               disabled={isSubmitting}
               aria-label={isSubmitting ? updateInfo.submit.submitting : updateInfo.submit.continue}
             >
@@ -1013,7 +1026,7 @@ export default function UpdateStudentInfoPage() {
                 </svg>
               )}
               {!isSubmitting && (
-                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <svg className="w-5 h-5 mr-2 group-hover:rotate-12 group-hover:scale-110 transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               )}
@@ -1031,9 +1044,9 @@ export default function UpdateStudentInfoPage() {
 
       {/* Confirmation Dialog */}
       <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto animate-in zoom-in-95 fade-in duration-300">
           <DialogHeader className="space-y-3 pb-2">
-            <DialogTitle className="flex items-center gap-3 text-xl font-bold">
+            <DialogTitle className={clsx("flex items-center gap-3 text-xl font-bold", locale === 'ar' && 'flex-row-reverse text-right')}>
               <div className="w-12 h-12 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0">
                 <svg className="w-7 h-7 text-amber-600 dark:text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -1045,7 +1058,7 @@ export default function UpdateStudentInfoPage() {
                   : 'Confirm Changes'}
               </span>
             </DialogTitle>
-            <DialogDescription className="text-base leading-relaxed">
+            <DialogDescription className={clsx("text-base leading-relaxed", locale === 'ar' && 'text-right')}>
               {locale === 'ar'
                 ? 'يرجى مراجعة التغييرات التالية قبل المتابعة إلى توقيع ميثاق السلوك:'
                 : 'Please review the following changes before proceeding to sign the conduct charter:'}
@@ -1066,7 +1079,7 @@ export default function UpdateStudentInfoPage() {
                 </h4>
               </div>
               <div className="p-4 space-y-3">
-                <div className="flex items-center gap-3">
+                <div className={clsx("flex items-center gap-3", locale === 'ar' && 'flex-row-reverse justify-end')}>
                   <Badge variant="secondary" className="shrink-0">
                     {locale === 'ar' ? 'الأساسي' : 'Primary'}
                   </Badge>
@@ -1075,7 +1088,7 @@ export default function UpdateStudentInfoPage() {
                   </span>
                 </div>
                 {preparedPayload?.contactNumbers[1] && (
-                  <div className="flex items-center gap-3">
+                  <div className={clsx("flex items-center gap-3", locale === 'ar' && 'flex-row-reverse justify-end')}>
                     <Badge variant="outline" className="shrink-0">
                       {locale === 'ar' ? 'الثانوي' : 'Secondary'}
                     </Badge>
@@ -1107,20 +1120,20 @@ export default function UpdateStudentInfoPage() {
                       {locale === 'ar' ? 'عنوان جديد' : 'New Address'}
                     </Badge>
                     <div className="space-y-2.5 bg-background/50 p-4 rounded-lg border border-border/40">
-                      <div className="flex gap-3">
+                      <div className={clsx("flex gap-3", locale === 'ar' && 'flex-row-reverse text-right')}>
                         <span className="font-medium text-muted-foreground min-w-[90px] shrink-0">
                           {locale === 'ar' ? 'الإمارة:' : 'Emirate:'}
                         </span>
                         <span className="text-foreground font-medium">{preparedPayload.newAddress?.emirateName || '—'}</span>
                       </div>
-                      <div className="flex gap-3">
+                      <div className={clsx("flex gap-3", locale === 'ar' && 'flex-row-reverse text-right')}>
                         <span className="font-medium text-muted-foreground min-w-[90px] shrink-0">
                           {locale === 'ar' ? 'المنطقة:' : 'Area:'}
                         </span>
                         <span className="text-foreground font-medium">{preparedPayload.newAddress?.areaName || '—'}</span>
                       </div>
                       {preparedPayload.newAddress?.communityName && (
-                        <div className="flex gap-3">
+                        <div className={clsx("flex gap-3", locale === 'ar' && 'flex-row-reverse text-right')}>
                           <span className="font-medium text-muted-foreground min-w-[90px] shrink-0">
                             {locale === 'ar' ? 'المجتمع:' : 'Community:'}
                           </span>
@@ -1128,7 +1141,7 @@ export default function UpdateStudentInfoPage() {
                         </div>
                       )}
                       {preparedPayload.documentName && (
-                        <div className="flex gap-3 pt-3 mt-3 border-t border-border/30">
+                        <div className={clsx("flex gap-3 pt-3 mt-3 border-t border-border/30", locale === 'ar' && 'flex-row-reverse text-right')}>
                           <span className="font-medium text-muted-foreground min-w-[90px] shrink-0">
                             {locale === 'ar' ? 'المستند:' : 'Document:'}
                           </span>
@@ -1140,7 +1153,7 @@ export default function UpdateStudentInfoPage() {
                     </div>
                   </div>
                 ) : (
-                  <div className="text-sm text-muted-foreground italic py-2">
+                  <div className={clsx("text-sm text-muted-foreground italic py-2", locale === 'ar' && 'text-right')}>
                     {locale === 'ar' ? 'لم يتم تغيير العنوان' : 'No address changes'}
                   </div>
                 )}
@@ -1170,11 +1183,11 @@ export default function UpdateStudentInfoPage() {
 
             {/* Warning Message */}
             <div className="rounded-lg border-2 border-amber-500/40 bg-gradient-to-r from-amber-50 to-amber-100/50 dark:from-amber-950/30 dark:to-amber-900/20 p-5">
-              <div className="flex gap-4">
+              <div className={clsx("flex gap-4", locale === 'ar' && 'flex-row-reverse')}>
                 <svg className="w-6 h-6 text-amber-600 dark:text-amber-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
-                <p className="text-sm text-amber-900 dark:text-amber-100 leading-relaxed font-medium">
+                <p className={clsx("text-sm text-amber-900 dark:text-amber-100 leading-relaxed font-medium", locale === 'ar' && 'text-right')}>
                   {locale === 'ar'
                     ? 'بالنقر على "تأكيد والمتابعة"، أقر بأن جميع المعلومات المذكورة أعلاه صحيحة وكاملة. سيتم الانتقال إلى صفحة توقيع ميثاق السلوك.'
                     : 'By clicking "Confirm & Continue", I acknowledge that all information above is correct and complete. You will proceed to sign the conduct charter.'}
