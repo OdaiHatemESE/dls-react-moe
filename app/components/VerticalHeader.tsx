@@ -120,9 +120,9 @@ export default function VerticalHeader() {
   type NavItem = { key: keyof typeof t.nav; href: string; icon: typeof DashboardIcon } & ({ badge: string } | { badge?: undefined });
   const navigation: NavItem[] = [
     { key: 'dashboard', href: '/dashboard', icon: DashboardIcon },
-    { key: 'announcements', href: '/announcements', icon: AnnouncementsIcon },
-    { key: 'calendar', href: '/calendar', icon: CalendarIcon },
-    { key: 'profile', href: '/profile', icon: ProfileIcon }
+    // { key: 'announcements', href: '/announcements', icon: AnnouncementsIcon },
+    // { key: 'calendar', href: '/calendar', icon: CalendarIcon },
+    // { key: 'profile', href: '/profile', icon: ProfileIcon }
   ];
 
   return (

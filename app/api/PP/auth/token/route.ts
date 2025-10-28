@@ -42,6 +42,7 @@ export async function GET() {
     });
 
     const data = (await res.json().catch(() => null)) as PPLoginResponse | null;
+    console.debug('PP Login Response:', data);
 
     if (!res.ok) {
       return NextResponse.json({ error: data ?? `Upstream returned ${res.status}` }, { status: res.status });

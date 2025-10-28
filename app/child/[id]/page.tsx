@@ -167,7 +167,7 @@ export default function ChildDetailPage() {
                       <svg className="w-2 h-2 me-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V4a2 2 0 00-2-2v0a2 2 0 00-2 2v2m4 0a2 2 0 104 0m-4 0a2 2 0 014 0z" />
                       </svg>
-                      <span className="hidden md:inline">ID: </span>{student.id.slice(-6)}
+                      <span className="hidden md:inline">ID: </span>{student.studentNumber || student.id.slice(-6)}
                     </Badge>
                     
                     <Badge variant="outline" className="px-2 py-1 border-primary/20 text-primary bg-primary/10 font-medium text-xs">
