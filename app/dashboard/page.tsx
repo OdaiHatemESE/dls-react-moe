@@ -83,7 +83,7 @@ export default function DashboardPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Professional Welcome Section */}
         <div className="mb-8">
-          <Card className="border-0 ">
+          <Card className="border-0 bg-card">
             <CardContent className="relative p-6">
               <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
                 <div className="flex-1">
@@ -119,9 +119,9 @@ export default function DashboardPage() {
       {/* Main Content Grid */}
       <div className="space-y-8">
         {/* Enhanced Children Section */}
-        <Card className="border-0 bg-card shadow-lg overflow-hidden">
+        <Card className="border-0 bg-card overflow-hidden">
           {/* Professional Header */}
-          <div className="border-b border-border bg-gradient-to-r from-primary/5 to-secondary/5">
+          <div className="border-b border-border bg-gradient-to-r from-primary/10 to-secondary/10">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">

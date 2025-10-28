@@ -132,3 +132,42 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime
 }
+
+model AdminUser {
+  id        Int      @id @default(autoincrement())
+  emirateId String   @unique @db.VarChar(20)
+  name      String   @db.VarChar(255)
+  email     String?  @db.VarChar(255)
+  isActive  Boolean  @default(true)
+  createdBy String?  @db.VarChar(64)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model UpdatePeriodConfig {
+  id          Int      @id @default(autoincrement())
+  name        String   @db.VarChar(255)
+  startDate   DateTime @db.DateTime
+  endDate     DateTime @db.DateTime
+  isEnabled   Boolean  @default(false)
+  description String?  @db.VarChar(Max)
+  createdBy   String?  @db.VarChar(64)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model StudentActionConfig {
+  id             Int      @id @default(autoincrement())
+  educationType  String   @db.VarChar(100)
+  actionName     String   @db.VarChar(255)
+  actionKey      String   @db.VarChar(100)
+  isEnabled      Boolean  @default(true)
+  displayOrder   Int      @default(0)
+  description    String?  @db.VarChar(Max)
+  configJson     String?  @db.VarChar(Max)
+  createdBy      String?  @db.VarChar(64)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([educationType, actionKey])
+}
