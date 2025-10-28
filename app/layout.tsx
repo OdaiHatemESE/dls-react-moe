@@ -33,6 +33,7 @@ export const metadata: Metadata = {
 };
 
 import HtmlLangDirProvider from "@/app/components/HtmlLangDirProvider";
+import ConditionalLayout from "@/app/components/ConditionalLayout";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -59,21 +60,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <I18nProvider defaultLocale="ar">
               <IconProvider>
                 <SWRProvider>
-                  {/* Vertical Sidebar Header */}
-                  <SiteHeader />
-                  <Switcher />
-                  
-                  {/* Main content area with sidebar offset */}
-                  <MainContent>
+                  <ConditionalLayout>
                     {children}
-                  </MainContent>
-                  <SiteFooter />
-                  
-                  {/* Mobile Bottom Navigation */}
-                  <MobileBottomNav />
-                  
-                  {/* Mobile Quick Access FAB */}
-                  <MobileQuickAccess />
+                  </ConditionalLayout>
                   
                   {/* Dynamically update lang/dir on client */}
                   <HtmlLangDirProvider />
@@ -88,23 +77,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 }
 
 // Local imports placed after component to avoid hoist issues in app dir
-import VerticalHeader from "./components/VerticalHeader";
-import MainContent from "./components/MainContent";
-import Footer from "./components/Footer";
 import AuthProvider from "./components/AuthProvider";
 import IconProvider from "./components/icons/IconProvider";
 import { I18nProvider } from "./i18n/I18nProvider";
 import SWRProvider from "@/app/components/SWRProvider";
-import MobileBottomNav from "./components/MobileBottomNav";
-import MobileQuickAccess from "./components/MobileQuickAccess";
-
-import Switcher from "@/app/components/Switcher";
 import ThemeProvider from "@/app/components/ThemeProvider";
-
-function SiteHeader() {
-  return <VerticalHeader />;
-}
-
-function SiteFooter() {
-  return <Footer />;
-}

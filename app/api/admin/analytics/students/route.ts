@@ -1,0 +1,112 @@
+import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { prismaParent } from "@/lib/prisma-parent";
+
+/**
+ * GET /api/admin/analytics/students
+ * Returns comprehensive student list with all information
+ */
+export async function GET(req: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.emiratesId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Check if user is admin
+    const admin = await prismaParent.adminUser.findFirst({
+      where: {
+        emirateId: session.user.emiratesId,
+        isActive: true,
+      },
+    });
+
+    if (!admin) {
+      return NextResponse.json({ error: "Forbidden - Admin access required" }, { status: 403 });
+    }
+
+    // Get query parameters for pagination and filtering
+    const searchParams = req.nextUrl.searchParams;
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "50");
+    const search = searchParams.get("search") || "";
+    const skip = (page - 1) * limit;
+
+    // Build where clause for search
+    const whereClause = search
+      ? {
+          OR: [
+            { emirateId: { contains: search } },
+            { firstNameEnglish: { contains: search } },
+            { familyNameEnglish: { contains: search } },
+            { firstNameArabic: { contains: search } },
+            { studentNumber: { contains: search } },
+            { username: { contains: search } },
+          ],
+        }
+      : {};
+
+    // Get students with all related data
+    const [students, totalCount] = await Promise.all([
+      prismaParent.student.findMany({
+        where: whereClause,
+        include: {
+          StudentAddress: true,
+          StudentContact: true,
+          StudentEnrollment: {
+            include: {},
+          },
+        },
+        orderBy: { updatedAt: "desc" },
+        skip,
+        take: limit,
+      }),
+      prismaParent.student.count({ where: whereClause }),
+    ]);
+
+    // Get update request info for each student
+    const studentIds = students.map((s) => s.emirateId).filter(Boolean) as string[];
+    const updateRequests = await prismaParent.updateInformationRequests.findMany({
+      where: {
+        studentEmirateId: { in: studentIds },
+      },
+    });
+
+    // Map update requests by student emirate ID
+    const updateRequestMap = new Map(
+      updateRequests.map((req) => [req.studentEmirateId, req])
+    );
+
+    // Enrich student data with update information
+    const enrichedStudents = students.map((student) => {
+      const updateReq = updateRequestMap.get(student.emirateId || "");
+      return {
+        ...student,
+        hasUpdateRequest: !!updateReq,
+        updateRequestStatus: updateReq?.infoUpdateRequestStatus,
+        lastUpdateRequestDate: updateReq?.updateAt,
+        hasConductAgreement: updateReq?.isConductAgreementSigned,
+      };
+    });
+
+    return NextResponse.json({
+      students: enrichedStudents,
+      pagination: {
+        page,
+        limit,
+        totalCount,
+        totalPages: Math.ceil(totalCount / limit),
+      },
+      meta: {
+        fetchedAt: new Date().toISOString(),
+      },
+    });
+  } catch (error) {
+    console.error("[Admin Analytics - Students]", error);
+    return NextResponse.json(
+      { error: "Failed to fetch student analytics" },
+      { status: 500 }
+    );
+  }
+}

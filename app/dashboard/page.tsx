@@ -10,6 +10,10 @@ import { Badge } from "@/components/ui/badge";
 import { jsonFetcher } from "@/lib/swr";
 import RefreshBar from "@/components/RefreshBar";
 import ChildCards from "./components/ChildCards";
+import RecentAnnouncements from "./components/RecentAnnouncements";
+import UpcomingEvents from "./components/UpcomingEvents";
+import Link from "next/link";
+import { Settings } from "lucide-react";
  
 export default function DashboardPage() {
   const { t, locale } = useI18n();
@@ -18,10 +22,11 @@ export default function DashboardPage() {
   const swrKey = eid ? `/api/PP/ChildList/${encodeURIComponent(eid)}` : null;
   const { data: childrenData } = useSWR<any>(swrKey, jsonFetcher);
   
+  // Check admin access
+  const { data: adminAccess } = useSWR<{ hasAccess: boolean }>('/api/admin/check-access', jsonFetcher);
+  
   // Extract meta from response
   const meta = childrenData?.meta;
-
- 
 
   return (
     <div className={clsx("min-h-screen bg-gradient-to-br from-background via-background to-primary/5", locale === 'ar' && 'direction-rtl')}>
@@ -118,6 +123,35 @@ export default function DashboardPage() {
  
       {/* Main Content Grid */}
       <div className="space-y-8">
+        {/* Admin Access Card - Only show if user has admin access */}
+        {adminAccess?.hasAccess && (
+          <Card className="border-0 bg-gradient-to-r from-aegold-500 to-aegold-600 text-white overflow-hidden shadow-lg">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
+                    <Settings className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold mb-1">
+                      {locale === 'ar' ? 'لوحة تحكم المشرف' : 'Admin Panel'}
+                    </h3>
+                    <p className="text-aegold-100 text-sm">
+                      {locale === 'ar' ? 'إدارة الإعدادات والمستخدمين والبيانات' : 'Manage settings, users, and data'}
+                    </p>
+                  </div>
+                </div>
+                <Link
+                  href="/admin/eid"
+                  className="px-6 py-3 bg-white text-aegold-600 rounded-lg font-semibold hover:bg-aegold-50 transition-all shadow-md hover:shadow-lg"
+                >
+                  {locale === 'ar' ? 'فتح' : 'Open'}
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Enhanced Children Section */}
         <Card className="border-0 bg-card overflow-hidden">
           {/* Professional Header */}
@@ -169,7 +203,7 @@ export default function DashboardPage() {
             <ChildCards />
           </CardContent>
         </Card>
-
+ 
     
         </div>
       </div>
