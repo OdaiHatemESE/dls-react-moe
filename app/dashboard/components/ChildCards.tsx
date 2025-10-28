@@ -4,98 +4,129 @@ import React from "react";
 import useSWR from "swr";
 import { useChildren } from "@/lib/hooks/useChildren";
 import type { StudentProfileV1 } from "@/app/types/studentprofile";
+import type { ChildActionResponse } from "@/types/child-actions";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useI18n } from "@/app/i18n/I18nProvider";
 import { useSession } from "next-auth/react";
 import clsx from "clsx";
 import { jsonFetcher } from "@/lib/swr";
-import ChildActions from "./ChildActions";
+import ChildActions, { ChildStatusBadge } from "./ChildActions";
+
+type StatusFlags = {
+  needsUpdate: boolean;
+  inProgress: boolean;
+  approved: boolean;
+  rejected: boolean;
+  needsConductSign: boolean;
+  allComplete: boolean;
+};
+
+type StatusIndicatorConfig = {
+  bgColor: string;
+  message: string;
+  icon: React.ReactNode;
+};
+
+function deriveStatusFlags(summary?: ChildActionResponse): StatusFlags | null {
+  if (!summary || !summary.ok) return null;
+
+  const update = summary.updateRequest;
+  const status = update.infoUpdateRequestStatus ?? null;
+  const approved = status === 3;
+  const conductSigned = !!update.isConductAgreementSigned;
+  const badgeKey = summary.badge?.key ?? null;
+
+  return {
+    needsUpdate: badgeKey === "childActions.badge.updateRequired",
+    inProgress: status === 1 || status === 2,
+    approved,
+    rejected: status === 4,
+    needsConductSign: badgeKey === "childActions.badge.signatureRequired",
+    allComplete: approved && conductSigned,
+  } satisfies StatusFlags;
+}
+
+function buildStatusConfig(flags: StatusFlags | null, locale: string, variant: "mobile" | "desktop"): StatusIndicatorConfig | null {
+  if (!flags) return null;
+
+  const sizeClass = variant === "mobile" ? "w-3.5 h-3.5" : "w-3 h-3";
+
+  if (flags.needsUpdate) {
+    return {
+      bgColor: "bg-destructive",
+      message: locale === "ar" ? "مطلوب تحديث المعلومات" : "Information Update Required",
+      icon: (
+        <svg className={`${sizeClass} text-white animate-pulse`} fill="currentColor" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M18 10A8 8 0 11.001 10 8 8 0 0118 10zM9 5h2v6H9V5zm0 8h2v2H9v-2z" clipRule="evenodd" />
+        </svg>
+      ),
+    };
+  }
+
+  if (flags.inProgress) {
+    return {
+      bgColor: "bg-chart-1",
+      message: locale === "ar" ? "قيد المراجعة" : "Under Review",
+      icon: (
+        <svg className={`${sizeClass} text-white animate-spin`} fill="none" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+        </svg>
+      ),
+    };
+  }
+
+  if (flags.rejected) {
+    return {
+      bgColor: "bg-destructive",
+      message: locale === "ar" ? "تم الرفض" : "Rejected",
+      icon: (
+        <svg className={`${sizeClass} text-white`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      ),
+    };
+  }
+
+  if (flags.needsConductSign) {
+    return {
+      bgColor: "bg-primary",
+      message: locale === "ar" ? "يتطلب توقيع اتفاقية السلوك" : "Conduct Agreement Signature Required",
+      icon: (
+        <svg className={`${sizeClass} text-white`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+        </svg>
+      ),
+    };
+  }
+
+  if (flags.allComplete) {
+    return {
+      bgColor: "bg-chart-2",
+      message: locale === "ar" ? "مكتمل" : "Complete",
+      icon: (
+        <svg className={`${sizeClass} text-white`} fill="currentColor" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+        </svg>
+      ),
+    };
+  }
+
+  return null;
+}
 
 // Avatar with dynamic status indicator based on update information status
 const StatusIndicatorAvatar = ({ studentPersonId, displayName, locale }: { studentPersonId: string; displayName: string; locale: string }) => {
   const params = new URLSearchParams({ studentPersonId });
-  const { data } = useSWR<{ ok: boolean; data?: { 
-    isInfoUpdateRequested?: boolean | null;
-    infoUpdateRequestStatus?: number | null;
-    isConductAgreementSigned?: boolean | null;
-  } }>(
-    `/api/parent/update-information-requests?${params.toString()}`,
+  const { data } = useSWR<ChildActionResponse>(
+    `/api/parent/child-actions?${params.toString()}`,
     jsonFetcher
   );
 
-  const row = data?.data;
-  const needsUpdate = !row?.isInfoUpdateRequested;
-  const status = row?.infoUpdateRequestStatus ?? null;
-  const inProgress = status === 1 || status === 2;
-  const approved = status === 3;
-  const rejected = status === 4;
-  const needsConductSign = approved && !row?.isConductAgreementSigned;
-  const allComplete = approved && row?.isConductAgreementSigned;
-
-  // Determine status indicator color and icon
-  const getStatusConfig = () => {
-    if (needsUpdate) {
-      return {
-        bgColor: 'bg-destructive',
-        message: locale === 'ar' ? 'مطلوب تحديث المعلومات' : 'Information Update Required',
-        icon: (
-          <svg className="w-3.5 h-3.5 text-white animate-pulse" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M18 10A8 8 0 11.001 10 8 8 0 0118 10zM9 5h2v6H9V5zm0 8h2v2H9v-2z" clipRule="evenodd" />
-          </svg>
-        )
-      };
-    }
-    if (inProgress) {
-      return {
-        bgColor: 'bg-chart-1',
-        message: locale === 'ar' ? 'قيد المراجعة' : 'Under Review',
-        icon: (
-          <svg className="w-3.5 h-3.5 text-white animate-spin" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-        )
-      };
-    }
-    if (rejected) {
-      return {
-        bgColor: 'bg-destructive',
-        message: locale === 'ar' ? 'تم الرفض' : 'Rejected',
-        icon: (
-          <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        )
-      };
-    }
-    if (needsConductSign) {
-      return {
-        bgColor: 'bg-primary',
-        message: locale === 'ar' ? 'يتطلب توقيع اتفاقية السلوك' : 'Conduct Agreement Signature Required',
-        icon: (
-          <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-          </svg>
-        )
-      };
-    }
-    if (allComplete) {
-      return {
-        bgColor: 'bg-chart-2',
-        message: locale === 'ar' ? 'مكتمل' : 'Complete',
-        icon: (
-          <svg className="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-          </svg>
-        )
-      };
-    }
-    // Default - no indicator
-    return null;
-  };
-
-  const statusConfig = getStatusConfig();
+  const summary = data?.ok ? data : undefined;
+  const flags = deriveStatusFlags(summary);
+  const statusConfig = buildStatusConfig(flags, locale, "mobile");
 
   return (
     <div className="relative flex-shrink-0 group/status">
@@ -132,87 +163,14 @@ const StatusIndicatorAvatar = ({ studentPersonId, displayName, locale }: { stude
 // Desktop version with smaller size
 const StatusIndicatorAvatarDesktop = ({ studentPersonId, displayName, locale }: { studentPersonId: string; displayName: string; locale: string }) => {
   const params = new URLSearchParams({ studentPersonId });
-  const { data } = useSWR<{ ok: boolean; data?: { 
-    isInfoUpdateRequested?: boolean | null;
-    infoUpdateRequestStatus?: number | null;
-    isConductAgreementSigned?: boolean | null;
-  } }>(
-    `/api/parent/update-information-requests?${params.toString()}`,
+  const { data } = useSWR<ChildActionResponse>(
+    `/api/parent/child-actions?${params.toString()}`,
     jsonFetcher
   );
 
-  const row = data?.data;
-  const needsUpdate = !row?.isInfoUpdateRequested;
-  const status = row?.infoUpdateRequestStatus ?? null;
-  const inProgress = status === 1 || status === 2;
-  const approved = status === 3;
-  const rejected = status === 4;
-  const needsConductSign = approved && !row?.isConductAgreementSigned;
-  const allComplete = approved && row?.isConductAgreementSigned;
-
-  // Determine status indicator color and icon
-  const getStatusConfig = () => {
-    if (needsUpdate) {
-      return {
-        bgColor: 'bg-destructive',
-        message: locale === 'ar' ? 'مطلوب تحديث المعلومات' : 'Information Update Required',
-        icon: (
-          <svg className="w-3 h-3 text-white animate-pulse" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M18 10A8 8 0 11.001 10 8 8 0 0118 10zM9 5h2v6H9V5zm0 8h2v2H9v-2z" clipRule="evenodd" />
-          </svg>
-        )
-      };
-    }
-    if (inProgress) {
-      return {
-        bgColor: 'bg-chart-1',
-        message: locale === 'ar' ? 'قيد المراجعة' : 'Under Review',
-        icon: (
-          <svg className="w-3 h-3 text-white animate-spin" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-        )
-      };
-    }
-    if (rejected) {
-      return {
-        bgColor: 'bg-destructive',
-        message: locale === 'ar' ? 'تم الرفض' : 'Rejected',
-        icon: (
-          <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        )
-      };
-    }
-    if (needsConductSign) {
-      return {
-        bgColor: 'bg-primary',
-        message: locale === 'ar' ? 'يتطلب توقيع اتفاقية السلوك' : 'Conduct Agreement Signature Required',
-        icon: (
-          <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-          </svg>
-        )
-      };
-    }
-    if (allComplete) {
-      return {
-        bgColor: 'bg-chart-2',
-        message: locale === 'ar' ? 'مكتمل' : 'Complete',
-        icon: (
-          <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-          </svg>
-        )
-      };
-    }
-    // Default - no indicator
-    return null;
-  };
-
-  const statusConfig = getStatusConfig();
+  const summary = data?.ok ? data : undefined;
+  const flags = deriveStatusFlags(summary);
+  const statusConfig = buildStatusConfig(flags, locale, "desktop");
 
   return (
     <div className="relative flex-shrink-0 group/avatar">
@@ -243,97 +201,6 @@ const StatusIndicatorAvatarDesktop = ({ studentPersonId, displayName, locale }: 
         </>
       )}
     </div>
-  );
-};
-
-// Status Message Badge Component - displays clear status text
-const StatusMessageBadge = ({ studentPersonId, locale }: { studentPersonId: string; locale: string }) => {
-  const params = new URLSearchParams({ studentPersonId });
-  const { data } = useSWR<{ ok: boolean; data?: { 
-    isInfoUpdateRequested?: boolean | null;
-    infoUpdateRequestStatus?: number | null;
-    isConductAgreementSigned?: boolean | null;
-  } }>(
-    `/api/parent/update-information-requests?${params.toString()}`,
-    jsonFetcher
-  );
-
-  const row = data?.data;
-  const needsUpdate = !row?.isInfoUpdateRequested;
-  const status = row?.infoUpdateRequestStatus ?? null;
-  const inProgress = status === 1 || status === 2;
-  const approved = status === 3;
-  const rejected = status === 4;
-  const needsConductSign = approved && !row?.isConductAgreementSigned;
-  const allComplete = approved && row?.isConductAgreementSigned;
-
-  // Get status config
-  const getStatusConfig = () => {
-    if (needsUpdate) {
-      return {
-        message: locale === 'ar' ? 'مطلوب تحديث المعلومات' : 'Information Update Required',
-        bgColor: 'bg-destructive/10',
-        textColor: 'text-destructive',
-        borderColor: 'border-destructive/30',
-        icon: '❗'
-      };
-    }
-    if (inProgress) {
-      return {
-        message: locale === 'ar' ? 'قيد المراجعة' : 'Under Review',
-        bgColor: 'bg-chart-1/10',
-        textColor: 'text-chart-1',
-        borderColor: 'border-chart-1/30',
-        icon: '⏳'
-      };
-    }
-    if (rejected) {
-      return {
-        message: locale === 'ar' ? 'تم الرفض' : 'Rejected',
-        bgColor: 'bg-destructive/10',
-        textColor: 'text-destructive',
-        borderColor: 'border-destructive/30',
-        icon: '❌'
-      };
-    }
-    if (needsConductSign) {
-      return {
-        message: locale === 'ar' ? 'يتطلب توقيع اتفاقية السلوك' : 'Conduct Agreement Signature Required',
-        bgColor: 'bg-primary/10',
-        textColor: 'text-primary',
-        borderColor: 'border-primary/30',
-        icon: '✍️'
-      };
-    }
-    if (allComplete) {
-      return {
-        message: locale === 'ar' ? 'مكتمل' : 'Complete',
-        bgColor: 'bg-chart-2/10',
-        textColor: 'text-chart-2',
-        borderColor: 'border-chart-2/30',
-        icon: '✅'
-      };
-    }
-    return null;
-  };
-
-  const statusConfig = getStatusConfig();
-  
-  if (!statusConfig) return null;
-
-  return (
-    <Badge 
-      className={clsx(
-        "inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 border shadow-sm rounded-lg",
-        statusConfig.bgColor,
-        statusConfig.textColor,
-        statusConfig.borderColor,
-        locale === 'ar' && 'font-bold '
-      )}
-    >
-      <span className="text-sm">{statusConfig.icon}</span>
-      <span>{statusConfig.message}</span>
-    </Badge>
   );
 };
 
@@ -472,7 +339,7 @@ export default function ChildCards() {
                         </svg>
                         {child.studentNumber || child.id.slice(-6)}
                       </Badge>
-                      <StatusMessageBadge studentPersonId={child.id} locale={locale} />
+                      <ChildStatusBadge studentPersonId={child.id} variant="mobile" />
                     </div>
                   </div>
                 </div>
@@ -595,7 +462,7 @@ export default function ChildCards() {
                               </svg>
                               {child.studentNumber || child.id?.slice(-6) || '—'}
                             </Badge>
-                            <StatusMessageBadge studentPersonId={child.id} locale={locale} />
+                            <ChildStatusBadge studentPersonId={child.id} />
                           </div>
                         </div>
                       </div>

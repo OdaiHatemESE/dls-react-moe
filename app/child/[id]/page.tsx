@@ -9,7 +9,7 @@ import Link from 'next/link';
 import { useI18n } from '@/app/i18n/I18nProvider';
 import { jsonFetcher } from '@/lib/swr';
 import type { StudentProfileV1 } from '@/app/types/studentprofile';
-import RefreshBar from '@/components/RefreshBar';
+import RefreshBar, { type CacheMeta } from '@/components/RefreshBar';
 
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -21,6 +21,9 @@ import StreamGrades from './StreamGrades';
 import SignConductSection from './components/SignConductSection';
 import { LoadingSkeleton } from './components/LoadingSkeleton';
 import InfoTab from './components/InfoTab';
+import { ChildStatusBadge } from '@/app/dashboard/components/ChildActions';
+
+type StudentProfileWithMeta = StudentProfileV1 & { meta?: { cache?: CacheMeta } };
 
 export default function ChildDetailPage() {
   const { t, locale } = useI18n();
@@ -32,8 +35,8 @@ export default function ChildDetailPage() {
   const { data: student, error, isLoading } = useSWR<StudentProfileV1>(swrKey, jsonFetcher);
   const [year, setYear] = React.useState<string>(() => String(new Date().getFullYear()));
   
-  // Extract meta information for RefreshBar
-  const meta = (student as any)?.meta;
+  // Extract meta information for RefreshBar without introducing any casts
+  const meta = (student as StudentProfileWithMeta | null)?.meta;
 
   if (isLoading) {
     return <LoadingSkeleton locale={locale} />;
@@ -190,6 +193,8 @@ export default function ChildDetailPage() {
                         {student.status === 'active' ? (locale === 'ar' ? 'نشط' : 'Active') : student.status}
                       </Badge>
                     )}
+
+                    <ChildStatusBadge studentPersonId={student.id} variant="mobile" />
                   </div>
                 </div>
 

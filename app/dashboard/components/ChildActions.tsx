@@ -6,22 +6,14 @@ import Link from "next/link";
 import clsx from "clsx";
 import { useI18n } from "@/app/i18n/I18nProvider";
 import { jsonFetcher } from "@/lib/swr";
-import { stat } from "fs";
+import type {
+  ChildActionDescriptor,
+  ChildActionResponse,
+  ChildActionUpdateRequest,
+  ChildStatusBadgeDescriptor,
+} from "@/types/child-actions";
 
-export type UpdateInfoRow = {
-  Id: number;
-  studentPersonId: string;
-  parentPersonId?: string | null;
-  isInfoUpdateRequested?: boolean | null;
-  infoUpdateRequestStatus?: number | null;
-  isConductAgreementSigned?: boolean | null;
-  conductAgreementStatus?: number | null;
-  studentEmirateId?: string | null;
-  pdfBase64?: string | null;
-  citizenship?: string | null;
-  createAt?: string | null;
-  updateAt?: string | null;
-};
+export type UpdateInfoRow = ChildActionUpdateRequest;
 
 type Props = {
   studentPersonId: string;
@@ -34,31 +26,32 @@ type Props = {
 export function ChildActions({ studentPersonId, parentPersonId, studentEmirateId, compact, className }: Props) {
   const { locale } = useI18n();
 
-  const params = new URLSearchParams({ studentPersonId });
-  if (parentPersonId) params.set("parentPersonId", parentPersonId);
-  if (studentEmirateId) params.set("studentEmirateId", studentEmirateId);
+  const queryString = React.useMemo(() => {
+    const search = new URLSearchParams({ studentPersonId });
+    if (parentPersonId) search.set("parentPersonId", parentPersonId);
+    if (studentEmirateId) search.set("studentEmirateId", studentEmirateId);
+    return search.toString();
+  }, [studentPersonId, parentPersonId, studentEmirateId]);
 
-  const { data, error, isLoading } = useSWR<{ ok: boolean; data?: UpdateInfoRow; error?: string }>(
-    `/api/parent/update-information-requests?${params.toString()}`,
-    jsonFetcher
-  );
+  const endpoint = React.useMemo(() => `/api/parent/child-actions?${queryString}`, [queryString]);
 
-  const handleDownloadPdf = () => {
-    if (!data?.data?.pdfBase64) return;
-    
+  const { data, error, isLoading } = useSWR<ChildActionResponse>(endpoint, jsonFetcher);
+
+  const handleDownloadPdf = React.useCallback(() => {
+    const base64 = data?.updateRequest.pdfBase64;
+    if (!base64) return;
+
     try {
-      // Convert base64 to blob
-      const byteCharacters = atob(data.data.pdfBase64);
+      const byteCharacters = atob(base64);
       const byteNumbers = new Array(byteCharacters.length);
       for (let i = 0; i < byteCharacters.length; i++) {
         byteNumbers[i] = byteCharacters.charCodeAt(i);
       }
       const byteArray = new Uint8Array(byteNumbers);
-      const blob = new Blob([byteArray], { type: 'application/pdf' });
-      
-      // Create download link
+      const blob = new Blob([byteArray], { type: "application/pdf" });
+
       const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = url;
       link.download = `conduct-agreement-${studentPersonId}.pdf`;
       document.body.appendChild(link);
@@ -66,9 +59,9 @@ export function ChildActions({ studentPersonId, parentPersonId, studentEmirateId
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
     } catch (err) {
-      console.error('Failed to download PDF:', err);
+      console.error("Failed to download PDF:", err);
     }
-  };
+  }, [data?.updateRequest.pdfBase64, studentPersonId]);
 
   if (isLoading) {
     return (
@@ -80,7 +73,7 @@ export function ChildActions({ studentPersonId, parentPersonId, studentEmirateId
     );
   }
 
-  if (error || !data?.ok || !data.data) {
+  if (error || !data) {
     // Fallback: just show View Profile
     return (
       <div className={clsx("inline-flex items-center gap-2", className)}>
@@ -98,158 +91,108 @@ export function ChildActions({ studentPersonId, parentPersonId, studentEmirateId
     );
   }
 
-  const row = data.data;
-  const infoRequested = !!row.isInfoUpdateRequested;
-  const status = row.infoUpdateRequestStatus ?? null; // 1,2=in progress; 3=approved; 4=rejected
-  const conductSigned = !!row.isConductAgreementSigned;
-  const hasPdf = !!row.pdfBase64;
-  console.log("ChildActions:", { infoRequested, status, conductSigned, hasPdf });
+  const actions = data.actions ?? [];
+  const statusBanner = data.statusBanner;
 
-  // Decision matrix from user:
-  // - if isInfoUpdateRequested == false -> show "Update Information"
-  // - if isInfoUpdateRequested == true -> check isConductAgreementSigned; if false -> show "Sign Conduct" and "View Profile"
-  //   (we will show both when infoRequested && !conductSigned). If both true, default to View Profile only.
+  const renderStatusBanner = () => {
+    if (!statusBanner) return null;
 
-  const Btn = ({ href, children, variant = "primary" }: { href: string; children: React.ReactNode; variant?: "primary" | "secondary" }) => (
-    <Link
-      href={href}
-      className={clsx(
-        "group inline-flex items-center justify-center gap-2 font-semibold rounded-xl transition-all duration-200 shadow-md hover:shadow-lg touch-manipulation active:scale-95",
-        compact
-          ? "px-4 py-2 text-xs"
-          : "px-5 py-2.5 text-sm",
-        variant === "primary" 
-          ? "bg-gradient-to-r from-primary to-primary/90 text-primary-foreground hover:from-primary/90 hover:to-primary/80" 
-          : "bg-gradient-to-r from-secondary to-secondary/90 text-secondary-foreground hover:from-secondary/90 hover:to-secondary/80"
-      )}
-    >
-      {variant === "primary" ? (
-        <svg className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-        </svg>
-      ) : (
-        <svg className="w-4 h-4 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-        </svg>
-      )}
-      {children}
-    </Link>
-  );
+    const message = getStatusMessage(statusBanner, locale);
 
-  const DownloadBtn = () => (
-    <button
-      onClick={handleDownloadPdf}
-      disabled={!hasPdf}
-      className={clsx(
-        "group inline-flex items-center justify-center gap-2 font-semibold rounded-xl transition-all duration-200 shadow-md hover:shadow-lg touch-manipulation active:scale-95",
-        compact
-          ? "px-4 py-2 text-xs"
-          : "px-5 py-2.5 text-sm",
-        "bg-gradient-to-r from-chart-2 to-chart-2/90 text-white hover:from-chart-2/90 hover:to-chart-2/80",
-        !hasPdf && "opacity-50 cursor-not-allowed"
-      )}
-      title={hasPdf ? (locale === "ar" ? "تحميل الميثاق" : "Download Conduct") : (locale === "ar" ? "لا يوجد ملف" : "No PDF available")}
-    >
-      <svg className="w-4 h-4 group-hover:translate-y-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-      </svg>
-      {locale === "ar" ? "تحميل الميثاق" : "Download Conduct"}
-    </button>
-  );
-
-  // Render based on matrix
-  // Case 1: No info requested yet
-   
-  if (!infoRequested) {
     return (
-      <div className={clsx("flex items-center gap-2", className)}>
-        <Btn href={`/child/${studentPersonId}/update-info?mode=init`}>
-          {locale === "ar" ? "تحديث المعلومات" : "Update Information"}
-        </Btn>
-      </div>
-    );
-  }
-  
-  // Case 2: Requested and status is 1 or 2 => in progress, show message only
-  if (status === 1 || status === 2) {
-    return (
-      <>
-      <div className={clsx(
-        "inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium transition-all",
-        "bg-gradient-to-r from-chart-1/10 to-chart-1/5 border border-chart-1/20",
-        compact ? "text-xs" : "text-sm",
-        className
-      )}>
+      <div
+        className={clsx(
+          "inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium transition-all",
+          "bg-gradient-to-r from-chart-1/10 to-chart-1/5 border border-chart-1/20",
+          compact ? "text-xs" : "text-sm"
+        )}
+      >
         <div className="relative">
           <svg className="w-4 h-4 text-chart-1 animate-spin" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
           </svg>
         </div>
-        <span className="text-chart-1 font-semibold">
-          {locale === "ar" ? "طلب تحديث البيانات قيد المعالجة": "Update request in Progress..."}
-        </span>
+        <span className="text-chart-1 font-semibold">{message}</span>
       </div>
-      
-       {!conductSigned && 
- 
-        <div className={clsx("flex flex-wrap items-center gap-2 mx-3", className)}>
-          <Btn href={`/child/${studentPersonId}/parent-conduct`}>
-            {locale === "ar" ? "توقيع الميثاق" : "Sign Conduct"}
-          </Btn>
-          {/* <Btn href={`/child/${studentPersonId}`} variant="secondary">
-            {locale === "ar" ? "عرض الملف" : "View Profile"}
-          </Btn> */}
-        </div>
-         }
+    );
+  };
 
-       {conductSigned && hasPdf && 
-        <div className={clsx("flex flex-wrap items-center gap-2 mx-3", className)}>
-          <DownloadBtn />
-        </div>
-       }
-      
-      </>
-    )
+  const renderAction = (action: ChildActionDescriptor) => {
+    if (action.key === "download-conduct") {
+      const reason = getActionReason(action, locale);
+      return (
+        <button
+          key={action.key}
+          onClick={handleDownloadPdf}
+          disabled={!!action.disabled}
+          className={buildButtonClasses("download", compact, !!action.disabled)}
+          title={reason ?? undefined}
+        >
+          <svg className="w-4 h-4 group-hover:translate-y-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          {getActionLabel(action, locale)}
+        </button>
+      );
     }
-  // Case 3: Requested and status is 3 => approved
-  if(status===3){
-    return(
-      <>
-       {!conductSigned && 
- 
-        <div className={clsx("flex flex-wrap items-center gap-2 mx-3", className)}>
-          <Btn href={`/child/${studentPersonId}/sign-conduct`}>
-            {locale === "ar" ? "توقيع الميثاق" : "Sign Conduct"}
-          </Btn>
-           <Btn href={`/child/${studentPersonId}`} variant="secondary">
-            {locale === "ar" ? "عرض الملف" : "View Profile"}
-          </Btn> 
-        </div>
-         }
 
-         {conductSigned && 
- 
-          
-        <div className={clsx("flex flex-wrap items-center gap-2 mx-3", className)}>
-          {hasPdf && <DownloadBtn />}
-          <Btn href={`/child/${studentPersonId}`}>
-            {locale === "ar" ? "عرض الملف" : "View Profile"}
-          </Btn>
-         
-        </div>
-         }
-      </>
-    )
-  }
+    const label = getActionLabel(action, locale);
+    const reason = getActionReason(action, locale);
+    const classes = buildButtonClasses(action.variant, compact, !!action.disabled);
+    const icon = action.variant === "primary" ? (
+      <svg className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+      </svg>
+    ) : (
+      <svg className="w-4 h-4 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+      </svg>
+    );
 
-  // Fallback
+    if (action.disabled || !action.href) {
+      return (
+        <span
+          key={action.key}
+          className={classes}
+          aria-disabled="true"
+          title={reason ?? undefined}
+        >
+          {icon}
+          {label}
+        </span>
+      );
+    }
+
+    return (
+      <Link
+        key={action.key}
+        href={action.href}
+        className={classes}
+        aria-disabled={action.disabled ? "true" : undefined}
+        tabIndex={action.disabled ? -1 : undefined}
+        title={reason ?? undefined}
+      >
+        {icon}
+        {label}
+      </Link>
+    );
+  };
+
   return (
-    <div className={clsx("flex items-center gap-2", className)}>
-      <Btn href={`/child/${studentPersonId}`} variant="secondary">
-        {locale === "ar" ? "عرض الملف" : "View Profile"}
-      </Btn>
+    <div className={clsx("flex flex-wrap items-center gap-2", className)}>
+      {renderStatusBanner()}
+      {actions.map(renderAction)}
+      {!actions.length && renderAction(
+        {
+          key: "view-profile",
+          labelKey: "childActions.viewProfile",
+          label: "View Profile",
+          href: `/child/${studentPersonId}`,
+          variant: "secondary",
+        }
+      )}
     </div>
   );
 }
@@ -265,41 +208,28 @@ export function ChildStatusBadge({ studentPersonId, parentPersonId, studentEmira
   variant?: "default" | "mobile";
 }) {
   const { locale } = useI18n();
-  const params = new URLSearchParams({ studentPersonId });
-  if (parentPersonId) params.set("parentPersonId", parentPersonId);
-  if (studentEmirateId) params.set("studentEmirateId", studentEmirateId);
-  const { data } = useSWR<{ ok: boolean; data?: UpdateInfoRow }>(
-    `/api/parent/update-information-requests?${params.toString()}`,
-    jsonFetcher
-  );
+  const params = React.useMemo(() => {
+    const search = new URLSearchParams({ studentPersonId });
+    if (parentPersonId) search.set("parentPersonId", parentPersonId);
+    if (studentEmirateId) search.set("studentEmirateId", studentEmirateId);
+    return search.toString();
+  }, [studentPersonId, parentPersonId, studentEmirateId]);
 
-  if (!data?.data) return null;
+  const { data } = useSWR<ChildActionResponse>(`/api/parent/child-actions?${params}`, jsonFetcher);
 
-  const row = data.data;
-  const needsUpdate = !row.isInfoUpdateRequested;
-  const status = row.infoUpdateRequestStatus ?? null;
-  const needsConductSign = row.isInfoUpdateRequested && status === 3 && !row.isConductAgreementSigned;
+  const badge = data?.badge;
+  if (!badge) return null;
 
-  // Show badge for: needs update OR needs conduct signature
-  if (!needsUpdate && !needsConductSign) return null;
-
-  const isUrgent = needsUpdate;
-  const label = isUrgent 
-    ? (locale === "ar" ? "تحديث مطلوب" : "Update Required")
-    : (locale === "ar" ? "يتطلب توقيع" : "Signature Required");
-  
-  const tooltip = isUrgent
-    ? (locale === "ar" ? "تحتاج إلى تحديث المعلومات" : "You need to update information")
-    : (locale === "ar" ? "يتطلب توقيع السلوك" : "Conduct signature required");
+  const label = getBadgeLabel(badge, locale);
+  const tooltip = getBadgeTooltip(badge, locale);
+  const urgent = badge.tone === "urgent";
 
   return (
     <div
       className={clsx(
         "inline-flex items-center gap-1.5 text-xs font-bold transition-all duration-200",
-        variant === "mobile" 
-          ? "px-2.5 py-1.5 rounded-lg shadow-sm" 
-          : "px-2.5 py-1 rounded-lg",
-        isUrgent
+        variant === "mobile" ? "px-2.5 py-1.5 rounded-lg shadow-sm" : "px-2.5 py-1 rounded-lg",
+        urgent
           ? "bg-gradient-to-r from-destructive/15 to-destructive/10 border border-destructive/30 text-destructive hover:shadow-md"
           : "bg-gradient-to-r from-chart-1/15 to-chart-1/10 border border-chart-1/30 text-chart-1 hover:shadow-md",
         className
@@ -307,7 +237,7 @@ export function ChildStatusBadge({ studentPersonId, parentPersonId, studentEmira
       title={tooltip}
       aria-label={tooltip}
     >
-      {isUrgent ? (
+      {urgent ? (
         <svg className="w-3.5 h-3.5 animate-pulse" fill="currentColor" viewBox="0 0 20 20">
           <path fillRule="evenodd" d="M18 10A8 8 0 11.001 10 8 8 0 0118 10zM9 5h2v6H9V5zm0 8h2v2H9v-2z" clipRule="evenodd" />
         </svg>
@@ -319,4 +249,93 @@ export function ChildStatusBadge({ studentPersonId, parentPersonId, studentEmira
       <span>{label}</span>
     </div>
   );
+}
+
+function buildButtonClasses(variant: ChildActionDescriptor["variant"], compact = false, disabled = false): string {
+  const base = "group inline-flex items-center justify-center gap-2 font-semibold rounded-xl transition-all duration-200 shadow-md hover:shadow-lg touch-manipulation active:scale-95";
+  const size = compact ? "px-4 py-2 text-xs" : "px-5 py-2.5 text-sm";
+
+  const palette = variant === "primary"
+    ? "bg-gradient-to-r from-primary to-primary/90 text-primary-foreground hover:from-primary/90 hover:to-primary/80"
+    : variant === "download"
+      ? "bg-gradient-to-r from-chart-2 to-chart-2/90 text-white hover:from-chart-2/90 hover:to-chart-2/80"
+      : "bg-gradient-to-r from-secondary to-secondary/90 text-secondary-foreground hover:from-secondary/90 hover:to-secondary/80";
+
+  const disabledStyles = disabled ? "opacity-50 cursor-not-allowed pointer-events-none" : "";
+
+  return clsx(base, size, palette, disabledStyles);
+}
+
+const ACTION_LABELS: Record<ChildActionDescriptor["key"], { en: string; ar: string }> = {
+  "update-info": { en: "Update Information", ar: "تحديث المعلومات" },
+  "sign-conduct": { en: "Sign Conduct", ar: "توقيع الميثاق" },
+  "view-profile": { en: "View Profile", ar: "عرض الملف" },
+  "download-conduct": { en: "Download Conduct", ar: "تحميل الميثاق" },
+};
+
+const STATUS_MESSAGES: Record<string, { en: string; ar: string }> = {
+  "childActions.status.inProgress": {
+    en: "Update request in progress...",
+    ar: "طلب تحديث البيانات قيد المعالجة...",
+  },
+};
+
+const REASON_LABELS: Record<string, { en: string; ar: string }> = {
+  "childActions.reasons.updateDisabled": {
+    en: "Updates temporarily disabled.",
+    ar: "تم إيقاف التحديثات مؤقتًا.",
+  },
+  "childActions.reasons.pdfUnavailable": {
+    en: "Conduct PDF not available yet.",
+    ar: "ملف السلوك غير متوفر بعد.",
+  },
+};
+
+const BADGE_LABELS: Record<string, { label: { en: string; ar: string }; tooltip: { en: string; ar: string } }> = {
+  "childActions.badge.updateRequired": {
+    label: { en: "Update Required", ar: "تحديث مطلوب" },
+    tooltip: { en: "You need to update information", ar: "تحتاج إلى تحديث المعلومات" },
+  },
+  "childActions.badge.signatureRequired": {
+    label: { en: "Signature Required", ar: "يتطلب توقيع" },
+    tooltip: { en: "Conduct signature required", ar: "يتطلب توقيع السلوك" },
+  },
+};
+
+function translate(locale: string, text: { en: string; ar: string }): string {
+  return locale === "ar" ? text.ar : text.en;
+}
+
+export function getActionLabel(action: ChildActionDescriptor, locale: string): string {
+  const entry = ACTION_LABELS[action.key];
+  if (entry) return translate(locale, entry);
+  return action.label;
+}
+
+export function getActionReason(action: ChildActionDescriptor, locale: string): string | null {
+  if (action.reasonKey) {
+    const entry = REASON_LABELS[action.reasonKey];
+    if (entry) return translate(locale, entry);
+  }
+  return action.reason ?? null;
+}
+
+export function getStatusMessage(banner: NonNullable<ChildActionResponse["statusBanner"]>, locale: string): string {
+  const entry = STATUS_MESSAGES[banner.messageKey];
+  return entry ? translate(locale, entry) : banner.message;
+}
+
+function getBadgeLabel(badge: ChildStatusBadgeDescriptor, locale: string): string {
+  const entry = BADGE_LABELS[badge.key];
+  if (entry) return translate(locale, entry.label);
+  return badge.label;
+}
+
+function getBadgeTooltip(badge: ChildStatusBadgeDescriptor, locale: string): string {
+  const entry = BADGE_LABELS[badge.key];
+  if (entry) return translate(locale, entry.tooltip);
+  if (badge.tooltipKey && BADGE_LABELS[badge.tooltipKey]) {
+    return translate(locale, BADGE_LABELS[badge.tooltipKey].tooltip);
+  }
+  return badge.tooltip ?? "";
 }
