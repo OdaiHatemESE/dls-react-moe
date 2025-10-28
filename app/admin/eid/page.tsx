@@ -132,13 +132,20 @@ export default function AdminConfigPage() {
     switch (activeView) {
       case "analytics":
         return (
-          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold text-foreground mb-2">System Analytics Overview</h2>
-              <p className="text-gray-600 dark:text-gray-400">Comprehensive view of system data, demographics, and activity</p>
+          <>
+            {/* Stats - Only shown in analytics view */}
+            <div className="mb-8">
+              <SystemStats />
+              <AdminStats />
             </div>
-            <UpdateLogsTable />
-          </div>
+            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
+              <div className="mb-6">
+                <h2 className="text-2xl font-bold text-foreground mb-2">System Analytics Overview</h2>
+                <p className="text-gray-600 dark:text-gray-400">Comprehensive view of system data, demographics, and activity</p>
+              </div>
+              <UpdateLogsTable />
+            </div>
+          </>
         );
       case "students":
         return (
@@ -307,14 +314,8 @@ export default function AdminConfigPage() {
           </select>
         </div>
 
-        {/* Stats */}
-        <div className="px-4 lg:px-8 py-6">
-          <SystemStats />
-          <AdminStats />
-        </div>
-
         {/* Content */}
-        <div className="px-4 lg:px-8 pb-8">
+        <div className="px-4 lg:px-8 py-6 pb-8">
           {renderContent()}
         </div>
 
