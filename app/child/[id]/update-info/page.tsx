@@ -9,6 +9,7 @@ import useSWR from 'swr';
 import { useI18n } from '@/app/i18n/I18nProvider';
 import { jsonFetcher } from '@/lib/swr';
 import type { StudentAddress, StudentProfileV1 } from '@/app/types/studentprofile';
+import type { IDHInsertResponse, IDHStudent } from '@/app/types/idh';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -19,7 +20,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
  
 
 import { LoadingSkeleton } from '../components/LoadingSkeleton';
-import { AddressPicker, type AddressValue } from '@/app/components/forms/AddressPicker';
+import { AddressPicker } from '@/app/components/forms/AddressPicker';
+import type { AddressPickerProps } from '@/app/components/forms/AddressPicker';
 
 function formatAddress(address?: StudentAddress | null): string {
   if (!address) return '';
@@ -57,6 +59,20 @@ function formatCoordinate(value?: number | null): string | null {
     : null;
 }
 
+function formatBytes(value?: number | null): string {
+  if (!value || !Number.isFinite(value)) return '';
+  const absolute = Math.abs(value);
+  if (absolute < 1024) return `${absolute} B`;
+  const units = ['KB', 'MB', 'GB'];
+  let unitIndex = 0;
+  let size = absolute / 1024;
+  while (size >= 1024 && unitIndex < units.length - 1) {
+    size /= 1024;
+    unitIndex += 1;
+  }
+  return `${size.toFixed(size >= 10 ? 0 : 1)} ${units[unitIndex]}`;
+}
+
 function localizedName(
   locale: string,
   english?: string | null,
@@ -66,6 +82,33 @@ function localizedName(
   return textOrNull(preferred);
 }
 
+async function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result;
+      if (typeof result === 'string') {
+        const commaIndex = result.indexOf(',');
+        const base64 = commaIndex >= 0 ? result.slice(commaIndex + 1) : result;
+        resolve(base64);
+      } else {
+        reject(new Error('Failed to read attachment'));
+      }
+    };
+    reader.onerror = () => reject(reader.error ?? new Error('Failed to read attachment'));
+    reader.readAsDataURL(file);
+  });
+}
+
+const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024;
+const ATTACHMENT_LIMIT_LABEL = '5 MB';
+const ALLOWED_ATTACHMENT_TYPES = ['application/pdf'];
+
+type AddressValue = NonNullable<AddressPickerProps['value']> & {
+  emirateName?: string | null;
+  areaName?: string | null;
+  communityName?: string | null;
+};
 type Mode = 'init' | 'edit';
 
 type PreparedPayload = {
@@ -335,6 +378,32 @@ export default function UpdateStudentInfoPage() {
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] ?? null;
+
+    if (file) {
+      if (!ALLOWED_ATTACHMENT_TYPES.includes(file.type)) {
+        setErrorMessage(
+          locale === 'ar'
+            ? 'يجب أن يكون المستند بصيغة PDF.'
+            : 'Attachment must be a PDF file.'
+        );
+        event.target.value = '';
+        setSupportingDocument(null);
+        return;
+      }
+
+      if (file.size > MAX_ATTACHMENT_BYTES) {
+        setErrorMessage(
+          locale === 'ar'
+            ? `حجم الملف المرفق كبير جداً. الحد الأقصى المسموح هو ${ATTACHMENT_LIMIT_LABEL}.`
+            : `Attachment is too large. Maximum allowed size is ${ATTACHMENT_LIMIT_LABEL}.`
+        );
+        event.target.value = '';
+        setSupportingDocument(null);
+        return;
+      }
+
+    }
+
     setSupportingDocument(file);
   };
 
@@ -351,7 +420,16 @@ export default function UpdateStudentInfoPage() {
       return;
     }
 
-    if (addressChanged && (!newAddress || !newAddress.emirateId || !newAddress.areaId)) {
+    if (
+      addressChanged &&
+      (
+        !newAddress ||
+        newAddress.emirateId === undefined ||
+        newAddress.emirateId === null ||
+        newAddress.areaId === undefined ||
+        newAddress.areaId === null
+      )
+    ) {
       setErrorMessage(updateInfo.validation.addressDetails);
       return;
     }
@@ -387,30 +465,194 @@ export default function UpdateStudentInfoPage() {
   };
 
   const handleConfirmSubmit = async () => {
-    if (!preparedPayload) return;
+    if (!preparedPayload || !student) {
+      setShowConfirmDialog(false);
+      return;
+    }
 
+    const studentNumber = textOrNull(student.studentNumber);
+    const primaryEnrollment = student.enrollment?.find((enrollment) => textOrNull(enrollment.schoolId));
+    const schoolId = primaryEnrollment ? textOrNull(primaryEnrollment.schoolId) : null;
+    const sourceId = textOrNull(preparedPayload.studentId) ?? textOrNull(student.id);
+
+    const missingFields: string[] = [];
+    if (!studentNumber) missingFields.push(locale === 'ar' ? 'رقم الطالب' : 'student number');
+    if (!schoolId) missingFields.push(locale === 'ar' ? 'كود المدرسة' : 'school ID');
+    if (!sourceId) missingFields.push(locale === 'ar' ? 'معرّف الطالب' : 'student ID');
+
+    if (missingFields.length > 0) {
+      setShowConfirmDialog(false);
+      const message = locale === 'ar'
+        ? `يتعذر متابعة الطلب بسبب نقص البيانات التالية: ${missingFields.join('، ')}.`
+        : `Cannot continue because the following data is missing: ${missingFields.join(', ')}.`;
+      setErrorMessage(message);
+      setPreparedPayload(null);
+      return;
+    }
+
+    const resolvedAddress = (() => {
+      if (preparedPayload.addressChanged && preparedPayload.newAddress) {
+        const next = preparedPayload.newAddress;
+        return {
+          emirate: textOrNull(next.emirateNameEn) ?? textOrNull(next.emirateName) ?? '',
+          area: textOrNull(next.areaNameEn) ?? textOrNull(next.areaName) ?? '',
+          street: textOrNull(next.streetName) ?? '',
+          houseBuilding: textOrNull(next.houseNumber) ?? '',
+          region: textOrNull(next.regionNameEn) ?? '',
+          zone: textOrNull(next.zoneNameEn) ?? '',
+          plot: numberToString(next.plotId) ?? '',
+          mainPlot: textOrNull(next.mainPlotId) ?? '',
+          premises: textOrNull(next.premisesPlotId) ?? textOrNull(next.communityName) ?? '',
+          latitude: formatCoordinate(next.latitude) ?? '',
+          longitude: formatCoordinate(next.longitude) ?? '',
+        };
+      }
+
+      if (primaryAddress) {
+        return {
+          emirate: textOrNull(primaryAddress.state) ?? '',
+          area: textOrNull(primaryAddress.city) ?? '',
+          street: textOrNull(primaryAddress.addressLine1) ?? '',
+          houseBuilding: textOrNull(primaryAddress.addressLine2) ?? '',
+          region: textOrNull(primaryAddress.region) ?? '',
+          zone: textOrNull(primaryAddress.sector) ?? '',
+          plot: textOrNull(primaryAddress.plotNumber) ?? '',
+          mainPlot: textOrNull(primaryAddress.plotId) ?? '',
+          premises: textOrNull(primaryAddress.addressLine3) ?? '',
+          latitude: '',
+          longitude: '',
+        };
+      }
+
+      return {
+        emirate: '',
+        area: '',
+        street: '',
+        houseBuilding: '',
+        region: '',
+        zone: '',
+        plot: '',
+        mainPlot: '',
+        premises: '',
+        latitude: '',
+        longitude: '',
+      };
+    })();
+
+    setErrorMessage(null);
     setShowConfirmDialog(false);
     setIsSubmitting(true);
-    
-    try {
-      // Placeholder for future API integration.
-      console.log('Update info submission', preparedPayload);
 
-      await new Promise((resolve) => setTimeout(resolve, 400));
+    try {
+      if (preparedPayload.addressChanged && !supportingDocument) {
+        throw new Error(locale === 'ar' ? 'الرجاء إعادة إرفاق المستند قبل الإرسال.' : 'Please reattach the supporting document before submitting.');
+      }
+
+      if (supportingDocument) {
+        if (!ALLOWED_ATTACHMENT_TYPES.includes(supportingDocument.type)) {
+          throw new Error(locale === 'ar' ? 'يجب أن يكون المستند بصيغة PDF.' : 'Attachment must be a PDF file.');
+        }
+
+        if (supportingDocument.size > MAX_ATTACHMENT_BYTES) {
+          throw new Error(
+            locale === 'ar'
+              ? `حجم الملف المرفق كبير جداً. الحد الأقصى المسموح هو ${ATTACHMENT_LIMIT_LABEL}.`
+              : `Attachment is too large. Maximum allowed size is ${ATTACHMENT_LIMIT_LABEL}.`
+          );
+        }
+      }
+
+      const attachmentBase64 = supportingDocument ? await fileToBase64(supportingDocument) : '';
+      const idhPayload: IDHStudent = {
+        studentNumber: studentNumber ?? '',
+        schoolId: schoolId ?? '',
+        sourceId: sourceId ?? '',
+        primaryPhone: preparedPayload.contactNumbers[0] ?? '',
+        otherPhone: preparedPayload.contactNumbers[1] ?? '',
+        transportationType: preparedPayload.transportation,
+        emirate: resolvedAddress.emirate,
+        area: resolvedAddress.area,
+        street: resolvedAddress.street,
+        houseBuilding: resolvedAddress.houseBuilding,
+        region: resolvedAddress.region,
+        zone: resolvedAddress.zone,
+        plot: resolvedAddress.plot,
+        mainPlot: resolvedAddress.mainPlot,
+        premises: resolvedAddress.premises,
+        latitude: resolvedAddress.latitude,
+        longitude: resolvedAddress.longitude,
+        attachment01: attachmentBase64,
+        statusId: preparedPayload.mode === 'edit' ? 3 : 1,
+        datetime: new Date().toISOString(),
+      };
+
+      const response = await fetch('/api/backoffice/idh', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(idhPayload),
+      });
+
+      let result: IDHInsertResponse | null = null;
+      try {
+        result = await response.json();
+      } catch (parseError) {
+        // Some upstream errors return empty bodies; ignore parse issues here.
+      }
+
+      if (!response.ok || !(result?.ok)) {
+        const upstreamError = result?.error;
+        const message = typeof upstreamError === 'string'
+          ? upstreamError
+          : upstreamError && typeof upstreamError === 'object'
+            ? JSON.stringify(upstreamError)
+            : response.statusText || 'IDH submission failed';
+        const error = new Error(message);
+        (error as Error & { status?: number }).status = response.status;
+        throw error;
+      }
 
       setShowSuccessToast(true);
       setHasUnsavedChanges(false);
-      
-      // Wait for user to see success message
+
       await new Promise((resolve) => setTimeout(resolve, 1500));
 
       if (sourcedId) {
         router.push(`/child/${encodeURIComponent(sourcedId)}/parent-conduct?studentId=${encodeURIComponent(sourcedId)}`);
       }
-    } catch (submitError) {
-      console.error(submitError);
-      setErrorMessage(locale === 'ar' ? 'حدث خطأ. يرجى المحاولة مرة أخرى.' : 'Something went wrong. Please try again.');
-      // Announce error to screen readers
+    } catch (submitError: any) {
+      console.error('IDH submission failed', submitError);
+      const status = submitError?.status as number | undefined;
+      const fallbackMessage = locale === 'ar' ? 'حدث خطأ أثناء حفظ البيانات. يرجى المحاولة مرة أخرى.' : 'Something went wrong while saving. Please try again.';
+
+      if (status === 413) {
+        const upstreamMessage = (() => {
+          if (typeof submitError?.message !== 'string' || submitError.message === 'IDH submission failed') {
+            return null;
+          }
+          const raw = submitError.message.trim();
+          try {
+            const parsed = JSON.parse(raw);
+            if (parsed && typeof parsed.error === 'string') {
+              return parsed.error;
+            }
+          } catch {
+            // not JSON, fall back to raw string
+          }
+          return raw;
+        })();
+        const rawSize = supportingDocument ? formatBytes(supportingDocument.size) : '';
+        const encodedSize = supportingDocument
+          ? formatBytes(Math.ceil((supportingDocument.size ?? 0) / 3) * 4)
+          : '';
+        const composed = locale === 'ar'
+          ? `${upstreamMessage ?? 'الملف المرفق كبير جداً.'} حجم الملف الحالي ${rawSize || 'غير معروف'} (حوالي ${encodedSize || '—'} بعد الترميز). يرجى تقليل الحجم إلى أقل من ${ATTACHMENT_LIMIT_LABEL}.`
+          : `${upstreamMessage ?? 'The attachment is too large.'} Your file size is ${rawSize || 'unknown'} (≈ ${encodedSize || '—'} once encoded). Please reduce it below ${ATTACHMENT_LIMIT_LABEL}.`;
+        setErrorMessage(composed.trim());
+      } else {
+        setErrorMessage(submitError?.message || fallbackMessage);
+      }
       const errorEl = document.getElementById('form-error-message');
       if (errorEl) {
         errorEl.setAttribute('role', 'alert');
@@ -808,7 +1050,7 @@ export default function UpdateStudentInfoPage() {
                 <Input
                   id="address-document"
                   type="file"
-                  accept=".pdf,.jpg,.jpeg,.png"
+                  accept=".pdf"
                   disabled={!addressChanged || isSubmitting}
                   onChange={handleFileChange}
                   className={clsx(

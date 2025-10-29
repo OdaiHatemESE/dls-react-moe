@@ -406,6 +406,8 @@ export type PlotLookupResponse = {
   meta: {
     filter: string;
     areaId: number | null;
+    regionId?: number | null;
+    zoneId?: number | null;
     count: number;
     mainPlotPromiseId: string;
   };

@@ -101,8 +101,11 @@ function enrichAddressWithLookups(
 
   if (value.emirateId) {
     const emirate = lookups.emirates.find((item) => item.Id === value.emirateId);
-    next.emirateNameEn = emirate?.TitleEn ?? value.emirateNameEn ?? null;
-    next.emirateNameAr = emirate?.TitleAr ?? value.emirateNameAr ?? null;
+    if (emirate) {
+      next.emirateNameEn = emirate.TitleEn ?? value.emirateNameEn ?? null;
+      next.emirateNameAr = emirate.TitleAr ?? value.emirateNameAr ?? null;
+    }
+    // Keep existing names if lookup not found
   } else {
     next.emirateNameEn = null;
     next.emirateNameAr = null;
@@ -111,8 +114,11 @@ function enrichAddressWithLookups(
   const allAreas = [...lookups.areas, ...lookups.abuDhabiAreas];
   if (value.areaId) {
     const area = allAreas.find((item) => item.Id === value.areaId);
-    next.areaNameEn = area?.TitleEn ?? value.areaNameEn ?? null;
-    next.areaNameAr = area?.TitleAr ?? value.areaNameAr ?? null;
+    if (area) {
+      next.areaNameEn = area.TitleEn ?? value.areaNameEn ?? null;
+      next.areaNameAr = area.TitleAr ?? value.areaNameAr ?? null;
+    }
+    // Keep existing names if lookup not found
   } else {
     next.areaNameEn = null;
     next.areaNameAr = null;
@@ -120,8 +126,11 @@ function enrichAddressWithLookups(
 
   if (value.regionId) {
     const region = lookups.regions.find((item) => item.Id === value.regionId);
-    next.regionNameEn = region?.TitleEn ?? value.regionNameEn ?? null;
-    next.regionNameAr = region?.TitleAr ?? value.regionNameAr ?? null;
+    if (region) {
+      next.regionNameEn = region.TitleEn ?? value.regionNameEn ?? null;
+      next.regionNameAr = region.TitleAr ?? value.regionNameAr ?? null;
+    }
+    // Keep existing names if lookup not found
   } else {
     next.regionNameEn = null;
     next.regionNameAr = null;
@@ -129,8 +138,11 @@ function enrichAddressWithLookups(
 
   if (value.zoneId) {
     const zone = lookups.zones.find((item) => item.Id === value.zoneId);
-    next.zoneNameEn = zone?.TitleEn ?? value.zoneNameEn ?? null;
-    next.zoneNameAr = zone?.TitleAr ?? value.zoneNameAr ?? null;
+    if (zone) {
+      next.zoneNameEn = zone.TitleEn ?? value.zoneNameEn ?? null;
+      next.zoneNameAr = zone.TitleAr ?? value.zoneNameAr ?? null;
+    }
+    // Keep existing names if lookup not found
   } else {
     next.zoneNameEn = null;
     next.zoneNameAr = null;
@@ -434,8 +446,12 @@ export function AddressPicker(props: AddressPickerProps) {
   }, [selectedEmirate]);
 
   // When Abu Dhabi is selected, clear dependent fields since a different picker is used elsewhere
+  // BUT: Don't clear if we have a valid map selection with Abu Dhabi data
   React.useEffect(() => {
     if (!isAbuDhabiSelected) return;
+    // Skip clearing if we just made a map selection
+    if (hasMapSelection) return;
+    
     const hasArea = local.areaId !== undefined && local.areaId !== null;
     const hasStreet = !!(local.streetName && local.streetName.trim().length > 0);
     const hasHouse = !!(local.houseNumber && local.houseNumber.trim().length > 0);
@@ -464,21 +480,36 @@ export function AddressPicker(props: AddressPickerProps) {
   }, [isAbuDhabiSelected, hasMapSelection]);
 
   // Fetch Abu Dhabi hierarchical data
+  const normalizedAbuDhabiEmirateId =
+    isAbuDhabiSelected && typeof local.emirateId === "number" && local.emirateId > 0
+      ? local.emirateId
+      : null;
+
   const { data: regionsData, isLoading: regionsLoading } = useRegions(
-    isAbuDhabiSelected ? local.emirateId : null
+    normalizedAbuDhabiEmirateId
   );
   const regions = React.useMemo(() => regionsData?.data ?? [], [regionsData]);
 
+  const normalizedRegionId =
+    isAbuDhabiSelected && typeof local.regionId === "number" && local.regionId > 0
+      ? local.regionId
+      : null;
+
   const { data: zonesData, isLoading: zonesLoading } = useZones(
-    isAbuDhabiSelected ? local.regionId : null
+    normalizedRegionId
   );
   const zones = React.useMemo(() => zonesData?.data ?? [], [zonesData]);
 
   // For Abu Dhabi areas, we fetch by zoneId (not emirateId)
+  const normalizedZoneId =
+    isAbuDhabiSelected && typeof local.zoneId === "number" && local.zoneId > 0
+      ? local.zoneId
+      : null;
+
   const { data: abuDhabiAreasData, isLoading: abuDhabiAreasLoading } = useAreas({
-    emirateId: isAbuDhabiSelected ? local.zoneId : null,
+    emirateId: normalizedZoneId,
     isAbuDhabi: true,
-    zoneIdOverride: local.zoneId ?? null,
+    zoneIdOverride: normalizedZoneId,
     gradeCode,
     genderCode,
   });
@@ -527,6 +558,30 @@ export function AddressPicker(props: AddressPickerProps) {
 
     if (!needsEnrichment) return;
 
+    // Skip enrichment if we already have names set (e.g., from map selection)
+    const hasAreaName = !!(local.areaNameEn || local.areaNameAr);
+    const hasZoneName = !!(local.zoneNameEn || local.zoneNameAr);
+    const hasRegionName = !!(local.regionNameEn || local.regionNameAr);
+    const hasEmirateName = !!(local.emirateNameEn || local.emirateNameAr);
+    
+    // If names are already present for all set IDs, skip enrichment
+    const skipEnrichment = (
+      (!local.areaId || hasAreaName) &&
+      (!local.zoneId || hasZoneName) &&
+      (!local.regionId || hasRegionName) &&
+      (!local.emirateId || hasEmirateName)
+    );
+
+    if (skipEnrichment) {
+      lastEnrichedRef.current = {
+        emirateId: local.emirateId,
+        areaId: local.areaId,
+        regionId: local.regionId,
+        zoneId: local.zoneId,
+      };
+      return;
+    }
+
     lastEnrichedRef.current = {
       emirateId: local.emirateId,
       areaId: local.areaId,
@@ -555,16 +610,62 @@ export function AddressPicker(props: AddressPickerProps) {
       return;
     }
 
-  const [record] = plotResponse.data;
+    const [record] = plotResponse.data;
     if (!record) {
       console.warn("AddressPicker: Plot response was empty", plotResponse);
       return;
     }
 
-    const emirateId = record.hierarchy.region.emirateId ?? null;
-    const regionId = record.hierarchy.region.id ?? null;
-    const zoneId = record.hierarchy.zone.id ?? null;
-    const areaId = record.identifiers.areaId ?? record.hierarchy.area.id ?? null;
+    const emirateId = record.hierarchy.region?.emirateId ?? null;
+    
+    const regionId = (() => {
+      const hierarchyRegionId = record.hierarchy.region?.id;
+      if (typeof hierarchyRegionId === "number" && hierarchyRegionId > 0) {
+        return hierarchyRegionId;
+      }
+      const zoneRegionId = record.hierarchy.zone?.regionId;
+      if (typeof zoneRegionId === "number" && zoneRegionId > 0) {
+        return zoneRegionId;
+      }
+      const metadataRegionId = plotResponse.meta?.regionId;
+      if (typeof metadataRegionId === "number" && metadataRegionId > 0) {
+        return metadataRegionId;
+      }
+      return null;
+    })();
+    
+    const zoneId = (() => {
+      const hierarchyZoneId = record.hierarchy.zone?.id;
+      if (typeof hierarchyZoneId === "number" && hierarchyZoneId > 0) {
+        return hierarchyZoneId;
+      }
+      const areaZoneId = record.hierarchy.area?.zoneId;
+      if (typeof areaZoneId === "number" && areaZoneId > 0) {
+        return areaZoneId;
+      }
+      const metadataZoneId = plotResponse.meta?.zoneId;
+      if (typeof metadataZoneId === "number" && metadataZoneId > 0) {
+        return metadataZoneId;
+      }
+      return null;
+    })();
+    
+    const areaId = (() => {
+      const identifierAreaId = record.identifiers?.areaId;
+      if (typeof identifierAreaId === "number" && identifierAreaId > 0) {
+        return identifierAreaId;
+      }
+      const hierarchyAreaId = record.hierarchy.area?.id;
+      if (typeof hierarchyAreaId === "number" && hierarchyAreaId > 0) {
+        return hierarchyAreaId;
+      }
+      const metadataAreaId = plotResponse.meta?.areaId;
+      if (typeof metadataAreaId === "number" && metadataAreaId > 0) {
+        return metadataAreaId;
+      }
+      return null;
+    })();
+    
     const plotId = record.identifiers?.plotId ?? record.plot?.id ?? null;
     const streetName = record.location.roadNumber ?? pendingSelection.roadId;
     const houseNumberSource = pendingSelection.plot?.trim() || record.identifiers?.mainPlotId || record.plot?.titles?.en;
@@ -576,18 +677,35 @@ export function AddressPicker(props: AddressPickerProps) {
       null;
     const premisesPlotId = record.identifiers?.premisesPlotId ?? null;
 
+    const normalizedEmirateId = emirateId ?? local.emirateId;
+    const normalizedRegionId = (typeof regionId === "number" && regionId > 0) ? regionId : undefined;
+    const normalizedZoneId = (typeof zoneId === "number" && zoneId > 0) ? zoneId : undefined;
+    const normalizedAreaId = (typeof areaId === "number" && areaId > 0) ? areaId : undefined;
+
+    // Determine if THIS selection is Abu Dhabi based on the plot response data
+    const isThisSelectionAbuDhabi = (() => {
+      const regionTitles = record.hierarchy.region?.titles;
+      if (!regionTitles) return false;
+      const en = (regionTitles.en || "").toLowerCase().replace(/\s+/g, "");
+      const ar = (regionTitles.ar || "").replace(/\s+/g, "").replace(/[\u0640\u061F]/g, "");
+      const abuDhabiArForms = ["أبوظبي", "ابوظبي", "أبوظبي", "ابوظبي".replace(/\s+/g, ""), "أبوظبي".replace(/\s+/g, "")];
+      return en.includes("abudhabi") || abuDhabiArForms.some((f) => ar.includes(f));
+    })();
+
     const updates: Partial<AddressValue> = {
-      emirateId: emirateId ?? local.emirateId,
-      areaId: areaId ?? local.areaId,
+      emirateId: normalizedEmirateId,
+      regionId: normalizedRegionId,
+      zoneId: normalizedZoneId,
+      areaId: normalizedAreaId,
       longitude: nextLongitude,
       latitude: nextLatitude,
       mainPlotId,
       premisesPlotId,
     };
 
-    const emirateLookup = (emirateId ?? local.emirateId)
+    const emirateLookup = normalizedEmirateId
       ? lookupsRef.current.emirates.find(
-          (item) => item.Id === (emirateId ?? local.emirateId ?? -1)
+          (item) => item.Id === (normalizedEmirateId ?? -1)
         )
       : undefined;
     if (emirateLookup) {
@@ -596,27 +714,34 @@ export function AddressPicker(props: AddressPickerProps) {
     }
 
     const areaTitles = record.hierarchy.area?.titles;
-    if (areaTitles) {
+    if (areaTitles && (areaTitles.en || areaTitles.ar)) {
       updates.areaNameEn = areaTitles.en ?? updates.areaNameEn ?? null;
       updates.areaNameAr = areaTitles.ar ?? updates.areaNameAr ?? null;
+    } else if (!normalizedAreaId) {
+      updates.areaNameEn = null;
+      updates.areaNameAr = null;
     }
 
     const regionTitles = record.hierarchy.region?.titles;
     if (regionTitles) {
       updates.regionNameEn = regionTitles.en ?? updates.regionNameEn ?? null;
       updates.regionNameAr = regionTitles.ar ?? updates.regionNameAr ?? null;
+    } else if (!normalizedRegionId) {
+      updates.regionNameEn = null;
+      updates.regionNameAr = null;
     }
 
     const zoneTitles = record.hierarchy.zone?.titles;
-    if (zoneTitles) {
+    if (zoneTitles && (zoneTitles.en || zoneTitles.ar)) {
       updates.zoneNameEn = zoneTitles.en ?? updates.zoneNameEn ?? null;
       updates.zoneNameAr = zoneTitles.ar ?? updates.zoneNameAr ?? null;
+    } else if (!normalizedZoneId) {
+      updates.zoneNameEn = null;
+      updates.zoneNameAr = null;
     }
 
-    if (isAbuDhabiSelected) {
-      updates.regionId = regionId ?? undefined;
-      updates.zoneId = zoneId ?? undefined;
-      updates.plotId = plotId ?? undefined;
+    if (isThisSelectionAbuDhabi) {
+      updates.plotId = typeof plotId === "number" && plotId > 0 ? plotId : undefined;
       updates.streetName = undefined;
       updates.houseNumber = undefined;
     } else {
@@ -668,6 +793,24 @@ export function AddressPicker(props: AddressPickerProps) {
 
   const isRTL = locale === "ar";
   const lockAbuDhabiFields = isAbuDhabiSelected && hasMapSelection;
+
+  const defaultZoneLabel = isRTL ? "النطاق" : "Zone";
+  const zonePlaceholder = zonesLoading
+    ? t.pickLocation.loading
+    : lockAbuDhabiFields && (local.zoneNameAr || local.zoneNameEn)
+      ? (isRTL
+          ? local.zoneNameAr ?? local.zoneNameEn ?? defaultZoneLabel
+          : local.zoneNameEn ?? local.zoneNameAr ?? defaultZoneLabel)
+      : defaultZoneLabel;
+
+  const defaultAreaLabel = l.area;
+  const areaPlaceholder = abuDhabiAreasLoading
+    ? t.pickLocation.loading
+    : lockAbuDhabiFields && (local.areaNameAr || local.areaNameEn)
+      ? (isRTL
+          ? local.areaNameAr ?? local.areaNameEn ?? defaultAreaLabel
+          : local.areaNameEn ?? local.areaNameAr ?? defaultAreaLabel)
+      : defaultAreaLabel;
 
   const wrapperClassName = cn(
     "space-y-6 bg-card rounded-xl p-6 border border-border/50 shadow-sm",
@@ -1010,7 +1153,7 @@ export function AddressPicker(props: AddressPickerProps) {
               dir={isRTL ? "rtl" : "ltr"}
               disabled={disabled || regionsLoading || lockAbuDhabiFields}
               value={
-                local.regionId !== undefined && local.regionId !== null
+                typeof local.regionId === "number" && local.regionId > 0
                   ? String(local.regionId)
                   : undefined
               }
@@ -1080,7 +1223,7 @@ export function AddressPicker(props: AddressPickerProps) {
                 lockAbuDhabiFields
               }
               value={
-                local.zoneId !== undefined && local.zoneId !== null
+                typeof local.zoneId === "number" && local.zoneId > 0
                   ? String(local.zoneId)
                   : undefined
               }
@@ -1101,9 +1244,7 @@ export function AddressPicker(props: AddressPickerProps) {
                   isRTL ? "text-right" : "text-left"
                 )}
               >
-                <SelectValue
-                  placeholder={zonesLoading ? t.pickLocation.loading : (locale === "ar" ? "النطاق" : "Zone")}
-                />
+                <SelectValue placeholder={zonePlaceholder} />
               </SelectTrigger>
               <SelectContent className="rounded-xl border-2 shadow-lg" dir={isRTL ? "rtl" : "ltr"}>
                 {zones.length === 0 && !zonesLoading && (
@@ -1149,7 +1290,7 @@ export function AddressPicker(props: AddressPickerProps) {
                 lockAbuDhabiFields
               }
               value={
-                local.areaId !== undefined && local.areaId !== null
+                typeof local.areaId === "number" && local.areaId > 0
                   ? String(local.areaId)
                   : undefined
               }
@@ -1167,9 +1308,7 @@ export function AddressPicker(props: AddressPickerProps) {
                   isRTL ? "text-right" : "text-left"
                 )}
               >
-                <SelectValue
-                  placeholder={abuDhabiAreasLoading ? t.pickLocation.loading : l.area}
-                />
+                <SelectValue placeholder={areaPlaceholder} />
               </SelectTrigger>
               <SelectContent className="rounded-xl border-2 shadow-lg" dir={isRTL ? "rtl" : "ltr"}>
                 {(abuDhabiAreasData?.data ?? []).length === 0 && !abuDhabiAreasLoading && (
