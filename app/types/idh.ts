@@ -24,6 +24,7 @@ export interface IDHStudent {
   statusId: number;
   sourceId: string;
   datetime: string;
+  ReturnComment?: string;
 }
 
 export interface IDHApiResponse {

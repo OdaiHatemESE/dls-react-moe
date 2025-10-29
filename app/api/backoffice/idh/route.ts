@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import type { Session } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { prismaParent } from '@/lib/prisma-parent';
 import type { IDHStudent } from '@/app/types/idh';
 
 type PPTokenResponse = {
@@ -12,38 +11,9 @@ type PPTokenResponse = {
 
 export const dynamic = 'force-dynamic';
 
-type BackofficeSessionResult =
-  | { session: Session }
-  | { response: NextResponse };
-
-async function requireBackofficeSession(): Promise<BackofficeSessionResult> {
+async function requireSession(): Promise<Session | null> {
   const session = await getServerSession(authOptions);
-
-  if (!session?.user) {
-    return { response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) };
-  }
-
-  const rawEmiratesId = session.user.emiratesId ?? '';
-  const normalizedEmiratesId = rawEmiratesId.replace(/[-\s]/g, '').trim();
-
-  if (!normalizedEmiratesId) {
-    return { response: NextResponse.json({ error: 'Forbidden - Backoffice access required' }, { status: 403 }) };
-  }
-
-  const adminUser = await prismaParent.adminUser.findFirst({
-    where: {
-      emirateId: normalizedEmiratesId,
-      isActive: true,
-    },
-    select: { id: true },
-  });
-
-  if (!adminUser) {
-    return { response: NextResponse.json({ error: 'Forbidden - Backoffice access required' }, { status: 403 }) };
-  }
-
-  session.user.emiratesId = normalizedEmiratesId;
-  return { session };
+  return session;
 }
 
 function buildTokenUrl(req: Request): string {
@@ -56,9 +26,9 @@ function buildTokenUrl(req: Request): string {
  */
 export async function GET(req: Request) {
   try {
-    const backofficeResult = await requireBackofficeSession();
-    if ('response' in backofficeResult) {
-      return backofficeResult.response;
+    const session = await requireSession();
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { searchParams } = new URL(req.url);
@@ -98,6 +68,18 @@ export async function GET(req: Request) {
     });
 
     if (!idhRes.ok) {
+      // If 404, return empty data (no IDH record exists yet)
+      if (idhRes.status === 404) {
+        return NextResponse.json({
+          ok: true,
+          data: null,
+          meta: {
+            sourceId,
+            fetchedAt: new Date().toISOString(),
+          },
+        });
+      }
+
       const errorData = await idhRes.json().catch(() => null);
       return NextResponse.json(
         { error: errorData ?? `Upstream returned ${idhRes.status}` },
@@ -105,7 +87,66 @@ export async function GET(req: Request) {
       );
     }
 
-    const idhData: IDHStudent = await idhRes.json();
+    // Normalize upstream to our IDHStudent shape (upstream often uses PascalCase)
+    const raw: unknown = await idhRes.json();
+
+    // Some PP endpoints wrap payloads as { ok, data } or { Data }, sometimes arrays
+    const unwrap = (input: unknown): unknown => {
+      if (input && typeof input === 'object') {
+        const obj = input as Record<string, unknown>;
+        const inner = obj['data'] ?? obj['Data'];
+        if (Array.isArray(inner)) return inner[0] ?? {};
+        if (inner && typeof inner === 'object') return inner;
+      }
+      return input;
+    };
+
+    const normalize = (input: unknown): IDHStudent => {
+      const obj = (input ?? {}) as Record<string, unknown>;
+      const getStr = (keys: string[]): string => {
+        for (const k of keys) {
+          const v = obj[k];
+          if (typeof v === 'string') return v;
+          if (typeof v === 'number' && Number.isFinite(v)) return String(v);
+        }
+        return '';
+      };
+      const getNum = (keys: string[]): number => {
+        for (const k of keys) {
+          const v = obj[k];
+          if (typeof v === 'number' && Number.isFinite(v)) return v;
+          if (typeof v === 'string' && v.trim() !== '' && !Number.isNaN(Number(v))) return Number(v);
+        }
+        return 0;
+      };
+
+      return {
+        studentNumber: getStr(['studentNumber', 'StudentNumber']),
+        schoolId: getStr(['schoolId', 'School_ID', 'SchoolId']),
+        sourceId: getStr(['sourceId', 'Source_ID', 'SourceId']),
+        primaryPhone: getStr(['primaryPhone', 'PrimaryPhone']),
+        otherPhone: getStr(['otherPhone', 'OtherPhone']),
+        transportationType: getStr(['transportationType', 'TransportationType']),
+        emirate: getStr(['emirate', 'Emirate']),
+        area: getStr(['area', 'Area']),
+        street: getStr(['street', 'Street']),
+        houseBuilding: getStr(['houseBuilding', 'HouseBuilding']),
+        region: getStr(['region', 'Region']),
+        zone: getStr(['zone', 'Zone']),
+        plot: getStr(['plot', 'Plot']),
+        mainPlot: getStr(['mainPlot', 'MainPlot']),
+        premises: getStr(['premises', 'Premises']),
+        latitude: getStr(['latitude', 'Latitude']),
+        longitude: getStr(['longitude', 'Longitude']),
+        attachment01: getStr(['attachment01', 'Attachment01']),
+        statusId: getNum(['statusId', 'Status_ID', 'StatusId']),
+        datetime: getStr(['datetime', 'Datetime']),
+        ReturnComment: getStr(['ReturnComment', 'returnComment']) || undefined,
+      };
+    };
+
+    const unwrapped = unwrap(raw);
+    const idhData: IDHStudent = normalize(unwrapped);
 
     return NextResponse.json({
       ok: true,
@@ -115,10 +156,10 @@ export async function GET(req: Request) {
         fetchedAt: new Date().toISOString(),
       },
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Error fetching IDH data:', err);
     return NextResponse.json(
-      { ok: false, error: err.message || String(err) },
+      { ok: false, error: (typeof err === 'object' && err && 'message' in err) ? String((err as any).message) : String(err) },
       { status: 500 }
     );
   }
@@ -132,9 +173,9 @@ export async function GET(req: Request) {
  */
 export async function POST(req: Request) {
   try {
-    const backofficeResult = await requireBackofficeSession();
-    if ('response' in backofficeResult) {
-      return backofficeResult.response;
+    const session = await requireSession();
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Parse request body
@@ -213,10 +254,10 @@ export async function POST(req: Request) {
         insertedAt: new Date().toISOString(),
       },
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Error inserting IDH data:', err);
     return NextResponse.json(
-      { ok: false, error: err.message || String(err) },
+      { ok: false, error: (typeof err === 'object' && err && 'message' in err) ? String((err as any).message) : String(err) },
       { status: 500 }
     );
   }

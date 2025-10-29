@@ -9,7 +9,7 @@ import useSWR from 'swr';
 import { useI18n } from '@/app/i18n/I18nProvider';
 import { jsonFetcher } from '@/lib/swr';
 import type { StudentAddress, StudentProfileV1 } from '@/app/types/studentprofile';
-import type { IDHInsertResponse, IDHStudent } from '@/app/types/idh';
+import type { IDHInsertResponse, IDHStudent, IDHApiResponse } from '@/app/types/idh';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -73,6 +73,27 @@ function formatBytes(value?: number | null): string {
   return `${size.toFixed(size >= 10 ? 0 : 1)} ${units[unitIndex]}`;
 }
 
+// Estimate original bytes from a Base64 string
+function estimateBytesFromBase64(b64?: string | null): number {
+  if (!b64) return 0;
+  const str = b64.trim();
+  if (!str) return 0;
+  const padding = str.endsWith('==') ? 2 : str.endsWith('=') ? 1 : 0;
+  return Math.floor((str.length * 3) / 4) - padding;
+}
+
+// Convert Base64 string to a PDF Blob
+function base64ToBlob(base64: string, contentType = 'application/pdf'): Blob {
+  const cleaned = base64.replace(/^data:[^;]+;base64,/, '');
+  const byteChars = atob(cleaned);
+  const byteNumbers = new Array<number>(byteChars.length);
+  for (let i = 0; i < byteChars.length; i++) {
+    byteNumbers[i] = byteChars.charCodeAt(i);
+  }
+  const byteArray = new Uint8Array(byteNumbers);
+  return new Blob([byteArray], { type: contentType });
+}
+
 function localizedName(
   locale: string,
   english?: string | null,
@@ -80,6 +101,20 @@ function localizedName(
 ): string | null {
   const preferred = locale === 'ar' ? arabic ?? english : english ?? arabic;
   return textOrNull(preferred);
+}
+
+// Normalize a free-text transportation value from IDH into our select model
+function normalizeTransportation(raw?: string | null): { value: 'car' | 'bus' | 'public' | 'other'; otherText: string } {
+  const t = (raw ?? '').trim();
+  if (!t) return { value: 'other', otherText: '' };
+  const l = t.toLowerCase();
+  const isCar = l === 'car' || l === 'private car' || l === 'private';
+  const isBus = l === 'bus' || l === 'school bus' || l === 'schoolbus';
+  const isPublic = l === 'public' || l === 'public transport' || l === 'public transportation' || l === 'metro' || l === 'tram';
+  if (isCar) return { value: 'car', otherText: '' };
+  if (isBus) return { value: 'bus', otherText: '' };
+  if (isPublic) return { value: 'public', otherText: '' };
+  return { value: 'other', otherText: t };
 }
 
 async function fileToBase64(file: File): Promise<string> {
@@ -103,6 +138,50 @@ async function fileToBase64(file: File): Promise<string> {
 const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024;
 const ATTACHMENT_LIMIT_LABEL = '5 MB';
 const ALLOWED_ATTACHMENT_TYPES = ['application/pdf'];
+
+// Helper: validates and returns Base64 for attachment based on repo rules
+async function validateAndEncodeAttachment(file: File | null, locale: string): Promise<string> {
+  if (!file) return '';
+  if (!ALLOWED_ATTACHMENT_TYPES.includes(file.type)) {
+    throw new Error(locale === 'ar' ? 'يجب أن يكون المستند بصيغة PDF.' : 'Attachment must be a PDF file.');
+  }
+  if (file.size > MAX_ATTACHMENT_BYTES) {
+    throw new Error(
+      locale === 'ar'
+        ? `حجم الملف المرفق كبير جداً. الحد الأقصى المسموح هو ${ATTACHMENT_LIMIT_LABEL}.`
+        : `Attachment is too large. Maximum allowed size is ${ATTACHMENT_LIMIT_LABEL}.`
+    );
+  }
+  return fileToBase64(file);
+}
+
+// Helper: submit payload to IDH and normalize error shape
+async function submitToIDH(idhPayload: IDHStudent): Promise<void> {
+  const response = await fetch('/api/backoffice/idh', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(idhPayload),
+  });
+
+  let result: IDHInsertResponse | null = null;
+  try {
+    result = await response.json();
+  } catch {
+    // Some upstream errors return empty bodies; ignore parse issues here.
+  }
+
+  if (!response.ok || !(result?.ok)) {
+    const upstreamError = result?.error;
+    const message = typeof upstreamError === 'string'
+      ? upstreamError
+      : upstreamError && typeof upstreamError === 'object'
+        ? JSON.stringify(upstreamError)
+        : response.statusText || 'IDH submission failed';
+    const error = new Error(message) as Error & { status?: number };
+    error.status = response.status;
+    throw error;
+  }
+}
 
 type AddressValue = NonNullable<AddressPickerProps['value']> & {
   emirateName?: string | null;
@@ -139,10 +218,25 @@ export default function UpdateStudentInfoPage() {
 
   const sourcedId = params.id as string | undefined;
   const modeParam = searchParams.get('mode');
-  const mode: Mode = modeParam === 'edit' ? 'edit' : 'init';
+  // Mode resolution: 'init' for first-time submission, 'edit' for resubmission
+  const mode: Mode = modeParam === 'resubmit' ? 'edit' : 'init';
 
-  const swrKey = sourcedId ? `/api/PP/student/${encodeURIComponent(sourcedId)}` : null;
-  const { data: student, error, isLoading } = useSWR<StudentProfileV1>(swrKey, jsonFetcher);
+  // ========== MODE-SPECIFIC DATA FETCHING ==========
+  // Student data is always needed (for display name, enrollment, etc.)
+  const studentSwrKey = sourcedId ? `/api/PP/student/${encodeURIComponent(sourcedId)}` : null;
+  const { data: student, error: studentError, isLoading: studentLoading } = useSWR<StudentProfileV1>(studentSwrKey, jsonFetcher);
+
+  // EDIT MODE: Also fetch previously submitted IDH data for prefilling
+  const idhSwrKey = mode === 'edit' && sourcedId
+    ? `/api/backoffice/idh?sourceId=${encodeURIComponent(sourcedId)}`
+    : null;
+  const { data: idhResp, error: idhError, isLoading: idhLoading } = useSWR<IDHApiResponse>(idhSwrKey, jsonFetcher);
+
+  // Resolve loading and error states based on mode
+  const error = studentError;
+  const isLoading = mode === 'edit' ? (studentLoading || idhLoading) : studentLoading;
+  
+  console.log('Mode:', mode, 'Student:', student, 'IDH Response:', idhResp, 'Error:', idhError);
 
   const meta = (student as StudentProfileWithMeta | undefined)?.meta;
   const primaryAddress = React.useMemo<StudentAddress | null>(() => {
@@ -150,6 +244,23 @@ export default function UpdateStudentInfoPage() {
   }, [student]);
 
   const formattedCurrentAddress = React.useMemo(() => formatAddress(primaryAddress), [primaryAddress]);
+  // Format previously submitted address from IDH (edit mode only)
+  const formattedPrevSubmittedAddress = React.useMemo(() => {
+    const idh = idhResp?.data;
+    if (!idh) return '';
+    const parts = [
+      textOrNull(idh.houseBuilding),
+      textOrNull(idh.street),
+      textOrNull(idh.plot),
+      textOrNull(idh.mainPlot),
+      textOrNull(idh.premises),
+      textOrNull(idh.area),
+      textOrNull(idh.zone),
+      textOrNull(idh.region),
+      textOrNull(idh.emirate),
+    ].filter(Boolean) as string[];
+    return parts.join(', ');
+  }, [idhResp]);
 
   const [contactNumbers, setContactNumbers] = React.useState<string[]>(['']);
   const contactsInitialized = React.useRef(false);
@@ -168,9 +279,14 @@ export default function UpdateStudentInfoPage() {
   const firstErrorRef = React.useRef<HTMLDivElement>(null);
   const [showConfirmDialog, setShowConfirmDialog] = React.useState<boolean>(false);
   const [preparedPayload, setPreparedPayload] = React.useState<PreparedPayload | null>(null);
+  const [idhAttachmentUrl, setIdhAttachmentUrl] = React.useState<string | null>(null);
+  const idhAttachmentSize = React.useMemo(() => estimateBytesFromBase64(idhResp?.data?.attachment01 ?? null), [idhResp]);
 
+  // ========== INIT MODE: Initialize form from OneRoster data ==========
   React.useEffect(() => {
+    if (mode !== 'init') return;
     if (!student || contactsInitialized.current) return;
+    
     const mobileContacts = (student.contacts || [])
       .filter((contact) => contact.type === 'Mobile' && contact.value)
       .map((contact) => contact.value.trim())
@@ -182,19 +298,61 @@ export default function UpdateStudentInfoPage() {
       setContactNumbers(['']);
     }
     contactsInitialized.current = true;
-  }, [student]);
+  }, [student, mode]);
 
-  // Track unsaved changes
+  // ========== EDIT MODE: Initialize form from IDH data ==========
   React.useEffect(() => {
-    const initialContacts = (student?.contacts || [])
-      .filter((contact) => contact.type === 'Mobile' && contact.value)
-      .map((contact) => contact.value.trim())
-      .slice(0, 2);
+    if (mode !== 'edit') return;
+    if (contactsInitialized.current) return;
     
-    const contactsChanged = JSON.stringify(contactNumbers) !== JSON.stringify(initialContacts.length > 0 ? initialContacts : ['']);
-    const hasChanges = contactsChanged || addressChanged || Boolean(transportation);
+    const idh = idhResp?.data;
+    if (!idh) return;
+
+    // Prefill contact numbers
+    const primary = (idh.primaryPhone ?? '').trim();
+    const other = (idh.otherPhone ?? '').trim();
+    const numbers: string[] = [];
+    if (primary) numbers.push(primary);
+    if (other) numbers.push(other);
+    setContactNumbers(numbers.length > 0 ? numbers.slice(0, 2) : ['']);
+
+    // Prefill transportation
+    const { value, otherText } = normalizeTransportation(idh.transportationType);
+    setTransportation(value);
+    setOtherTransportation(value === 'other' ? otherText : '');
+
+    contactsInitialized.current = true;
+  }, [mode, idhResp]);
+
+  // ========== Track unsaved changes (mode-specific baseline) ==========
+  React.useEffect(() => {
+    let initialContacts: string[] = [];
+    let initialTransportation = '';
+    
+    if (mode === 'edit') {
+      // EDIT MODE: baseline from IDH data
+      const idh = idhResp?.data;
+      const primary = (idh?.primaryPhone ?? '').trim();
+      const other = (idh?.otherPhone ?? '').trim();
+      if (primary) initialContacts.push(primary);
+      if (other) initialContacts.push(other);
+      initialTransportation = (idh?.transportationType ?? '').trim();
+    } else {
+      // INIT MODE: baseline from OneRoster data
+      initialContacts = (student?.contacts || [])
+        .filter((contact) => contact.type === 'Mobile' && contact.value)
+        .map((contact) => contact.value.trim())
+        .slice(0, 2);
+      initialTransportation = '';
+    }
+
+    const baseline = initialContacts.length > 0 ? initialContacts : [''];
+    const contactsChanged = JSON.stringify(contactNumbers) !== JSON.stringify(baseline);
+    const currentTransportation = transportation === 'other' ? otherTransportation.trim() : transportation;
+    const transportationChanged = currentTransportation !== initialTransportation;
+    const hasChanges = contactsChanged || addressChanged || transportationChanged;
     setHasUnsavedChanges(hasChanges);
-  }, [contactNumbers, addressChanged, transportation, student]);
+  }, [contactNumbers, addressChanged, transportation, otherTransportation, student, mode, idhResp]);
 
   // Warn before leaving with unsaved changes
   React.useEffect(() => {
@@ -223,6 +381,28 @@ export default function UpdateStudentInfoPage() {
       setSupportingDocument(null);
     }
   }, [addressChanged]);
+
+  // ========== Build PDF attachment URL (EDIT MODE only) ==========
+  React.useEffect(() => {
+    if (mode !== 'edit') return;
+    
+    let url: string | null = null;
+    try {
+      const b64 = (idhResp?.data?.attachment01 ?? '').trim();
+      if (b64) {
+        const blob = base64ToBlob(b64, 'application/pdf');
+        url = URL.createObjectURL(blob);
+        setIdhAttachmentUrl(url);
+      } else {
+        setIdhAttachmentUrl(null);
+      }
+    } catch {
+      setIdhAttachmentUrl(null);
+    }
+    return () => {
+      if (url) URL.revokeObjectURL(url);
+    };
+  }, [mode, idhResp?.data?.attachment01]);
 
   React.useEffect(() => {
     if (!addressChanged) {
@@ -407,6 +587,78 @@ export default function UpdateStudentInfoPage() {
     setSupportingDocument(file);
   };
 
+  // ========== Compute confirmation address (mode-specific fallback) ==========
+  const confirmAddress = React.useMemo(() => {
+    type FlatAddress = {
+      emirate: string; area: string; street: string; houseBuilding: string; region: string; zone: string; plot: string; mainPlot: string; premises: string; latitude: string; longitude: string;
+    };
+    const empty: FlatAddress = { emirate: '', area: '', street: '', houseBuilding: '', region: '', zone: '', plot: '', mainPlot: '', premises: '', latitude: '', longitude: '' };
+
+    // If user changed address, use the new one
+    if (preparedPayload?.addressChanged && preparedPayload.newAddress) {
+      const next = preparedPayload.newAddress;
+      return {
+        source: 'new' as const,
+        data: {
+          emirate: textOrNull(next.emirateNameEn) ?? textOrNull(next.emirateName) ?? '',
+          area: textOrNull(next.areaNameEn) ?? textOrNull(next.areaName) ?? '',
+          street: textOrNull(next.streetName) ?? '',
+          houseBuilding: textOrNull(next.houseNumber) ?? '',
+          region: textOrNull(next.regionNameEn) ?? '',
+          zone: textOrNull(next.zoneNameEn) ?? '',
+          plot: numberToString(next.plotId) ?? '',
+          mainPlot: textOrNull(next.mainPlotId) ?? '',
+          premises: textOrNull(next.premisesPlotId) ?? textOrNull(next.communityName) ?? '',
+          latitude: formatCoordinate(next.latitude) ?? '',
+          longitude: formatCoordinate(next.longitude) ?? '',
+        } satisfies FlatAddress,
+      };
+    }
+
+    // EDIT MODE: fallback to previously submitted IDH address
+    if (mode === 'edit' && idhResp?.data) {
+      const prev = idhResp.data;
+      return {
+        source: 'idh' as const,
+        data: {
+          emirate: textOrNull(prev.emirate) ?? '',
+          area: textOrNull(prev.area) ?? '',
+          street: textOrNull(prev.street) ?? '',
+          houseBuilding: textOrNull(prev.houseBuilding) ?? '',
+          region: textOrNull(prev.region) ?? '',
+          zone: textOrNull(prev.zone) ?? '',
+          plot: textOrNull(prev.plot) ?? '',
+          mainPlot: textOrNull(prev.mainPlot) ?? '',
+          premises: textOrNull(prev.premises) ?? '',
+          latitude: textOrNull(prev.latitude) ?? '',
+          longitude: textOrNull(prev.longitude) ?? '',
+        } satisfies FlatAddress,
+      };
+    }
+
+    // INIT MODE: fallback to OneRoster address
+    if (primaryAddress) {
+      return {
+        source: 'oneroster' as const,
+        data: {
+          emirate: textOrNull(primaryAddress.state) ?? '',
+          area: textOrNull(primaryAddress.city) ?? '',
+          street: textOrNull(primaryAddress.addressLine1) ?? '',
+          houseBuilding: textOrNull(primaryAddress.addressLine2) ?? '',
+          region: textOrNull(primaryAddress.region) ?? '',
+          zone: textOrNull(primaryAddress.sector) ?? '',
+          plot: textOrNull(primaryAddress.plotNumber) ?? '',
+          mainPlot: textOrNull(primaryAddress.plotId) ?? '',
+          premises: textOrNull(primaryAddress.addressLine3) ?? '',
+          latitude: '',
+          longitude: '',
+        } satisfies FlatAddress,
+      };
+    }
+
+    return { source: 'empty' as const, data: empty };
+  }, [preparedPayload, mode, idhResp, primaryAddress]);
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setErrorMessage(null);
@@ -490,7 +742,9 @@ export default function UpdateStudentInfoPage() {
       return;
     }
 
+    // ========== Resolve address based on mode ==========
     const resolvedAddress = (() => {
+      // If user changed address, use new address
       if (preparedPayload.addressChanged && preparedPayload.newAddress) {
         const next = preparedPayload.newAddress;
         return {
@@ -508,6 +762,25 @@ export default function UpdateStudentInfoPage() {
         };
       }
 
+      // EDIT MODE: fallback to previously submitted IDH address
+      if (mode === 'edit' && idhResp?.data) {
+        const prev = idhResp.data;
+        return {
+          emirate: textOrNull(prev.emirate) ?? '',
+          area: textOrNull(prev.area) ?? '',
+          street: textOrNull(prev.street) ?? '',
+          houseBuilding: textOrNull(prev.houseBuilding) ?? '',
+          region: textOrNull(prev.region) ?? '',
+          zone: textOrNull(prev.zone) ?? '',
+          plot: textOrNull(prev.plot) ?? '',
+          mainPlot: textOrNull(prev.mainPlot) ?? '',
+          premises: textOrNull(prev.premises) ?? '',
+          latitude: textOrNull(prev.latitude) ?? '',
+          longitude: textOrNull(prev.longitude) ?? '',
+        };
+      }
+
+      // INIT MODE: fallback to OneRoster address
       if (primaryAddress) {
         return {
           emirate: textOrNull(primaryAddress.state) ?? '',
@@ -548,21 +821,19 @@ export default function UpdateStudentInfoPage() {
         throw new Error(locale === 'ar' ? 'الرجاء إعادة إرفاق المستند قبل الإرسال.' : 'Please reattach the supporting document before submitting.');
       }
 
+      // ========== Handle attachment based on mode and user action ==========
+      let attachmentBase64 = '';
+      
       if (supportingDocument) {
-        if (!ALLOWED_ATTACHMENT_TYPES.includes(supportingDocument.type)) {
-          throw new Error(locale === 'ar' ? 'يجب أن يكون المستند بصيغة PDF.' : 'Attachment must be a PDF file.');
-        }
-
-        if (supportingDocument.size > MAX_ATTACHMENT_BYTES) {
-          throw new Error(
-            locale === 'ar'
-              ? `حجم الملف المرفق كبير جداً. الحد الأقصى المسموح هو ${ATTACHMENT_LIMIT_LABEL}.`
-              : `Attachment is too large. Maximum allowed size is ${ATTACHMENT_LIMIT_LABEL}.`
-          );
-        }
+        // User uploaded a new document (either mode)
+        attachmentBase64 = await validateAndEncodeAttachment(supportingDocument, locale);
+      } else if (mode === 'edit' && idhResp?.data?.attachment01) {
+        // EDIT mode: No new document uploaded, reuse existing attachment from IDH
+        attachmentBase64 = idhResp.data.attachment01;
       }
+      // INIT mode with no document will remain empty string
 
-      const attachmentBase64 = supportingDocument ? await fileToBase64(supportingDocument) : '';
+      // ========== Build payload based on mode ==========
       const idhPayload: IDHStudent = {
         studentNumber: studentNumber ?? '',
         schoolId: schoolId ?? '',
@@ -582,36 +853,11 @@ export default function UpdateStudentInfoPage() {
         latitude: resolvedAddress.latitude,
         longitude: resolvedAddress.longitude,
         attachment01: attachmentBase64,
-        statusId: preparedPayload.mode === 'edit' ? 3 : 1,
+        statusId: mode === 'init' ? 1 : 3, // STATUS: INIT=1, EDIT=3
         datetime: new Date().toISOString(),
       };
 
-      const response = await fetch('/api/backoffice/idh', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(idhPayload),
-      });
-
-      let result: IDHInsertResponse | null = null;
-      try {
-        result = await response.json();
-      } catch (parseError) {
-        // Some upstream errors return empty bodies; ignore parse issues here.
-      }
-
-      if (!response.ok || !(result?.ok)) {
-        const upstreamError = result?.error;
-        const message = typeof upstreamError === 'string'
-          ? upstreamError
-          : upstreamError && typeof upstreamError === 'object'
-            ? JSON.stringify(upstreamError)
-            : response.statusText || 'IDH submission failed';
-        const error = new Error(message);
-        (error as Error & { status?: number }).status = response.status;
-        throw error;
-      }
+      await submitToIDH(idhPayload);
 
       setShowSuccessToast(true);
       setHasUnsavedChanges(false);
@@ -621,17 +867,19 @@ export default function UpdateStudentInfoPage() {
       if (sourcedId) {
         router.push(`/child/${encodeURIComponent(sourcedId)}/parent-conduct?studentId=${encodeURIComponent(sourcedId)}`);
       }
-    } catch (submitError: any) {
+    } catch (submitError: unknown) {
       console.error('IDH submission failed', submitError);
-      const status = submitError?.status as number | undefined;
+      const status = typeof submitError === 'object' && submitError && 'status' in submitError
+        ? Number((submitError as { status?: number }).status)
+        : undefined;
       const fallbackMessage = locale === 'ar' ? 'حدث خطأ أثناء حفظ البيانات. يرجى المحاولة مرة أخرى.' : 'Something went wrong while saving. Please try again.';
 
       if (status === 413) {
         const upstreamMessage = (() => {
-          if (typeof submitError?.message !== 'string' || submitError.message === 'IDH submission failed') {
+          if (!(typeof submitError === 'object' && submitError && 'message' in submitError) || typeof (submitError as any).message !== 'string' || (submitError as any).message === 'IDH submission failed') {
             return null;
           }
-          const raw = submitError.message.trim();
+          const raw = String((submitError as any).message).trim();
           try {
             const parsed = JSON.parse(raw);
             if (parsed && typeof parsed.error === 'string') {
@@ -651,7 +899,10 @@ export default function UpdateStudentInfoPage() {
           : `${upstreamMessage ?? 'The attachment is too large.'} Your file size is ${rawSize || 'unknown'} (≈ ${encodedSize || '—'} once encoded). Please reduce it below ${ATTACHMENT_LIMIT_LABEL}.`;
         setErrorMessage(composed.trim());
       } else {
-        setErrorMessage(submitError?.message || fallbackMessage);
+        const msg = typeof submitError === 'object' && submitError && 'message' in submitError
+          ? String((submitError as any).message)
+          : fallbackMessage;
+        setErrorMessage(msg || fallbackMessage);
       }
       const errorEl = document.getElementById('form-error-message');
       if (errorEl) {
@@ -798,6 +1049,44 @@ export default function UpdateStudentInfoPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <span>{locale === 'ar' ? 'تم حفظ التغييرات بنجاح!' : 'Changes saved successfully!'}</span>
+          </div>
+        )}
+        
+        {/* IDH Return Comment (edit mode) */}
+        {mode === 'edit' && idhResp?.data?.ReturnComment && textOrNull(idhResp.data.ReturnComment) && (
+          
+          <div
+            className="rounded-lg border border-amber-500/40 bg-amber-50/60 dark:bg-amber-900/20 px-4 py-3 text-sm text-amber-800 dark:text-amber-200 flex items-start gap-3"
+            role="alert"
+            aria-live="assertive"
+          >
+            <svg className="w-5 h-5 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <div className="space-y-1">
+              <p className="font-semibold">
+                {locale === 'ar' ? 'سبب الإرجاع' : 'Return comment'}
+              </p>
+              <p className="whitespace-pre-wrap break-words">{idhResp.data.ReturnComment}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Non-blocking IDH error (edit mode) */}
+        {mode === 'edit' && idhError && (
+          <div
+            className="rounded-lg border border-amber-500/40 bg-amber-50/60 dark:bg-amber-900/20 px-4 py-3 text-sm text-amber-800 dark:text-amber-200 flex items-center gap-3"
+            role="status"
+            aria-live="polite"
+          >
+            <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <span>
+              {locale === 'ar'
+                ? 'تعذر تحميل بيانات الطلب السابقة من IDH. سيظهر الملف ببيانات OneRoster.'
+                : 'Could not load previous IDH submission. Falling back to OneRoster data.'}
+            </span>
           </div>
         )}
 
@@ -980,6 +1269,54 @@ export default function UpdateStudentInfoPage() {
                   <p className="leading-relaxed">{formattedCurrentAddress || t.child.no_address_available}</p>
                 </div>
               </div>
+
+              {mode === 'edit' && formattedPrevSubmittedAddress && (
+                <div className='my-5'>
+                  <Label className={clsx("text-sm font-medium block mb-2 flex items-center gap-2", locale === 'ar' && 'flex-row-reverse justify-end')}>
+                    <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <span>{locale === 'ar' ? 'العنوان المرسل سابقاً' : 'Previously submitted address'}</span>
+                  </Label>
+                  <div className={clsx("rounded-xl border-2 border-dashed border-border/50 bg-muted/30 px-4 py-4 text-sm text-foreground/80 shadow-sm", locale === 'ar' && 'text-right')}>
+                    <p className="leading-relaxed">{formattedPrevSubmittedAddress}</p>
+                  </div>
+                </div>
+              )}
+
+              {mode === 'edit' && idhAttachmentUrl && (
+                <div className='my-5'>
+                  <Label className={clsx("text-sm font-medium block mb-2 flex items-center gap-2", locale === 'ar' && 'flex-row-reverse justify-end')}>
+                    <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12H9m0 0l3 3m-3-3l3-3m7 9V6a2 2 0 00-2-2H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2z" />
+                    </svg>
+                    <span>{locale === 'ar' ? 'المستند المرفوع سابقًا' : 'Previously uploaded document'}</span>
+                  </Label>
+                  <div className={clsx("rounded-xl border-2 border-dashed border-border/50 bg-muted/30 px-4 py-4 text-sm text-foreground/80 shadow-sm flex items-center justify-between gap-3", locale === 'ar' && 'flex-row-reverse text-right')}>
+                    <div className="flex items-center gap-3">
+                      <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v8m4-4H8m11 8H5a2 2 0 01-2-2V6a2 2 0 012-2h6l2 2h6a2 2 0 012 2v10a2 2 0 01-2 2z" />
+                      </svg>
+                      <span className="font-medium">{locale === 'ar' ? 'ملف PDF' : 'PDF file'}</span>
+                      {idhAttachmentSize > 0 && (
+                        <span className="text-xs text-muted-foreground">({formatBytes(idhAttachmentSize)})</span>
+                      )}
+                    </div>
+                    <a
+                      href={idhAttachmentUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      download="supporting-document.pdf"
+                      className="inline-flex items-center gap-2 px-3 py-2 rounded-md border border-primary/40 text-primary hover:bg-primary/10 transition-colors"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4" />
+                      </svg>
+                      <span>{locale === 'ar' ? 'عرض/تحميل' : 'View / Download'}</span>
+                    </a>
+                  </div>
+                </div>
+              )}
 
               <div className="bg-primary/5 border-2 border-primary/20 rounded-xl p-4">
                 <label className={clsx("flex items-start gap-3 text-sm font-medium text-foreground cursor-pointer group", locale === 'ar' && 'flex-row-reverse text-right')}>
@@ -1362,29 +1699,97 @@ export default function UpdateStudentInfoPage() {
                       {locale === 'ar' ? 'عنوان جديد' : 'New Address'}
                     </Badge>
                     <div className="space-y-2.5 bg-background/50 p-4 rounded-lg border border-border/40">
-                      <div className={clsx("flex gap-3", locale === 'ar' && 'flex-row-reverse text-right')}>
-                        <span className="font-medium text-muted-foreground min-w-[90px] shrink-0">
-                          {locale === 'ar' ? 'الإمارة:' : 'Emirate:'}
-                        </span>
-                        <span className="text-foreground font-medium">{preparedPayload.newAddress?.emirateName || '—'}</span>
-                      </div>
-                      <div className={clsx("flex gap-3", locale === 'ar' && 'flex-row-reverse text-right')}>
-                        <span className="font-medium text-muted-foreground min-w-[90px] shrink-0">
-                          {locale === 'ar' ? 'المنطقة:' : 'Area:'}
-                        </span>
-                        <span className="text-foreground font-medium">{preparedPayload.newAddress?.areaName || '—'}</span>
-                      </div>
-                      {preparedPayload.newAddress?.communityName && (
+                      {confirmAddress.data.emirate && (
                         <div className={clsx("flex gap-3", locale === 'ar' && 'flex-row-reverse text-right')}>
-                          <span className="font-medium text-muted-foreground min-w-[90px] shrink-0">
-                            {locale === 'ar' ? 'المجتمع:' : 'Community:'}
+                          <span className="font-medium text-muted-foreground min-w-[120px] shrink-0">
+                            {locale === 'ar' ? 'الإمارة:' : 'Emirate:'}
                           </span>
-                          <span className="text-foreground font-medium">{preparedPayload.newAddress.communityName}</span>
+                          <span className="text-foreground font-medium">{confirmAddress.data.emirate}</span>
+                        </div>
+                      )}
+                      {confirmAddress.data.area && (
+                        <div className={clsx("flex gap-3", locale === 'ar' && 'flex-row-reverse text-right')}>
+                          <span className="font-medium text-muted-foreground min-w-[120px] shrink-0">
+                            {locale === 'ar' ? 'المنطقة:' : 'Area:'}
+                          </span>
+                          <span className="text-foreground font-medium">{confirmAddress.data.area}</span>
+                        </div>
+                      )}
+                      {confirmAddress.data.region && (
+                        <div className={clsx("flex gap-3", locale === 'ar' && 'flex-row-reverse text-right')}>
+                          <span className="font-medium text-muted-foreground min-w-[120px] shrink-0">
+                            {locale === 'ar' ? 'المنطقة الإدارية:' : 'Region:'}
+                          </span>
+                          <span className="text-foreground font-medium">{confirmAddress.data.region}</span>
+                        </div>
+                      )}
+                      {confirmAddress.data.zone && (
+                        <div className={clsx("flex gap-3", locale === 'ar' && 'flex-row-reverse text-right')}>
+                          <span className="font-medium text-muted-foreground min-w-[120px] shrink-0">
+                            {locale === 'ar' ? 'الحي/القطاع:' : 'Zone:'}
+                          </span>
+                          <span className="text-foreground font-medium">{confirmAddress.data.zone}</span>
+                        </div>
+                      )}
+                      {confirmAddress.data.street && (
+                        <div className={clsx("flex gap-3", locale === 'ar' && 'flex-row-reverse text-right')}>
+                          <span className="font-medium text-muted-foreground min-w-[120px] shrink-0">
+                            {locale === 'ar' ? 'الشارع:' : 'Street:'}
+                          </span>
+                          <span className="text-foreground font-medium">{confirmAddress.data.street}</span>
+                        </div>
+                      )}
+                      {confirmAddress.data.houseBuilding && (
+                        <div className={clsx("flex gap-3", locale === 'ar' && 'flex-row-reverse text-right')}>
+                          <span className="font-medium text-muted-foreground min-w-[120px] shrink-0">
+                            {locale === 'ar' ? 'المبنى/المنزل:' : 'House/Building:'}
+                          </span>
+                          <span className="text-foreground font-medium">{confirmAddress.data.houseBuilding}</span>
+                        </div>
+                      )}
+                      {confirmAddress.data.plot && (
+                        <div className={clsx("flex gap-3", locale === 'ar' && 'flex-row-reverse text-right')}>
+                          <span className="font-medium text-muted-foreground min-w-[120px] shrink-0">
+                            {locale === 'ar' ? 'القطعة:' : 'Plot:'}
+                          </span>
+                          <span className="text-foreground font-medium">{confirmAddress.data.plot}</span>
+                        </div>
+                      )}
+                      {confirmAddress.data.mainPlot && (
+                        <div className={clsx("flex gap-3", locale === 'ar' && 'flex-row-reverse text-right')}>
+                          <span className="font-medium text-muted-foreground min-w-[120px] shrink-0">
+                            {locale === 'ar' ? 'القطعة الرئيسية:' : 'Main Plot:'}
+                          </span>
+                          <span className="text-foreground font-medium">{confirmAddress.data.mainPlot}</span>
+                        </div>
+                      )}
+                      {confirmAddress.data.premises && (
+                        <div className={clsx("flex gap-3", locale === 'ar' && 'flex-row-reverse text-right')}>
+                          <span className="font-medium text-muted-foreground min-w-[120px] shrink-0">
+                            {locale === 'ar' ? 'الموقع/المبنى:' : 'Premises:'}
+                          </span>
+                          <span className="text-foreground font-medium">{confirmAddress.data.premises}</span>
+                        </div>
+                      )}
+                      {confirmAddress.data.latitude && (
+                        <div className={clsx("flex gap-3", locale === 'ar' && 'flex-row-reverse text-right')}>
+                          <span className="font-medium text-muted-foreground min-w-[120px] shrink-0">
+                            {locale === 'ar' ? 'خط العرض:' : 'Latitude:'}
+                          </span>
+                          <span className="text-foreground font-medium font-mono text-sm">{confirmAddress.data.latitude}</span>
+                        </div>
+                      )}
+                      {confirmAddress.data.longitude && (
+                        <div className={clsx("flex gap-3", locale === 'ar' && 'flex-row-reverse text-right')}>
+                          <span className="font-medium text-muted-foreground min-w-[120px] shrink-0">
+                            {locale === 'ar' ? 'خط الطول:' : 'Longitude:'}
+                          </span>
+                          <span className="text-foreground font-medium font-mono text-sm">{confirmAddress.data.longitude}</span>
                         </div>
                       )}
                       {preparedPayload.documentName && (
                         <div className={clsx("flex gap-3 pt-3 mt-3 border-t border-border/30", locale === 'ar' && 'flex-row-reverse text-right')}>
-                          <span className="font-medium text-muted-foreground min-w-[90px] shrink-0">
+                          <span className="font-medium text-muted-foreground min-w-[120px] shrink-0">
                             {locale === 'ar' ? 'المستند:' : 'Document:'}
                           </span>
                           <span className="text-foreground text-sm font-mono truncate flex-1" title={preparedPayload.documentName}>
@@ -1395,8 +1800,58 @@ export default function UpdateStudentInfoPage() {
                     </div>
                   </div>
                 ) : (
-                  <div className={clsx("text-sm text-muted-foreground italic py-2", locale === 'ar' && 'text-right')}>
-                    {locale === 'ar' ? 'لم يتم تغيير العنوان' : 'No address changes'}
+                  <div className="space-y-3">
+                    <Badge variant={confirmAddress.source === 'idh' ? 'secondary' : 'outline'} className="mb-2">
+                      {confirmAddress.source === 'idh'
+                        ? (locale === 'ar' ? 'العنوان السابق (IDH)' : 'Previously submitted (IDH)')
+                        : confirmAddress.source === 'oneroster'
+                          ? (locale === 'ar' ? 'العنوان الحالي (OneRoster)' : 'Current address (OneRoster)')
+                          : (locale === 'ar' ? 'لا يوجد عنوان' : 'No address')}
+                    </Badge>
+                    {confirmAddress.source === 'empty' ? (
+                      <div className={clsx("text-sm text-muted-foreground italic py-2", locale === 'ar' && 'text-right')}>
+                        {locale === 'ar' ? 'لا توجد بيانات عنوان لعرضها' : 'No address data to display'}
+                      </div>
+                    ) : (
+                      <div className="space-y-2.5 bg-background/50 p-4 rounded-lg border border-border/40">
+                        <div className={clsx("flex gap-3", locale === 'ar' && 'flex-row-reverse text-right')}>
+                          <span className="font-medium text-muted-foreground min-w-[90px] shrink-0">{locale === 'ar' ? 'الإمارة:' : 'Emirate:'}</span>
+                          <span className="text-foreground font-medium">{confirmAddress.data.emirate || '—'}</span>
+                        </div>
+                        <div className={clsx("flex gap-3", locale === 'ar' && 'flex-row-reverse text-right')}>
+                          <span className="font-medium text-muted-foreground min-w-[90px] shrink-0">{locale === 'ar' ? 'المنطقة:' : 'Area:'}</span>
+                          <span className="text-foreground font-medium">{confirmAddress.data.area || '—'}</span>
+                        </div>
+                        <div className={clsx("flex gap-3", locale === 'ar' && 'flex-row-reverse text-right')}>
+                          <span className="font-medium text-muted-foreground min-w-[90px] shrink-0">{locale === 'ar' ? 'الشارع:' : 'Street:'}</span>
+                          <span className="text-foreground font-medium">{confirmAddress.data.street || '—'}</span>
+                        </div>
+                        <div className={clsx("flex gap-3", locale === 'ar' && 'flex-row-reverse text-right')}>
+                          <span className="font-medium text-muted-foreground min-w-[90px] shrink-0">{locale === 'ar' ? 'المبنى/المنزل:' : 'House/Building:'}</span>
+                          <span className="text-foreground font-medium">{confirmAddress.data.houseBuilding || '—'}</span>
+                        </div>
+                        <div className={clsx("flex gap-3", locale === 'ar' && 'flex-row-reverse text-right')}>
+                          <span className="font-medium text-muted-foreground min-w-[90px] shrink-0">{locale === 'ar' ? 'المنطقة الإدارية:' : 'Region:'}</span>
+                          <span className="text-foreground font-medium">{confirmAddress.data.region || '—'}</span>
+                        </div>
+                        <div className={clsx("flex gap-3", locale === 'ar' && 'flex-row-reverse text-right')}>
+                          <span className="font-medium text-muted-foreground min-w-[90px] shrink-0">{locale === 'ar' ? 'الحي/القطاع:' : 'Zone:'}</span>
+                          <span className="text-foreground font-medium">{confirmAddress.data.zone || '—'}</span>
+                        </div>
+                        <div className={clsx("flex gap-3", locale === 'ar' && 'flex-row-reverse text-right')}>
+                          <span className="font-medium text-muted-foreground min-w-[90px] shrink-0">{locale === 'ar' ? 'القطعة:' : 'Plot:'}</span>
+                          <span className="text-foreground font-medium">{confirmAddress.data.plot || '—'}</span>
+                        </div>
+                        <div className={clsx("flex gap-3", locale === 'ar' && 'flex-row-reverse text-right')}>
+                          <span className="font-medium text-muted-foreground min-w-[90px] shrink-0">{locale === 'ar' ? 'القطعة الرئيسية:' : 'Main Plot:'}</span>
+                          <span className="text-foreground font-medium">{confirmAddress.data.mainPlot || '—'}</span>
+                        </div>
+                        <div className={clsx("flex gap-3", locale === 'ar' && 'flex-row-reverse text-right')}>
+                          <span className="font-medium text-muted-foreground min-w-[90px] shrink-0">{locale === 'ar' ? 'الموقع/المبنى:' : 'Premises:'}</span>
+                          <span className="text-foreground font-medium">{confirmAddress.data.premises || '—'}</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
