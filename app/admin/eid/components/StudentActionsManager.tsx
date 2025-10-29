@@ -56,6 +56,16 @@ const EDUCATION_TYPES = [
   "Special",
 ];
 
+const normalizeEducationType = (value: string) => {
+  if (!value) {
+    return value;
+  }
+  const match = EDUCATION_TYPES.find(
+    (type) => type.toLowerCase() === value.toLowerCase()
+  );
+  return match ?? value;
+};
+
 export function StudentActionsManager() {
   const { toast } = useToast();
   const { data: actions, mutate } = useSWR<StudentAction[]>(
@@ -79,7 +89,7 @@ export function StudentActionsManager() {
     if (action) {
       setEditingAction(action);
       setFormData({
-        educationType: action.educationType,
+        educationType: normalizeEducationType(action.educationType),
         actionName: action.actionName,
         actionKey: action.actionKey,
         isEnabled: action.isEnabled,
@@ -123,9 +133,13 @@ export function StudentActionsManager() {
 
       const url = "/api/admin/config/actions";
       const method = editingAction ? "PATCH" : "POST";
+      const normalizedFormData = {
+        ...formData,
+        educationType: normalizeEducationType(formData.educationType),
+      };
       const body = editingAction
-        ? { id: editingAction.id, ...formData }
-        : formData;
+        ? { id: editingAction.id, ...normalizedFormData }
+        : normalizedFormData;
 
       const res = await fetch(url, {
         method,
@@ -209,10 +223,12 @@ export function StudentActionsManager() {
 
   // Group actions by education type
   const groupedActions = actions?.reduce((acc, action) => {
-    if (!acc[action.educationType]) {
-      acc[action.educationType] = [];
+    const normalizedType = normalizeEducationType(action.educationType);
+    const key = normalizedType || action.educationType;
+    if (!acc[key]) {
+      acc[key] = [];
     }
-    acc[action.educationType].push(action);
+    acc[key].push(action);
     return acc;
   }, {} as Record<string, StudentAction[]>);
 
@@ -350,7 +366,10 @@ export function StudentActionsManager() {
                 <Select
                   value={formData.educationType}
                   onValueChange={(value) =>
-                    setFormData({ ...formData, educationType: value })
+                    setFormData({
+                      ...formData,
+                      educationType: normalizeEducationType(value),
+                    })
                   }
                   disabled={!!editingAction}
                 >
