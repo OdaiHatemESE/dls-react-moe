@@ -15,88 +15,21 @@ import {
 } from '@/components/ui/sheet';
 import { jsonFetcher } from '@/lib/swr';
 import type { ChildActionDescriptor, ChildActionResponse } from '@/types/child-actions';
-import { ChildStatusBadge, getActionLabel, getActionReason, getStatusMessage } from '@/app/dashboard/components/ChildActions';
+import {
+    ChildStatusBadge,
+    getActionLabel,
+    getActionReason,
+    getStatusMessage,
+    getActionDescription,
+    getActionCardVisuals,
+    renderActionIcon,
+} from '@/app/dashboard/components/ChildActions';
 
 type SignConductSectionProps = {
     locale: string;
     studentId?: string;
 };
 
-type ActionMeta = {
-    icon: React.ReactNode;
-    indicatorClass: string;
-    accentClass: string;
-    description: { en: string; ar: string };
-};
-
-const ACTION_META: Record<ChildActionDescriptor['key'], ActionMeta> = {
-    'update-info': {
-        icon: (
-            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-        ),
-        indicatorClass: 'from-blue-500 to-sky-600',
-        accentClass: 'border-blue-200 hover:border-blue-300',
-        description: {
-            en: 'Refresh contact, address, and transportation details.',
-            ar: 'حدِّث أرقام التواصل والعنوان وطريقة المواصلات.',
-        },
-    },
-    'sign-conduct': {
-        icon: (
-            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-            </svg>
-        ),
-        indicatorClass: 'from-primary to-primary/90',
-        accentClass: 'border-primary/30 hover:border-primary/40',
-        description: {
-            en: 'Review and digitally sign the school conduct charter.',
-            ar: 'راجع ووقع على ميثاق السلوك المدرسي رقميًا.',
-        },
-    },
-    'download-conduct': {
-        icon: (
-            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-        ),
-        indicatorClass: 'from-purple-500 to-purple-600',
-        accentClass: 'border-purple-200 hover:border-purple-300',
-        description: {
-            en: 'Download a copy of the signed conduct agreement.',
-            ar: 'حمّل نسخة من اتفاقية السلوك الموقعة.',
-        },
-    },
-    'view-profile': {
-        icon: (
-            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
-        ),
-        indicatorClass: 'from-slate-500 to-slate-600',
-        accentClass: 'border-slate-200 hover:border-slate-300',
-        description: {
-            en: 'Review full student profile details in one place.',
-            ar: 'استعرض معلومات ملف الطالب كاملة في مكان واحد.',
-        },
-    },
-};
-
-const DEFAULT_META: ActionMeta = {
-    icon: (
-        <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-        </svg>
-    ),
-    indicatorClass: 'from-muted to-muted/80',
-    accentClass: 'border-border hover:border-border/80',
-    description: {
-        en: 'Proceed with this action.',
-        ar: 'تابع هذا الإجراء.',
-    },
-};
 
 function translate(locale: string, copy: { en: string; ar: string }): string {
     return locale === 'ar' ? copy.ar : copy.en;
@@ -109,6 +42,7 @@ function SignConductSection({ locale, studentId }: SignConductSectionProps) {
     const query = React.useMemo(() => {
         if (!studentId) return null;
         const search = new URLSearchParams({ studentPersonId: studentId });
+        search.set('includeIdh', '1');
         return `/api/parent/child-actions?${search.toString()}`;
     }, [studentId]);
 
@@ -145,14 +79,31 @@ function SignConductSection({ locale, studentId }: SignConductSectionProps) {
         (action: ChildActionDescriptor) => {
             if (action.disabled) return;
 
-            if (action.key === 'download-conduct') {
-                handleDownloadPdf();
+            const { type, href, handlerKey } = action.action;
+
+            if (type === 'download') {
+                if (handlerKey === 'conduct-pdf') {
+                    handleDownloadPdf();
+                    setIsOpen(false);
+                    return;
+                }
+
+                if (href) {
+                    window.open(href, '_blank', 'noopener,noreferrer');
+                    setIsOpen(false);
+                }
+                return;
+            }
+
+            if (type === 'event') {
+                const eventName = handlerKey ?? action.key;
+                window.dispatchEvent(new CustomEvent(`child-action:${eventName}`, { detail: action }));
                 setIsOpen(false);
                 return;
             }
 
-            if (action.href) {
-                router.push(action.href);
+            if (type === 'href' && href) {
+                router.push(href);
                 setIsOpen(false);
             }
         },
@@ -160,9 +111,12 @@ function SignConductSection({ locale, studentId }: SignConductSectionProps) {
     );
 
     const renderAction = (action: ChildActionDescriptor) => {
-        const meta = ACTION_META[action.key] ?? DEFAULT_META;
+        const visuals = getActionCardVisuals(action);
         const label = getActionLabel(action, locale);
-        const description = translate(locale, meta.description);
+        const description = getActionDescription(action, locale) ?? translate(locale, {
+            en: 'Proceed with this action.',
+            ar: 'تابع هذا الإجراء.',
+        });
         const reason = getActionReason(action, locale);
         const disabled = Boolean(action.disabled);
         const arrowDirection = locale === 'ar' ? 'rotate-180' : '';
@@ -172,7 +126,7 @@ function SignConductSection({ locale, studentId }: SignConductSectionProps) {
                 key={action.key}
                 className={clsx(
                     'group relative overflow-hidden rounded-xl border bg-white transition-all duration-300',
-                    meta.accentClass,
+                    visuals.accentClass,
                     'hover:-translate-y-1 hover:shadow-lg'
                 )}
             >
@@ -187,12 +141,12 @@ function SignConductSection({ locale, studentId }: SignConductSectionProps) {
                 >
                     <div
                         className={clsx(
-                            'p-3 rounded-xl shadow-lg transition-all duration-300 group-hover:shadow-xl group-hover:scale-110 text-white bg-gradient-to-br',
-                            meta.indicatorClass,
+                            'p-3 rounded-xl shadow-lg transition-all duration-300 group-hover:shadow-xl group-hover:scale-110',
+                            visuals.iconBgClass,
                             disabled && 'grayscale'
                         )}
                     >
-                        {meta.icon}
+                        {renderActionIcon(action, { className: 'w-6 h-6 text-white', 'aria-hidden': true })}
                     </div>
                     <div className={clsx('flex-1', locale === 'ar' ? 'text-right' : 'text-left')}>
                         <div

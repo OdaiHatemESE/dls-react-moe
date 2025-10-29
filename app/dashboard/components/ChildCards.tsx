@@ -119,6 +119,7 @@ function buildStatusConfig(flags: StatusFlags | null, locale: string, variant: "
 // Avatar with dynamic status indicator based on update information status
 const StatusIndicatorAvatar = ({ studentPersonId, displayName, locale }: { studentPersonId: string; displayName: string; locale: string }) => {
   const params = new URLSearchParams({ studentPersonId });
+  params.set("includeIdh", "1");
   const { data } = useSWR<ChildActionResponse>(
     `/api/parent/child-actions?${params.toString()}`,
     jsonFetcher
@@ -163,6 +164,7 @@ const StatusIndicatorAvatar = ({ studentPersonId, displayName, locale }: { stude
 // Desktop version with smaller size
 const StatusIndicatorAvatarDesktop = ({ studentPersonId, displayName, locale }: { studentPersonId: string; displayName: string; locale: string }) => {
   const params = new URLSearchParams({ studentPersonId });
+  params.set("includeIdh", "1");
   const { data } = useSWR<ChildActionResponse>(
     `/api/parent/child-actions?${params.toString()}`,
     jsonFetcher

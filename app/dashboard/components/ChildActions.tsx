@@ -4,22 +4,37 @@ import React from "react";
 import useSWR from "swr";
 import Link from "next/link";
 import clsx from "clsx";
+import {
+  ChevronDown,
+  ClipboardList,
+  Download,
+  Edit3,
+  ExternalLink,
+  Eye,
+  FileText,
+  Info,
+  RefreshCw,
+  Signature,
+  UserRound,
+  type LucideIcon,
+  type LucideProps,
+} from "lucide-react";
 import { useI18n } from "@/app/i18n/I18nProvider";
 import { jsonFetcher } from "@/lib/swr";
+import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import type {
+  ChildActionColor,
   ChildActionDescriptor,
   ChildActionResponse,
-  ChildActionUpdateRequest,
   ChildStatusBadgeDescriptor,
 } from "@/types/child-actions";
-
-export type UpdateInfoRow = ChildActionUpdateRequest;
 
 type Props = {
   studentPersonId: string;
   parentPersonId?: string | null;
   studentEmirateId?: string | null;
-  compact?: boolean; // when true, render smaller buttons (e.g., inside table)
+  compact?: boolean;
   className?: string;
 };
 
@@ -30,6 +45,7 @@ export function ChildActions({ studentPersonId, parentPersonId, studentEmirateId
     const search = new URLSearchParams({ studentPersonId });
     if (parentPersonId) search.set("parentPersonId", parentPersonId);
     if (studentEmirateId) search.set("studentEmirateId", studentEmirateId);
+    search.set("includeIdh", "1");
     return search.toString();
   }, [studentPersonId, parentPersonId, studentEmirateId]);
 
@@ -63,6 +79,62 @@ export function ChildActions({ studentPersonId, parentPersonId, studentEmirateId
     }
   }, [data?.updateRequest.pdfBase64, studentPersonId]);
 
+  const handleAction = React.useCallback(
+    (action: ChildActionDescriptor) => {
+      if (action.disabled) return;
+
+      const { type, href, handlerKey } = action.action;
+
+      if (type === "download") {
+        if (handlerKey === "conduct-pdf") {
+          handleDownloadPdf();
+          return;
+        }
+
+        if (href) {
+          window.open(href, "_blank", "noopener,noreferrer");
+        }
+        return;
+      }
+
+      if (type === "event") {
+        const eventName = handlerKey ?? action.key;
+        window.dispatchEvent(new CustomEvent(`child-action:${eventName}`, { detail: action }));
+        return;
+      }
+
+      if (type === "href" && href) {
+        window.location.href = href;
+      }
+    },
+    [handleDownloadPdf]
+  );
+
+  const [isMenuOpen, setIsMenuOpen] = React.useState(false);
+
+  const rawActions = React.useMemo(() => data?.actions ?? [], [data]);
+  const visibleActions = React.useMemo(
+    () => rawActions.filter((action) => !action.hidden),
+    [rawActions]
+  );
+  const fallbackAction = React.useMemo(
+    () => buildLocalFallbackAction(studentPersonId),
+    [studentPersonId]
+  );
+  const actionsToDisplay = React.useMemo(() => {
+    if (visibleActions.length) {
+      return visibleActions;
+    }
+    return [fallbackAction];
+  }, [visibleActions, fallbackAction]);
+
+  const hasVisibleActions = visibleActions.length > 0;
+  const allHiddenButConfigured = !hasVisibleActions && rawActions.length > 0;
+  const showFallback = !hasVisibleActions;
+  const totalActionsCount = actionsToDisplay.length;
+  const statusBanner = data?.statusBanner ?? null;
+  const actionsLabel = locale === "ar" ? "إجراءات الطالب" : "Student Actions";
+
   if (isLoading) {
     return (
       <div className={clsx("inline-flex items-center gap-2", className)}>
@@ -74,7 +146,6 @@ export function ChildActions({ studentPersonId, parentPersonId, studentEmirateId
   }
 
   if (error || !data) {
-    // Fallback: just show View Profile
     return (
       <div className={clsx("inline-flex items-center gap-2", className)}>
         <Link
@@ -90,9 +161,6 @@ export function ChildActions({ studentPersonId, parentPersonId, studentEmirateId
       </div>
     );
   }
-
-  const actions = data.actions ?? [];
-  const statusBanner = data.statusBanner;
 
   const renderStatusBanner = () => {
     if (!statusBanner) return null;
@@ -118,81 +186,96 @@ export function ChildActions({ studentPersonId, parentPersonId, studentEmirateId
     );
   };
 
-  const renderAction = (action: ChildActionDescriptor) => {
-    if (action.key === "download-conduct") {
-      const reason = getActionReason(action, locale);
-      return (
-        <button
-          key={action.key}
-          onClick={handleDownloadPdf}
-          disabled={!!action.disabled}
-          className={buildButtonClasses("download", compact, !!action.disabled)}
-          title={reason ?? undefined}
-        >
-          <svg className="w-4 h-4 group-hover:translate-y-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-          {getActionLabel(action, locale)}
-        </button>
-      );
+  const handleActionSelect = (action: ChildActionDescriptor) => {
+    if (action.hidden || action.disabled) {
+      return;
     }
+    handleAction(action);
+    setIsMenuOpen(false);
+  };
 
+  const renderActionItem = (action: ChildActionDescriptor) => {
+    const disabled = Boolean(action.disabled);
     const label = getActionLabel(action, locale);
+    const description = getActionDescription(action, locale);
     const reason = getActionReason(action, locale);
-    const classes = buildButtonClasses(action.variant, compact, !!action.disabled);
-    const icon = action.variant === "primary" ? (
-      <svg className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-      </svg>
-    ) : (
-      <svg className="w-4 h-4 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-      </svg>
-    );
-
-    if (action.disabled || !action.href) {
-      return (
-        <span
-          key={action.key}
-          className={classes}
-          aria-disabled="true"
-          title={reason ?? undefined}
-        >
-          {icon}
-          {label}
-        </span>
-      );
-    }
+    const visuals = getActionCardVisuals(action);
+    const icon = renderActionIcon(action, { className: "w-4 h-4", "aria-hidden": true });
 
     return (
-      <Link
-        key={action.key}
-        href={action.href}
-        className={classes}
-        aria-disabled={action.disabled ? "true" : undefined}
-        tabIndex={action.disabled ? -1 : undefined}
-        title={reason ?? undefined}
-      >
-        {icon}
-        {label}
-      </Link>
+      <li key={`${action.configId ?? action.key}`}>
+        <button
+          type="button"
+          onClick={() => handleActionSelect(action)}
+          disabled={disabled}
+          className={clsx(
+            "flex w-full items-start gap-3 rounded-lg px-3 py-2 text-left transition-colors",
+            disabled ? "cursor-not-allowed opacity-60" : "hover:bg-muted"
+          )}
+        >
+          <span className={clsx("flex h-9 w-9 shrink-0 items-center justify-center rounded-lg", visuals.iconBgClass)}>
+            {icon}
+          </span>
+          <span className="flex-1 min-w-0">
+            <span className="block text-sm font-semibold leading-tight text-foreground">{label}</span>
+            {description && (
+              <span className="mt-1 block text-xs text-muted-foreground leading-snug line-clamp-2">{description}</span>
+            )}
+            {disabled && reason && (
+              <span className="mt-2 block text-xs font-medium text-destructive">{reason}</span>
+            )}
+          </span>
+        </button>
+      </li>
     );
   };
 
   return (
-    <div className={clsx("flex flex-wrap items-center gap-2", className)}>
+    <div className={clsx("flex flex-wrap items-center gap-3", className)}>
       {renderStatusBanner()}
-      {actions.map(renderAction)}
-      {!actions.length && renderAction(
-        {
-          key: "view-profile",
-          labelKey: "childActions.viewProfile",
-          label: "View Profile",
-          href: `/child/${studentPersonId}`,
-          variant: "secondary",
-        }
-      )}
+      <Popover open={isMenuOpen} onOpenChange={setIsMenuOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            type="button"
+            variant="outline"
+            size={compact ? "sm" : "default"}
+            className="inline-flex items-center gap-2"
+            disabled={!actionsToDisplay.length}
+          >
+            <span>{actionsLabel}</span>
+            <span className="inline-flex h-5 min-w-[1.5rem] items-center justify-center rounded-full bg-primary/10 px-1 text-xs font-semibold text-primary">
+              {totalActionsCount || actionsToDisplay.length}
+            </span>
+            <ChevronDown className="h-4 w-4 opacity-70" aria-hidden="true" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[20rem] p-0" align="start">
+          <div className="flex flex-col gap-2 p-2">
+            {statusBanner && (
+              <div className="flex items-center gap-2 rounded-lg bg-chart-1/10 px-3 py-2 text-xs font-medium text-chart-1">
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>{getStatusMessage(statusBanner, locale)}</span>
+              </div>
+            )}
+            <ul className="flex flex-col gap-1">
+              {actionsToDisplay.map(renderActionItem)}
+            </ul>
+            {showFallback && (
+              <p className="px-1 text-[11px] text-muted-foreground">
+                {locale === "ar"
+                  ? allHiddenButConfigured
+                    ? "الإجراءات غير متاحة لهذا الطالب في الوقت الحالي. يظهر خيار عرض الملف فقط."
+                    : "لم يتم إعداد إجراءات مخصصة بعد. يتم عرض خيار عرض الملف كإجراء افتراضي."
+                  : allHiddenButConfigured
+                    ? "Actions are currently unavailable for this student. Showing View Profile as the only option."
+                    : "No custom actions are configured yet. Showing View Profile as the default option."}
+              </p>
+            )}
+          </div>
+        </PopoverContent>
+      </Popover>
     </div>
   );
 }
@@ -212,6 +295,7 @@ export function ChildStatusBadge({ studentPersonId, parentPersonId, studentEmira
     const search = new URLSearchParams({ studentPersonId });
     if (parentPersonId) search.set("parentPersonId", parentPersonId);
     if (studentEmirateId) search.set("studentEmirateId", studentEmirateId);
+    search.set("includeIdh", "1");
     return search.toString();
   }, [studentPersonId, parentPersonId, studentEmirateId]);
 
@@ -250,27 +334,114 @@ export function ChildStatusBadge({ studentPersonId, parentPersonId, studentEmira
     </div>
   );
 }
+ 
+type ColorPreset = {
+  solid: string;
+  outline: string;
+  ghost: string;
+  link: string;
+  cardIndicator: string;
+  cardAccent: string;
+  cardIconBg: string;
+};
 
-function buildButtonClasses(variant: ChildActionDescriptor["variant"], compact = false, disabled = false): string {
-  const base = "group inline-flex items-center justify-center gap-2 font-semibold rounded-xl transition-all duration-200 shadow-md hover:shadow-lg touch-manipulation active:scale-95";
-  const size = compact ? "px-4 py-2 text-xs" : "px-5 py-2.5 text-sm";
+const COLOR_PRESETS: Record<ChildActionColor, ColorPreset> = {
+  primary: {
+    solid: "bg-gradient-to-r from-primary to-primary/90 text-primary-foreground hover:from-primary/90 hover:to-primary/80",
+    outline: "border border-primary text-primary hover:bg-primary/10",
+    ghost: "bg-primary/10 text-primary hover:bg-primary/15",
+    link: "bg-transparent text-primary underline-offset-4 hover:underline",
+    cardIndicator: "from-primary/90 to-primary/70",
+    cardAccent: "border-primary/30 hover:border-primary/40",
+    cardIconBg: "bg-gradient-to-br from-primary/90 to-primary/70 text-white",
+  },
+  secondary: {
+    solid: "bg-gradient-to-r from-secondary to-secondary/90 text-secondary-foreground hover:from-secondary/90 hover:to-secondary/80",
+    outline: "border border-secondary text-secondary-foreground hover:bg-secondary/10",
+    ghost: "bg-secondary/10 text-secondary-foreground hover:bg-secondary/20",
+    link: "bg-transparent text-secondary-foreground underline-offset-4 hover:underline",
+    cardIndicator: "from-secondary/90 to-secondary/70",
+    cardAccent: "border-secondary/30 hover:border-secondary/40",
+    cardIconBg: "bg-gradient-to-br from-secondary/90 to-secondary/70 text-secondary-foreground",
+  },
+  info: {
+    solid: "bg-gradient-to-r from-chart-1 to-chart-1/90 text-white hover:from-chart-1/90 hover:to-chart-1/80",
+    outline: "border border-chart-1 text-chart-1 hover:bg-chart-1/10",
+    ghost: "bg-chart-1/10 text-chart-1 hover:bg-chart-1/15",
+    link: "bg-transparent text-chart-1 underline-offset-4 hover:underline",
+    cardIndicator: "from-chart-1 to-chart-1/80",
+    cardAccent: "border-chart-1/30 hover:border-chart-1/40",
+    cardIconBg: "bg-gradient-to-br from-chart-1 to-chart-1/80 text-white",
+  },
+  success: {
+    solid: "bg-gradient-to-r from-emerald-500 to-emerald-600 text-white hover:from-emerald-500/90 hover:to-emerald-600/90",
+    outline: "border border-emerald-500 text-emerald-600 hover:bg-emerald-50",
+    ghost: "bg-emerald-50 text-emerald-600 hover:bg-emerald-100",
+    link: "bg-transparent text-emerald-600 underline-offset-4 hover:underline",
+    cardIndicator: "from-emerald-500 to-emerald-600",
+    cardAccent: "border-emerald-200 hover:border-emerald-300",
+    cardIconBg: "bg-gradient-to-br from-emerald-500 to-emerald-600 text-white",
+  },
+  warning: {
+    solid: "bg-gradient-to-r from-amber-500 to-amber-600 text-white hover:from-amber-500/90 hover:to-amber-600/90",
+    outline: "border border-amber-500 text-amber-600 hover:bg-amber-50",
+    ghost: "bg-amber-50 text-amber-600 hover:bg-amber-100",
+    link: "bg-transparent text-amber-600 underline-offset-4 hover:underline",
+    cardIndicator: "from-amber-500 to-amber-600",
+    cardAccent: "border-amber-200 hover:border-amber-300",
+    cardIconBg: "bg-gradient-to-br from-amber-500 to-amber-600 text-white",
+  },
+  danger: {
+    solid: "bg-gradient-to-r from-rose-500 to-rose-600 text-white hover:from-rose-500/90 hover:to-rose-600/90",
+    outline: "border border-rose-500 text-rose-600 hover:bg-rose-50",
+    ghost: "bg-rose-50 text-rose-600 hover:bg-rose-100",
+    link: "bg-transparent text-rose-600 underline-offset-4 hover:underline",
+    cardIndicator: "from-rose-500 to-rose-600",
+    cardAccent: "border-rose-200 hover:border-rose-300",
+    cardIconBg: "bg-gradient-to-br from-rose-500 to-rose-600 text-white",
+  },
+  neutral: {
+    solid: "bg-gradient-to-r from-slate-600 to-slate-700 text-white hover:from-slate-600/90 hover:to-slate-700/90",
+    outline: "border border-slate-300 text-slate-700 hover:bg-slate-100",
+    ghost: "bg-slate-100 text-slate-700 hover:bg-slate-200",
+    link: "bg-transparent text-slate-700 underline-offset-4 hover:underline",
+    cardIndicator: "from-slate-500 to-slate-600",
+    cardAccent: "border-slate-200 hover:border-slate-300",
+    cardIconBg: "bg-gradient-to-br from-slate-600 to-slate-500 text-white",
+  },
+};
 
-  const palette = variant === "primary"
-    ? "bg-gradient-to-r from-primary to-primary/90 text-primary-foreground hover:from-primary/90 hover:to-primary/80"
-    : variant === "download"
-      ? "bg-gradient-to-r from-chart-2 to-chart-2/90 text-white hover:from-chart-2/90 hover:to-chart-2/80"
-      : "bg-gradient-to-r from-secondary to-secondary/90 text-secondary-foreground hover:from-secondary/90 hover:to-secondary/80";
-
-  const disabledStyles = disabled ? "opacity-50 cursor-not-allowed pointer-events-none" : "";
-
-  return clsx(base, size, palette, disabledStyles);
+function getColorPreset(color?: ChildActionColor | null): ColorPreset {
+  if (!color) {
+    return COLOR_PRESETS.primary;
+  }
+  return COLOR_PRESETS[color] ?? COLOR_PRESETS.primary;
 }
 
-const ACTION_LABELS: Record<ChildActionDescriptor["key"], { en: string; ar: string }> = {
+const FALLBACK_ACTION_LABELS: Record<string, { en: string; ar: string }> = {
   "update-info": { en: "Update Information", ar: "تحديث المعلومات" },
   "sign-conduct": { en: "Sign Conduct", ar: "توقيع الميثاق" },
   "view-profile": { en: "View Profile", ar: "عرض الملف" },
   "download-conduct": { en: "Download Conduct", ar: "تحميل الميثاق" },
+};
+
+const FALLBACK_ACTION_DESCRIPTIONS: Record<string, { en: string; ar: string }> = {
+  "update-info": {
+    en: "Refresh contact, address, and transportation details.",
+    ar: "حدِّث أرقام التواصل والعنوان وطريقة المواصلات.",
+  },
+  "sign-conduct": {
+    en: "Review and digitally sign the school conduct charter.",
+    ar: "راجع ووقع على ميثاق السلوك المدرسي رقميًا.",
+  },
+  "download-conduct": {
+    en: "Download a copy of the signed conduct agreement.",
+    ar: "حمّل نسخة من اتفاقية السلوك الموقعة.",
+  },
+  "view-profile": {
+    en: "Review full student profile details in one place.",
+    ar: "استعرض معلومات ملف الطالب كاملة في مكان واحد.",
+  },
 };
 
 const STATUS_MESSAGES: Record<string, { en: string; ar: string }> = {
@@ -307,17 +478,42 @@ function translate(locale: string, text: { en: string; ar: string }): string {
 }
 
 export function getActionLabel(action: ChildActionDescriptor, locale: string): string {
-  const entry = ACTION_LABELS[action.key];
-  if (entry) return translate(locale, entry);
+  const localized = getLocalizedText(action.display?.label, locale, action.label);
+  if (localized) {
+    return localized;
+  }
+
+  const fallback = FALLBACK_ACTION_LABELS[action.key];
+  if (fallback) {
+    return translate(locale, fallback);
+  }
+
   return action.label;
 }
 
 export function getActionReason(action: ChildActionDescriptor, locale: string): string | null {
+  if (action.disabledReason) {
+    const localized = getLocalizedText(action.disabledReason, locale, undefined);
+    if (localized) {
+      return localized;
+    }
+  }
+
   if (action.reasonKey) {
     const entry = REASON_LABELS[action.reasonKey];
     if (entry) return translate(locale, entry);
   }
   return action.reason ?? null;
+}
+
+export function getActionDescription(action: ChildActionDescriptor, locale: string): string | null {
+  const localized = getLocalizedText(action.display?.description, locale, action.description ?? undefined);
+  if (localized) {
+    return localized;
+  }
+
+  const fallback = FALLBACK_ACTION_DESCRIPTIONS[action.key];
+  return fallback ? translate(locale, fallback) : action.description ?? null;
 }
 
 export function getStatusMessage(banner: NonNullable<ChildActionResponse["statusBanner"]>, locale: string): string {
@@ -338,4 +534,101 @@ function getBadgeTooltip(badge: ChildStatusBadgeDescriptor, locale: string): str
     return translate(locale, BADGE_LABELS[badge.tooltipKey].tooltip);
   }
   return badge.tooltip ?? "";
+}
+
+export function getActionCardVisuals(action: ChildActionDescriptor): {
+  indicatorClass: string;
+  accentClass: string;
+  iconBgClass: string;
+} {
+  const palette = getColorPreset(action.style.color);
+  return {
+    indicatorClass: palette.cardIndicator,
+    accentClass: palette.cardAccent,
+    iconBgClass: palette.cardIconBg,
+  };
+}
+
+const ICON_MAP: Record<string, LucideIcon> = {
+  "edit": Edit3,
+  "edit-3": Edit3,
+  "signature": Signature,
+  "download": Download,
+  "eye": Eye,
+  "file": FileText,
+  "file-text": FileText,
+  "link": ExternalLink,
+  "clipboard": ClipboardList,
+  "user": UserRound,
+  "info": Info,
+  "refresh": RefreshCw,
+};
+
+function getIconComponent(action: ChildActionDescriptor): LucideIcon {
+  const iconKey = (action.style.icon ?? action.key).toLowerCase();
+  return ICON_MAP[iconKey] ?? FileText;
+}
+
+export function renderActionIcon(action: ChildActionDescriptor, props?: LucideProps): React.ReactElement {
+  const Icon = getIconComponent(action);
+  const mergedProps: LucideProps = { strokeWidth: 2, ...props };
+  return <Icon {...mergedProps} />;
+}
+
+function getLocalizedText(
+  text: { en?: string; ar?: string } | null | undefined,
+  locale: string,
+  fallback?: string
+): string {
+  if (!text) {
+    return fallback ?? "";
+  }
+
+  const value = locale === "ar" ? text.ar ?? text.en : text.en ?? text.ar;
+  if (value && value.trim().length > 0) {
+    return value;
+  }
+
+  return fallback ?? "";
+}
+
+function buildLocalFallbackAction(studentPersonId: string): ChildActionDescriptor {
+  const label = FALLBACK_ACTION_LABELS["view-profile"];
+  const description = FALLBACK_ACTION_DESCRIPTIONS["view-profile"];
+  const href = `/child/${studentPersonId}`;
+
+  return {
+    key: "view-profile",
+    labelKey: "childActions.viewProfile",
+    label: label.en,
+    description: description.en,
+    href,
+    variant: "secondary",
+    disabled: false,
+    reasonKey: null,
+    reason: null,
+    display: {
+      label,
+      description,
+      shortLabel: undefined,
+      labelKey: "childActions.viewProfile",
+      descriptionKey: null,
+    },
+    style: {
+      icon: "eye",
+      color: "neutral",
+      variant: "outline",
+    },
+    action: {
+      type: "href",
+      href,
+      handlerKey: null,
+      payload: null,
+      downloadFileName: null,
+    },
+    disabledReason: null,
+    order: Number.MAX_SAFE_INTEGER,
+    metadata: null,
+    configId: null,
+  };
 }

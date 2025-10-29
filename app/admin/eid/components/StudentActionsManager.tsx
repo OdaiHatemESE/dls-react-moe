@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { Separator } from "@/components/ui/separator";
 import {
   Select,
   SelectContent,
@@ -24,15 +25,21 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { Trash2, Edit, Plus, Loader2, Settings as SettingsIcon } from "lucide-react";
 import { useToast } from "@/lib/hooks/use-toast";
+import type {
+  AdminActionConfigSchema,
+  ChildActionColor,
+  ChildActionVariant,
+  ChildActionType,
+} from "@/types/child-actions";
 
 type StudentAction = {
   id: number;
@@ -66,80 +73,480 @@ const normalizeEducationType = (value: string) => {
   return match ?? value;
 };
 
+type LocalizedFieldState = {
+  en: string;
+  ar: string;
+};
+
+type AdminConfigFormState = {
+  label: LocalizedFieldState;
+  shortLabel: LocalizedFieldState;
+  description: LocalizedFieldState;
+  labelKey: string;
+  descriptionKey: string;
+  icon: string;
+  color: ChildActionColor;
+  variant: ChildActionVariant;
+  actionType: ChildActionType;
+  href: string;
+  hrefTemplate: string;
+  handlerKey: string;
+  payloadJson: string;
+  downloadFileName: string;
+  statusInclude: string;
+  statusExclude: string;
+  requiresUpdatePeriod: boolean;
+  requiresPdf: boolean;
+  requiresPdfMode: "disable" | "hide";
+  requiresPdfReason: LocalizedFieldState;
+  requiresConductSignature: "signed" | "unsigned" | "any";
+  metadataJson: string;
+  order: string;
+};
+
+type LocalizedFieldKey = "label" | "shortLabel" | "description" | "requiresPdfReason";
+
+type FormState = {
+  educationType: string;
+  actionName: string;
+  actionKey: string;
+  isEnabled: boolean;
+  displayOrder: number;
+  description: string;
+  config: AdminConfigFormState;
+};
+
+const ACTION_COLORS: ChildActionColor[] = [
+  "primary",
+  "secondary",
+  "info",
+  "success",
+  "warning",
+  "danger",
+  "neutral",
+];
+
+const ACTION_VARIANTS: ChildActionVariant[] = ["solid", "outline", "ghost", "link"];
+const ACTION_TYPES: ChildActionType[] = ["href", "download", "event"];
+const PDF_MODES = ["disable", "hide"] as const;
+const CONDUCT_REQUIREMENTS = ["any", "signed", "unsigned"] as const;
+
+const createEmptyLocalizedField = (): LocalizedFieldState => ({ en: "", ar: "" });
+
+const createEmptyConfigForm = (): AdminConfigFormState => ({
+  label: createEmptyLocalizedField(),
+  shortLabel: createEmptyLocalizedField(),
+  description: createEmptyLocalizedField(),
+  labelKey: "",
+  descriptionKey: "",
+  icon: "",
+  color: "primary",
+  variant: "solid",
+  actionType: "href",
+  href: "",
+  hrefTemplate: "",
+  handlerKey: "",
+  payloadJson: "",
+  downloadFileName: "",
+  statusInclude: "",
+  statusExclude: "",
+  requiresUpdatePeriod: false,
+  requiresPdf: false,
+  requiresPdfMode: "disable",
+  requiresPdfReason: createEmptyLocalizedField(),
+  requiresConductSignature: "any",
+  metadataJson: "",
+  order: "",
+});
+
+const createEmptyFormState = (): FormState => ({
+  educationType: "",
+  actionName: "",
+  actionKey: "",
+  isEnabled: true,
+  displayOrder: 0,
+  description: "",
+  config: createEmptyConfigForm(),
+});
+
+const toLocalizedFieldState = (input: unknown): LocalizedFieldState => {
+  if (!input) {
+    return createEmptyLocalizedField();
+  }
+
+  if (typeof input === "string") {
+    const trimmed = input.trim();
+    return { en: trimmed, ar: trimmed };
+  }
+
+  if (typeof input === "object" && !Array.isArray(input)) {
+    const obj = input as Record<string, unknown>;
+    const en = typeof obj.en === "string" ? obj.en : "";
+    const ar = typeof obj.ar === "string" ? obj.ar : "";
+    return { en, ar };
+  }
+
+  return createEmptyLocalizedField();
+};
+
+const formatStatusList = (values?: Array<number | null> | null): string => {
+  if (!values || !values.length) {
+    return "";
+  }
+
+  return values
+    .map((value) => (value === null ? "null" : String(value)))
+    .join(", ");
+};
+
+const parseStatusInput = (value: string): Array<number | null> | undefined => {
+  if (!value.trim()) {
+    return undefined;
+  }
+
+  const parts = value
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  if (!parts.length) {
+    return undefined;
+  }
+
+  return parts.map((part) => {
+    if (part.toLowerCase() === "null") {
+      return null;
+    }
+    const parsed = Number(part);
+    if (Number.isNaN(parsed)) {
+      throw new Error("Status filters must contain numbers or 'null'");
+    }
+    return parsed;
+  });
+};
+
+const tryParseJsonObject = (value: string, context: string): Record<string, unknown> | null | undefined => {
+  if (!value.trim()) {
+    return undefined;
+  }
+
+  try {
+    const parsed = JSON.parse(value);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      throw new Error(`${context} must be a JSON object`);
+    }
+    return parsed as Record<string, unknown>;
+  } catch {
+    throw new Error(`${context} must be valid JSON`);
+  }
+};
+
+const parseConfigJson = (configJson?: string | null): AdminConfigFormState => {
+  const config = createEmptyConfigForm();
+  if (!configJson || !configJson.trim()) {
+    return config;
+  }
+
+  try {
+    const parsed = JSON.parse(configJson) as AdminActionConfigSchema;
+
+    if (parsed.display) {
+      config.label = toLocalizedFieldState(parsed.display.label);
+      config.shortLabel = toLocalizedFieldState(parsed.display.shortLabel);
+      config.description = toLocalizedFieldState(parsed.display.description);
+      config.labelKey = parsed.display.labelKey ?? "";
+      config.descriptionKey = parsed.display.descriptionKey ?? "";
+    }
+
+    if (parsed.style) {
+      config.icon = typeof parsed.style.icon === "string" ? parsed.style.icon : "";
+      if (typeof parsed.style.color === "string" && ACTION_COLORS.includes(parsed.style.color as ChildActionColor)) {
+        config.color = parsed.style.color as ChildActionColor;
+      }
+      if (typeof parsed.style.variant === "string" && ACTION_VARIANTS.includes(parsed.style.variant as ChildActionVariant)) {
+        config.variant = parsed.style.variant as ChildActionVariant;
+      }
+    }
+
+    if (parsed.action) {
+      if (typeof parsed.action.type === "string" && ACTION_TYPES.includes(parsed.action.type as ChildActionType)) {
+        config.actionType = parsed.action.type as ChildActionType;
+      }
+      config.href = typeof parsed.action.href === "string" ? parsed.action.href : "";
+      config.hrefTemplate = typeof parsed.action.hrefTemplate === "string" ? parsed.action.hrefTemplate : "";
+      config.handlerKey = typeof parsed.action.handlerKey === "string" ? parsed.action.handlerKey : "";
+      config.downloadFileName =
+        typeof parsed.action.downloadFileName === "string" ? parsed.action.downloadFileName : "";
+      if (parsed.action.payload && typeof parsed.action.payload === "object") {
+        config.payloadJson = JSON.stringify(parsed.action.payload, null, 2);
+      }
+    }
+
+    if (parsed.availability) {
+      if (parsed.availability.status) {
+        config.statusInclude = formatStatusList(parsed.availability.status.include ?? undefined);
+        config.statusExclude = formatStatusList(parsed.availability.status.exclude ?? undefined);
+      }
+      config.requiresUpdatePeriod = Boolean(parsed.availability.requiresUpdatePeriod);
+      config.requiresPdf = Boolean(parsed.availability.requiresPdf);
+      if (typeof parsed.availability.requiresPdfMode === "string" && PDF_MODES.includes(parsed.availability.requiresPdfMode as (typeof PDF_MODES)[number])) {
+        config.requiresPdfMode = parsed.availability.requiresPdfMode as "disable" | "hide";
+      }
+      config.requiresPdfReason = toLocalizedFieldState(parsed.availability.requiresPdfReason);
+      if (
+        typeof parsed.availability.requiresConductSignature === "string" &&
+        CONDUCT_REQUIREMENTS.includes(parsed.availability.requiresConductSignature as (typeof CONDUCT_REQUIREMENTS)[number])
+      ) {
+        config.requiresConductSignature = parsed.availability.requiresConductSignature as "signed" | "unsigned" | "any";
+      }
+    }
+
+    if (parsed.metadata && typeof parsed.metadata === "object") {
+      config.metadataJson = JSON.stringify(parsed.metadata, null, 2);
+    }
+
+    if (typeof parsed.order === "number") {
+      config.order = String(parsed.order);
+    }
+  } catch (error) {
+    console.warn("Failed to parse action config JSON", error);
+  }
+
+  return config;
+};
+
+const toLocalizedOutput = (value: LocalizedFieldState) => {
+  const en = value.en.trim();
+  const ar = value.ar.trim();
+  if (!en && !ar) {
+    return undefined;
+  }
+  return { en: en || ar, ar: ar || en };
+};
+
+const buildConfigPayload = (state: AdminConfigFormState): AdminActionConfigSchema | null => {
+  const config: AdminActionConfigSchema = { schemaVersion: 1 };
+
+  const display: AdminActionConfigSchema["display"] = {};
+  const label = toLocalizedOutput(state.label);
+  if (label) {
+    display.label = label;
+  }
+  const shortLabel = toLocalizedOutput(state.shortLabel);
+  if (shortLabel) {
+    display.shortLabel = shortLabel;
+  }
+  const description = toLocalizedOutput(state.description);
+  if (description) {
+    display.description = description;
+  }
+  if (state.labelKey.trim()) {
+    display.labelKey = state.labelKey.trim();
+  }
+  if (state.descriptionKey.trim()) {
+    display.descriptionKey = state.descriptionKey.trim();
+  }
+  if (Object.keys(display).length) {
+    config.display = display;
+  }
+
+  const style: AdminActionConfigSchema["style"] = {};
+  const icon = state.icon.trim();
+  if (icon) {
+    style.icon = icon;
+  }
+  if (state.color) {
+    style.color = state.color;
+  }
+  if (state.variant) {
+    style.variant = state.variant;
+  }
+  if (Object.keys(style).length) {
+    config.style = style;
+  }
+
+  const action: AdminActionConfigSchema["action"] = {
+    type: state.actionType,
+  };
+  if (state.href.trim()) {
+    action.href = state.href.trim();
+  }
+  if (state.hrefTemplate.trim()) {
+    action.hrefTemplate = state.hrefTemplate.trim();
+  }
+  if (state.handlerKey.trim()) {
+    action.handlerKey = state.handlerKey.trim();
+  }
+  if (state.downloadFileName.trim()) {
+    action.downloadFileName = state.downloadFileName.trim();
+  }
+  const payload = tryParseJsonObject(state.payloadJson, "Action payload JSON");
+  if (payload !== undefined) {
+    action.payload = payload;
+  }
+  config.action = action;
+
+  const availability: AdminActionConfigSchema["availability"] = {};
+  const includeStatuses = parseStatusInput(state.statusInclude);
+  const excludeStatuses = parseStatusInput(state.statusExclude);
+  if (includeStatuses || excludeStatuses) {
+    availability.status = {};
+    if (includeStatuses) {
+      availability.status.include = includeStatuses;
+    }
+    if (excludeStatuses) {
+      availability.status.exclude = excludeStatuses;
+    }
+  }
+  if (state.requiresUpdatePeriod) {
+    availability.requiresUpdatePeriod = true;
+  }
+  if (state.requiresPdf) {
+    availability.requiresPdf = true;
+    availability.requiresPdfMode = state.requiresPdfMode;
+    const reason = toLocalizedOutput(state.requiresPdfReason);
+    if (reason) {
+      availability.requiresPdfReason = reason;
+    }
+  }
+  if (state.requiresConductSignature !== "any") {
+    availability.requiresConductSignature = state.requiresConductSignature;
+  }
+  if (Object.keys(availability).length) {
+    config.availability = availability;
+  }
+
+  const metadata = tryParseJsonObject(state.metadataJson, "Metadata JSON");
+  if (metadata !== undefined) {
+    config.metadata = metadata ?? null;
+  }
+
+  if (state.order.trim()) {
+    const parsedOrder = Number(state.order.trim());
+    if (Number.isNaN(parsedOrder)) {
+      throw new Error("Order must be numeric");
+    }
+    config.order = parsedOrder;
+  }
+
+  const meaningfulKeys = Object.keys(config).filter((key) => key !== "schemaVersion");
+  return meaningfulKeys.length ? config : null;
+};
+
+const createFormStateFromAction = (action?: StudentAction | null): FormState => {
+  if (!action) {
+    return createEmptyFormState();
+  }
+
+  return {
+    educationType: normalizeEducationType(action.educationType),
+    actionName: action.actionName,
+    actionKey: action.actionKey,
+    isEnabled: action.isEnabled,
+    displayOrder: action.displayOrder ?? 0,
+    description: action.description || "",
+    config: parseConfigJson(action.configJson || ""),
+  };
+};
+
 export function StudentActionsManager() {
   const { toast } = useToast();
   const { data: actions, mutate } = useSWR<StudentAction[]>(
     "/api/admin/config/actions",
     jsonFetcher
   );
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [editingAction, setEditingAction] = useState<StudentAction | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState({
-    educationType: "",
-    actionName: "",
-    actionKey: "",
-    isEnabled: true,
-    displayOrder: 0,
-    description: "",
-    configJson: "",
-  });
+  const [formData, setFormData] = useState<FormState>(createEmptyFormState());
 
-  const handleOpenDialog = (action?: StudentAction) => {
-    if (action) {
-      setEditingAction(action);
-      setFormData({
-        educationType: normalizeEducationType(action.educationType),
-        actionName: action.actionName,
-        actionKey: action.actionKey,
-        isEnabled: action.isEnabled,
-        displayOrder: action.displayOrder,
-        description: action.description || "",
-        configJson: action.configJson || "",
-      });
-    } else {
-      setEditingAction(null);
-      setFormData({
-        educationType: "",
-        actionName: "",
-        actionKey: "",
-        isEnabled: true,
-        displayOrder: 0,
-        description: "",
-        configJson: "",
-      });
-    }
-    setIsDialogOpen(true);
+  const updateConfigField = <K extends keyof AdminConfigFormState>(
+    key: K,
+    value: AdminConfigFormState[K]
+  ) => {
+    setFormData((prev) => ({
+      ...prev,
+      config: {
+        ...prev.config,
+        [key]: value,
+      },
+    }));
   };
 
-  const handleCloseDialog = () => {
-    setIsDialogOpen(false);
+  const updateLocalizedField = (key: LocalizedFieldKey, locale: "en" | "ar", value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      config: {
+        ...prev.config,
+        [key]: {
+          ...prev.config[key],
+          [locale]: value,
+        },
+      },
+    }));
+  };
+
+  const handleOpenSheet = (action?: StudentAction) => {
+    if (action) {
+      setEditingAction(action);
+      setFormData(createFormStateFromAction(action));
+    } else {
+      setEditingAction(null);
+      setFormData(createEmptyFormState());
+    }
+    setIsSheetOpen(true);
+  };
+
+  const handleCloseSheet = () => {
+    setIsSheetOpen(false);
     setEditingAction(null);
+    setFormData(createEmptyFormState());
+  };
+
+  const handleSheetOpenChange = (open: boolean) => {
+    if (open) {
+      setIsSheetOpen(true);
+      return;
+    }
+    handleCloseSheet();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
+    let configPayload: AdminActionConfigSchema | null;
     try {
-      // Validate JSON if provided
-      if (formData.configJson.trim()) {
-        try {
-          JSON.parse(formData.configJson);
-        } catch {
-          throw new Error("Invalid JSON in configuration");
-        }
-      }
+      configPayload = buildConfigPayload(formData.config);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Please review the configuration inputs";
+      toast({
+        title: "Invalid configuration",
+        description: message,
+        variant: "destructive",
+      });
+      setIsSubmitting(false);
+      return;
+    }
 
+    try {
       const url = "/api/admin/config/actions";
       const method = editingAction ? "PATCH" : "POST";
       const normalizedFormData = {
-        ...formData,
         educationType: normalizeEducationType(formData.educationType),
+        actionName: formData.actionName,
+        actionKey: formData.actionKey,
+        isEnabled: formData.isEnabled,
+        displayOrder: formData.displayOrder,
+        description: formData.description.trim(),
       };
-      const body = editingAction
+      const body: Record<string, unknown> = editingAction
         ? { id: editingAction.id, ...normalizedFormData }
-        : normalizedFormData;
+        : { ...normalizedFormData };
+
+      body.displayOrder = Number(normalizedFormData.displayOrder) || 0;
+      body.description = normalizedFormData.description || "";
+      body.config = configPayload;
 
       const res = await fetch(url, {
         method,
@@ -148,8 +555,8 @@ export function StudentActionsManager() {
       });
 
       if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || "Failed to save action");
+        const errorBody = await res.json();
+        throw new Error(errorBody.error || "Failed to save action");
       }
 
       toast({
@@ -158,11 +565,12 @@ export function StudentActionsManager() {
       });
 
       await mutate();
-      handleCloseDialog();
-    } catch (error: any) {
+      handleCloseSheet();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to save action";
       toast({
         title: "Error",
-        description: error.message,
+        description: message,
         variant: "destructive",
       });
     } finally {
@@ -179,8 +587,8 @@ export function StudentActionsManager() {
       });
 
       if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || "Failed to delete action");
+        const errorBody = await res.json();
+        throw new Error(errorBody.error || "Failed to delete action");
       }
 
       toast({
@@ -189,10 +597,11 @@ export function StudentActionsManager() {
       });
 
       await mutate();
-    } catch (error: any) {
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to delete action";
       toast({
         title: "Error",
-        description: error.message,
+        description: message,
         variant: "destructive",
       });
     }
@@ -207,15 +616,16 @@ export function StudentActionsManager() {
       });
 
       if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || "Failed to update action");
+        const errorBody = await res.json();
+        throw new Error(errorBody.error || "Failed to update action");
       }
 
       await mutate();
-    } catch (error: any) {
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to update action";
       toast({
         title: "Error",
-        description: error.message,
+        description: message,
         variant: "destructive",
       });
     }
@@ -243,7 +653,7 @@ export function StudentActionsManager() {
             Configure available actions by education type
           </p>
         </div>
-        <Button onClick={() => handleOpenDialog()} className="bg-gradient-to-r from-aegold-700 to-aered-600 hover:from-aegold-800 hover:to-aered-700 shadow-lg hover:shadow-xl transition-all">
+        <Button onClick={() => handleOpenSheet()} className="bg-gradient-to-r from-aegold-700 to-aered-600 hover:from-aegold-800 hover:to-aered-700 shadow-lg hover:shadow-xl transition-all">
           <Plus className="w-4 h-4 mr-2" />
           Add Action
         </Button>
@@ -323,7 +733,7 @@ export function StudentActionsManager() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => handleOpenDialog(action)}
+                              onClick={() => handleOpenSheet(action)}
                               className="hover:bg-aegold-100 hover:text-aegold-800 dark:hover:bg-aegold-900/30 dark:hover:text-aegold-300 transition-colors"
                             >
                               <Edit className="w-4 h-4" />
@@ -347,29 +757,33 @@ export function StudentActionsManager() {
         )}
       </div>
 
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>
-              {editingAction ? "Edit Student Action" : "Add Student Action"}
-            </DialogTitle>
-            <DialogDescription>
-              {editingAction
-                ? "Update student action configuration"
-                : "Configure a new action for a specific education type"}
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleSubmit}>
-            <div className="space-y-4 py-4">
+      <Sheet open={isSheetOpen} onOpenChange={handleSheetOpenChange}>
+        <SheetContent
+          side="right"
+          className="flex h-full w-full flex-col overflow-hidden p-0 sm:max-w-3xl"
+        >
+          <form onSubmit={handleSubmit} className="flex h-full flex-col">
+            <SheetHeader className="border-b px-6 py-4 text-left">
+              <SheetTitle>
+                {editingAction ? "Edit Student Action" : "Add Student Action"}
+              </SheetTitle>
+              <SheetDescription>
+                {editingAction
+                  ? "Update student action configuration"
+                  : "Configure a new action for a specific education type"}
+              </SheetDescription>
+            </SheetHeader>
+            <div className="flex-1 overflow-y-auto px-6">
+              <div className="space-y-4 py-4">
               <div className="space-y-2">
                 <Label htmlFor="educationType">Education Type *</Label>
                 <Select
                   value={formData.educationType}
                   onValueChange={(value) =>
-                    setFormData({
-                      ...formData,
+                    setFormData((prev) => ({
+                      ...prev,
                       educationType: normalizeEducationType(value),
-                    })
+                    }))
                   }
                   disabled={!!editingAction}
                 >
@@ -393,7 +807,7 @@ export function StudentActionsManager() {
                     placeholder="e.g., Update Address"
                     value={formData.actionName}
                     onChange={(e) =>
-                      setFormData({ ...formData, actionName: e.target.value })
+                      setFormData((prev) => ({ ...prev, actionName: e.target.value }))
                     }
                     required
                   />
@@ -405,7 +819,7 @@ export function StudentActionsManager() {
                     placeholder="e.g., update_address"
                     value={formData.actionKey}
                     onChange={(e) =>
-                      setFormData({ ...formData, actionKey: e.target.value })
+                      setFormData((prev) => ({ ...prev, actionKey: e.target.value }))
                     }
                     required
                     disabled={!!editingAction}
@@ -420,10 +834,10 @@ export function StudentActionsManager() {
                   min="0"
                   value={formData.displayOrder}
                   onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      displayOrder: parseInt(e.target.value) || 0,
-                    })
+                    setFormData((prev) => ({
+                      ...prev,
+                      displayOrder: Number.parseInt(e.target.value, 10) || 0,
+                    }))
                   }
                 />
               </div>
@@ -434,40 +848,436 @@ export function StudentActionsManager() {
                   placeholder="Optional description of this action"
                   value={formData.description}
                   onChange={(e) =>
-                    setFormData({ ...formData, description: e.target.value })
+                    setFormData((prev) => ({ ...prev, description: e.target.value }))
                   }
                   rows={2}
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="configJson">Configuration JSON</Label>
-                <Textarea
-                  id="configJson"
-                  placeholder='{"key": "value"}'
-                  value={formData.configJson}
-                  onChange={(e) =>
-                    setFormData({ ...formData, configJson: e.target.value })
-                  }
-                  rows={4}
-                  className="font-mono text-sm"
-                />
+              <Separator />
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-base font-semibold">Display content</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Localized labels shown to guardians across the app.
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="displayLabelEn">Label (English) *</Label>
+                    <Input
+                      id="displayLabelEn"
+                      placeholder="Update student information"
+                      value={formData.config.label.en}
+                      onChange={(e) => updateLocalizedField("label", "en", e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="displayLabelAr">Label (Arabic) *</Label>
+                    <Input
+                      id="displayLabelAr"
+                      placeholder="تحديث بيانات الطالب"
+                      value={formData.config.label.ar}
+                      onChange={(e) => updateLocalizedField("label", "ar", e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="displayShortLabelEn">Short Label (English)</Label>
+                    <Input
+                      id="displayShortLabelEn"
+                      placeholder="Update info"
+                      value={formData.config.shortLabel.en}
+                      onChange={(e) => updateLocalizedField("shortLabel", "en", e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="displayShortLabelAr">Short Label (Arabic)</Label>
+                    <Input
+                      id="displayShortLabelAr"
+                      placeholder="تحديث"
+                      value={formData.config.shortLabel.ar}
+                      onChange={(e) => updateLocalizedField("shortLabel", "ar", e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="displayDescriptionEn">Description (English)</Label>
+                    <Textarea
+                      id="displayDescriptionEn"
+                      value={formData.config.description.en}
+                      onChange={(e) => updateLocalizedField("description", "en", e.target.value)}
+                      rows={2}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="displayDescriptionAr">Description (Arabic)</Label>
+                    <Textarea
+                      id="displayDescriptionAr"
+                      value={formData.config.description.ar}
+                      onChange={(e) => updateLocalizedField("description", "ar", e.target.value)}
+                      rows={2}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="labelKey">Label i18n key</Label>
+                    <Input
+                      id="labelKey"
+                      placeholder="childActions.updateInfo"
+                      value={formData.config.labelKey}
+                      onChange={(e) => updateConfigField("labelKey", e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="descriptionKey">Description i18n key</Label>
+                    <Input
+                      id="descriptionKey"
+                      placeholder="childActions.updateInfo.description"
+                      value={formData.config.descriptionKey}
+                      onChange={(e) => updateConfigField("descriptionKey", e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-base font-semibold">Style</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Configure icon and button styling for this action.
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                  <div className="space-y-2 md:col-span-1">
+                    <Label htmlFor="styleIcon">Icon</Label>
+                    <Input
+                      id="styleIcon"
+                      placeholder="lucide icon name"
+                      value={formData.config.icon}
+                      onChange={(e) => updateConfigField("icon", e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2 md:col-span-1">
+                    <Label htmlFor="styleColor">Color</Label>
+                    <Select
+                      value={formData.config.color}
+                      onValueChange={(value) => updateConfigField("color", value as ChildActionColor)}
+                    >
+                      <SelectTrigger id="styleColor">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ACTION_COLORS.map((color) => (
+                          <SelectItem key={color} value={color}>
+                            {color}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2 md:col-span-1">
+                    <Label htmlFor="styleVariant">Variant</Label>
+                    <Select
+                      value={formData.config.variant}
+                      onValueChange={(value) => updateConfigField("variant", value as ChildActionVariant)}
+                    >
+                      <SelectTrigger id="styleVariant">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ACTION_VARIANTS.map((variant) => (
+                          <SelectItem key={variant} value={variant}>
+                            {variant}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-base font-semibold">Action</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Define how this action behaves when parents tap it.
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                  <div className="space-y-2 md:col-span-1">
+                    <Label htmlFor="actionType">Type</Label>
+                    <Select
+                      value={formData.config.actionType}
+                      onValueChange={(value) => updateConfigField("actionType", value as ChildActionType)}
+                    >
+                      <SelectTrigger id="actionType">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ACTION_TYPES.map((type) => (
+                          <SelectItem key={type} value={type}>
+                            {type}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {formData.config.actionType === "href" && (
+                    <>
+                      <div className="space-y-2 md:col-span-1">
+                        <Label htmlFor="hrefTemplate">Href template</Label>
+                        <Input
+                          id="hrefTemplate"
+                          placeholder="/child/:studentPersonId/update-info"
+                          value={formData.config.hrefTemplate}
+                          onChange={(e) => updateConfigField("hrefTemplate", e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2 md:col-span-1">
+                        <Label htmlFor="hrefStatic">Static href</Label>
+                        <Input
+                          id="hrefStatic"
+                          placeholder="Optional direct link"
+                          value={formData.config.href}
+                          onChange={(e) => updateConfigField("href", e.target.value)}
+                        />
+                      </div>
+                    </>
+                  )}
+                  {formData.config.actionType !== "href" && (
+                    <div className="space-y-2 md:col-span-1">
+                      <Label htmlFor="handlerKey">Handler key</Label>
+                      <Input
+                        id="handlerKey"
+                        placeholder="conduct-pdf"
+                        value={formData.config.handlerKey}
+                        onChange={(e) => updateConfigField("handlerKey", e.target.value)}
+                      />
+                    </div>
+                  )}
+                  {formData.config.actionType === "download" && (
+                    <div className="space-y-2 md:col-span-1">
+                      <Label htmlFor="downloadFileName">Download file name</Label>
+                      <Input
+                        id="downloadFileName"
+                        placeholder="conduct-agreement-:studentPersonId.pdf"
+                        value={formData.config.downloadFileName}
+                        onChange={(e) => updateConfigField("downloadFileName", e.target.value)}
+                      />
+                    </div>
+                  )}
+                </div>
+                {(formData.config.actionType === "event" || formData.config.actionType === "download") && (
+                  <div className="space-y-2">
+                    <Label htmlFor="payloadJson">Payload JSON</Label>
+                    <Textarea
+                      id="payloadJson"
+                      placeholder='{"event": "open-modal"}'
+                      value={formData.config.payloadJson}
+                      onChange={(e) => updateConfigField("payloadJson", e.target.value)}
+                      rows={3}
+                      className="font-mono text-sm"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Supports template tokens like <code>:studentPersonId</code>.
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <Separator />
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-base font-semibold">Availability rules</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Control when this action appears or is disabled.
+                  </p>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="statusInclude">Include statuses</Label>
+                    <Input
+                      id="statusInclude"
+                      placeholder="e.g., 1, 3, null"
+                      value={formData.config.statusInclude}
+                      onChange={(e) => updateConfigField("statusInclude", e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="statusExclude">Exclude statuses</Label>
+                    <Input
+                      id="statusExclude"
+                      placeholder="e.g., 2, 5"
+                      value={formData.config.statusExclude}
+                      onChange={(e) => updateConfigField("statusExclude", e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Switch
+                    id="requiresUpdatePeriod"
+                    checked={formData.config.requiresUpdatePeriod}
+                    onCheckedChange={(checked) => updateConfigField("requiresUpdatePeriod", checked)}
+                  />
+                  <Label htmlFor="requiresUpdatePeriod" className="font-normal">
+                    Only available during the update period
+                  </Label>
+                </div>
+                <div className="space-y-3 rounded-lg border border-dashed border-slate-200 p-4 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <Switch
+                      id="requiresPdf"
+                      checked={formData.config.requiresPdf}
+                      onCheckedChange={(checked) => updateConfigField("requiresPdf", checked)}
+                    />
+                    <Label htmlFor="requiresPdf" className="font-normal">
+                      Requires conduct PDF before enabling
+                    </Label>
+                  </div>
+                  {formData.config.requiresPdf && (
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <div className="space-y-2">
+                          <Label htmlFor="requiresPdfMode">Unavailable mode</Label>
+                          <Select
+                            value={formData.config.requiresPdfMode}
+                            onValueChange={(value) => updateConfigField("requiresPdfMode", value as (typeof PDF_MODES)[number])}
+                          >
+                            <SelectTrigger id="requiresPdfMode">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {PDF_MODES.map((mode) => (
+                                <SelectItem key={mode} value={mode}>
+                                  {mode}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="requiresConductSignature">Conduct signature state</Label>
+                          <Select
+                            value={formData.config.requiresConductSignature}
+                            onValueChange={(value) =>
+                              updateConfigField("requiresConductSignature", value as AdminConfigFormState["requiresConductSignature"])
+                            }
+                          >
+                            <SelectTrigger id="requiresConductSignature">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {CONDUCT_REQUIREMENTS.map((option) => (
+                                <SelectItem key={option} value={option}>
+                                  {option}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <div className="space-y-2">
+                          <Label htmlFor="pdfReasonEn">Disabled reason (English)</Label>
+                          <Textarea
+                            id="pdfReasonEn"
+                            rows={2}
+                            value={formData.config.requiresPdfReason.en}
+                            onChange={(e) => updateLocalizedField("requiresPdfReason", "en", e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="pdfReasonAr">Disabled reason (Arabic)</Label>
+                          <Textarea
+                            id="pdfReasonAr"
+                            rows={2}
+                            value={formData.config.requiresPdfReason.ar}
+                            onChange={(e) => updateLocalizedField("requiresPdfReason", "ar", e.target.value)}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                {!formData.config.requiresPdf && (
+                  <div className="space-y-2">
+                    <Label htmlFor="requiresConductSignatureStandalone">Conduct signature state</Label>
+                    <Select
+                      value={formData.config.requiresConductSignature}
+                      onValueChange={(value) =>
+                        updateConfigField("requiresConductSignature", value as AdminConfigFormState["requiresConductSignature"])
+                      }
+                    >
+                      <SelectTrigger id="requiresConductSignatureStandalone">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {CONDUCT_REQUIREMENTS.map((option) => (
+                          <SelectItem key={option} value={option}>
+                            {option}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </div>
+
+              <Separator />
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-base font-semibold">Metadata</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Optional override for ordering and custom metadata payloads.
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div className="space-y-2 md:col-span-1">
+                    <Label htmlFor="configOrder">Explicit order</Label>
+                    <Input
+                      id="configOrder"
+                      type="number"
+                      value={formData.config.order}
+                      onChange={(e) => updateConfigField("order", e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="metadataJson">Metadata JSON</Label>
+                    <Textarea
+                      id="metadataJson"
+                      placeholder='{"trackingTag": "priority"}'
+                      value={formData.config.metadataJson}
+                      onChange={(e) => updateConfigField("metadataJson", e.target.value)}
+                      rows={3}
+                      className="font-mono text-sm"
+                    />
+                  </div>
+                </div>
               </div>
               <div className="flex items-center space-x-2">
                 <Switch
                   id="isEnabled"
                   checked={formData.isEnabled}
                   onCheckedChange={(checked: boolean) =>
-                    setFormData({ ...formData, isEnabled: checked })
+                    setFormData((prev) => ({ ...prev, isEnabled: checked }))
                   }
                 />
                 <Label htmlFor="isEnabled">Enable this action</Label>
               </div>
             </div>
-            <DialogFooter>
+            </div>
+            <SheetFooter className="gap-2 border-t px-6 py-4">
               <Button
                 type="button"
                 variant="outline"
-                onClick={handleCloseDialog}
+                onClick={handleCloseSheet}
                 disabled={isSubmitting}
               >
                 Cancel
@@ -484,10 +1294,10 @@ export function StudentActionsManager() {
                   "Create"
                 )}
               </Button>
-            </DialogFooter>
+            </SheetFooter>
           </form>
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
