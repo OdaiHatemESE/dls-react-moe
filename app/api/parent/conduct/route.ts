@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import type {
-  BasicInfoResponse,
   ParentConductAggregatedResponse,
-  SchoolEnrollmentResponse,
   UpdateInfoRow,
 } from "@/lib/parent-conduct";
+import type { StudentProfileV1 } from "@/app/types/studentprofile";
 
 export const dynamic = "force-dynamic";
 
@@ -72,26 +71,15 @@ export async function GET(req: NextRequest) {
   }
 
   const nocache = searchParams.get("nocache");
-  const nocacheSuffix = nocache ? `&nocache=${encodeURIComponent(nocache)}` : "";
+  const nocacheSuffix = nocache ? `?nocache=${encodeURIComponent(nocache)}` : "";
   const cookie = req.headers.get("cookie") ?? "";
   const origin = req.nextUrl.origin;
 
   try {
-    const [studentInfo, parentInfo, enrollmentInfo, updateInfo] = await Promise.all([
-      fetchJson<BasicInfoResponse>(`${origin}`, `/api/oneroster/basic-info-full?sourcedId=${encodeURIComponent(studentPersonId)}${nocacheSuffix}`, cookie).catch((error) => {
+    // Fetch student info from PP API instead of OneRoster
+    const [studentInfo, updateInfo] = await Promise.all([
+      fetchJson<StudentProfileV1>(`${origin}`, `/api/PP/student/${encodeURIComponent(studentPersonId)}${nocacheSuffix}`, cookie).catch((error) => {
         if (error instanceof UpstreamFetchError && error.status === 404) {
-          return null;
-        }
-        throw error;
-      }),
-      fetchJson<BasicInfoResponse>(`${origin}`, `/api/oneroster/basic-info-full${nocacheSuffix ? `?nocache=${encodeURIComponent(nocache ?? "")}` : ""}`, cookie).catch((error) => {
-        if (error instanceof UpstreamFetchError && (error.status === 401 || error.status === 404)) {
-          return null;
-        }
-        throw error;
-      }),
-      fetchJson<SchoolEnrollmentResponse>(`${origin}`, `/api/oneroster/schoolenrollments?studentId=${encodeURIComponent(studentPersonId)}${nocacheSuffix}`, cookie).catch((error) => {
-        if (error instanceof UpstreamFetchError && (error.status === 404 || error.status === 204)) {
           return null;
         }
         throw error;
@@ -106,8 +94,8 @@ export async function GET(req: NextRequest) {
 
     const payload: ParentConductAggregatedResponse = {
       studentInfo,
-      parentInfo,
-      enrollmentInfo,
+      parentInfo: null,
+      enrollmentInfo: null,
       updateInfo,
     };
 

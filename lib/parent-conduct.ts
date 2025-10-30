@@ -6,6 +6,7 @@ import type {
   SchoolEnrollment,
   StreamGrade,
 } from "@/types";
+import type { StudentProfileV1 } from "@/app/types/studentprofile";
 
 export interface BasicInfoResponse {
   meta: {
@@ -41,7 +42,7 @@ export type UpdateInfoRow = {
 };
 
 export type ParentConductAggregatedResponse = {
-  studentInfo: BasicInfoResponse | null;
+  studentInfo: StudentProfileV1 | BasicInfoResponse | null;
   parentInfo: BasicInfoResponse | null;
   enrollmentInfo: SchoolEnrollmentResponse | null;
   updateInfo: { ok: boolean; data?: UpdateInfoRow } | null;

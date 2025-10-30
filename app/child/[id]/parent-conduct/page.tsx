@@ -11,21 +11,10 @@ import { jsonFetcher } from '@/lib/swr';
 import { useI18n } from '@/app/i18n/I18nProvider';
 import { downloadBase64PDF, type PdfFormData } from '@/lib/pdf-generator';
 import {
-  collectOrgs,
-  extractCitizenship,
-  extractPersonContact,
-  extractSchoolContact,
-  extractStreamGradeName,
-  findLatestEnrollment,
-  formatOrgAddress,
-  formatPersonAddress,
-  formatPersonName,
-  getLatestSchool,
-  pickPrimaryPerson,
-  preferValue,
   type ParentConductAggregatedResponse,
   type UpdateInfoRow,
 } from '@/lib/parent-conduct';
+import type { StudentProfileV1 } from '@/app/types/studentprofile';
 
 type AggregatedApiResponse = {
   ok: boolean;
@@ -183,102 +172,97 @@ export default function ParentConductPage() {
   const hasFetchError = Boolean(apiErrorMessage);
 
   const studentInfo = aggregated?.studentInfo ?? null;
-  const parentInfo = aggregated?.parentInfo ?? null;
-  const enrollmentInfo = aggregated?.enrollmentInfo ?? null;
   const updateInfo = aggregated?.updateInfo ?? null;
 
-  const studentPerson = React.useMemo(() => pickPrimaryPerson(studentInfo), [studentInfo]);
-  const parentPerson = React.useMemo(() => pickPrimaryPerson(parentInfo), [parentInfo]);
-  const latestEnrollment = React.useMemo(
-    () => findLatestEnrollment(enrollmentInfo?.enrollments),
-    [enrollmentInfo],
-  );
-  const allSchools = React.useMemo(
-    () => collectOrgs(enrollmentInfo?.schoolInfo, enrollmentInfo?.schoolInfos),
-    [enrollmentInfo],
-  );
-  const latestSchool = React.useMemo(
-    () => getLatestSchool(allSchools, latestEnrollment),
-    [allSchools, latestEnrollment],
-  );
-  const schoolContact = React.useMemo(() => extractSchoolContact(latestSchool), [latestSchool]);
-  const latestStreamGradeName = React.useMemo(
-    () =>
-      extractStreamGradeName(
-        enrollmentInfo?.StreamGrades,
-        latestEnrollment?.streamGrade?.sourcedId,
-        locale,
-      ),
-    [enrollmentInfo, latestEnrollment, locale],
-  );
+  // Helper functions for StudentProfileV1
+  const isStudentProfile = (data: any): data is StudentProfileV1 => {
+    return data && typeof data === 'object' && 'enrollment' in data;
+  };
 
-  // Resolve citizenship once for conditional UI (e.g., expat-specific clauses)
-  const [citizenship, setCitizenship] = React.useState<string | null>(null);
-  React.useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        const c = await extractCitizenship(studentPerson);
-        if (mounted) setCitizenship(c ?? null);
-      } catch {
-        if (mounted) setCitizenship(null);
-      }
-    })();
-    return () => {
-      mounted = false;
+  // Extract student data from PP API response
+  const student = React.useMemo(() => {
+    if (!studentInfo || !isStudentProfile(studentInfo)) return null;
+    return studentInfo;
+  }, [studentInfo]);
+
+  const studentFullName = React.useMemo(() => {
+    if (!student) return PLACEHOLDER;
+    if (locale === 'ar') {
+      const arabicName = [
+        student.firstNameArabic,
+        student.middleNameArabic,
+        student.lastNameArabic,
+      ].filter(Boolean).join(' ').trim();
+      if (arabicName) return arabicName;
+    }
+    const englishName = [
+      student.firstNameEnglish,
+      student.middleNameEnglish,
+      student.thirdNameEnglish,
+      student.fourthNameEnglish,
+      student.familyNameEnglish,
+    ].filter(Boolean).join(' ').trim();
+    return englishName || PLACEHOLDER;
+  }, [student, locale]);
+
+  const studentNationalId = student?.emirateId || PLACEHOLDER;
+  
+  const studentAddress = React.useMemo(() => {
+    if (!student?.addresses?.length) return PLACEHOLDER;
+    const address = student.addresses[0];
+    const parts = [
+      address.addressLine1,
+      address.addressLine2,
+      address.addressLine3,
+      address.city,
+      address.state,
+      address.country,
+    ].filter(Boolean).join(', ');
+    return parts || PLACEHOLDER;
+  }, [student]);
+
+  const studentContacts = React.useMemo(() => {
+    if (!student?.contacts) return { phone: undefined, email: undefined };
+    const mobile = student.contacts.find(c => c.type === 'Mobile' || c.type.toLowerCase().includes('mobile'));
+    const email = student.contacts.find(c => c.type === 'Email' || c.type === 'OfficialEmail');
+    return {
+      phone: mobile?.value,
+      email: email?.value,
     };
-  }, [studentPerson]);
+  }, [student]);
+
+  const latestEnrollment = React.useMemo(() => {
+    if (!student?.enrollment?.length) return null;
+    // Get the most recent enrollment (last in array or highest entryDate)
+    return student.enrollment.reduce((latest, current) => {
+      if (!latest) return current;
+      const currentDate = current.entryDate ? new Date(current.entryDate).getTime() : 0;
+      const latestDate = latest.entryDate ? new Date(latest.entryDate).getTime() : 0;
+      return currentDate > latestDate ? current : latest;
+    });
+  }, [student]);
+
+  const citizenship = student?.CitizenshipStatus || null;
   const isExpatCitizenship = React.useMemo(() => {
     const c = (citizenship ?? '').trim().toLowerCase();
     return c === 'expat arab' || c === 'expat non arab';
   }, [citizenship]);
 
-  const studentFullName = formatPersonName(studentPerson, locale) || PLACEHOLDER;
-  const parentFullName = formatPersonName(parentPerson, locale) || PLACEHOLDER;
-  const studentAddress = formatPersonAddress(studentPerson?.metadata?.addresses) || PLACEHOLDER;
-  const parentAddress = formatPersonAddress(parentPerson?.metadata?.addresses) || PLACEHOLDER;
-  const studentContacts = extractPersonContact(studentPerson);
-  const parentContacts = extractPersonContact(parentPerson);
-
-  const parentEid =
-    preferValue(
-      parentInfo?.meta?.eid,
-      parentInfo?.meta?.parentEid,
-      parentPerson?.identifier,
-      parentPerson?.metadata?.identifier as string | undefined,
-    ) ?? PLACEHOLDER;
-
-  const studentNationalId =
-    preferValue(
-      studentPerson?.identifier,
-      studentPerson?.metadata?.identifier as string | undefined,
-    ) ?? PLACEHOLDER;
-
-  const schoolName = React.useMemo(() => {
-    if (!latestSchool) return PLACEHOLDER;
-    const resolved =
-      locale === 'en'
-        ? preferValue(
-            latestSchool.metadata?.englishName,
-            latestSchool.name,
-            latestSchool.metadata?.shortName,
-          )
-        : preferValue(
-            latestSchool.name,
-            latestSchool.metadata?.englishName,
-            latestSchool.metadata?.shortName,
-          );
-    return resolved ?? PLACEHOLDER;
-  }, [latestSchool, locale]);
-
-  const schoolAddress = formatOrgAddress(latestSchool) || PLACEHOLDER;
-  const schoolYearLabel = latestEnrollment?.schoolYear
-    ? String(latestEnrollment.schoolYear)
-    : PLACEHOLDER;
-
-  const warningMessage = studentInfo?.warning || parentInfo?.warning;
+  // For now, set parent and school info to placeholders
+  // These would need to come from a separate API call if needed
+  const parentFullName = PLACEHOLDER;
+  const parentEid = PLACEHOLDER;
+  const parentAddress = PLACEHOLDER;
+  const parentContacts = { phone: undefined, email: undefined };
+  
+  const schoolName = latestEnrollment?.schoolId || PLACEHOLDER;
+  const schoolYearLabel = PLACEHOLDER; // Not available in StudentProfileV1
+  const schoolAddress = PLACEHOLDER;
+  const schoolContact = { phone: undefined, email: undefined };
+  const latestStreamGradeName = latestEnrollment?.streamGradeId || PLACEHOLDER;
 
   const signedRow: UpdateInfoRow | undefined = updateInfo?.ok ? updateInfo.data : undefined;
+  const warningMessage = null;
   const alreadySigned = Boolean(
     signedRow?.isConductAgreementSigned &&
       signedRow?.conductAgreementStatus === 1 &&
@@ -315,9 +299,8 @@ export default function ParentConductPage() {
         SignDate: today,
       };
 
-      const citizenship = await extractCitizenship(studentPerson);
       let templateType: 'uae' | 'expats' = 'uae';
-      if (citizenship == 'Expat Arab' || citizenship == 'Expat non Arab') {
+      if (citizenship === 'Expat Arab' || citizenship === 'Expat non Arab') {
         templateType = 'expats';
       } else {
         templateType = 'uae';
@@ -343,6 +326,7 @@ export default function ParentConductPage() {
       studentFullName,
       studentNationalId,
       today,
+      citizenship,
     ],
   );
 
@@ -371,11 +355,10 @@ export default function ParentConductPage() {
       setLatestPdfBase64(base64);
 
       setIsSigned(true);
-      const citizenship = await extractCitizenship(studentPerson);
       await persistConductAgreement(
         {
           studentPersonId: resolvedStudentId,
-          parentPersonId: parentPerson?.sourcedId ?? null,
+          parentPersonId: null,
           studentEmirateId: studentNationalId !== PLACEHOLDER ? studentNationalId : null,
           citizenship: citizenship ?? null,
         },
@@ -460,10 +443,9 @@ export default function ParentConductPage() {
     mutate,
     parentContacts.email,
     parentContacts.phone,
-    parentPerson?.sourcedId,
     resolvedStudentId,
     studentNationalId,
-    studentPerson,
+    citizenship,
   ]);
 
   if (!resolvedStudentId) {
