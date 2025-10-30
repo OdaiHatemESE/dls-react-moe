@@ -89,3 +89,30 @@ export async function isAdminUser(emirateId: string): Promise<boolean> {
     return false;
   }
 }
+
+/**
+ * Get the active academic year
+ */
+export async function getActiveAcademicYear() {
+  try {
+    return await prisma.academicYearConfig.findFirst({
+      where: { isActive: true },
+    });
+  } catch (error) {
+    console.error("Error fetching active academic year:", error);
+    return null;
+  }
+}
+
+/**
+ * Get the active academic year value (just the ending year number)
+ */
+export async function getActiveAcademicYearValue(): Promise<number | null> {
+  try {
+    const activeYear = await getActiveAcademicYear();
+    return activeYear?.yearValue ?? null;
+  } catch (error) {
+    console.error("Error fetching active academic year value:", error);
+    return null;
+  }
+}

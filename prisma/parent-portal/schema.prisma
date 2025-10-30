@@ -171,3 +171,14 @@ model StudentActionConfig {
 
   @@unique([educationType, actionKey])
 }
+
+model AcademicYearConfig {
+  id               Int      @id @default(autoincrement())
+  academicYear     String   @unique @db.VarChar(20)
+  yearValue        Int
+  isActive         Boolean  @default(false)
+  description      String?  @db.VarChar(Max)
+  createdBy        String?  @db.VarChar(64)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}

@@ -6,6 +6,7 @@ import { Users, Calendar, Settings, Loader2, AlertCircle, Database, FileText, Ba
 import { AdminUsersManager } from "./components/AdminUsersManager";
 import { UpdatePeriodsManager } from "./components/UpdatePeriodsManager";
 import { StudentActionsManager } from "./components/StudentActionsManager";
+import { AcademicYearManager } from "./components/AcademicYearManager";
 import { AdminStats } from "./components/AdminStats";
 import { SystemStats } from "./components/SystemStats";
 import { StudentsTable } from "./components/StudentsTable";
@@ -62,6 +63,12 @@ const navigationItems: NavigationItem[] = [
     label: "Update Periods",
     icon: Calendar,
     description: "Configure update windows",
+  },
+  {
+    id: "academic-year",
+    label: "Academic Year",
+    icon: Calendar,
+    description: "Set active academic year",
   },
   {
     id: "actions",
@@ -169,6 +176,12 @@ export default function AdminConfigPage() {
         return (
           <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
             <UpdatePeriodsManager />
+          </div>
+        );
+      case "academic-year":
+        return (
+          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
+            <AcademicYearManager />
           </div>
         );
       case "actions":
