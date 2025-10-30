@@ -16,6 +16,52 @@ import {
 } from '@/lib/parent-conduct';
 import type { StudentProfileV1 } from '@/app/types/studentprofile';
 
+type SchoolContact = {
+  note: string;
+  contactType: string;
+  isPrivate: boolean;
+  value: string;
+};
+
+type SchoolAddress = {
+  country: string;
+  zipCode: string;
+  city: string;
+  isVerified: boolean;
+  latitude: string;
+  poBox: string;
+  roadNumber: string;
+  plotId: string;
+  addressLine1: string;
+  plotNumber: string;
+  addressLine2: string;
+  addressLine3: string;
+  state: string;
+  region: string;
+  sector: string;
+  longitude: string;
+};
+
+type SchoolMetadata = {
+  shortName: string;
+  contacts: SchoolContact[];
+  addresses: SchoolAddress[];
+  englishName: string;
+};
+
+type SchoolInfo = {
+  sourcedId: string;
+  identifier: string;
+  metadata: SchoolMetadata;
+  name: string;
+  meta?: {
+    cache?: {
+      source: string;
+      lastUpdated: string | null;
+    };
+  };
+};
+
 type AggregatedApiResponse = {
   ok: boolean;
   data?: ParentConductAggregatedResponse;
@@ -151,7 +197,7 @@ export default function ParentConductPage() {
   const [latestPdfBase64, setLatestPdfBase64] = React.useState<string | null>(null);
 
   const dataKey = resolvedStudentId
-    ? `${CONDUCT_DATA_ENDPOINT}?studentPersonId=${encodeURIComponent(resolvedStudentId)}`
+    ? `${CONDUCT_DATA_ENDPOINT}?studentPersonId=${encodeURIComponent(resolvedStudentId)}&schoolYear=2026`
     : null;
   const {
     data: aggregatedResponse,
@@ -173,6 +219,7 @@ export default function ParentConductPage() {
 
   const studentInfo = aggregated?.studentInfo ?? null;
   const updateInfo = aggregated?.updateInfo ?? null;
+  const schoolInfo = aggregated?.schoolInfo as SchoolInfo | null;
 
   // Helper functions for StudentProfileV1
   const isStudentProfile = (data: any): data is StudentProfileV1 => {
@@ -248,17 +295,90 @@ export default function ParentConductPage() {
     return c === 'expat arab' || c === 'expat non arab';
   }, [citizenship]);
 
-  // For now, set parent and school info to placeholders
-  // These would need to come from a separate API call if needed
-  const parentFullName = PLACEHOLDER;
-  const parentEid = PLACEHOLDER;
-  const parentAddress = PLACEHOLDER;
-  const parentContacts = { phone: undefined, email: undefined };
+  // Extract parent information from student profile
+  const parentInfo = student?.parent ?? null;
   
-  const schoolName = latestEnrollment?.schoolId || PLACEHOLDER;
-  const schoolYearLabel = PLACEHOLDER; // Not available in StudentProfileV1
-  const schoolAddress = PLACEHOLDER;
-  const schoolContact = { phone: undefined, email: undefined };
+  const parentFullName = React.useMemo(() => {
+    if (!parentInfo) return PLACEHOLDER;
+    if (locale === 'ar') {
+      const arabicName = [
+        parentInfo.givenName,
+        parentInfo.middleName,
+        parentInfo.familyName,
+      ].filter(Boolean).join(' ').trim();
+      if (arabicName) return arabicName;
+    }
+    const englishName = [
+      parentInfo.englishFirstName,
+      parentInfo.englishSecondName,
+      parentInfo.englishThirdName,
+      parentInfo.englishFamilyName,
+    ].filter(Boolean).join(' ').trim();
+    return englishName || PLACEHOLDER;
+  }, [parentInfo, locale]);
+
+  const parentEid = parentInfo?.identifier || PLACEHOLDER;
+  
+  const parentContacts = React.useMemo(() => {
+    if (!parentInfo?.contacts) return { phone: undefined, email: undefined };
+    const mobile = parentInfo.contacts.find(c => c.type === 'Mobile' || c.type.toLowerCase().includes('mobile'));
+    const email = parentInfo.contacts.find(c => c.type === 'Email' || c.type === 'OfficialEmail');
+    return {
+      phone: mobile?.value,
+      email: email?.value,
+    };
+  }, [parentInfo]);
+  
+  // Extract school information from API response
+  const schoolName = React.useMemo(() => {
+    if (!schoolInfo) return latestEnrollment?.schoolId || PLACEHOLDER;
+    if (locale === 'ar') {
+      return schoolInfo.name || schoolInfo.metadata?.englishName || PLACEHOLDER;
+    }
+    return schoolInfo.metadata?.englishName || schoolInfo.name || PLACEHOLDER;
+  }, [schoolInfo, latestEnrollment, locale]);
+
+  const schoolYearLabel = latestEnrollment?.schoolYear || PLACEHOLDER;
+  
+  const schoolAddress = React.useMemo(() => {
+    if (!schoolInfo?.metadata?.addresses?.length) return PLACEHOLDER;
+    const address = schoolInfo.metadata.addresses[0];
+    const parts = [
+      address.addressLine1,
+      address.addressLine2,
+      address.addressLine3,
+      address.city,
+      address.state,
+      address.country,
+    ].filter(Boolean).join(', ');
+    return parts || PLACEHOLDER;
+  }, [schoolInfo]);
+  
+  const schoolContact = React.useMemo(() => {
+    if (!schoolInfo?.metadata?.contacts?.length) {
+      return { phone: undefined, email: undefined };
+    }
+    
+    let phone: string | undefined;
+    let email: string | undefined;
+    
+    for (const contact of schoolInfo.metadata.contacts) {
+      const type = contact.contactType?.toLowerCase() || '';
+      
+      if (!email && (type.includes('email') || contact.value.includes('@'))) {
+        email = contact.value;
+      }
+      
+      if (!phone && (type.includes('phone') || type.includes('mobile') || type.includes('tel'))) {
+        phone = contact.value;
+      }
+      
+      if (phone && email) break;
+    }
+    
+    return { phone, email };
+  }, [schoolInfo]);
+  
   const latestStreamGradeName = latestEnrollment?.streamGradeId || PLACEHOLDER;
 
   const signedRow: UpdateInfoRow | undefined = updateInfo?.ok ? updateInfo.data : undefined;
@@ -295,7 +415,7 @@ export default function ParentConductPage() {
         ParentName: parentFullName !== PLACEHOLDER ? parentFullName : '',
         ParentEmiratesID: parentEid !== PLACEHOLDER ? parentEid : '',
         Phone: parentContacts.phone || '',
-        Address: parentAddress !== PLACEHOLDER ? parentAddress : '',
+        Address: '',
         SignDate: today,
       };
 
@@ -316,7 +436,6 @@ export default function ParentConductPage() {
       return { base64, filename };
     },
     [
-      parentAddress,
       parentContacts.phone,
       parentEid,
       parentFullName,
@@ -661,7 +780,6 @@ export default function ParentConductPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <InfoField label={t.parentConduct.parentSection.parentName} value={parentFullName} />
                     <InfoField label={t.parentConduct.parentSection.parentNationalId} value={parentEid} mono />
-                    <InfoField label={t.parentConduct.parentSection.parentAddress} value={parentAddress} span={2} />
                     <InfoField label={t.parentConduct.parentSection.contactNumber} value={parentContacts.phone || PLACEHOLDER} />
                     <InfoField label={t.parentConduct.parentSection.parentEmail} value={parentContacts.email || PLACEHOLDER} />
                   </div>

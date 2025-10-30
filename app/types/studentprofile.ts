@@ -78,4 +78,20 @@ export interface StudentProfileV1 {
   addresses: StudentAddress[];
 
   enrollment: StudentEnrollment[]; // array as you modeled
+  parent?: StudentParentInfo | null;
+}
+
+
+export interface StudentParentInfo {
+  sourcedId: string;
+  identifier?: string | null;
+  enabledUser?: boolean;
+  givenName?: string | null;
+  middleName?: string | null;
+  familyName?: string | null;
+  englishFirstName?: string | null;
+  englishSecondName?: string | null;
+  englishThirdName?: string | null;
+  englishFamilyName?: string | null;
+  contacts?: StudentContact[];
 }

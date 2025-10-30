@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import type {
   ParentConductAggregatedResponse,
-  UpdateInfoRow,
 } from "@/lib/parent-conduct";
 import type { StudentProfileV1 } from "@/app/types/studentprofile";
 
@@ -71,32 +70,49 @@ export async function GET(req: NextRequest) {
   }
 
   const nocache = searchParams.get("nocache");
-  const nocacheSuffix = nocache ? `?nocache=${encodeURIComponent(nocache)}` : "";
+  const schoolYear = searchParams.get("schoolYear");
+  
+  // Build query string for student API
+  const queryParams = new URLSearchParams();
+  if (nocache) queryParams.set("nocache", nocache);
+  if (schoolYear) queryParams.set("schoolYear", schoolYear);
+  const querySuffix = queryParams.toString() ? `?${queryParams.toString()}` : "";
+  
   const cookie = req.headers.get("cookie") ?? "";
   const origin = req.nextUrl.origin;
 
   try {
     // Fetch student info from PP API instead of OneRoster
-    const [studentInfo, updateInfo] = await Promise.all([
-      fetchJson<StudentProfileV1>(`${origin}`, `/api/PP/student/${encodeURIComponent(studentPersonId)}${nocacheSuffix}`, cookie).catch((error) => {
-        if (error instanceof UpstreamFetchError && error.status === 404) {
+    const studentInfo = await fetchJson<StudentProfileV1>(`${origin}`, `/api/PP/student/${encodeURIComponent(studentPersonId)}${querySuffix}`, cookie).catch((error) => {
+      if (error instanceof UpstreamFetchError && error.status === 404) {
+        return null;
+      }
+      throw error;
+    });
+
+    // Extract parent info from student data
+    const parentInfo = studentInfo?.parent ?? null;
+
+    // Extract schoolId from student's enrollment data
+    let schoolInfo = null;
+    if (studentInfo && studentInfo.enrollment && studentInfo.enrollment.length > 0) {
+      // Get the most recent enrollment (you can adjust this logic if needed)
+      const latestEnrollment = studentInfo.enrollment[0];
+      const schoolId = latestEnrollment.schoolId;
+      
+      if (schoolId) {
+        // Fetch school information
+        schoolInfo = await fetchJson<unknown>(`${origin}`, `/api/PP/school/${encodeURIComponent(schoolId)}`, cookie).catch((error) => {
+          console.warn(`Failed to fetch school info for schoolId ${schoolId}:`, error);
           return null;
-        }
-        throw error;
-      }),
-      fetchJson<{ ok: boolean; data?: UpdateInfoRow }>(`${origin}`, `/api/parent/update-information-requests?studentPersonId=${encodeURIComponent(studentPersonId)}`, cookie).catch((error) => {
-        if (error instanceof UpstreamFetchError && error.status === 404) {
-          return null;
-        }
-        throw error;
-      }),
-    ]);
+        });
+      }
+    }
 
     const payload: ParentConductAggregatedResponse = {
       studentInfo,
-      parentInfo: null,
-      enrollmentInfo: null,
-      updateInfo,
+      parentInfo,
+      schoolInfo,
     };
 
     return NextResponse.json({
