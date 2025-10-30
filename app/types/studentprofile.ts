@@ -37,6 +37,7 @@ export interface StudentEnrollment {
   educationType: string | null;  // from schools table (private/public)
   schoolId: string | null;       // your local school key
   streamGradeId: string | null;  // your local streamGrade key
+  schoolYear: string | null;     // e.g., "2026"
 }
 
 export interface StudentProfileV1 {

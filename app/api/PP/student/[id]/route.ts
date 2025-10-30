@@ -32,8 +32,11 @@ export async function GET(
     const url = new URL(req.url);
     const nocache = url.searchParams.get('nocache');
     const skipCache = nocache === '1' || nocache === 'true';
+    const schoolYear = url.searchParams.get('schoolYear');
 
-    const cacheKey = `pp:student:${studentId}`;
+    const cacheKey = schoolYear 
+      ? `pp:student:${studentId}:year:${schoolYear}`
+      : `pp:student:${studentId}`;
     
     // Track cache metadata
     let source: "cache" | "upstream" = "cache";
@@ -114,13 +117,23 @@ export async function GET(
     const studentList: StudentProfileV1[] = await profilesRes.json();
 
     // Find the specific student by ID
-    const student = studentList.find(s => s.id === studentId);
+    let student = studentList.find(s => s.id === studentId);
 
     if (!student) {
       return NextResponse.json(
         { error: 'Student not found or not authorized' },
         { status: 404 }
       );
+    }
+
+    // Filter enrollments by schoolYear if provided
+    if (schoolYear && student.enrollment) {
+      student = {
+        ...student,
+        enrollment: student.enrollment.filter(
+          enr => enr.schoolYear === schoolYear
+        ),
+      };
     }
 
     // Cache the student data for 5 minutes with metadata
