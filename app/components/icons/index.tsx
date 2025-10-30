@@ -5,6 +5,7 @@ import {
   MegaphoneSimple as Announcements,
   CalendarBlank as Calendar,
   User as Profile,
+  ChartBar as Summary,
   Bell,
   CaretDown,
   List as Menu,
@@ -30,6 +31,7 @@ import {
 type IconProps = React.ComponentProps<typeof Dashboard>
 
 export const DashboardIcon = (props: IconProps) => <Dashboard {...props} />
+export const SummaryIcon = (props: IconProps) => <Summary {...props} />
 export const MessagesIcon = (props: IconProps) => <Messages {...props} />
 export const AnnouncementsIcon = (props: IconProps) => <Announcements {...props} />
 export const CalendarIcon = (props: IconProps) => <Calendar {...props} />

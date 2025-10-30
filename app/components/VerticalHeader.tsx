@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import clsx from 'clsx';
 import { 
   DashboardIcon, 
+  SummaryIcon,
   MessagesIcon, 
   AnnouncementsIcon,
   CalendarIcon, 
@@ -120,6 +121,7 @@ export default function VerticalHeader() {
   type NavItem = { key: keyof typeof t.nav; href: string; icon: typeof DashboardIcon } & ({ badge: string } | { badge?: undefined });
   const navigation: NavItem[] = [
     { key: 'dashboard', href: '/dashboard', icon: DashboardIcon },
+    { key: 'summary', href: '/parent/summary', icon: SummaryIcon },
     // { key: 'announcements', href: '/announcements', icon: AnnouncementsIcon },
     // { key: 'calendar', href: '/calendar', icon: CalendarIcon },
     // { key: 'profile', href: '/profile', icon: ProfileIcon }
@@ -317,34 +319,41 @@ export default function VerticalHeader() {
       </header>
 
       {/* Professional Desktop Sidebar */}
-      <aside className={`hidden lg:fixed lg:flex lg:flex-col z-50 ${
-        locale === 'ar' ? 'lg:right-4 lg:top-6 lg:bottom-6' : 'lg:left-4 lg:top-6 lg:bottom-6'
-      } lg:w-72`}>
-        <div className={`flex grow flex-col gap-y-6 overflow-y-auto bg-card shadow-lg px-6 pb-6 rounded-2xl border border-border`}>
-          {/* Modern gradient overlay */}
-          <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-background to-secondary/5 rounded-2xl" />
+      <aside className={`hidden lg:fixed lg:flex lg:flex-col lg:inset-y-0 z-50 ${
+        locale === 'ar' ? 'lg:right-0' : 'lg:left-0'
+      } lg:w-80`}>
+        <div className={`relative flex grow flex-col gap-y-6 overflow-y-auto bg-gradient-to-br from-card via-card to-card/95 backdrop-blur-xl shadow-2xl px-7 pb-7 border-r-2 border-border/50 hover:border-primary/20 transition-all duration-500`}>
+          {/* Decorative Elements */}
+          <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-primary/10 to-transparent rounded-full -translate-y-20 translate-x-20 blur-3xl" />
+          <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-secondary/10 to-transparent rounded-full translate-y-16 -translate-x-16 blur-2xl" />
    
           <div className="relative">
             {/* Professional Desktop Logo */}
-            <div className="flex h-20 shrink-0 items-center justify-center border-b border-border mb-6">
+            <div className="flex h-24 shrink-0 items-center justify-center border-b-2 border-border/30 mb-8">
               <Link 
                 href="/dashboard" 
-                className={`group flex items-center gap-4 text-foreground hover:text-primary transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:ring-offset-2 rounded-xl px-4 py-3 hover:bg-muted ${locale === 'ar' ? 'text-xl font-black tracking-wide' : 'text-xl font-bold'}`}
+                className={`group flex items-center gap-4 text-foreground hover:text-primary transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:ring-offset-2 rounded-2xl px-5 py-4 hover:bg-primary/5 ${locale === 'ar' ? 'text-xl font-black tracking-wide' : 'text-2xl font-bold'}`}
               >
-                <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary/80 rounded-xl flex items-center justify-center group-hover:shadow-lg group-hover:scale-105 transition-all duration-300 shadow-md">
-                  <svg className="w-7 h-7 text-primary-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                  </svg>
+                <div className="relative">
+                  <div className="absolute inset-0 bg-primary/20 rounded-2xl blur-md group-hover:blur-lg transition-all" />
+                  <div className="relative w-14 h-14 bg-gradient-to-br from-primary via-primary to-primary/80 rounded-2xl flex items-center justify-center group-hover:shadow-2xl group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 shadow-lg">
+                    <svg className="w-8 h-8 text-primary-foreground group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                    </svg>
+                  </div>
                 </div>
-                <span className="font-bold">{locale === 'ar' ? 'اولياء الأمور' : 'ParentPortal'}</span>
+                <div className="flex flex-col">
+                  <span className="font-bold group-hover:translate-x-1 transition-transform">{locale === 'ar' ? 'بوابة أولياء الأمور' : 'Parent Portal'}</span>
+                  <span className="text-xs text-muted-foreground font-medium">{locale === 'ar' ? 'وزارة التربية' : 'MOE'}</span>
+                </div>
               </Link>
             </div>
 
             {/* Modern Desktop Navigation */}
             <nav className="flex flex-1 flex-col" role="navigation" aria-label="Main navigation">
-              <ul role="list" className="flex flex-1 flex-col gap-y-1">
+              <ul role="list" className="flex flex-1 flex-col gap-y-2">
                 <li>
-                  <ul role="list" className="space-y-1">
+                  <ul role="list" className="space-y-2">
                     {navigation.map((item) => {
                       const Icon = item.icon;
                       const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href));
@@ -354,27 +363,42 @@ export default function VerticalHeader() {
                           <Link
                             href={item.href}
                             className={clsx(
-                              'group flex items-center gap-x-4 rounded-lg px-4 py-3 transition-all duration-200',
-                              locale === 'ar' ? 'text-sm font-semibold tracking-wide' : 'text-sm font-medium',
+                              'group relative flex items-center gap-x-4 rounded-2xl px-5 py-4 transition-all duration-300 overflow-hidden',
+                              locale === 'ar' ? 'text-base font-semibold tracking-wide' : 'text-base font-semibold',
                               isActive
-                                ? 'bg-primary text-primary-foreground shadow-sm'
-                                : 'text-foreground hover:bg-muted hover:text-foreground'
+                                ? 'bg-gradient-to-r from-primary to-primary/90 text-primary-foreground shadow-lg shadow-primary/25 scale-105'
+                                : 'text-foreground hover:bg-gradient-to-r hover:from-primary/10 hover:to-transparent hover:text-primary hover:scale-102 hover:shadow-md'
                             )}
                             aria-current={isActive ? 'page' : undefined}
                           >
+                            {/* Active indicator */}
+                            {isActive && (
+                              <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-primary-foreground rounded-r-full" />
+                            )}
+                            
+                            {/* Icon with background */}
                             <div className={clsx(
-                              'flex h-6 w-6 shrink-0 items-center justify-center transition-all duration-200',
+                              'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-all duration-300',
                               isActive 
-                                ? 'text-primary-foreground' 
-                                : 'text-muted-foreground group-hover:text-foreground'
+                                ? 'bg-primary-foreground/20 text-primary-foreground shadow-inner' 
+                                : 'bg-muted/50 text-muted-foreground group-hover:bg-primary/20 group-hover:text-primary group-hover:scale-110 group-hover:rotate-3'
                             )}>
-                              <Icon className="h-6 w-6" aria-hidden="true" />
+                              <Icon className="h-5 w-5" aria-hidden="true" />
                             </div>
-                            <span className="truncate font-medium">{t.nav[item.key]}</span>
+                            
+                            <span className="truncate font-semibold flex-1">{t.nav[item.key]}</span>
+                            
                             {item.badge && (
-                              <span className="ml-auto inline-flex items-center justify-center w-5 h-5 text-xs font-medium text-destructive-foreground bg-destructive rounded-full">
+                              <span className="ml-auto inline-flex items-center justify-center min-w-6 h-6 px-2 text-xs font-bold text-white bg-gradient-to-r from-red-500 to-red-600 rounded-full shadow-lg animate-pulse">
                                 {item.badge}
                               </span>
+                            )}
+                            
+                            {/* Hover arrow */}
+                            {!isActive && (
+                              <svg className="w-4 h-4 text-primary opacity-0 group-hover:opacity-100 transform translate-x-0 group-hover:translate-x-1 transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d={locale === 'ar' ? "M15 19l-7-7 7-7" : "M9 5l7 7-7 7"} />
+                              </svg>
                             )}
                           </Link>
                         </li>
@@ -497,43 +521,53 @@ export default function VerticalHeader() {
 
                   {/* User Profile */}
                   <div className="group relative mt-6">
-                    <div className="flex items-center gap-x-3 rounded-lg p-3 bg-muted hover:bg-muted/80 transition-all duration-200 cursor-pointer border border-border">
-                      <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-sm">
-                        <ProfileIcon className="h-5 w-5 text-primary-foreground" />
+                    <div className="flex items-center gap-x-4 rounded-2xl p-4 bg-gradient-to-r from-primary/5 to-secondary/5 hover:from-primary/10 hover:to-secondary/10 border-2 border-border/50 hover:border-primary/30 transition-all duration-300 cursor-pointer shadow-sm hover:shadow-md">
+                      <div className="relative">
+                        <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary via-primary to-primary/80 flex items-center justify-center shadow-lg">
+                          <ProfileIcon className="h-6 w-6 text-primary-foreground" />
+                        </div>
+                        <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-card rounded-full" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className={`text-foreground truncate ${locale === 'ar' ? 'text-sm font-semibold tracking-wide' : 'text-sm font-medium'}`}>
-                          {((session?.user?.name as string) || '').split(' ')[0] || 'Profile'}
+                        <p className={`text-foreground truncate font-bold ${locale === 'ar' ? 'text-sm tracking-wide' : 'text-sm'}`}>
+                          {((session?.user?.name as string) || '').split(' ').slice(0, 2).join(' ') || 'Parent Profile'}
                         </p>
-                        <p className={`text-muted-foreground truncate ${locale === 'ar' ? 'text-xs' : 'text-xs'}`}>
+                        <p className={`text-muted-foreground truncate ${locale === 'ar' ? 'text-xs font-medium' : 'text-xs'}`}>
                           {locale === 'ar' ? 'عرض الملف الشخصي' : 'View Profile'}
                         </p>
                       </div>
-                      <ChevronDownIcon className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+                      <ChevronDownIcon className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:rotate-180 transition-all duration-300" />
                     </div>
 
                     {/* User Dropdown */}
-                    <div className="absolute bottom-full left-0 right-0 mb-2 bg-card border border-border rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-200 z-10 pointer-events-none group-hover:pointer-events-auto transform translate-y-1 group-hover:translate-y-0">
-                      <div className="p-2">
+                    <div className="absolute bottom-full left-0 right-0 mb-3 bg-gradient-to-b from-card via-card to-card/95 backdrop-blur-xl border-2 border-border/50 rounded-2xl shadow-2xl opacity-0 group-hover:opacity-100 transition-all duration-300 z-20 pointer-events-none group-hover:pointer-events-auto transform translate-y-2 group-hover:translate-y-0 overflow-hidden">
+                      <div className="p-3">
                         <Link
                           href="/profile"
-                          className={`flex items-center gap-3 px-3 py-2.5 text-foreground hover:text-primary hover:bg-muted rounded-md transition-colors group/item ${locale === 'ar' ? 'text-sm font-medium tracking-wide' : 'text-sm font-medium'}`}
+                          className={`flex items-center gap-3 px-4 py-3.5 text-foreground hover:text-primary hover:bg-gradient-to-r hover:from-primary/10 hover:to-transparent rounded-xl transition-all duration-200 group/item ${locale === 'ar' ? 'text-sm font-semibold tracking-wide' : 'text-sm font-semibold'}`}
                         >
-                          <div className="h-7 w-7 rounded-md bg-muted flex items-center justify-center group-hover/item:bg-primary/10 transition-colors">
-                            <ProfileIcon className="h-4 w-4 text-muted-foreground group-hover/item:text-primary" />
+                          <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center group-hover/item:bg-primary/20 group-hover/item:scale-110 transition-all">
+                            <ProfileIcon className="h-5 w-5 text-primary" />
                           </div>
-                          {t.nav.profile}
+                          <span className="flex-1">{t.nav.profile}</span>
+                          <svg className="w-4 h-4 text-primary opacity-0 group-hover/item:opacity-100 transform -translate-x-1 group-hover/item:translate-x-0 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d={locale === 'ar' ? "M15 19l-7-7 7-7" : "M9 5l7 7-7 7"} />
+                          </svg>
                         </Link>
+                        <div className="my-2 border-t border-border/50" />
                         <button
-                          className={`w-full flex items-center gap-3 px-3 py-2.5 text-destructive hover:text-destructive/80 hover:bg-destructive/5 rounded-md transition-colors group/item ${locale === 'ar' ? 'text-sm font-medium tracking-wide' : 'text-sm font-medium'}`}
+                          className={`w-full flex items-center gap-3 px-4 py-3.5 text-destructive hover:text-white hover:bg-gradient-to-r hover:from-destructive hover:to-destructive/90 rounded-xl transition-all duration-200 group/item font-semibold ${locale === 'ar' ? 'text-sm tracking-wide' : 'text-sm'}`}
                           onClick={() => signOut({ callbackUrl: '/login' })}
                         >
-                          <div className="h-7 w-7 rounded-md bg-destructive/10 flex items-center justify-center group-hover/item:bg-destructive/20 transition-colors">
-                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                          <div className="h-9 w-9 rounded-xl bg-destructive/10 group-hover/item:bg-white/20 flex items-center justify-center group-hover/item:scale-110 transition-all">
+                            <svg className="h-5 w-5 group-hover/item:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                             </svg>
                           </div>
-                          {locale === 'ar' ? 'تسجيل خروج' : 'Logout'}
+                          <span className="flex-1">{locale === 'ar' ? 'تسجيل خروج' : 'Logout'}</span>
+                          <svg className="w-4 h-4 opacity-0 group-hover/item:opacity-100 group-hover/item:text-white transform -translate-x-1 group-hover/item:translate-x-0 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                          </svg>
                         </button>
                       </div>
                     </div>

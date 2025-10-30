@@ -2,6 +2,7 @@ export const en = {
   nav: {
     home: "Home",
     dashboard: "Dashboard",
+    summary: "Summary",
     messages: "Messages",
     announcements: "Announcements",
     calendar: "Calendar",

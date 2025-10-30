@@ -2,6 +2,7 @@ export const ar = {
   nav: {
     home: "الرئيسية",
     dashboard: "لوحة التحكم",
+    summary: "الملخص",
     messages: "الرسائل",
     announcements: "الإعلانات",
     calendar: "التقويم",

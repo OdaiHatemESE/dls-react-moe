@@ -6,7 +6,8 @@ import { usePathname } from 'next/navigation';
 import clsx from 'clsx';
 import { useI18n } from '@/app/i18n/I18nProvider';
 import { 
-  DashboardIcon, 
+  DashboardIcon,
+  SummaryIcon,
   MessagesIcon, 
   AnnouncementsIcon,
   CalendarIcon, 
@@ -23,6 +24,12 @@ export default function MobileBottomNav() {
       href: '/dashboard', 
       icon: DashboardIcon,
       label: locale === 'ar' ? 'الرئيسية' : 'Home'
+    },
+    { 
+      key: 'summary' as keyof typeof t.nav, 
+      href: '/parent/summary', 
+      icon: SummaryIcon,
+      label: locale === 'ar' ? 'الملخص' : 'Summary'
     },
     { 
       key: 'announcements' as keyof typeof t.nav, 
