@@ -17,6 +17,48 @@ type ChildWithActions = StudentProfileV1 & {
   actions?: ChildActionResponse;
 };
 
+const DEFAULT_ACADEMIC_YEAR = "2025-2026";
+
+function parseEntryDate(value?: string | null): number {
+  if (!value) return Number.NEGATIVE_INFINITY;
+  const timestamp = Date.parse(value);
+  return Number.isNaN(timestamp) ? Number.NEGATIVE_INFINITY : timestamp;
+}
+
+function resolveLatestEnrollment(enrollments?: StudentProfileV1["enrollment"]): StudentProfileV1["enrollment"][number] | null {
+  if (!enrollments || enrollments.length === 0) return null;
+  const [first, ...rest] = enrollments;
+  let latest = first;
+  let latestTime = parseEntryDate(first.entryDate);
+
+  for (const entry of rest) {
+    const entryTime = parseEntryDate(entry.entryDate);
+    if (entryTime > latestTime) {
+      latest = entry;
+      latestTime = entryTime;
+    }
+  }
+
+  return latest;
+}
+
+function normalizeAcademicYear(value?: string | null): string | null {
+  const trimmed = typeof value === "string" ? value.trim() : "";
+  if (!trimmed) return null;
+  if (trimmed.includes("-")) return trimmed;
+  const parsed = Number.parseInt(trimmed, 10);
+  if (!Number.isNaN(parsed) && parsed > 0) {
+    return `${parsed - 1}-${parsed}`;
+  }
+  return trimmed;
+}
+
+function deriveAcademicYear(enrollments?: StudentProfileV1["enrollment"]): string {
+  const latest = resolveLatestEnrollment(enrollments);
+  const normalized = normalizeAcademicYear(latest?.schoolYear);
+  return normalized ?? DEFAULT_ACADEMIC_YEAR;
+}
+
 // Animated Counter Component
 function AnimatedCounter({ value, duration = 1000 }: { value: number; duration?: number }) {
   const [count, setCount] = React.useState(0);
@@ -474,6 +516,9 @@ export default function ParentSummaryPage() {
                   ? new Date().getFullYear() - new Date(child.dateOfBirth).getFullYear()
                   : null;
 
+                const resolvedStudentNumber = child.studentNumber?.trim() || null;
+                const resolvedAcademicYear = resolvedStudentNumber ? deriveAcademicYear(child.enrollment) : undefined;
+
                 return (
                   <div
                     key={child.id}
@@ -569,6 +614,8 @@ export default function ParentSummaryPage() {
                               studentPersonId={child.id}
                               parentPersonId={session?.user?.emiratesId}
                               studentEmirateId={child.emirateId}
+                              studentNumber={resolvedStudentNumber}
+                              academicYear={resolvedAcademicYear}
                               className="w-full"
                             />
                           </div>

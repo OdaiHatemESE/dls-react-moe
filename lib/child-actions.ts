@@ -8,7 +8,6 @@ import type {
   ChildActionResponse,
   ChildActionStudentSummary,
   ChildActionUpdateRequest,
-  ChildStatusBadgeDescriptor,
   ChildStatusBannerDescriptor,
   ChildActionDisplay,
   ChildActionStyle,
@@ -143,7 +142,7 @@ const FALLBACK_CONFIGS: Record<string, AdminActionConfigSchema> = {
       hrefTemplate: "/child/:studentPersonId/parent-conduct",
     },
     availability: {
-      status: { include: [1, 3, 4] },
+      // REMOVED: status requirement - conduct signature is independent of IDH status
       requiresConductSignature: "unsigned",
     },
   },
@@ -164,7 +163,7 @@ const FALLBACK_CONFIGS: Record<string, AdminActionConfigSchema> = {
       downloadFileName: "conduct-agreement-:studentPersonId.pdf",
     },
     availability: {
-      status: { include: [1, 3, 4] },
+      // REMOVED: status requirement - PDF download is independent of IDH status
       requiresPdf: true,
       requiresPdfMode: "disable",
       requiresPdfReason: DEFAULT_PDF_REASON,
@@ -330,9 +329,6 @@ function resolveChildActions(context: ResolveContext): ChildActionResponse {
     statusBanner = null;
   }
 
-  const hasActiveUpdateAction = actions.some((action) => action.key === "update-info" && !action.disabled);
-  const badge = deriveBadge(updateRequest, updatePeriodActive && hasActiveUpdateAction, status);
-
   console.log("\n🎯 RESOLVED ACTIONS:");
   actions.forEach((action, index) => {
     console.log(`\n  [${index + 1}] ${action.key.toUpperCase()}`);
@@ -348,7 +344,6 @@ function resolveChildActions(context: ResolveContext): ChildActionResponse {
     console.log(`      Color: ${action.style.color ?? "default"}`);
   });
 
-  console.log("\n🏷️  BADGE:", badge ? `${badge.label} (${badge.tone})` : "None");
   console.log("📢 BANNER:", statusBanner ? `${statusBanner.message} (${statusBanner.severity})` : "None");
   console.log("💾 DOWNLOADS:", hasPdf ? "Conduct PDF available" : "No PDFs");
   console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
@@ -363,7 +358,7 @@ function resolveChildActions(context: ResolveContext): ChildActionResponse {
     idhFetchedAt: context.idhFetchedAt,
     actions,
     statusBanner,
-    badge,
+    badge: null,
     downloads: { conductPdfAvailable: hasPdf },
     reasons: Array.from(reasons),
   };
@@ -926,51 +921,3 @@ function deriveStatusBannerForStatus(status: number | null): ChildStatusBannerDe
   return null;
 }
 
-function deriveBadge(
-  updateRequest: ChildActionUpdateRequest,
-  canShowUpdateIndicators: boolean,
-  idhStatusId: number | null
-): ChildStatusBadgeDescriptor | null {
-  console.log(`\n🏷️  Deriving badge:`);
-  console.log(`   Can show update indicators: ${canShowUpdateIndicators}`);
-  console.log(`   IDH Status: ${idhStatusId}`);
-
-  if (!canShowUpdateIndicators) {
-    console.log(`   ❌ Cannot show indicators (update period closed or no update action)`);
-    return null;
-  }
-
-  const status = typeof idhStatusId === "number" ? idhStatusId : null;
-  const requiresUpdate = status === null || status === 2 || status === 5;
-
-  console.log(`   Requires update: ${requiresUpdate} (null/2/5)`);
-
-  if (requiresUpdate) {
-    console.log(`   ✅ Badge: "Update Required" (urgent/red)`);
-    return {
-      key: "childActions.badge.updateRequired",
-      labelKey: "childActions.badge.updateRequired",
-      label: "Update Required",
-      tooltipKey: "childActions.badge.updateTooltip",
-      tooltip: "You need to update information",
-      tone: "urgent",
-    };
-  }
-
-  console.log(`   Conduct signed: ${updateRequest.isConductAgreementSigned}`);
-
-  if (status === 4 && !updateRequest.isConductAgreementSigned) {
-    console.log(`   ✅ Badge: "Signature Required" (info/blue)`);
-    return {
-      key: "childActions.badge.signatureRequired",
-      labelKey: "childActions.badge.signatureRequired",
-      label: "Signature Required",
-      tooltipKey: "childActions.badge.signatureTooltip",
-      tooltip: "Conduct signature required",
-      tone: "info",
-    };
-  }
-
-  console.log(`   ℹ️  No badge`);
-  return null;
-}

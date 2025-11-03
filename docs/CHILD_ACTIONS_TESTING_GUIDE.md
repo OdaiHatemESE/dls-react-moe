@@ -7,32 +7,48 @@ This guide explains how the child actions system works and provides test cases f
 
 ## 🎯 How Actions Work
 
-The action system determines which buttons appear on child cards based on:
+The action system determines which buttons appear on child cards based on **TWO INDEPENDENT** data sources:
 
-1. **IDH Status ID** - Tracks student update request status (from external API)
-2. **Update Period Active** - Whether parents can currently update information
-3. **PDF Availability** - Whether conduct PDF document exists
-4. **Conduct Signature Status** - Whether parent signed the conduct agreement
+### **1. IDH Status (Info Update System)**
+Controls **"Update Info"** action only:
+- Tracked by `idhStatusId` from external IDH API
+- Values: `null`, `1`, `2`, `3`, `4`, `5`
+- Completely separate from conduct signature
+
+### **2. Conduct Signature Status**
+Controls **"Sign Conduct"** and **"Download Conduct"** actions only:
+- Tracked by `isConductAgreementSigned` boolean
+- Tracked by `pdfBase64` (PDF availability)
+- Completely separate from IDH status
+
+### **3. Update Period**
+Global control that can disable update actions:
+- When closed: disables "Update Info" action
+- Does not affect conduct signature actions
 
 ---
 
-## 📊 Status ID Values & Meanings
+## 📊 IDH Status Values (Info Update Only)
 
-| Status ID | Meaning | Description |
-|-----------|---------|-------------|
-| `null` | **No Record** | Student has never submitted an update request |
-| `1` | **Pending Review** | Update request submitted and awaiting approval |
-| `2` | **Approved/Completed** | Update request was approved and completed |
-| `3` | **Under Review** | Update request is currently being reviewed |
-| `4` | **Approved - Signature Needed** | Update approved but requires conduct signature |
-| `5` | **Rejected** | Update request was rejected and needs resubmission |
+| Status ID | Meaning | Affects Only |
+|-----------|---------|--------------|
+| `null` | **No update record** | "Update Info" action → SHOW |
+| `1` | **Pending review** | "Update Info" action → HIDE |
+| `2` | **Approved/Completed** | "Update Info" action → SHOW (can update again) |
+| `3` | **Under review** | "Update Info" action → HIDE |
+| `4` | **Approved final** | "Update Info" action → HIDE |
+| `5` | **Rejected** | "Update Info" action → SHOW (must resubmit) |
+
+**Important:** IDH status does NOT control conduct signature actions!
 
 ---
 
-## 🔧 Default Actions Configuration
+## 🔧 Action Availability Rules
 
 ### 1. **Update Info** (`update-info`)
 **Purpose:** Allow parents to update student contact, address, and transportation info
+
+**Data Source:** IDH Status + Update Period
 
 **Availability Rules:**
 ```typescript
@@ -44,8 +60,8 @@ The action system determines which buttons appear on child cards based on:
 
 **Behavior Matrix:**
 
-| Status | Period Active | Result | Href Template |
-|--------|--------------|--------|---------------|
+| IDH Status | Period Active | Result | Href Template |
+|-----------|--------------|--------|---------------|
 | `null` | ✅ Yes | ✅ **ENABLED** | `/child/:id/update-info?mode=init` |
 | `null` | ❌ No | 🔒 **DISABLED** | Reason: "Updates temporarily disabled" |
 | `2` | ✅ Yes | ✅ **ENABLED** | `/child/:id/update-info?mode=resubmit` |
@@ -59,34 +75,34 @@ The action system determines which buttons appear on child cards based on:
 ### 2. **Sign Conduct** (`sign-conduct`)
 **Purpose:** Allow parents to review and digitally sign school conduct charter
 
+**Data Source:** Conduct Signature Status ONLY (independent of IDH)
+
 **Availability Rules:**
 ```typescript
 {
-  status: { include: [1, 3, 4] },        // During/after update process
   requiresConductSignature: "unsigned"   // Only if not yet signed
 }
 ```
 
 **Behavior Matrix:**
 
-| Status | Conduct Signed | Result | Href Template |
-|--------|----------------|--------|---------------|
-| `1` | ❌ No | ✅ **ENABLED** | `/child/:id/parent-conduct` |
-| `3` | ❌ No | ✅ **ENABLED** | `/child/:id/parent-conduct` |
-| `4` | ❌ No | ✅ **ENABLED** | `/child/:id/parent-conduct` |
-| `4` | ✅ Yes | 🚫 **HIDDEN** | Already signed |
-| `null` | ❌ No | 🚫 **HIDDEN** | No update request |
-| `2` | ❌ No | 🚫 **HIDDEN** | Process completed |
+| Conduct Signed | Result | Href Template |
+|----------------|--------|---------------|
+| ❌ No | ✅ **ENABLED** | `/child/:id/parent-conduct` |
+| ✅ Yes | 🚫 **HIDDEN** | Already signed |
+
+**Note:** This action can appear at ANY IDH status! It's completely independent.
 
 ---
 
 ### 3. **Download Conduct** (`download-conduct`)
 **Purpose:** Download signed conduct agreement PDF
 
+**Data Source:** PDF Availability ONLY (independent of IDH)
+
 **Availability Rules:**
 ```typescript
 {
-  status: { include: [1, 3, 4] },
   requiresPdf: true,
   requiresPdfMode: "disable"  // Disable (not hide) if missing
 }
@@ -94,13 +110,12 @@ The action system determines which buttons appear on child cards based on:
 
 **Behavior Matrix:**
 
-| Status | Has PDF | Result | Download Handler |
-|--------|---------|--------|------------------|
-| `1` | ✅ Yes | ✅ **ENABLED** | `conduct-pdf` |
-| `3` | ✅ Yes | ✅ **ENABLED** | `conduct-pdf` |
-| `4` | ✅ Yes | ✅ **ENABLED** | `conduct-pdf` |
-| `4` | ❌ No | 🔒 **DISABLED** | Reason: "Conduct PDF not available yet" |
-| `null` | ✅ Yes | 🚫 **HIDDEN** | No update request |
+| Has PDF | Result | Download Handler |
+|---------|--------|------------------|
+| ✅ Yes | ✅ **ENABLED** | `conduct-pdf` |
+| ❌ No | 🔒 **DISABLED** | Reason: "Conduct PDF not available yet" |
+
+**Note:** This action can appear at ANY IDH status! It's completely independent.
 
 ---
 

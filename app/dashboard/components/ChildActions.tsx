@@ -34,11 +34,31 @@ type Props = {
   studentPersonId: string;
   parentPersonId?: string | null;
   studentEmirateId?: string | null;
+  studentNumber?: string | null;
+  academicYear?: string | null;
   compact?: boolean;
   className?: string;
 };
 
-export function ChildActions({ studentPersonId, parentPersonId, studentEmirateId, compact, className }: Props) {
+const DEFAULT_ACADEMIC_YEAR = "2025-2026";
+
+type PartnershipCharterResponse = {
+  ok: boolean;
+  data?: {
+    attachment01?: string | null;
+  } | null;
+  error?: string;
+};
+
+export function ChildActions({
+  studentPersonId,
+  parentPersonId,
+  studentEmirateId,
+  studentNumber,
+  academicYear,
+  compact,
+  className,
+}: Props) {
   const { locale } = useI18n();
 
   const queryString = React.useMemo(() => {
@@ -53,8 +73,62 @@ export function ChildActions({ studentPersonId, parentPersonId, studentEmirateId
 
   const { data, error, isLoading } = useSWR<ChildActionResponse>(endpoint, jsonFetcher);
 
+  const resolvedStudentNumber = React.useMemo(() => {
+    const value = typeof studentNumber === "string" ? studentNumber.trim() : "";
+    return value.length > 0 ? value : null;
+  }, [studentNumber]);
+
+  const resolvedAcademicYear = React.useMemo(() => {
+    const value = typeof academicYear === "string" ? academicYear.trim() : "";
+    return value.length > 0 ? value : DEFAULT_ACADEMIC_YEAR;
+  }, [academicYear]);
+
+  const charterEndpoint = React.useMemo(() => {
+    if (!resolvedStudentNumber) return null;
+    const params = new URLSearchParams({
+      studentNumber: resolvedStudentNumber,
+      academicyear: resolvedAcademicYear,
+    });
+    return `/api/parent/students-partnership-charter?${params.toString()}`;
+  }, [resolvedStudentNumber, resolvedAcademicYear]);
+
+  const {
+    data: charterData,
+    error: charterError,
+    isLoading: isCharterLoading,
+  } = useSWR<PartnershipCharterResponse>(charterEndpoint, jsonFetcher);
+
+  const charterAttachment = React.useMemo(() => {
+    if (!charterData?.data) return "";
+    const value = charterData.data.attachment01;
+    return typeof value === "string" ? value.trim() : "";
+  }, [charterData]);
+
+  const signatureOverride = React.useMemo<boolean | null>(() => {
+    if (!charterEndpoint) return null;
+    if (isCharterLoading) return null;
+    if (charterError) return null;
+    if (!charterData) return null;
+    if (charterData.ok === false) return null;
+    return charterAttachment.length > 0;
+  }, [charterEndpoint, charterData, charterAttachment, charterError, isCharterLoading]);
+
+  const fallbackSigned = React.useMemo(
+    () => Boolean(data?.updateRequest.pdfBase64),
+    [data?.updateRequest.pdfBase64]
+  );
+
+  const isConductSigned = signatureOverride ?? fallbackSigned;
+
+  const pdfBase64 = React.useMemo(() => {
+    if (charterAttachment.length > 0) {
+      return charterAttachment;
+    }
+    return data?.updateRequest.pdfBase64 ?? null;
+  }, [charterAttachment, data?.updateRequest.pdfBase64]);
+
   const handleDownloadPdf = React.useCallback(() => {
-    const base64 = data?.updateRequest.pdfBase64;
+    const base64 = pdfBase64;
     if (!base64) return;
 
     try {
@@ -77,7 +151,7 @@ export function ChildActions({ studentPersonId, parentPersonId, studentEmirateId
     } catch (err) {
       console.error("Failed to download PDF:", err);
     }
-  }, [data?.updateRequest.pdfBase64, studentPersonId]);
+  }, [pdfBase64, studentPersonId]);
 
   const handleAction = React.useCallback(
     (action: ChildActionDescriptor) => {
@@ -113,9 +187,45 @@ export function ChildActions({ studentPersonId, parentPersonId, studentEmirateId
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
 
   const rawActions = React.useMemo(() => data?.actions ?? [], [data]);
+
+  const processedActions = React.useMemo(() => {
+    if (!rawActions.length) {
+      return rawActions;
+    }
+
+    return rawActions.map((action) => {
+      if (action.key === "sign-conduct") {
+        return {
+          ...action,
+          hidden: isConductSigned,
+        };
+      }
+
+      if (action.key === "download-conduct") {
+        if (!isConductSigned) {
+          return {
+            ...action,
+            hidden: true,
+          };
+        }
+
+        return {
+          ...action,
+          hidden: false,
+          disabled: false,
+          reason: null,
+          reasonKey: null,
+          disabledReason: null,
+        };
+      }
+
+      return action;
+    });
+  }, [isConductSigned, rawActions]);
+
   const visibleActions = React.useMemo(
-    () => rawActions.filter((action) => !action.hidden),
-    [rawActions]
+    () => processedActions.filter((action) => !action.hidden),
+    [processedActions]
   );
   const fallbackAction = React.useMemo(
     () => buildLocalFallbackAction(studentPersonId),
@@ -129,7 +239,7 @@ export function ChildActions({ studentPersonId, parentPersonId, studentEmirateId
   }, [visibleActions, fallbackAction]);
 
   const hasVisibleActions = visibleActions.length > 0;
-  const allHiddenButConfigured = !hasVisibleActions && rawActions.length > 0;
+  const allHiddenButConfigured = !hasVisibleActions && processedActions.length > 0;
   const showFallback = !hasVisibleActions;
   const totalActionsCount = actionsToDisplay.length;
   const statusBanner = data?.statusBanner ?? null;

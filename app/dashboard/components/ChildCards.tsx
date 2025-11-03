@@ -1,224 +1,83 @@
 "use client";
 
 import React from "react";
-import useSWR from "swr";
 import { useChildren } from "@/lib/hooks/useChildren";
 import type { StudentProfileV1 } from "@/app/types/studentprofile";
-import type { ChildActionResponse } from "@/types/child-actions";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useI18n } from "@/app/i18n/I18nProvider";
 import { useSession } from "next-auth/react";
 import clsx from "clsx";
-import { jsonFetcher } from "@/lib/swr";
 import ChildActions, { ChildStatusBadge } from "./ChildActions";
 
-type StatusFlags = {
-  needsUpdate: boolean;
-  inProgress: boolean;
-  approved: boolean;
-  rejected: boolean;
-  needsConductSign: boolean;
-  allComplete: boolean;
-};
+const DEFAULT_ACADEMIC_YEAR = "2025-2026";
 
-type StatusIndicatorConfig = {
-  bgColor: string;
-  message: string;
-  icon: React.ReactNode;
-};
-
-function deriveStatusFlags(summary?: ChildActionResponse): StatusFlags | null {
-  if (!summary || !summary.ok) return null;
-
-  const update = summary.updateRequest;
-  const status = update.infoUpdateRequestStatus ?? null;
-  const approved = status === 4; // Status 4 = Approved (needs signature)
-  const conductSigned = !!update.isConductAgreementSigned;
-  const badgeKey = summary.badge?.key ?? null;
-
-  const flags = {
-    needsUpdate: badgeKey === "childActions.badge.updateRequired",
-    inProgress: status === 1 || status === 3, // Status 1 = Pending, Status 3 = Under Review
-    approved,
-    rejected: status === 5, // Status 5 = Rejected
-    needsConductSign: badgeKey === "childActions.badge.signatureRequired",
-    allComplete: approved && conductSigned,
-  } satisfies StatusFlags;
-
-  console.log("👤 Avatar Status Flags:");
-  console.log("   Status ID:", status);
-  console.log("   Badge Key:", badgeKey);
-  console.log("   Flags:", {
-    needsUpdate: flags.needsUpdate,
-    inProgress: flags.inProgress,
-    approved: flags.approved,
-    rejected: flags.rejected,
-    needsConductSign: flags.needsConductSign,
-    allComplete: flags.allComplete,
-  });
-
-  return flags;
+function parseEntryDate(value?: string | null): number {
+  if (!value) return Number.NEGATIVE_INFINITY;
+  const timestamp = Date.parse(value);
+  return Number.isNaN(timestamp) ? Number.NEGATIVE_INFINITY : timestamp;
 }
 
-function buildStatusConfig(flags: StatusFlags | null, locale: string, variant: "mobile" | "desktop"): StatusIndicatorConfig | null {
-  if (!flags) return null;
+function resolveLatestEnrollment(enrollments?: StudentProfileV1["enrollment"]): StudentProfileV1["enrollment"][number] | null {
+  if (!enrollments || enrollments.length === 0) return null;
+  const [first, ...rest] = enrollments;
+  let latest = first;
+  let latestTime = parseEntryDate(first.entryDate);
 
-  const sizeClass = variant === "mobile" ? "w-3.5 h-3.5" : "w-3 h-3";
-
-  if (flags.needsUpdate) {
-    return {
-      bgColor: "bg-destructive",
-      message: locale === "ar" ? "مطلوب تحديث المعلومات" : "Information Update Required",
-      icon: (
-        <svg className={`${sizeClass} text-white animate-pulse`} fill="currentColor" viewBox="0 0 20 20">
-          <path fillRule="evenodd" d="M18 10A8 8 0 11.001 10 8 8 0 0118 10zM9 5h2v6H9V5zm0 8h2v2H9v-2z" clipRule="evenodd" />
-        </svg>
-      ),
-    };
+  for (const entry of rest) {
+    const entryTime = parseEntryDate(entry.entryDate);
+    if (entryTime > latestTime) {
+      latest = entry;
+      latestTime = entryTime;
+    }
   }
 
-  if (flags.inProgress) {
-    return {
-      bgColor: "bg-chart-1",
-      message: locale === "ar" ? "قيد المراجعة" : "Under Review",
-      icon: (
-        <svg className={`${sizeClass} text-white animate-spin`} fill="none" viewBox="0 0 24 24">
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-        </svg>
-      ),
-    };
-  }
-
-  if (flags.rejected) {
-    return {
-      bgColor: "bg-destructive",
-      message: locale === "ar" ? "تم الرفض" : "Rejected",
-      icon: (
-        <svg className={`${sizeClass} text-white`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      ),
-    };
-  }
-
-  if (flags.needsConductSign) {
-    return {
-      bgColor: "bg-primary",
-      message: locale === "ar" ? "يتطلب توقيع اتفاقية السلوك" : "Conduct Agreement Signature Required",
-      icon: (
-        <svg className={`${sizeClass} text-white`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-        </svg>
-      ),
-    };
-  }
-
-  if (flags.allComplete) {
-    return {
-      bgColor: "bg-chart-2",
-      message: locale === "ar" ? "مكتمل" : "Complete",
-      icon: (
-        <svg className={`${sizeClass} text-white`} fill="currentColor" viewBox="0 0 20 20">
-          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-        </svg>
-      ),
-    };
-  }
-
-  return null;
+  return latest;
 }
 
-// Avatar with dynamic status indicator based on update information status
-const StatusIndicatorAvatar = ({ studentPersonId, displayName, locale }: { studentPersonId: string; displayName: string; locale: string }) => {
-  const params = new URLSearchParams({ studentPersonId });
-  params.set("includeIdh", "1");
-  const { data } = useSWR<ChildActionResponse>(
-    `/api/parent/child-actions?${params.toString()}`,
-    jsonFetcher
-  );
+function normalizeAcademicYear(value?: string | null): string | null {
+  const trimmed = typeof value === "string" ? value.trim() : "";
+  if (!trimmed) return null;
+  if (trimmed.includes("-")) return trimmed;
+  const parsed = Number.parseInt(trimmed, 10);
+  if (!Number.isNaN(parsed) && parsed > 0) {
+    return `${parsed - 1}-${parsed}`;
+  }
+  return trimmed;
+}
 
-  const summary = data?.ok ? data : undefined;
-  const flags = deriveStatusFlags(summary);
-  const statusConfig = buildStatusConfig(flags, locale, "mobile");
+function deriveAcademicYear(enrollments?: StudentProfileV1["enrollment"]): string {
+  const latest = resolveLatestEnrollment(enrollments);
+  const normalized = normalizeAcademicYear(latest?.schoolYear);
+  return normalized ?? DEFAULT_ACADEMIC_YEAR;
+}
 
-  return (
-    <div className="relative flex-shrink-0 group/status">
-      <div className="w-20 h-20 bg-gradient-to-br from-primary via-primary/90 to-primary/70 rounded-2xl flex items-center justify-center shadow-xl ring-2 ring-card group-hover:scale-105 transition-transform duration-300">
-        <span className="text-2xl font-bold text-primary-foreground">
-          {displayName.charAt(0).toUpperCase()}
-        </span>
-      </div>
-      {statusConfig && (
-        <>
-          <div className={clsx(
-            "absolute -bottom-1 -right-1 w-7 h-7 rounded-full border-3 border-card flex items-center justify-center shadow-lg",
-            statusConfig.bgColor
-          )}>
-            {statusConfig.icon}
-          </div>
-          {/* Status message tooltip */}
-          <div className={clsx(
-            "absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-lg",
-            "bg-popover text-popover-foreground text-xs font-medium whitespace-nowrap shadow-lg border border-border",
-            "opacity-0 group-hover/status:opacity-100 transition-opacity duration-200 pointer-events-none z-10"
-          )}>
-            {statusConfig.message}
-            <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-px">
-              <div className="border-4 border-transparent border-t-popover" />
-            </div>
-          </div>
-        </>
-      )}
+/**
+ * Mobile avatar component (status indicator removed).
+ */
+const ChildAvatar = ({ displayName }: { displayName: string }) => (
+  <div className="relative flex-shrink-0">
+    <div className="w-20 h-20 bg-gradient-to-br from-primary via-primary/90 to-primary/70 rounded-2xl flex items-center justify-center shadow-xl ring-2 ring-card transition-transform duration-300">
+      <span className="text-2xl font-bold text-primary-foreground">
+        {displayName.charAt(0).toUpperCase()}
+      </span>
     </div>
-  );
-};
+  </div>
+);
 
-// Desktop version with smaller size
-const StatusIndicatorAvatarDesktop = ({ studentPersonId, displayName, locale }: { studentPersonId: string; displayName: string; locale: string }) => {
-  const params = new URLSearchParams({ studentPersonId });
-  params.set("includeIdh", "1");
-  const { data } = useSWR<ChildActionResponse>(
-    `/api/parent/child-actions?${params.toString()}`,
-    jsonFetcher
-  );
-
-  const summary = data?.ok ? data : undefined;
-  const flags = deriveStatusFlags(summary);
-  const statusConfig = buildStatusConfig(flags, locale, "desktop");
-
-  return (
-    <div className="relative flex-shrink-0 group/avatar">
-      <div className="w-16 h-16 bg-gradient-to-br from-primary via-primary/90 to-primary/70 rounded-2xl flex items-center justify-center shadow-lg group-hover/avatar:shadow-2xl transition-all duration-300 group-hover:scale-110 ring-2 ring-card">
-        <span className="text-2xl font-bold text-primary-foreground">
-          {displayName.charAt(0).toUpperCase()}
-        </span>
-      </div>
-      {statusConfig && (
-        <>
-          <div className={clsx(
-            "absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-3 border-card flex items-center justify-center shadow-lg",
-            statusConfig.bgColor
-          )}>
-            {statusConfig.icon}
-          </div>
-          {/* Status message tooltip */}
-          <div className={clsx(
-            "absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-lg",
-            "bg-popover text-popover-foreground text-xs font-medium whitespace-nowrap shadow-lg border border-border",
-            "opacity-0 group-hover/avatar:opacity-100 transition-opacity duration-200 pointer-events-none z-10"
-          )}>
-            {statusConfig.message}
-            <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-px">
-              <div className="border-4 border-transparent border-t-popover" />
-            </div>
-          </div>
-        </>
-      )}
+/**
+ * Desktop avatar component (status indicator removed).
+ */
+const ChildAvatarDesktop = ({ displayName }: { displayName: string }) => (
+  <div className="relative flex-shrink-0">
+    <div className="w-16 h-16 bg-gradient-to-br from-primary via-primary/90 to-primary/70 rounded-2xl flex items-center justify-center shadow-lg transition-all duration-300 ring-2 ring-card">
+      <span className="text-2xl font-bold text-primary-foreground">
+        {displayName.charAt(0).toUpperCase()}
+      </span>
     </div>
-  );
-};
+  </div>
+);
+
 
 export default function ChildCards() {
   const { t, locale } = useI18n();
@@ -323,6 +182,9 @@ export default function ChildCards() {
             ? [child.firstNameArabic, child.middleNameArabic, child.lastNameArabic].filter(Boolean).join(' ')
             : [child.firstNameEnglish, child.middleNameEnglish, child.thirdNameEnglish, child.fourthNameEnglish, child.familyNameEnglish].filter(Boolean).join(' ');
 
+          const resolvedStudentNumber = child.studentNumber?.trim() || null;
+          const resolvedAcademicYear = resolvedStudentNumber ? deriveAcademicYear(child.enrollment) : undefined;
+
           return (
             <Card 
               key={child.id} 
@@ -340,7 +202,7 @@ export default function ChildCards() {
                 {/* Student Header */}
                 <div className="flex items-center gap-4 mb-5">
                   {/* Avatar with status indicator */}
-                  <StatusIndicatorAvatar studentPersonId={child.id} displayName={displayName} locale={locale} />
+                  <ChildAvatar displayName={displayName} />
 
                   {/* Student Info */}
                   <div className="flex-1 min-w-0">
@@ -359,10 +221,14 @@ export default function ChildCards() {
                     </div>
                   </div>
                 </div>
-
                 {/* Actions Section - Simplified */}
                 <div className="mt-4 pt-4 border-t border-border/50">
-                  <ChildActions studentPersonId={child.id} className="w-full" />
+                  <ChildActions
+                    studentPersonId={child.id}
+                    studentNumber={resolvedStudentNumber}
+                    academicYear={resolvedAcademicYear}
+                    className="w-full"
+                  />
                 </div>
               </div>
             </Card>
@@ -454,6 +320,9 @@ export default function ChildCards() {
                   ? [child.firstNameArabic, child.middleNameArabic, child.lastNameArabic].filter(Boolean).join(' ')
                   : [child.firstNameEnglish, child.middleNameEnglish, child.thirdNameEnglish, child.fourthNameEnglish, child.familyNameEnglish].filter(Boolean).join(' ');
 
+                const resolvedStudentNumber = child.studentNumber?.trim() || null;
+                const resolvedAcademicYear = resolvedStudentNumber ? deriveAcademicYear(child.enrollment) : undefined;
+
                 return (
                   <tr 
                     key={child.id}
@@ -462,7 +331,7 @@ export default function ChildCards() {
                     {/* Enhanced Student Name & Avatar */}
                     <td className="px-8 py-6">
                       <div className={clsx("flex items-center gap-5", locale === 'ar' && '')}>
-                        <StatusIndicatorAvatarDesktop studentPersonId={child.id} displayName={displayName} locale={locale} />
+                        <ChildAvatarDesktop displayName={displayName} />
                         <div className="flex-1 min-w-0">
                           <div className={clsx(
                             "font-bold text-foreground group-hover:text-primary transition-colors mb-3",
@@ -487,7 +356,12 @@ export default function ChildCards() {
                     {/* Enhanced Actions */}
                     <td className="px-8 py-6">
                       <div className="flex items-center justify-center">
-                        <ChildActions studentPersonId={child.id} compact />
+                        <ChildActions
+                          studentPersonId={child.id}
+                          studentNumber={resolvedStudentNumber}
+                          academicYear={resolvedAcademicYear}
+                          compact
+                        />
                       </div>
                     </td>
                   </tr>
