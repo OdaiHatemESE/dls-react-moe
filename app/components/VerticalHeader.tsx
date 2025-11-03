@@ -15,9 +15,12 @@ import {
   MenuIcon,
   XIcon
 } from './icons';
+import { Settings } from 'lucide-react';
 import { useSession, signOut } from 'next-auth/react';
 import { useI18n } from '@/app/i18n/I18nProvider';
 import { useTheme } from '@/lib/hooks/useTheme';
+import useSWR from 'swr';
+import { jsonFetcher } from '@/lib/swr';
 
 type Theme = 'light' | 'blue' | 'green' | 'purple' | 'dark';
 
@@ -92,6 +95,9 @@ export default function VerticalHeader() {
   const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
   const { data: session } = useSession();
   const { theme: currentTheme, switchTheme } = useTheme();
+  
+  // Check admin access
+  const { data: adminAccess } = useSWR<{ hasAccess: boolean }>('/api/admin/check-access', jsonFetcher);
 
   // Close theme menu when clicking outside or pressing escape
   React.useEffect(() => {
@@ -118,10 +124,12 @@ export default function VerticalHeader() {
     };
   }, [isThemeMenuOpen]);
 
-  type NavItem = { key: keyof typeof t.nav; href: string; icon: typeof DashboardIcon } & ({ badge: string } | { badge?: undefined });
+  type NavItem = { key: keyof typeof t.nav | 'admin'; href: string; icon: typeof DashboardIcon; isAdminOnly?: boolean } & ({ badge: string } | { badge?: undefined });
   const navigation: NavItem[] = [
     { key: 'dashboard', href: '/dashboard', icon: DashboardIcon },
     { key: 'summary', href: '/parent/summary', icon: SummaryIcon },
+    // Admin panel link - only shown if user has admin access
+    ...(adminAccess?.hasAccess ? [{ key: 'admin' as const, href: '/admin/eid', icon: Settings as any, isAdminOnly: true }] : []),
     // { key: 'announcements', href: '/announcements', icon: AnnouncementsIcon },
     // { key: 'calendar', href: '/calendar', icon: CalendarIcon },
     // { key: 'profile', href: '/profile', icon: ProfileIcon }
@@ -184,8 +192,12 @@ export default function VerticalHeader() {
                       href={item.href}
                       className={`group flex items-center gap-4 px-4 py-4 rounded-xl ${locale === 'ar' ? 'text-sm font-semibold tracking-wide' : 'text-sm font-semibold'} transition-all duration-300 border ${
                         isActive
-                          ? 'text-primary-foreground bg-gradient-to-r from-primary to-primary/80 border-primary/40 shadow-lg'
-                          : 'text-foreground hover:text-primary bg-card/80 hover:bg-card border-border hover:border-primary/20 hover:shadow-md backdrop-blur-sm'
+                          ? item.isAdminOnly
+                            ? 'text-white bg-gradient-to-r from-aegold-500 to-aegold-600 border-aegold-400/40 shadow-lg'
+                            : 'text-primary-foreground bg-gradient-to-r from-primary to-primary/80 border-primary/40 shadow-lg'
+                          : item.isAdminOnly
+                            ? 'text-foreground hover:text-white bg-card/80 hover:bg-gradient-to-r hover:from-aegold-500 hover:to-aegold-600 border-border hover:border-aegold-400/20 hover:shadow-md backdrop-blur-sm'
+                            : 'text-foreground hover:text-primary bg-card/80 hover:bg-card border-border hover:border-primary/20 hover:shadow-md backdrop-blur-sm'
                       }`}
                       onClick={() => setIsMenuOpen(false)}
                       aria-current={isActive ? 'page' : undefined}
@@ -197,7 +209,7 @@ export default function VerticalHeader() {
                       }`}>
                         <Icon className="w-5 h-5" aria-hidden="true" />
                       </div>
-                      <span className="flex-1 font-medium">{t.nav[item.key]}</span>
+                      <span className="flex-1 font-medium">{item.key === 'admin' ? (locale === 'ar' ? 'لوحة تحكم المشرف' : 'Admin Panel') : t.nav[item.key]}</span>
                       {item.badge && (
                         <span className="bg-destructive text-destructive-foreground text-xs rounded-full h-6 w-6 flex items-center justify-center animate-pulse font-medium">
                           {item.badge}
@@ -366,27 +378,38 @@ export default function VerticalHeader() {
                               'group relative flex items-center gap-x-4 rounded-2xl px-5 py-4 transition-all duration-300 overflow-hidden',
                               locale === 'ar' ? 'text-base font-semibold tracking-wide' : 'text-base font-semibold',
                               isActive
-                                ? 'bg-gradient-to-r from-primary to-primary/90 text-primary-foreground shadow-lg shadow-primary/25 scale-105'
-                                : 'text-foreground hover:bg-gradient-to-r hover:from-primary/10 hover:to-transparent hover:text-primary hover:scale-102 hover:shadow-md'
+                                ? item.isAdminOnly
+                                  ? 'bg-gradient-to-r from-aegold-500 to-aegold-600 text-white shadow-lg shadow-aegold-500/25 scale-105'
+                                  : 'bg-gradient-to-r from-primary to-primary/90 text-primary-foreground shadow-lg shadow-primary/25 scale-105'
+                                : item.isAdminOnly
+                                  ? 'text-foreground hover:bg-gradient-to-r hover:from-aegold-500 hover:to-aegold-600 hover:text-white hover:scale-102 hover:shadow-md'
+                                  : 'text-foreground hover:bg-gradient-to-r hover:from-primary/10 hover:to-transparent hover:text-primary hover:scale-102 hover:shadow-md'
                             )}
                             aria-current={isActive ? 'page' : undefined}
                           >
                             {/* Active indicator */}
                             {isActive && (
-                              <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-primary-foreground rounded-r-full" />
+                              <div className={clsx(
+                                'absolute left-0 top-0 bottom-0 w-1.5 rounded-r-full',
+                                item.isAdminOnly ? 'bg-white' : 'bg-primary-foreground'
+                              )} />
                             )}
                             
                             {/* Icon with background */}
                             <div className={clsx(
                               'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-all duration-300',
                               isActive 
-                                ? 'bg-primary-foreground/20 text-primary-foreground shadow-inner' 
-                                : 'bg-muted/50 text-muted-foreground group-hover:bg-primary/20 group-hover:text-primary group-hover:scale-110 group-hover:rotate-3'
+                                ? item.isAdminOnly
+                                  ? 'bg-white/20 text-white shadow-inner'
+                                  : 'bg-primary-foreground/20 text-primary-foreground shadow-inner'
+                                : item.isAdminOnly
+                                  ? 'bg-muted/50 text-muted-foreground group-hover:bg-white/20 group-hover:text-white group-hover:scale-110 group-hover:rotate-3'
+                                  : 'bg-muted/50 text-muted-foreground group-hover:bg-primary/20 group-hover:text-primary group-hover:scale-110 group-hover:rotate-3'
                             )}>
                               <Icon className="h-5 w-5" aria-hidden="true" />
                             </div>
                             
-                            <span className="truncate font-semibold flex-1">{t.nav[item.key]}</span>
+                            <span className="truncate font-semibold flex-1">{item.key === 'admin' ? (locale === 'ar' ? 'لوحة تحكم المشرف' : 'Admin Panel') : t.nav[item.key]}</span>
                             
                             {item.badge && (
                               <span className="ml-auto inline-flex items-center justify-center min-w-6 h-6 px-2 text-xs font-bold text-white bg-gradient-to-r from-red-500 to-red-600 rounded-full shadow-lg animate-pulse">
@@ -396,7 +419,10 @@ export default function VerticalHeader() {
                             
                             {/* Hover arrow */}
                             {!isActive && (
-                              <svg className="w-4 h-4 text-primary opacity-0 group-hover:opacity-100 transform translate-x-0 group-hover:translate-x-1 transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className={clsx(
+                                'w-4 h-4 opacity-0 group-hover:opacity-100 transform translate-x-0 group-hover:translate-x-1 transition-all duration-300',
+                                item.isAdminOnly ? 'text-white' : 'text-primary'
+                              )} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d={locale === 'ar' ? "M15 19l-7-7 7-7" : "M9 5l7 7-7 7"} />
                               </svg>
                             )}

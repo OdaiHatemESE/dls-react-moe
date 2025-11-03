@@ -13,7 +13,6 @@ import ChildCards from "./components/ChildCards";
 import RecentAnnouncements from "./components/RecentAnnouncements";
 import UpcomingEvents from "./components/UpcomingEvents";
 import Link from "next/link";
-import { Settings } from "lucide-react";
  
 export default function DashboardPage() {
   const { t, locale } = useI18n();
@@ -21,9 +20,6 @@ export default function DashboardPage() {
   const eid = session?.user?.emiratesId as string | undefined;
   const swrKey = eid ? `/api/PP/ChildList/${encodeURIComponent(eid)}` : null;
   const { data: childrenData } = useSWR<any>(swrKey, jsonFetcher);
-  
-  // Check admin access
-  const { data: adminAccess } = useSWR<{ hasAccess: boolean }>('/api/admin/check-access', jsonFetcher);
   
   // Extract meta from response
   const meta = childrenData?.meta;
@@ -123,69 +119,6 @@ export default function DashboardPage() {
  
       {/* Main Content Grid */}
       <div className="space-y-8">
-        {/* Admin Access Card - Only show if user has admin access */}
-        {adminAccess?.hasAccess && (
-          <Card className="border-0 bg-gradient-to-r from-aegold-500 to-aegold-600 text-white overflow-hidden shadow-lg">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
-                    <Settings className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold mb-1">
-                      {locale === 'ar' ? 'لوحة تحكم المشرف' : 'Admin Panel'}
-                    </h3>
-                    <p className="text-aegold-100 text-sm">
-                      {locale === 'ar' ? 'إدارة الإعدادات والمستخدمين والبيانات' : 'Manage settings, users, and data'}
-                    </p>
-                  </div>
-                </div>
-                <Link
-                  href="/admin/eid"
-                  className="px-6 py-3 bg-white text-aegold-600 rounded-lg font-semibold hover:bg-aegold-50 transition-all shadow-md hover:shadow-lg"
-                >
-                  {locale === 'ar' ? 'فتح' : 'Open'}
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Quick Summary Card */}
-        <Card className="border-0 bg-gradient-to-r from-chart-1/10 via-chart-2/10 to-chart-3/10 overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary/80 rounded-xl flex items-center justify-center shadow-md">
-                  <svg className="w-6 h-6 text-primary-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className={clsx(
-                    "text-lg font-bold text-foreground mb-1",
-                    locale === 'ar' && "leading-relaxed"
-                  )}>
-                    {locale === 'ar' ? 'ملخص الأطفال' : 'Children Summary'}
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    {locale === 'ar' 
-                      ? 'عرض إحصائيات شاملة ومعلومات مهمة عن جميع أطفالك'
-                      : 'View comprehensive statistics and important information about all your children'}
-                  </p>
-                </div>
-              </div>
-              <Link
-                href="/parent/summary"
-                className="px-6 py-3 bg-primary text-primary-foreground rounded-lg font-semibold hover:opacity-90 transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 whitespace-nowrap"
-              >
-                {locale === 'ar' ? 'عرض الملخص' : 'View Summary'}
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Enhanced Children Section */}
         <Card className="border-0 bg-card overflow-hidden">
           {/* Professional Header */}
