@@ -290,7 +290,7 @@ export const en = {
         otherTransportation: "Describe the transportation arrangement.",
       },
       submit: {
-        continue: "Continue to Conduct Charter",
+        continue: "Submit request",
         submitting: "Preparing...",
         cancel: "Back to child profile",
       },

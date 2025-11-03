@@ -327,7 +327,7 @@ export const ar = {
         otherTransportation: "يرجى وصف طريقة المواصلات.",
       },
       submit: {
-        continue: "المتابعة إلى ميثاق السلوك",
+        continue: "إرسال الطلب",
         submitting: "جارٍ التحضير...",
         cancel: "العودة إلى ملف الطالب",
       },

@@ -44,6 +44,26 @@ function formatAddress(address?: StudentAddress | null): string {
     .join(', ');
 }
 
+const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024;
+const ATTACHMENT_LIMIT_LABEL = '5 MB';
+const ALLOWED_ATTACHMENT_TYPES = ['application/pdf'];
+
+// Helper: validates and returns Base64 for attachment based on repo rules
+async function validateAndEncodeAttachment(file: File | null, locale: string): Promise<string> {
+  if (!file) return '';
+  if (!ALLOWED_ATTACHMENT_TYPES.includes(file.type)) {
+    throw new Error(locale === 'ar' ? 'يجب أن يكون المستند بصيغة PDF.' : 'Attachment must be a PDF file.');
+  }
+  if (file.size > MAX_ATTACHMENT_BYTES) {
+    throw new Error(
+      locale === 'ar'
+        ? `حجم الملف المرفق كبير جداً. الحد الأقصى المسموح هو ${ATTACHMENT_LIMIT_LABEL}.`
+        : `Attachment is too large. Maximum allowed size is ${ATTACHMENT_LIMIT_LABEL}.`
+    );
+  }
+  return fileToBase64(file);
+}
+
 function textOrNull(value?: string | null): string | null {
   const text = typeof value === 'string' ? value.trim() : '';
   return text.length > 0 ? text : null;
@@ -134,26 +154,7 @@ async function fileToBase64(file: File): Promise<string> {
     reader.readAsDataURL(file);
   });
 }
-
-const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024;
-const ATTACHMENT_LIMIT_LABEL = '5 MB';
-const ALLOWED_ATTACHMENT_TYPES = ['application/pdf'];
-
-// Helper: validates and returns Base64 for attachment based on repo rules
-async function validateAndEncodeAttachment(file: File | null, locale: string): Promise<string> {
-  if (!file) return '';
-  if (!ALLOWED_ATTACHMENT_TYPES.includes(file.type)) {
-    throw new Error(locale === 'ar' ? 'يجب أن يكون المستند بصيغة PDF.' : 'Attachment must be a PDF file.');
-  }
-  if (file.size > MAX_ATTACHMENT_BYTES) {
-    throw new Error(
-      locale === 'ar'
-        ? `حجم الملف المرفق كبير جداً. الحد الأقصى المسموح هو ${ATTACHMENT_LIMIT_LABEL}.`
-        : `Attachment is too large. Maximum allowed size is ${ATTACHMENT_LIMIT_LABEL}.`
-    );
-  }
-  return fileToBase64(file);
-}
+ 
 
 // Helper: submit payload to IDH and normalize error shape
 async function submitToIDH(idhPayload: IDHStudent): Promise<void> {
@@ -864,9 +865,8 @@ export default function UpdateStudentInfoPage() {
 
       await new Promise((resolve) => setTimeout(resolve, 1500));
 
-      if (sourcedId) {
-        router.push(`/child/${encodeURIComponent(sourcedId)}/parent-conduct?studentId=${encodeURIComponent(sourcedId)}`);
-      }
+      // After successful update, navigate back to dashboard
+      router.push('/dashboard');
     } catch (submitError: unknown) {
       console.error('IDH submission failed', submitError);
       const status = typeof submitError === 'object' && submitError && 'status' in submitError
@@ -1048,7 +1048,7 @@ export default function UpdateStudentInfoPage() {
             <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <span>{locale === 'ar' ? 'تم حفظ التغييرات بنجاح!' : 'Changes saved successfully!'}</span>
+            <span>{locale === 'ar' ? 'تم إرسال طلب تحديث البيانات بنجاح!' : 'Your data update request has been submitted!'}</span>
           </div>
         )}
         
@@ -1614,7 +1614,6 @@ export default function UpdateStudentInfoPage() {
           </div>
         </form>
       </main>
-
       {/* Keyboard Navigation Hints */}
       <div className="sr-only" role="region" aria-label={locale === 'ar' ? 'تلميحات لوحة المفاتيح' : 'Keyboard hints'}>
         <p>{locale === 'ar' ? 'استخدم Tab للتنقل بين الحقول' : 'Use Tab to navigate between fields'}</p>
@@ -1639,8 +1638,8 @@ export default function UpdateStudentInfoPage() {
             </DialogTitle>
             <DialogDescription className={clsx("text-base leading-relaxed", locale === 'ar' && 'text-right')}>
               {locale === 'ar'
-                ? 'يرجى مراجعة التغييرات التالية قبل المتابعة إلى توقيع ميثاق السلوك:'
-                : 'Please review the following changes before proceeding to sign the conduct charter:'}
+                ? 'يرجى مراجعة التغييرات التالية قبل تقديم الطلب:'
+                : 'Please review the following changes before submitting your request:'}
             </DialogDescription>
           </DialogHeader>
 
@@ -1886,8 +1885,8 @@ export default function UpdateStudentInfoPage() {
                 </svg>
                 <p className={clsx("text-sm text-amber-900 dark:text-amber-100 leading-relaxed font-medium", locale === 'ar' && 'text-right')}>
                   {locale === 'ar'
-                    ? 'بالنقر على "تأكيد والمتابعة"، أقر بأن جميع المعلومات المذكورة أعلاه صحيحة وكاملة. سيتم الانتقال إلى صفحة توقيع ميثاق السلوك.'
-                    : 'By clicking "Confirm & Continue", I acknowledge that all information above is correct and complete. You will proceed to sign the conduct charter.'}
+                    ? 'بالنقر على "تأكيد والإرسال"، أقر بأن جميع المعلومات المذكورة أعلاه صحيحة وكاملة وسيتم إرسال طلب تحديث البيانات.'
+                    : 'By clicking "Confirm & Submit", I acknowledge that all information above is correct and complete and that a data update request will be submitted.'}
                 </p>
               </div>
             </div>
@@ -1924,7 +1923,7 @@ export default function UpdateStudentInfoPage() {
                   <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  {locale === 'ar' ? 'تأكيد والمتابعة' : 'Confirm & Continue'}
+                  {locale === 'ar' ? 'تأكيد والإرسال' : 'Confirm & Submit'}
                 </>
               )}
             </Button>
