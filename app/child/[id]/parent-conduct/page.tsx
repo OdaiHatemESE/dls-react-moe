@@ -12,7 +12,6 @@ import { useI18n } from '@/app/i18n/I18nProvider';
 import { downloadBase64PDF, type PdfFormData } from '@/lib/pdf-generator';
 import {
   type ParentConductAggregatedResponse,
-  type UpdateInfoRow,
 } from '@/lib/parent-conduct';
 import type { StudentProfileV1 } from '@/app/types/studentprofile';
 
@@ -69,24 +68,28 @@ type AggregatedApiResponse = {
   meta?: { aggregatedAt: string };
 };
 
+type CharterStatusResponse = {
+  ok: boolean;
+  data?: {
+    academicyear?: string;
+    studentNumber?: string;
+    attachment01?: string | null;
+    datetime?: string | null;
+  } | null;
+  error?: string;
+  meta?: { fetchedAt?: string | null; studentNumber?: string };
+};
+
 const PLACEHOLDER = '—';
 const CONDUCT_DATA_ENDPOINT = '/api/parent/conduct';
 const GENERATE_CONDUCT_PDF_ENDPOINT = '/api/parent/generate-conduct-pdf';
-const UPDATE_INFORMATION_ENDPOINT = '/api/parent/update-information-requests';
-const PDF_CHUNK_SIZE = 500_000;
+const STUDENTS_PARTNERSHIP_CHARTER_ENDPOINT = '/api/parent/students-partnership-charter';
 
 type PdfRequestBody = PdfFormData & { template?: 'uae' | 'expats' };
 
 type GeneratePdfResult = {
   base64: string;
   filename: string;
-};
-
-type PersistPayload = {
-  studentPersonId: string;
-  parentPersonId?: string | null;
-  studentEmirateId?: string | null;
-  citizenship?: string | null;
 };
 
 async function requestConductPdf(body: PdfRequestBody): Promise<GeneratePdfResult> {
@@ -110,54 +113,24 @@ async function requestConductPdf(body: PdfRequestBody): Promise<GeneratePdfResul
   return { base64: json.base64, filename };
 }
 
-async function persistConductAgreement(basePayload: PersistPayload, base64: string): Promise<void> {
-  if (!base64) return;
+type PartnershipCharterPayload = {
+  academicyear: string;
+  studentNumber: string;
+  attachment01: string;
+  datetime: string;
+};
 
-  const baseRequest = {
-    studentPersonId: basePayload.studentPersonId,
-    parentPersonId: basePayload.parentPersonId ?? null,
-    studentEmirateId: basePayload.studentEmirateId ?? null,
-    citizenship: basePayload.citizenship ?? null,
-  };
-
-  const primaryResponse = await fetch(UPDATE_INFORMATION_ENDPOINT, {
-    method: 'PATCH',
+async function submitPartnershipCharter(body: PartnershipCharterPayload): Promise<void> {
+  const response = await fetch(STUDENTS_PARTNERSHIP_CHARTER_ENDPOINT, {
+    method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      ...baseRequest,
-      isConductAgreementSigned: true,
-      conductAgreementStatus: 1,
-      pdfBase64: base64,
-    }),
+    body: JSON.stringify(body),
   });
 
-  if (primaryResponse.ok) {
-    return;
-  }
-
-  const totalChunks = Math.ceil(base64.length / PDF_CHUNK_SIZE);
-  if (totalChunks <= 1) {
-    const errorText = await primaryResponse.text().catch(() => 'Failed to persist conduct agreement');
-    throw new Error(errorText || 'Failed to persist conduct agreement');
-  }
-
-  for (let index = 0; index < totalChunks; index++) {
-    const chunk = base64.slice(index * PDF_CHUNK_SIZE, (index + 1) * PDF_CHUNK_SIZE);
-    const chunkResponse = await fetch(UPDATE_INFORMATION_ENDPOINT, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ...baseRequest,
-        chunk,
-        chunkIndex: index,
-        totalChunks,
-      }),
-    });
-
-    if (!chunkResponse.ok) {
-      const errorText = await chunkResponse.text().catch(() => `Chunk upload failed at index ${index}`);
-      throw new Error(errorText || `Chunk upload failed at index ${index}`);
-    }
+  const json = await response.json().catch(() => null);
+  if (!response.ok) {
+    const message = json && typeof json.error === 'string' ? json.error : 'Failed to submit partnership charter';
+    throw new Error(message);
   }
 }
 
@@ -203,7 +176,7 @@ export default function ParentConductPage() {
     data: aggregatedResponse,
     error: aggregatedError,
     isLoading,
-    mutate,
+    mutate: mutateAggregated,
   } = useSWR<AggregatedApiResponse>(dataKey, jsonFetcher);
 
   const aggregated = aggregatedResponse?.data ?? null;
@@ -215,10 +188,8 @@ export default function ParentConductPage() {
         : aggregatedError
           ? String(aggregatedError)
           : undefined;
-  const hasFetchError = Boolean(apiErrorMessage);
 
   const studentInfo = aggregated?.studentInfo ?? null;
-  const updateInfo = aggregated?.updateInfo ?? null;
   const schoolInfo = aggregated?.schoolInfo as SchoolInfo | null;
 
   // Helper functions for StudentProfileV1
@@ -253,6 +224,65 @@ export default function ParentConductPage() {
   }, [student, locale]);
 
   const studentNationalId = student?.emirateId || PLACEHOLDER;
+  const studentNumber = student?.studentNumber?.trim() ?? null;
+
+  const latestEnrollment = React.useMemo(() => {
+    if (!student?.enrollment?.length) return null;
+    // Get the most recent enrollment (last in array or highest entryDate)
+    return student.enrollment.reduce((latest, current) => {
+      if (!latest) return current;
+      const currentDate = current.entryDate ? new Date(current.entryDate).getTime() : 0;
+      const latestDate = latest.entryDate ? new Date(latest.entryDate).getTime() : 0;
+      return currentDate > latestDate ? current : latest;
+    });
+  }, [student]);
+
+  const academicYearValue = React.useMemo(() => {
+    const rawYear = latestEnrollment?.schoolYear?.trim();
+    if (!rawYear) {
+      return '2025-2026';
+    }
+    if (rawYear.includes('-')) {
+      return rawYear;
+    }
+    const parsed = Number.parseInt(rawYear, 10);
+    if (!Number.isNaN(parsed) && parsed > 0) {
+      return `${parsed - 1}-${parsed}`;
+    }
+    return rawYear;
+  }, [latestEnrollment?.schoolYear]);
+
+  const charterStatusKey = studentNumber
+    ? `${STUDENTS_PARTNERSHIP_CHARTER_ENDPOINT}?studentNumber=${encodeURIComponent(studentNumber)}&academicyear=${encodeURIComponent(academicYearValue)}`
+    : null;
+
+  const {
+    data: charterStatusResponse,
+    error: charterStatusError,
+    isLoading: isCharterLoading,
+    mutate: mutateCharter,
+  } = useSWR<CharterStatusResponse>(charterStatusKey, jsonFetcher);
+
+  const charterRecord = charterStatusResponse?.data ?? null;
+
+  React.useEffect(() => {
+    setIsSigned(false);
+    setLatestPdfBase64(null);
+  }, [studentNumber]);
+
+  const charterErrorMessage =
+    charterStatusResponse && charterStatusResponse.ok === false
+      ? charterStatusResponse.error
+      : charterStatusError instanceof Error
+        ? charterStatusError.message
+        : charterStatusError
+          ? String(charterStatusError)
+          : undefined;
+
+  const hasFetchError = Boolean(apiErrorMessage);
+  const combinedErrorMessage = apiErrorMessage ?? charterErrorMessage;
+  const isInitialCharterLoading =
+    Boolean(studentNumber) && isCharterLoading && !charterStatusResponse && !charterErrorMessage;
   
   const studentAddress = React.useMemo(() => {
     if (!student?.addresses?.length) return PLACEHOLDER;
@@ -276,17 +306,6 @@ export default function ParentConductPage() {
       phone: mobile?.value,
       email: email?.value,
     };
-  }, [student]);
-
-  const latestEnrollment = React.useMemo(() => {
-    if (!student?.enrollment?.length) return null;
-    // Get the most recent enrollment (last in array or highest entryDate)
-    return student.enrollment.reduce((latest, current) => {
-      if (!latest) return current;
-      const currentDate = current.entryDate ? new Date(current.entryDate).getTime() : 0;
-      const latestDate = latest.entryDate ? new Date(latest.entryDate).getTime() : 0;
-      return currentDate > latestDate ? current : latest;
-    });
   }, [student]);
 
   const citizenship = student?.CitizenshipStatus || null;
@@ -381,20 +400,7 @@ export default function ParentConductPage() {
   
   const latestStreamGradeName = latestEnrollment?.streamGradeId || PLACEHOLDER;
 
-  const signedRow: UpdateInfoRow | undefined = updateInfo?.ok ? updateInfo.data : undefined;
   const warningMessage = null;
-  const alreadySigned = Boolean(
-    signedRow?.isConductAgreementSigned &&
-      signedRow?.conductAgreementStatus === 1 &&
-      signedRow?.pdfBase64 &&
-      signedRow.pdfBase64.length > 20,
-  );
-
-  React.useEffect(() => {
-    if (signedRow?.pdfBase64) {
-      setLatestPdfBase64(signedRow.pdfBase64);
-    }
-  }, [signedRow?.pdfBase64]);
 
   const today = React.useMemo(() => {
     try {
@@ -403,6 +409,18 @@ export default function ParentConductPage() {
       return new Date().toLocaleDateString();
     }
   }, []);
+
+  React.useEffect(() => {
+    if (!charterStatusResponse) return;
+    const attachment = typeof charterRecord?.attachment01 === 'string' ? charterRecord.attachment01.trim() : '';
+    if (attachment.length > 20) {
+      setIsSigned(true);
+      setLatestPdfBase64(attachment);
+    } else if (charterStatusResponse.ok && (!charterRecord || attachment.length === 0)) {
+      setIsSigned(false);
+      setLatestPdfBase64(null);
+    }
+  }, [charterRecord, charterStatusResponse]);
 
   const handleGeneratePDF = React.useCallback(
     async ({ autoDownload = false }: { autoDownload?: boolean } = {}) => {
@@ -466,27 +484,30 @@ export default function ParentConductPage() {
   }, [handleGeneratePDF, latestPdfBase64, studentFullName]);
 
   const handleSign = React.useCallback(async () => {
-    if (!resolvedStudentId || !isAgreed || isSigning) return;
+    if (!isAgreed || isSigning) return;
+
+    if (!studentNumber) {
+      alert(locale === 'ar' ? 'رقم الطالب غير متوفر.' : 'Student number is unavailable.');
+      return;
+    }
+
+    const academicyear = academicYearValue || '2025-2026';
 
     setIsSigning(true);
     try {
       const { base64 } = await handleGeneratePDF({ autoDownload: true });
+
+      await submitPartnershipCharter({
+        academicyear,
+        studentNumber,
+        attachment01: base64,
+        datetime: new Date().toISOString(),
+      });
+
       setLatestPdfBase64(base64);
-
       setIsSigned(true);
-      await persistConductAgreement(
-        {
-          studentPersonId: resolvedStudentId,
-          parentPersonId: null,
-          studentEmirateId: studentNationalId !== PLACEHOLDER ? studentNationalId : null,
-          citizenship: citizenship ?? null,
-        },
-        base64,
-      );
 
-      const notifyParent = async () => {
-        if (!base64) return;
-
+      const notifyParent = async (pdf: string) => {
         const emailRecipient = parentContacts.email?.trim();
         const smsRecipient = parentContacts.phone?.trim();
 
@@ -498,7 +519,7 @@ export default function ParentConductPage() {
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
             body: JSON.stringify({
-              pdf64: base64,
+              pdf64: pdf,
               to: emailRecipient,
             }),
           });
@@ -542,29 +563,36 @@ export default function ParentConductPage() {
         });
       };
 
-      await notifyParent();
+      await notifyParent(base64);
 
-      if (typeof mutate === 'function') {
-        void mutate();
+      if (studentNumber) {
+        await mutateCharter();
+      }
+
+      if (typeof mutateAggregated === 'function') {
+        void mutateAggregated();
       }
     } catch (error) {
       console.error('Error completing conduct signature:', error);
       alert(
-        'Charter signed successfully, but saving the agreement failed. It will retry on next visit.',
+        locale === 'ar'
+          ? 'تعذر حفظ توقيع الميثاق. يرجى المحاولة مرة أخرى.'
+          : 'Failed to submit the partnership charter. Please try again.',
       );
     } finally {
       setIsSigning(false);
     }
   }, [
+    academicYearValue,
     handleGeneratePDF,
     isAgreed,
     isSigning,
-    mutate,
+    locale,
+    mutateAggregated,
+    mutateCharter,
     parentContacts.email,
     parentContacts.phone,
-    resolvedStudentId,
-    studentNationalId,
-    citizenship,
+    studentNumber,
   ]);
 
   if (!resolvedStudentId) {
@@ -575,7 +603,7 @@ export default function ParentConductPage() {
     );
   }
 
-  if (isLoading) {
+  if (isLoading || isInitialCharterLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <Spinner variant="education" text={t.parentConduct.loading} />
@@ -584,7 +612,7 @@ export default function ParentConductPage() {
   }
 
   if (hasFetchError) {
-    const message = apiErrorMessage ?? t.parentConduct.errorLoading;
+    const message = combinedErrorMessage ?? t.parentConduct.errorLoading;
     return (
       <div className="max-w-xl mx-auto py-10 text-center text-destructive">
         {message}
@@ -602,54 +630,109 @@ export default function ParentConductPage() {
     );
   }
 
-  if (alreadySigned && signedRow?.pdfBase64) {
+  // If charter is already signed, show only the success message
+  if (isSigned && latestPdfBase64) {
     return (
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10" dir={locale === 'ar' ? 'rtl' : 'ltr'}>
-        <Card className="mb-6 border shadow-md">
-          <CardHeader className="bg-gradient-to-r from-green-600 to-green-500 text-white">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6" dir={locale === 'ar' ? 'rtl' : 'ltr'}>
+        {/* Top nav */}
+        <div className="mb-6">
+          <Link 
+            href={routeChildId ? `/child/${encodeURIComponent(routeChildId)}` : '/dashboard'}
+            className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <svg className="w-4 h-4 ml-2 rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            {t.parentConduct.backButton}
+          </Link>
+        </div>
+
+        {/* Header */}
+        <Card className="mb-6 border shadow-lg">
+          <CardHeader className="bg-gradient-to-r from-primary to-primary/90 text-primary-foreground">
             <CardTitle className="text-center text-lg sm:text-xl font-semibold">
-              {locale === 'ar' ? 'تم توقيع ميثاق السلوك بنجاح' : 'Parent Conduct Charter Completed'}
+              {t.parentConduct.title}
             </CardTitle>
           </CardHeader>
+        </Card>
+
+        {/* Already Signed Notice */}
+        <Card className="border-2 border-green-500 shadow-lg">
           <CardContent className="pt-6">
-            <div className="flex items-start gap-3 p-4 bg-green-50 border border-green-200 rounded-lg">
-              <svg className="w-6 h-6 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <div>
-                <div className="text-sm font-medium text-foreground mb-1">
-                  {locale === 'ar'
-                    ? 'تم إنجاز عملية التوقيع وحفظ نسخة PDF'
-                    : 'The charter has been signed and a PDF copy is stored.'}
+            <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-6">
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0">
+                  <div className="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center">
+                    <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
                 </div>
-                <div className="text-xs text-muted-foreground">
-                  {locale === 'ar'
-                    ? 'يمكنك تنزيل نسخة الـ PDF في أي وقت.'
-                    : 'You can download the PDF copy anytime.'}
+                <div className="flex-1">
+                  <h3 className="text-xl font-bold text-green-800 dark:text-green-300 mb-2">
+                    {locale === 'ar' ? 'تم توقيع الميثاق بنجاح' : 'Charter Already Signed'}
+                  </h3>
+                  <p className="text-sm text-green-700 dark:text-green-400 mb-4">
+                    {locale === 'ar' 
+                      ? 'لقد قمت بالفعل بتوقيع ميثاق الشراكة بين المدرسة وولي الأمر. يمكنك تحميل نسخة من الميثاق الموقع في أي وقت.'
+                      : 'You have already signed the partnership charter between the school and parent. You can download a copy of the signed charter at any time.'}
+                  </p>
+
+                  {/* Student Info Summary */}
+                  <div className="bg-white dark:bg-gray-800 rounded-lg p-4 mb-4 border border-green-200 dark:border-green-800">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <span className="font-medium text-gray-600 dark:text-gray-400">
+                          {locale === 'ar' ? 'الطالب: ' : 'Student: '}
+                        </span>
+                        <span className="text-gray-900 dark:text-gray-100">{studentFullName}</span>
+                      </div>
+                      <div>
+                        <span className="font-medium text-gray-600 dark:text-gray-400">
+                          {locale === 'ar' ? 'ولي الأمر: ' : 'Parent: '}
+                        </span>
+                        <span className="text-gray-900 dark:text-gray-100">{parentFullName}</span>
+                      </div>
+                      <div>
+                        <span className="font-medium text-gray-600 dark:text-gray-400">
+                          {locale === 'ar' ? 'المدرسة: ' : 'School: '}
+                        </span>
+                        <span className="text-gray-900 dark:text-gray-100">{schoolName}</span>
+                      </div>
+                      <div>
+                        <span className="font-medium text-gray-600 dark:text-gray-400">
+                          {locale === 'ar' ? 'السنة الدراسية: ' : 'Academic Year: '}
+                        </span>
+                        <span className="text-gray-900 dark:text-gray-100">{schoolYearLabel}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Download Button */}
+                  <button
+                    type="button"
+                    onClick={handleManualDownload}
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-all shadow-md hover:shadow-lg"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    {locale === 'ar' ? 'تحميل الميثاق الموقع' : 'Download Signed Charter'}
+                  </button>
                 </div>
               </div>
             </div>
-
-            <div className="mt-6 flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => downloadBase64PDF(signedRow.pdfBase64 as string, `${studentFullName}_ParentConduct.pdf`)}
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all bg-secondary hover:bg-secondary/90 text-secondary-foreground shadow-md hover:shadow-lg"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                {locale === 'ar' ? 'تحميل PDF' : 'Download PDF'}
-              </button>
-
-              <Link href={routeChildId ? `/child/${encodeURIComponent(routeChildId)}` : '/dashboard'}>
-                <button className="px-6 py-3 rounded-lg border bg-muted text-foreground" type="button">
-                  {t.parentConduct.navigation.close}
-                </button>
-              </Link>
-            </div>
           </CardContent>
         </Card>
+
+        {/* Back Button */}
+        <div className="mt-6 text-center">
+          <Link href={routeChildId ? `/child/${encodeURIComponent(routeChildId)}` : '/dashboard'}>
+            <button className="px-6 py-2 border rounded bg-muted hover:bg-muted/80 text-foreground transition-colors" type="button">
+              {t.parentConduct.navigation.close}
+            </button>
+          </Link>
+        </div>
       </div>
     );
   }
@@ -915,75 +998,103 @@ export default function ParentConductPage() {
                 </div>
               </div>
 
-              <div className="space-y-4">
-                <div className="p-4 bg-accent/20 border border-accent rounded-lg">
-                  <div className="text-xs text-muted-foreground leading-relaxed mb-4">
-                    <span className="font-medium text-foreground block mb-2">{t.parentConduct.signatureSection.parentDeclaration}</span>
-                    {t.parentConduct.signatureSection.declarationText}
+              {/* Already Signed Notice */}
+              {isSigned && (
+                <div className="bg-green-50 dark:bg-green-900/20 border-2 border-green-500 rounded-lg p-4 mb-4">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0">
+                      <svg className="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-green-800 dark:text-green-300 mb-1">
+                        {locale === 'ar' ? '✓ تم توقيع الميثاق بنجاح' : '✓ Charter Already Signed'}
+                      </h4>
+                      <p className="text-sm text-green-700 dark:text-green-400">
+                        {locale === 'ar' 
+                          ? 'لقد قمت بالفعل بتوقيع ميثاق الشراكة بين المدرسة وولي الأمر. يمكنك تحميل نسخة من الميثاق الموقع باستخدام الزر أدناه.'
+                          : 'You have already signed the partnership charter between the school and parent. You can download a copy of the signed charter using the button below.'}
+                      </p>
+                      <div className="mt-3">
+                        <button
+                          type="button"
+                          onClick={handleManualDownload}
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-all shadow-md hover:shadow-lg"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                          {locale === 'ar' ? 'تحميل الميثاق الموقع' : 'Download Signed Charter'}
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                  
-                  <div className="flex items-start gap-3 mt-4 p-3 bg-background rounded border">
-                    <input
-                      type="checkbox"
-                      id="agree-checkbox"
-                      checked={isAgreed}
-                      onChange={(e) => setIsAgreed(e.target.checked)}
-                      className="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                      disabled={isSigned || isSigning}
-                    />
-                    <label htmlFor="agree-checkbox" className="text-sm text-foreground cursor-pointer">
-                      {locale === 'ar' 
-                        ? 'أوافق على جميع بنود وشروط ميثاق الشراكة بين المدرسة وولي الأمر وأتعهد بالالتزام بها.'
-                        : 'I agree to all terms and conditions of the partnership charter between the school and parent and commit to abide by them.'}
-                    </label>
-                  </div>
+                </div>
+              )}
 
-                  <div className="mt-4 flex flex-col sm:flex-row gap-3">
-                    <button
-                      type="button"
-                      onClick={handleSign}
-                      disabled={!isAgreed || isSigned || isSigning}
-                      className={`w-full sm:w-auto px-6 py-3 rounded-lg font-medium transition-all ${
-                        !isAgreed || isSigned || isSigning
-                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                          : 'bg-primary hover:bg-primary/90 text-primary-foreground shadow-md hover:shadow-lg'
-                      }`}
-                    >
-                      {isSigned
-                        ? locale === 'ar'
-                          ? '✓ تم التوقيع'
-                          : '✓ Signed'
-                        : isSigning
+              <div className="space-y-4">
+                {!isSigned && (
+                  <div className="p-4 bg-accent/20 border border-accent rounded-lg">
+                    <div className="text-xs text-muted-foreground leading-relaxed mb-4">
+                      <span className="font-medium text-foreground block mb-2">{t.parentConduct.signatureSection.parentDeclaration}</span>
+                      {t.parentConduct.signatureSection.declarationText}
+                    </div>
+                    
+                    <div className="flex items-start gap-3 mt-4 p-3 bg-background rounded border">
+                      <input
+                        type="checkbox"
+                        id="agree-checkbox"
+                        checked={isAgreed}
+                        onChange={(e) => setIsAgreed(e.target.checked)}
+                        className="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                        disabled={isSigning}
+                      />
+                      <label htmlFor="agree-checkbox" className="text-sm text-foreground cursor-pointer">
+                        {locale === 'ar' 
+                          ? 'أوافق على جميع بنود وشروط ميثاق الشراكة بين المدرسة وولي الأمر وأتعهد بالالتزام بها.'
+                          : 'I agree to all terms and conditions of the partnership charter between the school and parent and commit to abide by them.'}
+                      </label>
+                    </div>
+
+                    {charterErrorMessage && (
+                      <div className="mt-3 text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded p-2">
+                        {locale === 'ar'
+                          ? 'تعذر التحقق من حالة الميثاق الحالية. يمكنك متابعة التوقيع، وسيتم التحقق مرة أخرى بعد الحفظ.'
+                          : 'Unable to verify the existing charter status. You may continue signing and the system will re-check after saving.'}
+                      </div>
+                    )}
+
+                    <div className="mt-4 flex flex-col sm:flex-row gap-3">
+                      <button
+                        type="button"
+                        onClick={handleSign}
+                        disabled={!isAgreed || isSigning || !studentNumber || isCharterLoading}
+                        className={`w-full sm:w-auto px-6 py-3 rounded-lg font-medium transition-all ${
+                          !isAgreed || isSigning || !studentNumber || isCharterLoading
+                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                            : 'bg-primary hover:bg-primary/90 text-primary-foreground shadow-md hover:shadow-lg'
+                        }`}
+                      >
+                        {isSigning
                           ? locale === 'ar'
                             ? 'جاري التوقيع...'
                             : 'Signing...'
                           : locale === 'ar'
                             ? 'توقيع الميثاق'
                             : 'Sign Charter'}
-                    </button>
-
-                    {isSigned && (
-                      <button
-                        type="button"
-                        onClick={handleManualDownload}
-                        className="w-full sm:w-auto px-6 py-3 rounded-lg font-medium transition-all bg-secondary hover:bg-secondary/90 text-secondary-foreground shadow-md hover:shadow-lg flex items-center justify-center gap-2"
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                        {locale === 'ar' ? 'تحميل PDF' : 'Download PDF'}
                       </button>
-                    )}
-                    
-                    {!isAgreed && !isSigned && (
-                      <p className="text-xs text-muted-foreground mt-2">
-                        {locale === 'ar' 
-                          ? 'يرجى الموافقة على الشروط للمتابعة'
-                          : 'Please agree to the terms to proceed'}
-                      </p>
-                    )}
+                      
+                      {!isAgreed && (
+                        <p className="text-xs text-muted-foreground mt-2">
+                          {locale === 'ar' 
+                            ? 'يرجى الموافقة على الشروط للمتابعة'
+                            : 'Please agree to the terms to proceed'}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 <div className="grid grid-cols-1 md:grid-cols-3 items-end gap-4 mt-4">
                   <div className="md:col-span-2 flex flex-col items-center justify-center border-2 border-dashed border-secondary rounded-lg py-6 bg-secondary/10">
