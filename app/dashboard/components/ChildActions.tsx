@@ -302,12 +302,28 @@ export function ChildStatusBadge({ studentPersonId, parentPersonId, studentEmira
   const { data } = useSWR<ChildActionResponse>(`/api/parent/child-actions?${params}`, jsonFetcher);
 
   const badge = data?.badge;
+  
+  React.useEffect(() => {
+    if (badge) {
+      console.log("🏷️  ChildStatusBadge Rendering:");
+      console.log("   Student:", studentPersonId);
+      console.log("   Badge Key:", badge.key);
+      console.log("   Badge Label:", badge.label);
+      console.log("   Badge Tone:", badge.tone);
+      console.log("   Is Urgent:", badge.tone === "urgent");
+      console.log("   Is Signature Required:", badge.key === "childActions.badge.signatureRequired");
+    }
+  }, [badge, studentPersonId]);
+  
   if (!badge) return null;
 
   const label = getBadgeLabel(badge, locale);
   const tooltip = getBadgeTooltip(badge, locale);
   const urgent = badge.tone === "urgent";
 
+  // Determine icon based on badge type
+  const isSignatureRequired = badge.key === "childActions.badge.signatureRequired";
+  
   return (
     <div
       className={clsx(
@@ -322,12 +338,19 @@ export function ChildStatusBadge({ studentPersonId, parentPersonId, studentEmira
       aria-label={tooltip}
     >
       {urgent ? (
+        // Red alert icon for urgent (Update Required)
         <svg className="w-3.5 h-3.5 animate-pulse" fill="currentColor" viewBox="0 0 20 20">
           <path fillRule="evenodd" d="M18 10A8 8 0 11.001 10 8 8 0 0118 10zM9 5h2v6H9V5zm0 8h2v2H9v-2z" clipRule="evenodd" />
         </svg>
-      ) : (
+      ) : isSignatureRequired ? (
+        // Pen/signature icon for signature required
         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+        </svg>
+      ) : (
+        // Info/checkmark icon for other info badges
+        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
       )}
       <span>{label}</span>

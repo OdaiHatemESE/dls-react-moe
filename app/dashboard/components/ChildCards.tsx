@@ -33,18 +33,32 @@ function deriveStatusFlags(summary?: ChildActionResponse): StatusFlags | null {
 
   const update = summary.updateRequest;
   const status = update.infoUpdateRequestStatus ?? null;
-  const approved = status === 3;
+  const approved = status === 4; // Status 4 = Approved (needs signature)
   const conductSigned = !!update.isConductAgreementSigned;
   const badgeKey = summary.badge?.key ?? null;
 
-  return {
+  const flags = {
     needsUpdate: badgeKey === "childActions.badge.updateRequired",
-    inProgress: status === 1 || status === 2,
+    inProgress: status === 1 || status === 3, // Status 1 = Pending, Status 3 = Under Review
     approved,
-    rejected: status === 4,
+    rejected: status === 5, // Status 5 = Rejected
     needsConductSign: badgeKey === "childActions.badge.signatureRequired",
     allComplete: approved && conductSigned,
   } satisfies StatusFlags;
+
+  console.log("👤 Avatar Status Flags:");
+  console.log("   Status ID:", status);
+  console.log("   Badge Key:", badgeKey);
+  console.log("   Flags:", {
+    needsUpdate: flags.needsUpdate,
+    inProgress: flags.inProgress,
+    approved: flags.approved,
+    rejected: flags.rejected,
+    needsConductSign: flags.needsConductSign,
+    allComplete: flags.allComplete,
+  });
+
+  return flags;
 }
 
 function buildStatusConfig(flags: StatusFlags | null, locale: string, variant: "mobile" | "desktop"): StatusIndicatorConfig | null {
