@@ -29,6 +29,8 @@ type ChildActionRequestOptions = {
   schoolYearHint?: string | null;
   idhStatusId?: number | null;
   idhFetchedAt?: string | null;
+  activeAcademicYear?: number | null;
+  updatePeriodActive?: boolean;
 };
 
 type ResolveContext = {
@@ -199,10 +201,20 @@ export async function getChildActionsSummary(options: ChildActionRequestOptions)
   const studentEmirateId = options.studentEmirateId ?? null;
   const schoolYear = options.schoolYearHint ?? null;
 
+  const activeAcademicYearPromise =
+    options.activeAcademicYear !== undefined
+      ? Promise.resolve(options.activeAcademicYear)
+      : getActiveAcademicYearValue();
+
+  const updatePeriodActivePromise =
+    options.updatePeriodActive !== undefined
+      ? Promise.resolve(options.updatePeriodActive)
+      : isUpdatePeriodActive();
+
   const [activeAcademicYear, educationType, periodActive] = await Promise.all([
-    getActiveAcademicYearValue(),
+    activeAcademicYearPromise,
     Promise.resolve(options.educationTypeHint ?? null),
-    isUpdatePeriodActive(),
+    updatePeriodActivePromise,
   ]);
 
   // Validate schoolYear against active academic year if both are available

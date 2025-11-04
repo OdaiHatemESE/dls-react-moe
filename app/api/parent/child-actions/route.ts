@@ -22,7 +22,8 @@ export async function GET(req: Request) {
       return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
     }
 
-    const { searchParams } = new URL(req.url);
+    const url = new URL(req.url);
+    const { searchParams } = url;
     const studentPersonId = searchParams.get("studentPersonId")?.trim();
     const parentPersonId = searchParams.get("parentPersonId")?.trim() || null;
     const studentEmirateId = searchParams.get("studentEmirateId")?.trim() || null;
@@ -33,46 +34,56 @@ export async function GET(req: Request) {
     }
 
     // Fetch student enrollment data from PP API
-    const origin = new URL(req.url).origin;
+    const origin = url.origin;
+
+    const activeAcademicYearPromise = getActiveAcademicYearValue();
+    const studentProfilePromise = (async (): Promise<StudentProfileV1 | null> => {
+      try {
+        const studentRes = await fetch(`${origin}/api/PP/student/${encodeURIComponent(studentPersonId)}`, {
+          headers: { cookie: req.headers.get("cookie") ?? "" },
+          cache: "no-store",
+        });
+
+        if (studentRes.ok) {
+          return (await studentRes.json()) as StudentProfileV1;
+        }
+      } catch (error) {
+        console.warn("Failed to fetch student enrollment data from PP API:", error);
+      }
+
+      return null;
+    })();
+
+    const idhPromise = fetchIdhStatus(studentPersonId, req, { debug: includeIdhDebug });
+
+    const [activeAcademicYear, studentData, idh] = await Promise.all([
+      activeAcademicYearPromise,
+      studentProfilePromise,
+      idhPromise,
+    ]);
+
     let educationType: string | null = null;
     let schoolYear: string | null = null;
 
-    try {
-      const studentRes = await fetch(`${origin}/api/PP/student/${encodeURIComponent(studentPersonId)}`, {
-        headers: { cookie: req.headers.get("cookie") ?? "" },
-        cache: "no-store",
-      });
+    if (studentData) {
+      const activeYearStr = activeAcademicYear ? String(activeAcademicYear) : null;
+      const matchingEnrollment = studentData.enrollment?.find((enr) => enr.schoolYear === activeYearStr);
 
-      if (studentRes.ok) {
-        const studentData: StudentProfileV1 = await studentRes.json();
-        const activeYear = await getActiveAcademicYearValue();
-        const activeYearStr = activeYear ? String(activeYear) : null;
-
-        // Find enrollment matching active academic year
-        const matchingEnrollment = studentData.enrollment?.find(
-          (enr) => enr.schoolYear === activeYearStr
-        );
-
-        if (matchingEnrollment) {
-          educationType = matchingEnrollment.educationType;
-          schoolYear = matchingEnrollment.schoolYear;
-        } else if (studentData.enrollment?.length > 0) {
-          // Fallback to most recent enrollment
-          const sorted = [...studentData.enrollment].sort((a, b) => {
-            const aYear = a.schoolYear ? parseInt(a.schoolYear, 10) : 0;
-            const bYear = b.schoolYear ? parseInt(b.schoolYear, 10) : 0;
-            return bYear - aYear;
-          });
-          educationType = sorted[0].educationType;
-          schoolYear = sorted[0].schoolYear;
-        }
+      if (matchingEnrollment) {
+        educationType = matchingEnrollment.educationType;
+        schoolYear = matchingEnrollment.schoolYear;
+      } else if (studentData.enrollment?.length) {
+        const sorted = [...studentData.enrollment].sort((a, b) => {
+          const aYear = a.schoolYear ? parseInt(a.schoolYear, 10) : 0;
+          const bYear = b.schoolYear ? parseInt(b.schoolYear, 10) : 0;
+          return bYear - aYear;
+        });
+        educationType = sorted[0].educationType;
+        schoolYear = sorted[0].schoolYear;
       }
-    } catch (error) {
-      console.warn("Failed to fetch student enrollment data from PP API:", error);
     }
 
     // Always fetch IDH data
-    const idh = await fetchIdhStatus(studentPersonId, req, { debug: includeIdhDebug });
     const idhStatusId = idh.statusId;
     const idhFetchedAt = idh.fetchedAt;
     const idhTrace = idh.trace;
@@ -85,6 +96,7 @@ export async function GET(req: Request) {
       schoolYearHint: schoolYear,
       idhStatusId,
       idhFetchedAt,
+      activeAcademicYear,
     });
 
     if (includeIdhDebug && idhTrace) {
