@@ -2,7 +2,7 @@ import "server-only";
 
 import type { StudentActionConfig } from "@prisma/client-parent-portal";
 import { prismaParent } from "@/lib/prisma-parent";
-import { isUpdatePeriodActive } from "@/lib/admin-config";
+import { isUpdatePeriodActive, getActiveAcademicYearValue } from "@/lib/admin-config";
 import type {
   ChildActionDescriptor,
   ChildActionResponse,
@@ -26,6 +26,7 @@ type ChildActionRequestOptions = {
   parentPersonId?: string | null;
   studentEmirateId?: string | null;
   educationTypeHint?: string | null;
+  schoolYearHint?: string | null;
   idhStatusId?: number | null;
   idhFetchedAt?: string | null;
 };
@@ -196,12 +197,23 @@ export async function getChildActionsSummary(options: ChildActionRequestOptions)
 
   const parentPersonId = options.parentPersonId ?? null;
   const studentEmirateId = options.studentEmirateId ?? null;
+  const schoolYear = options.schoolYearHint ?? null;
 
-  const [educationType, periodActive, configs] = await Promise.all([
-    resolveEducationType(studentPersonId, options.educationTypeHint ?? null),
+  const [activeAcademicYear, educationType, periodActive] = await Promise.all([
+    getActiveAcademicYearValue(),
+    Promise.resolve(options.educationTypeHint ?? null),
     isUpdatePeriodActive(),
-    loadActionConfigs(options.educationTypeHint ?? null, studentPersonId),
   ]);
+
+  // Validate schoolYear against active academic year if both are available
+  const isActiveYear = schoolYear && activeAcademicYear 
+    ? String(activeAcademicYear) === schoolYear
+    : true;
+
+  console.debug("Active academic year:", activeAcademicYear, "Student's schoolYear:", schoolYear, "Is active:", isActiveYear);
+
+  // Load configs based on education type
+  const configs = await loadActionConfigs(educationType);
 
   const updateRequest = buildUpdateRequestFromIdh({
     studentPersonId,
@@ -230,30 +242,13 @@ export async function getChildActionsSummary(options: ChildActionRequestOptions)
   return resolveChildActions(context);
 }
 
-async function resolveEducationType(studentPersonId: string, hint: string | null): Promise<string | null> {
-  if (hint) return hint;
+// No longer needed - educationType comes from enrollment data passed as hint
+// async function resolveEducationType removed
 
-  const enrollment = await prismaParent.studentEnrollment.findFirst({
-    where: {
-      Student: {
-        orSourcedId: studentPersonId,
-      },
-    },
-    orderBy: [
-      { entryDate: "desc" },
-      { createdAt: "desc" },
-    ],
-    select: { educationType: true },
-  });
+async function loadActionConfigs(educationTypeHint: string | null): Promise<StudentActionConfig[]> {
+  if (!educationTypeHint) return [];
 
-  return enrollment?.educationType ?? null;
-}
-
-async function loadActionConfigs(educationTypeHint: string | null, studentPersonId: string): Promise<StudentActionConfig[]> {
-  const educationTypeRaw = educationTypeHint ?? (await resolveEducationType(studentPersonId, null));
-  if (!educationTypeRaw) return [];
-
-  const candidates = [educationTypeRaw, educationTypeRaw.toLowerCase(), educationTypeRaw.toUpperCase()]
+  const candidates = [educationTypeHint, educationTypeHint.toLowerCase(), educationTypeHint.toUpperCase()]
     .map((value) => value.trim())
     .filter((value, index, self) => value.length > 0 && self.indexOf(value) === index);
 

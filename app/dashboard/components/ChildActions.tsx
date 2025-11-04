@@ -36,6 +36,8 @@ type Props = {
   studentEmirateId?: string | null;
   studentNumber?: string | null;
   academicYear?: string | null;
+  educationType?: string | null;
+  schoolYear?: string | null;
   compact?: boolean;
   className?: string;
 };
@@ -56,6 +58,8 @@ export function ChildActions({
   studentEmirateId,
   studentNumber,
   academicYear,
+  educationType,
+  schoolYear,
   compact,
   className,
 }: Props) {
@@ -65,9 +69,11 @@ export function ChildActions({
     const search = new URLSearchParams({ studentPersonId });
     if (parentPersonId) search.set("parentPersonId", parentPersonId);
     if (studentEmirateId) search.set("studentEmirateId", studentEmirateId);
+    if (educationType) search.set("educationType", educationType);
+    if (schoolYear) search.set("schoolYear", schoolYear);
     search.set("includeIdh", "1");
     return search.toString();
-  }, [studentPersonId, parentPersonId, studentEmirateId]);
+  }, [studentPersonId, parentPersonId, studentEmirateId, educationType, schoolYear]);
 
   const endpoint = React.useMemo(() => `/api/parent/child-actions?${queryString}`, [queryString]);
 

@@ -184,6 +184,9 @@ export default function ChildCards() {
 
           const resolvedStudentNumber = child.studentNumber?.trim() || null;
           const resolvedAcademicYear = resolvedStudentNumber ? deriveAcademicYear(child.enrollment) : undefined;
+          const latestEnrollment = resolveLatestEnrollment(child.enrollment);
+          const educationType = latestEnrollment?.educationType ?? null;
+          const schoolYear = latestEnrollment?.schoolYear ?? null;
 
           return (
             <Card 
@@ -227,6 +230,8 @@ export default function ChildCards() {
                     studentPersonId={child.id}
                     studentNumber={resolvedStudentNumber}
                     academicYear={resolvedAcademicYear}
+                    educationType={educationType}
+                    schoolYear={schoolYear}
                     className="w-full"
                   />
                 </div>
@@ -322,6 +327,9 @@ export default function ChildCards() {
 
                 const resolvedStudentNumber = child.studentNumber?.trim() || null;
                 const resolvedAcademicYear = resolvedStudentNumber ? deriveAcademicYear(child.enrollment) : undefined;
+                const latestEnrollment = resolveLatestEnrollment(child.enrollment);
+                const educationType = latestEnrollment?.educationType ?? null;
+                const schoolYear = latestEnrollment?.schoolYear ?? null;
 
                 return (
                   <tr 
@@ -360,6 +368,8 @@ export default function ChildCards() {
                           studentPersonId={child.id}
                           studentNumber={resolvedStudentNumber}
                           academicYear={resolvedAcademicYear}
+                          educationType={educationType}
+                          schoolYear={schoolYear}
                           compact
                         />
                       </div>

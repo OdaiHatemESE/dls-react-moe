@@ -24,6 +24,8 @@ export async function GET(req: Request) {
     const studentPersonId = searchParams.get("studentPersonId")?.trim();
     const parentPersonId = searchParams.get("parentPersonId")?.trim() || null;
     const studentEmirateId = searchParams.get("studentEmirateId")?.trim() || null;
+    const educationTypeHint = searchParams.get("educationType")?.trim() || null;
+    const schoolYearHint = searchParams.get("schoolYear")?.trim() || null;
     const includeIdh = TRUE_VALUES.has((searchParams.get("includeIdh") ?? "").toLowerCase());
     const includeIdhDebug = includeIdh && TRUE_VALUES.has((searchParams.get("idhDebug") ?? "").toLowerCase());
 
@@ -46,6 +48,8 @@ export async function GET(req: Request) {
       studentPersonId,
       parentPersonId,
       studentEmirateId,
+      educationTypeHint,
+      schoolYearHint,
       idhStatusId,
       idhFetchedAt,
     });
