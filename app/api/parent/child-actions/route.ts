@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { getChildActionsSummary } from "@/lib/child-actions";
 import { getActiveAcademicYearValue } from "@/lib/admin-config";
+import { cacheGetJSON, cacheSetJSON, makeKey } from "@/lib/cache";
 import type { StudentProfileV1 } from "@/app/types/studentprofile";
 import type {
   ChildActionIdhDebug,
@@ -15,6 +16,12 @@ export const dynamic = "force-dynamic";
 
 const TRUE_VALUES = new Set(["1", "true", "yes", "on"]);
 console.debug("child-actions route loaded");
+
+const CACHE_TTL_SECONDS = 90;
+
+type StudentProfileFetchResult =
+  | { ok: true; profile: StudentProfileV1 }
+  | { ok: false; status: number; message: string };
 export async function GET(req: Request) {
   try {
     const session = await getServerSession(authOptions);
@@ -25,19 +32,50 @@ export async function GET(req: Request) {
     const url = new URL(req.url);
     const { searchParams } = url;
     const studentPersonId = searchParams.get("studentPersonId")?.trim();
-    const parentPersonId = searchParams.get("parentPersonId")?.trim() || null;
+    const requestedParentId = searchParams.get("parentPersonId")?.trim() || null;
     const studentEmirateId = searchParams.get("studentEmirateId")?.trim() || null;
-    const includeIdhDebug = TRUE_VALUES.has((searchParams.get("idhDebug") ?? "").toLowerCase());
+    const debugParamRequested = TRUE_VALUES.has((searchParams.get("idhDebug") ?? "").toLowerCase());
+    const bypassCache = TRUE_VALUES.has((searchParams.get("nocache") ?? "").toLowerCase());
+    const includeIdhDebug = false;
+    const sessionParentId = session.user?.emiratesId?.trim() || null;
 
     if (!studentPersonId) {
       return NextResponse.json({ ok: false, error: "studentPersonId is required" }, { status: 400 });
+    }
+
+    if (!sessionParentId) {
+      return NextResponse.json({ ok: false, error: "Parent identity missing in session" }, { status: 403 });
+    }
+
+    if (requestedParentId && requestedParentId !== sessionParentId) {
+      return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
+    }
+
+    if (debugParamRequested) {
+      console.warn("idhDebug query ignored for parent child-actions route");
+    }
+
+    const parentPersonId = sessionParentId;
+
+    const cacheKey = makeKey([
+      "parent-child-actions",
+      parentPersonId,
+      studentPersonId,
+      studentEmirateId ?? "none",
+    ]);
+
+    if (!bypassCache) {
+      const cached = await cacheGetJSON<ChildActionResponse>(cacheKey);
+      if (cached) {
+        return NextResponse.json(cached, { headers: { "x-child-actions-cache": "hit" } });
+      }
     }
 
     // Fetch student enrollment data from PP API
     const origin = url.origin;
 
     const activeAcademicYearPromise = getActiveAcademicYearValue();
-    const studentProfilePromise = (async (): Promise<StudentProfileV1 | null> => {
+    const studentProfilePromise = (async (): Promise<StudentProfileFetchResult> => {
       try {
         const studentRes = await fetch(`${origin}/api/PP/student/${encodeURIComponent(studentPersonId)}`, {
           headers: { cookie: req.headers.get("cookie") ?? "" },
@@ -45,22 +83,48 @@ export async function GET(req: Request) {
         });
 
         if (studentRes.ok) {
-          return (await studentRes.json()) as StudentProfileV1;
+          const data = (await studentRes.json()) as StudentProfileV1;
+          return { ok: true, profile: data };
         }
+
+        const errorBody = await studentRes.json().catch(() => null);
+        const message =
+          errorBody && typeof errorBody === "object" && errorBody !== null && "error" in errorBody &&
+          typeof (errorBody as { error?: unknown }).error === "string"
+            ? (errorBody as { error: string }).error
+            : `PP student fetch failed with status ${studentRes.status}`;
+
+        return { ok: false, status: studentRes.status, message };
       } catch (error) {
         console.warn("Failed to fetch student enrollment data from PP API:", error);
+        return {
+          ok: false,
+          status: 502,
+          message: "Failed to reach PP student profile endpoint",
+        };
       }
-
-      return null;
     })();
 
     const idhPromise = fetchIdhStatus(studentPersonId, req, { debug: includeIdhDebug });
 
-    const [activeAcademicYear, studentData, idh] = await Promise.all([
+    const [activeAcademicYear, studentProfileResult, idh] = await Promise.all([
       activeAcademicYearPromise,
       studentProfilePromise,
       idhPromise,
     ]);
+
+    if (!studentProfileResult.ok) {
+      const upstreamStatus = studentProfileResult.status;
+      const status = upstreamStatus === 401 ? 403 : upstreamStatus;
+      const message =
+        upstreamStatus === 404
+          ? "Student not found or not associated with this account"
+          : studentProfileResult.message;
+
+      return NextResponse.json({ ok: false, error: message }, { status });
+    }
+
+    const studentData = studentProfileResult.profile;
 
     let educationType: string | null = null;
     let schoolYear: string | null = null;
@@ -103,7 +167,15 @@ export async function GET(req: Request) {
       payload.idhDebug = idhTrace;
     }
 
-    return NextResponse.json(payload as ChildActionResponse);
+    if (!bypassCache) {
+      void cacheSetJSON(cacheKey, payload, { ttlSeconds: CACHE_TTL_SECONDS }).catch((err) => {
+        console.warn("Failed to cache parent child actions", err);
+      });
+    }
+
+    return NextResponse.json(payload as ChildActionResponse, {
+      headers: { "x-child-actions-cache": bypassCache ? "bypassed" : "miss" },
+    });
   } catch (error) {
     console.error("child-actions GET failed", error);
     const message = error instanceof Error ? error.message : "Unknown error";
@@ -175,7 +247,7 @@ async function fetchIdhStatus(studentPersonId: string, req: Request, options?: F
         trace.parsedShape = "empty";
         trace.warning = "IDH record not found (404)";
       }
-      return { statusId: null, fetchedAt: new Date().toISOString(), trace: trace ?? undefined };
+      return { statusId: null, fetchedAt: null, trace: trace ?? undefined };
     }
 
     const rawBody = await idhRes.text();

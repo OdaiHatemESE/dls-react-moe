@@ -308,26 +308,31 @@ function resolveChildActions(context: ResolveContext): ChildActionResponse {
   const { student, updatePeriodActive, updateRequest, configs, idhStatusId } = context;
   const status = typeof idhStatusId === "number" ? idhStatusId : null;
   const hasPdf = !!updateRequest.pdfBase64;
+  const debugLogsEnabled = process.env.CHILD_ACTIONS_DEBUG === "true";
 
-  console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-  console.log("🎬 RESOLVING CHILD ACTIONS");
-  console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-  console.log("📊 Context:");
-  console.log("  Student ID:", student.studentPersonId);
-  console.log("  Education Type:", student.educationType ?? "null");
-  console.log("  IDH Status ID:", status === null ? "null (no record)" : status);
-  console.log("  Status Meaning:", getStatusMeaning(status));
-  console.log("  Update Period Active:", updatePeriodActive ? "✅ YES" : "❌ NO");
-  console.log("  Has PDF:", hasPdf ? "✅ YES" : "❌ NO");
-  console.log("  Conduct Signed:", updateRequest.isConductAgreementSigned ? "✅ YES" : "❌ NO");
-  console.log("  Configs Loaded:", configs.length);
+  if (debugLogsEnabled) {
+    console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    console.log("🎬 RESOLVING CHILD ACTIONS");
+    console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    console.log("📊 Context:");
+    console.log("  Student ID:", student.studentPersonId);
+    console.log("  Education Type:", student.educationType ?? "null");
+    console.log("  IDH Status ID:", status === null ? "null (no record)" : status);
+    console.log("  Status Meaning:", getStatusMeaning(status));
+    console.log("  Update Period Active:", updatePeriodActive ? "✅ YES" : "❌ NO");
+    console.log("  Has PDF:", hasPdf ? "✅ YES" : "❌ NO");
+    console.log("  Conduct Signed:", updateRequest.isConductAgreementSigned ? "✅ YES" : "❌ NO");
+    console.log("  Configs Loaded:", configs.length);
+  }
 
   const reasons = new Set<string>();
   const actionsFromConfig = buildConfiguredActions(context, configs, status, hasPdf, reasons);
 
   let actions = actionsFromConfig;
   if (!actions.length) {
-    console.log("⚠️  No configured actions found, using fallback");
+    if (debugLogsEnabled) {
+      console.log("⚠️  No configured actions found, using fallback");
+    }
     actions = [buildFallbackViewProfileAction(student)];
   }
 
@@ -336,24 +341,26 @@ function resolveChildActions(context: ResolveContext): ChildActionResponse {
     statusBanner = null;
   }
 
-  console.log("\n🎯 RESOLVED ACTIONS:");
-  actions.forEach((action, index) => {
-    console.log(`\n  [${index + 1}] ${action.key.toUpperCase()}`);
-    console.log(`      Label: ${action.label}`);
-    console.log(`      Type: ${action.action.type}`);
-    console.log(`      Hidden: ${action.hidden ? "🚫 YES" : "✅ NO"}`);
-    console.log(`      Disabled: ${action.disabled ? "🔒 YES" : "✅ NO"}`);
-    if (action.disabled && action.disabledReason) {
-      console.log(`      Reason: ${action.disabledReason.en}`);
-    }
-    console.log(`      Href: ${action.href ?? "N/A"}`);
-    console.log(`      Variant: ${action.variant ?? "default"}`);
-    console.log(`      Color: ${action.style.color ?? "default"}`);
-  });
+  if (debugLogsEnabled) {
+    console.log("\n🎯 RESOLVED ACTIONS:");
+    actions.forEach((action, index) => {
+      console.log(`\n  [${index + 1}] ${action.key.toUpperCase()}`);
+      console.log(`      Label: ${action.label}`);
+      console.log(`      Type: ${action.action.type}`);
+      console.log(`      Hidden: ${action.hidden ? "🚫 YES" : "✅ NO"}`);
+      console.log(`      Disabled: ${action.disabled ? "🔒 YES" : "✅ NO"}`);
+      if (action.disabled && action.disabledReason) {
+        console.log(`      Reason: ${action.disabledReason.en}`);
+      }
+      console.log(`      Href: ${action.href ?? "N/A"}`);
+      console.log(`      Variant: ${action.variant ?? "default"}`);
+      console.log(`      Color: ${action.style.color ?? "default"}`);
+    });
 
-  console.log("📢 BANNER:", statusBanner ? `${statusBanner.message} (${statusBanner.severity})` : "None");
-  console.log("💾 DOWNLOADS:", hasPdf ? "Conduct PDF available" : "No PDFs");
-  console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+    console.log("📢 BANNER:", statusBanner ? `${statusBanner.message} (${statusBanner.severity})` : "None");
+    console.log("💾 DOWNLOADS:", hasPdf ? "Conduct PDF available" : "No PDFs");
+    console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+  }
 
   return {
     ok: true,
