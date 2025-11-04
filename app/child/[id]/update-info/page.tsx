@@ -241,7 +241,12 @@ export default function UpdateStudentInfoPage() {
 
   const meta = (student as StudentProfileWithMeta | undefined)?.meta;
   const primaryAddress = React.useMemo<StudentAddress | null>(() => {
-    return student?.addresses?.[0] ?? null;
+    if (!student?.addresses || student.addresses.length === 0) return null;
+    // Find address with isPrimary flag, fallback to first address
+    const primary = student.addresses.find(addr => addr.isPrimary);
+    const selected = primary ?? student.addresses[0];
+    console.log('Addresses:', student.addresses, 'Primary address:', selected, 'Has isPrimary flag:', !!primary);
+    return selected;
   }, [student]);
 
   const formattedCurrentAddress = React.useMemo(() => formatAddress(primaryAddress), [primaryAddress]);
@@ -290,6 +295,12 @@ export default function UpdateStudentInfoPage() {
     
     const mobileContacts = (student.contacts || [])
       .filter((contact) => contact.type === 'Mobile' && contact.value)
+      .sort((a, b) => {
+        // Sort by isPrimary flag: primary contacts first
+        if (a.isPrimary && !b.isPrimary) return -1;
+        if (!a.isPrimary && b.isPrimary) return 1;
+        return 0;
+      })
       .map((contact) => contact.value.trim())
       .filter(Boolean);
 
@@ -342,6 +353,12 @@ export default function UpdateStudentInfoPage() {
       // INIT MODE: baseline from OneRoster data
       initialContacts = (student?.contacts || [])
         .filter((contact) => contact.type === 'Mobile' && contact.value)
+        .sort((a, b) => {
+          // Sort by isPrimary flag: primary contacts first
+          if (a.isPrimary && !b.isPrimary) return -1;
+          if (!a.isPrimary && b.isPrimary) return 1;
+          return 0;
+        })
         .map((contact) => contact.value.trim())
         .slice(0, 2);
       initialTransportation = '';
@@ -1164,7 +1181,14 @@ export default function UpdateStudentInfoPage() {
                           ? updateInfo.contactSection.primaryLabel
                           : updateInfo.contactSection.secondaryLabel}
                       </span>
-                      {index === 0 && <span className="text-destructive" aria-label={locale === 'ar' ? 'مطلوب' : 'required'}>*</span>}
+                      {index === 0 && (
+                        <>
+                          <Badge variant="default" className="text-xs px-2 py-0.5">
+                            {locale === 'ar' ? 'أساسي' : 'Primary'}
+                          </Badge>
+                          <span className="text-destructive" aria-label={locale === 'ar' ? 'مطلوب' : 'required'}>*</span>
+                        </>
+                      )}
                     </Label>
                     <div className="flex gap-3">
                       <Input
@@ -1264,6 +1288,11 @@ export default function UpdateStudentInfoPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
                   <span>{updateInfo.addressSection.currentLabel}</span>
+                  {primaryAddress?.isPrimary && (
+                    <Badge variant="default" className="text-xs px-2 py-0.5">
+                      {locale === 'ar' ? 'أساسي' : 'Primary'}
+                    </Badge>
+                  )}
                 </Label>
                 <div className={clsx("rounded-xl border-2 border-dashed border-border/50 bg-muted/30 px-4 py-4 text-sm text-foreground/80 shadow-sm", locale === 'ar' && 'text-right')}>
                   <p className="leading-relaxed">{formattedCurrentAddress || t.child.no_address_available}</p>

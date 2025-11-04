@@ -3,6 +3,7 @@
 export interface StudentContact {
   type: "Mobile" | "Email" | "OfficialEmail" | string;
   value: string;
+  isPrimary?: boolean;
 }
 
 export interface StudentAddress {
@@ -11,6 +12,7 @@ export interface StudentAddress {
   city: string | null;
   region: string | null;
   verified: boolean;
+  isPrimary?: boolean;
   zipCode?: string | null;
   latitude?: string | null;
   longitude?: string | null;
