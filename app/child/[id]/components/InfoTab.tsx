@@ -11,11 +11,16 @@ interface InfoTabProps {
 }
 
 export default function InfoTab({ person, t, locale }: InfoTabProps) {
-  const primaryAddress = person.addresses?.[0];
+  // Get primary address (marked with isPrimary flag) or fall back to first address
+  const primaryAddress = person.addresses?.find(a => a.isPrimary) || person.addresses?.[0];
   
-  // Get primary contact email and phone
-  const primaryEmail = person.contacts?.find(c => c.type === 'Email' || c.type === 'OfficialEmail')?.value || '';
-  const primaryPhone = person.contacts?.find(c => c.type === 'Mobile')?.value || '';
+  // Get primary contact email and phone (prefer isPrimary flag, then fallback to first match)
+  const primaryEmail = person.contacts?.find(c => c.isPrimary && (c.type === 'Email' || c.type === 'OfficialEmail'))?.value 
+    || person.contacts?.find(c => c.type === 'Email' || c.type === 'OfficialEmail')?.value 
+    || '';
+  const primaryPhone = person.contacts?.find(c => c.isPrimary && c.type === 'Mobile')?.value 
+    || person.contacts?.find(c => c.type === 'Mobile')?.value 
+    || '';
 
   return (
     <div className="space-y-8">
@@ -182,17 +187,29 @@ export default function InfoTab({ person, t, locale }: InfoTabProps) {
       {/* Address */}
       <Card className="border-0  bg-white">
         <CardHeader className="bg-gradient-to-r from-primary/5 via-background to-primary/5 text-gray-900 border-b border-gray-200 rounded-t-lg">
-          <CardTitle className="flex items-center">
-            <div className="p-3 bg-stone-100 rounded-xl me-4">
-              <svg className="w-6 h-6 text-stone-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center">
+              <div className="p-3 bg-stone-100 rounded-xl me-4">
+                <svg className="w-6 h-6 text-stone-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </div>
+              <div>
+                <span className={`${locale === 'ar' ? 'text-lg font-semibold' : 'text-xl font-bold'}`}>{t.child.primary_address}</span>
+                <p className={`text-gray-600 ${locale === 'ar' ? 'text-xs' : 'text-sm'} font-normal mt-1`}>Current residential address information</p>
+              </div>
             </div>
-            <div>
-              <span className={`${locale === 'ar' ? 'text-lg font-semibold' : 'text-xl font-bold'}`}>{t.child.primary_address}</span>
-              <p className={`text-gray-600 ${locale === 'ar' ? 'text-xs' : 'text-sm'} font-normal mt-1`}>Current residential address information</p>
-            </div>
+            {primaryAddress?.isPrimary && (
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-lg">
+                <svg className="w-4 h-4 text-primary" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                <span className="text-xs font-semibold text-primary">
+                  {locale === 'ar' ? 'عنوان أساسي' : 'Primary Address'}
+                </span>
+              </div>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent className="p-8">

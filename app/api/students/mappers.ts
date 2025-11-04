@@ -14,7 +14,7 @@ function toStringOrNull(v: unknown): string | null {
 
 export function mapContacts(contacts?: PersonContact[] | null): StudentContact[] {
   if (!Array.isArray(contacts)) return [];
-  return contacts
+  const mapped = contacts
     .map((c): StudentContact | null => {
       const rawType = (c?.contactType || "").toString().toLowerCase();
       let type: StudentContact["type"] = "Other";
@@ -23,19 +23,27 @@ export function mapContacts(contacts?: PersonContact[] | null): StudentContact[]
       else if (rawType === "officialemail" || rawType === "official_email") type = "OfficialEmail";
       const value = toStringOrNull(c?.value);
       if (!value) return null;
-      return { type, value };
+      return { type, value, isPrimary: false };
     })
     .filter((x): x is StudentContact => !!x);
+  
+  // Mark first contact as primary
+  if (mapped.length > 0) {
+    mapped[0].isPrimary = true;
+  }
+  
+  return mapped;
 }
 
 export function mapAddresses(addresses?: PersonAddress[] | null): StudentAddress[] {
   if (!Array.isArray(addresses)) return [];
-  return addresses.map((a): StudentAddress => ({
+  const mapped = addresses.map((a): StudentAddress => ({
     country: toStringOrNull(a?.country),
     state: toStringOrNull(a?.state),
     city: toStringOrNull(a?.city),
     region: toStringOrNull(a?.region),
     verified: Boolean(a?.isVerified),
+    isPrimary: false,
     zipCode: toStringOrNull((a as PersonAddress)?.zipCode),
     latitude: toStringOrNull((a as PersonAddress)?.latitude),
     longitude: toStringOrNull((a as PersonAddress)?.longitude),
@@ -48,6 +56,13 @@ export function mapAddresses(addresses?: PersonAddress[] | null): StudentAddress
     addressLine3: toStringOrNull((a as PersonAddress)?.addressLine3),
     sector: toStringOrNull((a as PersonAddress)?.sector),
   }));
+  
+  // Mark first address as primary
+  if (mapped.length > 0) {
+    mapped[0].isPrimary = true;
+  }
+  
+  return mapped;
 }
 /**
  * Map OneRoster SchoolEnrollment[] to simplified StudentEnrollment[] for API response
@@ -67,6 +82,7 @@ export function mapEnrollments(enrollments?: SchoolEnrollment[] | null): Student
     educationType: toStringOrNull(e.school?.educationType as unknown as string),
     schoolId: toStringOrNull(e.school?.sourcedId),
     streamGradeId: toStringOrNull(e.streamGrade?.sourcedId),
+    schoolYear: e.schoolYear ? String(e.schoolYear) : null,
   }));
 }
 
