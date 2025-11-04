@@ -69,11 +69,8 @@ export function ChildActions({
     const search = new URLSearchParams({ studentPersonId });
     if (parentPersonId) search.set("parentPersonId", parentPersonId);
     if (studentEmirateId) search.set("studentEmirateId", studentEmirateId);
-    if (educationType) search.set("educationType", educationType);
-    if (schoolYear) search.set("schoolYear", schoolYear);
-    search.set("includeIdh", "1");
     return search.toString();
-  }, [studentPersonId, parentPersonId, studentEmirateId, educationType, schoolYear]);
+  }, [studentPersonId, parentPersonId, studentEmirateId]);
 
   const endpoint = React.useMemo(() => `/api/parent/child-actions?${queryString}`, [queryString]);
 
@@ -411,7 +408,6 @@ export function ChildStatusBadge({ studentPersonId, parentPersonId, studentEmira
     const search = new URLSearchParams({ studentPersonId });
     if (parentPersonId) search.set("parentPersonId", parentPersonId);
     if (studentEmirateId) search.set("studentEmirateId", studentEmirateId);
-    search.set("includeIdh", "1");
     return search.toString();
   }, [studentPersonId, parentPersonId, studentEmirateId]);
 

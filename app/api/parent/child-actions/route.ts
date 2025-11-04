@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { getChildActionsSummary } from "@/lib/child-actions";
+import { getActiveAcademicYearValue } from "@/lib/admin-config";
+import type { StudentProfileV1 } from "@/app/types/studentprofile";
 import type {
   ChildActionIdhDebug,
   ChildActionIdhDebugShape,
@@ -24,32 +26,63 @@ export async function GET(req: Request) {
     const studentPersonId = searchParams.get("studentPersonId")?.trim();
     const parentPersonId = searchParams.get("parentPersonId")?.trim() || null;
     const studentEmirateId = searchParams.get("studentEmirateId")?.trim() || null;
-    const educationTypeHint = searchParams.get("educationType")?.trim() || null;
-    const schoolYearHint = searchParams.get("schoolYear")?.trim() || null;
-    const includeIdh = TRUE_VALUES.has((searchParams.get("includeIdh") ?? "").toLowerCase());
-    const includeIdhDebug = includeIdh && TRUE_VALUES.has((searchParams.get("idhDebug") ?? "").toLowerCase());
+    const includeIdhDebug = TRUE_VALUES.has((searchParams.get("idhDebug") ?? "").toLowerCase());
 
     if (!studentPersonId) {
       return NextResponse.json({ ok: false, error: "studentPersonId is required" }, { status: 400 });
     }
 
-    let idhStatusId: number | null = null;
-    let idhFetchedAt: string | null = null;
-    let idhTrace: ChildActionIdhDebug | undefined;
+    // Fetch student enrollment data from PP API
+    const origin = new URL(req.url).origin;
+    let educationType: string | null = null;
+    let schoolYear: string | null = null;
 
-    if (includeIdh) {
-      const idh = await fetchIdhStatus(studentPersonId, req, { debug: includeIdhDebug });
-      idhStatusId = idh.statusId;
-      idhFetchedAt = idh.fetchedAt;
-      idhTrace = idh.trace;
+    try {
+      const studentRes = await fetch(`${origin}/api/PP/student/${encodeURIComponent(studentPersonId)}`, {
+        headers: { cookie: req.headers.get("cookie") ?? "" },
+        cache: "no-store",
+      });
+
+      if (studentRes.ok) {
+        const studentData: StudentProfileV1 = await studentRes.json();
+        const activeYear = await getActiveAcademicYearValue();
+        const activeYearStr = activeYear ? String(activeYear) : null;
+
+        // Find enrollment matching active academic year
+        const matchingEnrollment = studentData.enrollment?.find(
+          (enr) => enr.schoolYear === activeYearStr
+        );
+
+        if (matchingEnrollment) {
+          educationType = matchingEnrollment.educationType;
+          schoolYear = matchingEnrollment.schoolYear;
+        } else if (studentData.enrollment?.length > 0) {
+          // Fallback to most recent enrollment
+          const sorted = [...studentData.enrollment].sort((a, b) => {
+            const aYear = a.schoolYear ? parseInt(a.schoolYear, 10) : 0;
+            const bYear = b.schoolYear ? parseInt(b.schoolYear, 10) : 0;
+            return bYear - aYear;
+          });
+          educationType = sorted[0].educationType;
+          schoolYear = sorted[0].schoolYear;
+        }
+      }
+    } catch (error) {
+      console.warn("Failed to fetch student enrollment data from PP API:", error);
     }
+
+    // Always fetch IDH data
+    const idh = await fetchIdhStatus(studentPersonId, req, { debug: includeIdhDebug });
+    const idhStatusId = idh.statusId;
+    const idhFetchedAt = idh.fetchedAt;
+    const idhTrace = idh.trace;
 
     const payload = await getChildActionsSummary({
       studentPersonId,
       parentPersonId,
       studentEmirateId,
-      educationTypeHint,
-      schoolYearHint,
+      educationTypeHint: educationType,
+      schoolYearHint: schoolYear,
       idhStatusId,
       idhFetchedAt,
     });
