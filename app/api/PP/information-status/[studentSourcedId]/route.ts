@@ -6,10 +6,10 @@ type PPTokenResponse = {
 };
 
 /**
- * POST /api/PP/information-status/[studentSourcedId]
+ * PATCH /api/PP/information-status/[studentSourcedId]
  * Updates student information status via PP API
  */
-export async function POST(
+export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ studentSourcedId: string }> }
 ) {
@@ -22,6 +22,11 @@ export async function POST(
         { status: 400 }
       );
     }
+
+    // Parse request body to get dynamic status and isInformationUpdated flag
+    const body = await req.json().catch(() => ({}));
+    const status = typeof body.status === 'number' ? body.status : null;
+    const isInformationUpdated = typeof body.isInformationUpdated === 'boolean' ? body.isInformationUpdated : true;
 
     // Get PP token from our token endpoint
     const tokenUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:4200'}/api/PP/auth/token`;
@@ -45,17 +50,22 @@ export async function POST(
       );
     }
 
-    // Prepare payload with dynamic timestamp
-    const payload = {
-      isInformationUpdated: true,
+    // Prepare payload with dynamic timestamp and status
+    const payload: {
+      isInformationUpdated: boolean;
+      informationUpdatedAt: string;
+      informationUpdateStatus: number | null;
+    } = {
+      isInformationUpdated,
       informationUpdatedAt: new Date().toISOString(),
+      informationUpdateStatus: status,
     };
 
     // Call PP API endpoint
     const ppUrl = `${baseUrl.replace(/\/$/, '')}/oneroster/students/${studentSourcedId}/information-status`;
     
     const ppRes = await fetch(ppUrl, {
-      method: 'POST',
+      method: 'PATCH',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
         'Content-Type': 'application/json',

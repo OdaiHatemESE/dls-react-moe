@@ -68,6 +68,9 @@ model Student {
   informationUpdatedAt     DateTime?
   isConductAgreementSigned Boolean             @default(false)
   conductAgreementSignedAt DateTime?
+  informationUpdateStatus  Int?
+  parentId                 Int?
+  Parent                   Parent?             @relation(fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   StudentAddress           StudentAddress[]
   StudentContact           StudentContact[]
   StudentEnrollment        StudentEnrollment[]
@@ -185,4 +188,32 @@ model AcademicYearConfig {
   createdBy    String?  @db.VarChar(64)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+}
+
+model Parent {
+  id                Int             @id @default(autoincrement())
+  orSourcedId       String          @unique
+  identifier        String?
+  enabledUser       Boolean         @default(true)
+  givenNameArabic   String?
+  middleNameArabic  String?
+  familyNameArabic  String?
+  firstNameEnglish  String?
+  secondNameEnglish String?
+  thirdNameEnglish  String?
+  familyNameEnglish String?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime
+  ParentContact     ParentContact[]
+  Student           Student[]
+}
+
+model ParentContact {
+  id        Int      @id @default(autoincrement())
+  type      String
+  value     String
+  parentId  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  Parent    Parent   @relation(fields: [parentId], references: [id])
 }

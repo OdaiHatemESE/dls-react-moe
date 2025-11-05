@@ -877,6 +877,33 @@ export default function UpdateStudentInfoPage() {
 
       await submitToIDH(idhPayload);
 
+      // IDH submission successful - now update information status via PP API (if endpoint exists)
+      try {
+        const statusResponse = await fetch(`/api/PP/information-status/${encodeURIComponent(sourceId ?? '')}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            status: mode === 'init' ? 1 : 3, // INIT=1, EDIT=3
+            isInformationUpdated: true, // Only sent after successful IDH submission
+          }),
+        });
+
+        if (!statusResponse.ok) {
+          const errorData = await statusResponse.json().catch(() => null);
+          // Log warning but don't block the user flow if endpoint doesn't exist
+          if (statusResponse.status === 404) {
+            console.warn('Information status endpoint not available on PP API');
+          } else {
+            console.warn('Failed to update information status:', errorData);
+          }
+        } else {
+          console.log('Information status updated successfully');
+        }
+      } catch (statusError) {
+        console.warn('Error calling information-status API:', statusError);
+        // Non-blocking: continue even if status update fails
+      }
+
       setShowSuccessToast(true);
       setHasUnsavedChanges(false);
 
