@@ -28,14 +28,25 @@ import {
 type SignConductSectionProps = {
     locale: string;
     studentId?: string;
+    studentNumber?: string | null;
+    academicYear?: string | null;
 };
 
+type PartnershipCharterResponse = {
+    ok: boolean;
+    data?: {
+        attachment01?: string | null;
+    } | null;
+    error?: string;
+};
+
+const DEFAULT_ACADEMIC_YEAR = "2025-2026";
 
 function translate(locale: string, copy: { en: string; ar: string }): string {
     return locale === 'ar' ? copy.ar : copy.en;
 }
 
-function SignConductSection({ locale, studentId }: SignConductSectionProps) {
+function SignConductSection({ locale, studentId, studentNumber, academicYear }: SignConductSectionProps) {
     const router = useRouter();
     const [isOpen, setIsOpen] = React.useState(false);
 
@@ -50,13 +61,112 @@ function SignConductSection({ locale, studentId }: SignConductSectionProps) {
         keepPreviousData: true,
     });
 
-    const actions = data?.actions ?? [];
+    // Resolve student number and academic year
+    const resolvedStudentNumber = React.useMemo(() => {
+        const value = typeof studentNumber === "string" ? studentNumber.trim() : "";
+        return value.length > 0 ? value : null;
+    }, [studentNumber]);
+
+    const resolvedAcademicYear = React.useMemo(() => {
+        const value = typeof academicYear === "string" ? academicYear.trim() : "";
+        return value.length > 0 ? value : DEFAULT_ACADEMIC_YEAR;
+    }, [academicYear]);
+
+    // Fetch partnership charter to check for conduct signature
+    const charterEndpoint = React.useMemo(() => {
+        if (!resolvedStudentNumber) return null;
+        const params = new URLSearchParams({
+            studentNumber: resolvedStudentNumber,
+            academicyear: resolvedAcademicYear,
+        });
+        return `/api/parent/students-partnership-charter?${params.toString()}`;
+    }, [resolvedStudentNumber, resolvedAcademicYear]);
+
+    const {
+        data: charterData,
+        error: charterError,
+        isLoading: isCharterLoading,
+    } = useSWR<PartnershipCharterResponse>(charterEndpoint, jsonFetcher);
+
+    const charterAttachment = React.useMemo(() => {
+        if (!charterData?.data) return "";
+        const value = charterData.data.attachment01;
+        return typeof value === "string" ? value.trim() : "";
+    }, [charterData]);
+
+    const signatureOverride = React.useMemo<boolean | null>(() => {
+        if (!charterEndpoint) return null;
+        if (isCharterLoading) return null;
+        if (charterError) return null;
+        if (!charterData) return null;
+        if (charterData.ok === false) return null;
+        return charterAttachment.length > 0;
+    }, [charterEndpoint, charterData, charterAttachment, charterError, isCharterLoading]);
+
+    const fallbackSigned = React.useMemo(
+        () => Boolean(data?.updateRequest.pdfBase64),
+        [data?.updateRequest.pdfBase64]
+    );
+
+    const isConductSigned = signatureOverride ?? fallbackSigned;
+
+    const pdfBase64 = React.useMemo(() => {
+        if (charterAttachment.length > 0) {
+            return charterAttachment;
+        }
+        return data?.updateRequest.pdfBase64 ?? null;
+    }, [charterAttachment, data?.updateRequest.pdfBase64]);
+
+    const rawActions = React.useMemo(() => data?.actions ?? [], [data]);
+
+    // Process actions based on conduct signature status (same logic as ChildActions)
+    const processedActions = React.useMemo(() => {
+        if (!rawActions.length) {
+            return rawActions;
+        }
+
+        return rawActions.map((action) => {
+            if (action.key === "sign-conduct") {
+                return {
+                    ...action,
+                    hidden: isConductSigned,
+                };
+            }
+
+            if (action.key === "download-conduct") {
+                if (!isConductSigned) {
+                    return {
+                        ...action,
+                        hidden: true,
+                    };
+                }
+
+                return {
+                    ...action,
+                    hidden: false,
+                    disabled: false,
+                    reason: null,
+                    reasonKey: null,
+                    disabledReason: null,
+                };
+            }
+
+            return action;
+        });
+    }, [isConductSigned, rawActions]);
+
+    const visibleActions = React.useMemo(
+        () => processedActions.filter((action) => !action.hidden),
+        [processedActions]
+    );
+
+    const actions = visibleActions;
     const statusBanner = data?.statusBanner ?? null;
     const badge = data?.badge ?? null;
     const reasons = data?.reasons ?? [];
 
     const handleDownloadPdf = React.useCallback(() => {
-        const base64 = data?.updateRequest.pdfBase64;
+        const base64 = pdfBase64;
         if (!base64) return;
 
         try {
@@ -73,7 +183,7 @@ function SignConductSection({ locale, studentId }: SignConductSectionProps) {
         } catch (err) {
             console.error('Failed to download conduct PDF', err);
         }
-    }, [data?.updateRequest.pdfBase64, studentId]);
+    }, [pdfBase64, studentId]);
 
     const handleAction = React.useCallback(
         (action: ChildActionDescriptor) => {

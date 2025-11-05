@@ -25,6 +25,48 @@ import { ChildStatusBadge } from '@/app/dashboard/components/ChildActions';
 
 type StudentProfileWithMeta = StudentProfileV1 & { meta?: { cache?: CacheMeta } };
 
+const DEFAULT_ACADEMIC_YEAR = "2025-2026";
+
+function parseEntryDate(value?: string | null): number {
+  if (!value) return Number.NEGATIVE_INFINITY;
+  const timestamp = new Date(value).getTime();
+  return Number.isNaN(timestamp) ? Number.NEGATIVE_INFINITY : timestamp;
+}
+
+function resolveLatestEnrollment(enrollments?: StudentProfileV1["enrollment"]): StudentProfileV1["enrollment"][number] | null {
+  if (!enrollments || enrollments.length === 0) return null;
+  const [first, ...rest] = enrollments;
+  let latest = first;
+  let latestTime = parseEntryDate(first.entryDate);
+
+  for (const entry of rest) {
+    const entryTime = parseEntryDate(entry.entryDate);
+    if (entryTime > latestTime) {
+      latest = entry;
+      latestTime = entryTime;
+    }
+  }
+
+  return latest;
+}
+
+function normalizeAcademicYear(value?: string | null): string | null {
+  const trimmed = typeof value === "string" ? value.trim() : "";
+  if (!trimmed) return null;
+  if (trimmed.includes("-")) return trimmed;
+  const parsed = Number.parseInt(trimmed, 10);
+  if (!Number.isNaN(parsed) && parsed > 0) {
+    return `${parsed - 1}-${parsed}`;
+  }
+  return trimmed;
+}
+
+function deriveAcademicYear(enrollments?: StudentProfileV1["enrollment"]): string {
+  const latest = resolveLatestEnrollment(enrollments);
+  const normalized = normalizeAcademicYear(latest?.schoolYear);
+  return normalized ?? DEFAULT_ACADEMIC_YEAR;
+}
+
 export default function ChildDetailPage() {
   const { t, locale } = useI18n();
   const params = useParams();
@@ -233,7 +275,12 @@ export default function ChildDetailPage() {
                           </p>
                         </div>
                       </div>
-                      <SignConductSection locale={locale} studentId={student.id} />
+                      <SignConductSection 
+                        locale={locale} 
+                        studentId={student.id}
+                        studentNumber={student.studentNumber}
+                        academicYear={deriveAcademicYear(student.enrollment)}
+                      />
                     </div>
                   </div>
                 </div>
