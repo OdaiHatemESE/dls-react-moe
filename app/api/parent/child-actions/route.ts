@@ -3,7 +3,6 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { getChildActionsSummary } from "@/lib/child-actions";
 import { getActiveAcademicYearValue } from "@/lib/admin-config";
-import { cacheGetJSON, cacheSetJSON, makeKey } from "@/lib/cache";
 import type { StudentProfileV1 } from "@/app/types/studentprofile";
 import type {
   ChildActionIdhDebug,
@@ -16,8 +15,6 @@ export const dynamic = "force-dynamic";
 
 const TRUE_VALUES = new Set(["1", "true", "yes", "on"]);
 console.debug("child-actions route loaded");
-
-const CACHE_TTL_SECONDS = 90;
 
 type StudentProfileFetchResult =
   | { ok: true; profile: StudentProfileV1 }
@@ -35,7 +32,6 @@ export async function GET(req: Request) {
     const requestedParentId = searchParams.get("parentPersonId")?.trim() || null;
     const studentEmirateId = searchParams.get("studentEmirateId")?.trim() || null;
     const debugParamRequested = TRUE_VALUES.has((searchParams.get("idhDebug") ?? "").toLowerCase());
-    const bypassCache = TRUE_VALUES.has((searchParams.get("nocache") ?? "").toLowerCase());
     const includeIdhDebug = false;
     const sessionParentId = session.user?.emiratesId?.trim() || null;
 
@@ -56,20 +52,6 @@ export async function GET(req: Request) {
     }
 
     const parentPersonId = sessionParentId;
-
-    const cacheKey = makeKey([
-      "parent-child-actions",
-      parentPersonId,
-      studentPersonId,
-      studentEmirateId ?? "none",
-    ]);
-
-    if (!bypassCache) {
-      const cached = await cacheGetJSON<ChildActionResponse>(cacheKey);
-      if (cached) {
-        return NextResponse.json(cached, { headers: { "x-child-actions-cache": "hit" } });
-      }
-    }
 
     // Fetch student enrollment data from PP API
     const origin = url.origin;
@@ -167,15 +149,7 @@ export async function GET(req: Request) {
       payload.idhDebug = idhTrace;
     }
 
-    if (!bypassCache) {
-      void cacheSetJSON(cacheKey, payload, { ttlSeconds: CACHE_TTL_SECONDS }).catch((err) => {
-        console.warn("Failed to cache parent child actions", err);
-      });
-    }
-
-    return NextResponse.json(payload as ChildActionResponse, {
-      headers: { "x-child-actions-cache": bypassCache ? "bypassed" : "miss" },
-    });
+    return NextResponse.json(payload as ChildActionResponse);
   } catch (error) {
     console.error("child-actions GET failed", error);
     const message = error instanceof Error ? error.message : "Unknown error";

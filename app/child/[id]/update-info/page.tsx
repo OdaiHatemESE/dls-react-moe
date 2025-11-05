@@ -4,7 +4,7 @@ import React from 'react';
 import clsx from 'clsx';
 import Link from 'next/link';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import useSWR from 'swr';
+import useSWR, { mutate } from 'swr';
 
 import { useI18n } from '@/app/i18n/I18nProvider';
 import { jsonFetcher } from '@/lib/swr';
@@ -879,6 +879,21 @@ export default function UpdateStudentInfoPage() {
 
       setShowSuccessToast(true);
       setHasUnsavedChanges(false);
+
+      // Clear SWR cache for student data and IDH data to ensure fresh data on next load
+      const studentId = sourcedId ?? '';
+      await mutate(
+        (key) => {
+          if (typeof key === 'string') {
+            return (
+               key.includes('/api/parent/child-actions')
+            );
+          }
+          return false;
+        },
+        undefined,
+        { revalidate: true }
+      );
 
       await new Promise((resolve) => setTimeout(resolve, 1500));
 
