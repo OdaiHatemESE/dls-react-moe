@@ -3,6 +3,10 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { getChildActionsSummary } from "@/lib/child-actions";
 import { getActiveAcademicYearValue } from "@/lib/admin-config";
+import { fetchStudentProfile } from "@/lib/fetch-student-profile";
+import { fetchWithTimeout, FetchTimeoutError } from "@/lib/fetch-with-timeout";
+import Logger, { createScopedLogger } from "@/lib/logger";
+import { safeValidateChildActionResponse } from "@/lib/child-actions-schema";
 import type { StudentProfileV1 } from "@/app/types/studentprofile";
 import type {
   ChildActionIdhDebug,
@@ -14,15 +18,22 @@ import type {
 export const dynamic = "force-dynamic";
 
 const TRUE_VALUES = new Set(["1", "true", "yes", "on"]);
-console.debug("child-actions route loaded");
+const ALLOWED_DEBUG_USERS = new Set(process.env.ALLOWED_DEBUG_USER_IDS?.split(',').map(id => id.trim()) ?? []);
+const REQUEST_TIMEOUT_MS = 15000; // 15 seconds for student profile
+const IDH_TIMEOUT_MS = 10000; // 10 seconds for IDH
 
-type StudentProfileFetchResult =
-  | { ok: true; profile: StudentProfileV1 }
-  | { ok: false; status: number; message: string };
+Logger.debug("child-actions route loaded");
 export async function GET(req: Request) {
+  const startTime = Date.now();
+  const correlationId = Logger.generateCorrelationId();
+  const log = createScopedLogger(correlationId, { endpoint: '/api/parent/child-actions' });
+
   try {
+    log.info('Incoming request');
+
     const session = await getServerSession(authOptions);
     if (!session) {
+      log.warn('Unauthorized request - no session');
       return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
     }
 
@@ -32,68 +43,73 @@ export async function GET(req: Request) {
     const requestedParentId = searchParams.get("parentPersonId")?.trim() || null;
     const studentEmirateId = searchParams.get("studentEmirateId")?.trim() || null;
     const debugParamRequested = TRUE_VALUES.has((searchParams.get("idhDebug") ?? "").toLowerCase());
-    const includeIdhDebug = false;
     const sessionParentId = session.user?.emiratesId?.trim() || null;
 
+    // Allow idhDebug for authorized users only
+    const includeIdhDebug = debugParamRequested && (
+      ALLOWED_DEBUG_USERS.size === 0 || 
+      ALLOWED_DEBUG_USERS.has(sessionParentId ?? '')
+    );
+
+    if (debugParamRequested && !includeIdhDebug) {
+      log.warn('idhDebug requested but user not authorized', { userId: sessionParentId ?? undefined });
+    }
+
     if (!studentPersonId) {
+      log.warn('Missing required parameter: studentPersonId');
       return NextResponse.json({ ok: false, error: "studentPersonId is required" }, { status: 400 });
     }
 
     if (!sessionParentId) {
+      log.warn('Parent identity missing in session');
       return NextResponse.json({ ok: false, error: "Parent identity missing in session" }, { status: 403 });
     }
 
     if (requestedParentId && requestedParentId !== sessionParentId) {
+      log.warn('Forbidden: Parent ID mismatch', { 
+        requested: requestedParentId, 
+        session: sessionParentId 
+      });
       return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
     }
 
-    if (debugParamRequested) {
-      console.warn("idhDebug query ignored for parent child-actions route");
-    }
+    log.info('Request validated', { 
+      studentPersonId, 
+      parentPersonId: sessionParentId,
+      includeIdhDebug 
+    });
 
     const parentPersonId = sessionParentId;
-
-    // Fetch student enrollment data from PP API
     const origin = url.origin;
 
+    log.debug('Fetching parallel data', { studentPersonId, parentPersonId });
+
+    const fetchStart = Date.now();
     const activeAcademicYearPromise = getActiveAcademicYearValue();
-    const studentProfilePromise = (async (): Promise<StudentProfileFetchResult> => {
-      try {
-        const studentRes = await fetch(`${origin}/api/PP/student/${encodeURIComponent(studentPersonId)}`, {
-          headers: { cookie: req.headers.get("cookie") ?? "" },
-          cache: "no-store",
-        });
+    const studentProfilePromise = fetchStudentProfile({
+      origin,
+      studentPersonId,
+      cookieHeader: req.headers.get("cookie") ?? undefined,
+      timeoutMs: REQUEST_TIMEOUT_MS,
+      retries: 1,
+    });
 
-        if (studentRes.ok) {
-          const data = (await studentRes.json()) as StudentProfileV1;
-          return { ok: true, profile: data };
-        }
-
-        const errorBody = await studentRes.json().catch(() => null);
-        const message =
-          errorBody && typeof errorBody === "object" && errorBody !== null && "error" in errorBody &&
-          typeof (errorBody as { error?: unknown }).error === "string"
-            ? (errorBody as { error: string }).error
-            : `PP student fetch failed with status ${studentRes.status}`;
-
-        return { ok: false, status: studentRes.status, message };
-      } catch (error) {
-        console.warn("Failed to fetch student enrollment data from PP API:", error);
-        return {
-          ok: false,
-          status: 502,
-          message: "Failed to reach PP student profile endpoint",
-        };
-      }
-    })();
-
-    const idhPromise = fetchIdhStatus(studentPersonId, req, { debug: includeIdhDebug });
+    const idhPromise = fetchIdhStatus(studentPersonId, req, { 
+      debug: includeIdhDebug,
+      timeoutMs: IDH_TIMEOUT_MS,
+    });
 
     const [activeAcademicYear, studentProfileResult, idh] = await Promise.all([
       activeAcademicYearPromise,
       studentProfilePromise,
       idhPromise,
     ]);
+
+    const fetchDuration = Date.now() - fetchStart;
+    log.logDuration('Parallel fetches completed', fetchDuration, {
+      studentProfileOk: studentProfileResult.ok,
+      idhStatusId: idh.statusId,
+    });
 
     if (!studentProfileResult.ok) {
       const upstreamStatus = studentProfileResult.status;
@@ -102,6 +118,11 @@ export async function GET(req: Request) {
         upstreamStatus === 404
           ? "Student not found or not associated with this account"
           : studentProfileResult.message;
+
+      log.error('Student profile fetch failed', { 
+        status: upstreamStatus, 
+        message 
+      });
 
       return NextResponse.json({ ok: false, error: message }, { status });
     }
@@ -118,6 +139,7 @@ export async function GET(req: Request) {
       if (matchingEnrollment) {
         educationType = matchingEnrollment.educationType;
         schoolYear = matchingEnrollment.schoolYear;
+        log.debug('Using active year enrollment', { educationType, schoolYear });
       } else if (studentData.enrollment?.length) {
         const sorted = [...studentData.enrollment].sort((a, b) => {
           const aYear = a.schoolYear ? parseInt(a.schoolYear, 10) : 0;
@@ -126,6 +148,9 @@ export async function GET(req: Request) {
         });
         educationType = sorted[0].educationType;
         schoolYear = sorted[0].schoolYear;
+        log.debug('Using most recent enrollment', { educationType, schoolYear });
+      } else {
+        log.warn('No enrollment data found for student');
       }
     }
 
@@ -133,6 +158,8 @@ export async function GET(req: Request) {
     const idhStatusId = idh.statusId;
     const idhFetchedAt = idh.fetchedAt;
     const idhTrace = idh.trace;
+
+    log.debug('Generating child actions summary', { idhStatusId, idhFetchedAt });
 
     const payload = await getChildActionsSummary({
       studentPersonId,
@@ -147,18 +174,49 @@ export async function GET(req: Request) {
 
     if (includeIdhDebug && idhTrace) {
       payload.idhDebug = idhTrace;
+      log.debug('IDH debug info included in response');
     }
 
-    return NextResponse.json(payload as ChildActionResponse);
+    // Validate response schema
+    const validationResult = safeValidateChildActionResponse(payload);
+    if (!validationResult.success) {
+      log.error('Response schema validation failed', { 
+        errors: validationResult.errors.errors 
+      });
+      // Log but don't block - return payload anyway for backward compatibility
+    }
+
+    const totalDuration = Date.now() - startTime;
+    log.logDuration('Request completed successfully', totalDuration, {
+      actionCount: payload.actions?.length ?? 0,
+    });
+
+    return NextResponse.json(
+      payload as ChildActionResponse,
+      { headers: { 'x-correlation-id': correlationId } }
+    );
   } catch (error) {
-    console.error("child-actions GET failed", error);
+    const totalDuration = Date.now() - startTime;
+    const err = error instanceof Error ? error : new Error(String(error));
+    
+    log.error('Request failed', { duration: totalDuration }, err);
+    
     const message = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json({ ok: false, error: message }, { status: 500 });
+    const status = error instanceof FetchTimeoutError ? 504 : 500;
+    
+    return NextResponse.json(
+      { ok: false, error: message },
+      { 
+        status,
+        headers: { 'x-correlation-id': correlationId }
+      }
+    );
   }
 }
 
 type FetchIdhStatusOptions = {
   debug?: boolean;
+  timeoutMs?: number;
 };
 
 type FetchIdhStatusResult = {
@@ -169,6 +227,7 @@ type FetchIdhStatusResult = {
 
 async function fetchIdhStatus(studentPersonId: string, req: Request, options?: FetchIdhStatusOptions): Promise<FetchIdhStatusResult> {
   const debug = options?.debug ?? false;
+  const timeoutMs = options?.timeoutMs ?? 10000;
   const trace: ChildActionIdhDebug | null = debug
     ? {
         statusId: null,
@@ -182,7 +241,7 @@ async function fetchIdhStatus(studentPersonId: string, req: Request, options?: F
   try {
     const baseUrl = process.env.PP_BASE_URL;
     if (!baseUrl) {
-      console.warn("PP_BASE_URL missing; skipping IDH fetch");
+      Logger.warn("PP_BASE_URL missing; skipping IDH fetch");
       if (trace) {
         trace.warning = "PP_BASE_URL missing";
       }
@@ -190,11 +249,14 @@ async function fetchIdhStatus(studentPersonId: string, req: Request, options?: F
     }
 
     const origin = new URL(req.url).origin;
-    const tokenRes = await fetch(`${origin}/api/PP/auth/token`, { cache: "no-store" });
+    const tokenRes = await fetchWithTimeout(`${origin}/api/PP/auth/token`, { 
+      cache: "no-store",
+      timeoutMs: 5000 // 5 second timeout for token fetch
+    });
     const tokenJson = (await tokenRes.json().catch(() => null)) as { accessToken?: string } | null;
 
     if (!tokenRes.ok || !tokenJson?.accessToken) {
-      console.warn("Failed to retrieve PP token", tokenJson);
+      Logger.warn("Failed to retrieve PP token", { status: tokenRes.status });
       if (trace) {
         trace.warning = `Failed to retrieve PP token (${tokenRes.status})`;
         trace.parsedShape = "empty";
@@ -204,12 +266,13 @@ async function fetchIdhStatus(studentPersonId: string, req: Request, options?: F
 
     const accessToken = tokenJson.accessToken;
     const upstreamUrl = `${baseUrl.replace(/\/$/, "")}/idh?sourceId=${encodeURIComponent(studentPersonId)}`;
-    const idhRes = await fetch(upstreamUrl, {
+    const idhRes = await fetchWithTimeout(upstreamUrl, {
       headers: {
         Authorization: `Bearer ${accessToken}`,
         "Content-Type": "application/json",
       },
       cache: "no-store",
+      timeoutMs,
     });
 
     if (trace) {
@@ -229,7 +292,7 @@ async function fetchIdhStatus(studentPersonId: string, req: Request, options?: F
     const hasBody = trimmedBody.length > 0;
 
     if (!idhRes.ok) {
-      console.warn("IDH fetch failed", idhRes.status, hasBody ? trimmedBody : "");
+      Logger.warn("IDH fetch failed", { status: idhRes.status, hasBody });
       if (trace) {
         trace.parsedShape = hasBody ? "string" : "empty";
         trace.warning = `Upstream returned ${idhRes.status}`;
@@ -239,7 +302,7 @@ async function fetchIdhStatus(studentPersonId: string, req: Request, options?: F
     }
 
     if (!hasBody) {
-      console.warn("IDH fetch returned empty body", upstreamUrl);
+      Logger.warn("IDH fetch returned empty body", { url: upstreamUrl });
       if (trace) {
         trace.parsedShape = "empty";
         trace.warning = "Empty body from upstream";
@@ -251,7 +314,7 @@ async function fetchIdhStatus(studentPersonId: string, req: Request, options?: F
     try {
       parsed = JSON.parse(trimmedBody);
     } catch (error) {
-      console.warn("Failed to parse IDH response JSON", error);
+      Logger.warn("Failed to parse IDH response JSON", {}, error instanceof Error ? error : undefined);
       if (trace) {
         trace.parsedShape = "string";
         trace.warning = "Failed to parse JSON body";
@@ -286,7 +349,7 @@ async function fetchIdhStatus(studentPersonId: string, req: Request, options?: F
       trace: trace ?? undefined,
     };
   } catch (error) {
-    console.warn("Error while fetching IDH status", error);
+    Logger.warn("Error while fetching IDH status", {}, error instanceof Error ? error : undefined);
     if (trace) {
       trace.warning = error instanceof Error ? error.message : String(error);
     }
