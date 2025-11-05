@@ -36,37 +36,41 @@ model ApiKey {
 }
 
 model Student {
-  id                  Int                 @id @default(autoincrement())
-  orSourcedId         String              @unique
-  username            String
-  status              String
-  role                String
-  firstNameArabic     String?
-  middleNameArabic    String?
-  lastNameArabic      String?
-  gender              String?
-  dateOfBirth         DateTime?
-  religion            String?
-  emirateId           String?
-  firstNameEnglish    String?
-  middleNameEnglish   String?
-  thirdNameEnglish    String?
-  fourthNameEnglish   String?
-  familyNameEnglish   String?
-  studentNumber       String?
-  userIds             String?
-  NationalityAR       String?
-  NationalityEN       String?
-  CitizenshipStatus   String?
-  birthPlaceCityAr    String?
-  birthPlaceCityEn    String?
-  birthPlaceCountryAr String?
-  birthPlaceCountryEn String?
-  createdAt           DateTime            @default(now())
-  updatedAt           DateTime
-  StudentAddress      StudentAddress[]
-  StudentContact      StudentContact[]
-  StudentEnrollment   StudentEnrollment[]
+  id                       Int                 @id @default(autoincrement())
+  orSourcedId              String              @unique
+  username                 String
+  status                   String
+  role                     String
+  firstNameArabic          String?
+  middleNameArabic         String?
+  lastNameArabic           String?
+  gender                   String?
+  dateOfBirth              DateTime?
+  religion                 String?
+  emirateId                String?
+  firstNameEnglish         String?
+  middleNameEnglish        String?
+  thirdNameEnglish         String?
+  fourthNameEnglish        String?
+  familyNameEnglish        String?
+  studentNumber            String?
+  userIds                  String?
+  NationalityAR            String?
+  NationalityEN            String?
+  CitizenshipStatus        String?
+  birthPlaceCityAr         String?
+  birthPlaceCityEn         String?
+  birthPlaceCountryAr      String?
+  birthPlaceCountryEn      String?
+  createdAt                DateTime            @default(now())
+  updatedAt                DateTime
+  isInformationUpdated     Boolean             @default(false)
+  informationUpdatedAt     DateTime?
+  isConductAgreementSigned Boolean             @default(false)
+  conductAgreementSignedAt DateTime?
+  StudentAddress           StudentAddress[]
+  StudentContact           StudentContact[]
+  StudentEnrollment        StudentEnrollment[]
 }
 
 model StudentAddress {
@@ -157,28 +161,28 @@ model UpdatePeriodConfig {
 }
 
 model StudentActionConfig {
-  id             Int      @id @default(autoincrement())
-  educationType  String   @db.VarChar(100)
-  actionName     String   @db.VarChar(255)
-  actionKey      String   @db.VarChar(100)
-  isEnabled      Boolean  @default(true)
-  displayOrder   Int      @default(0)
-  description    String?  @db.VarChar(Max)
-  configJson     String?  @db.VarChar(Max)
-  createdBy      String?  @db.VarChar(64)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id            Int      @id @default(autoincrement())
+  educationType String   @db.VarChar(100)
+  actionName    String   @db.VarChar(255)
+  actionKey     String   @db.VarChar(100)
+  isEnabled     Boolean  @default(true)
+  displayOrder  Int      @default(0)
+  description   String?  @db.VarChar(Max)
+  configJson    String?  @db.VarChar(Max)
+  createdBy     String?  @db.VarChar(64)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   @@unique([educationType, actionKey])
 }
 
 model AcademicYearConfig {
-  id               Int      @id @default(autoincrement())
-  academicYear     String   @unique @db.VarChar(20)
-  yearValue        Int
-  isActive         Boolean  @default(false)
-  description      String?  @db.VarChar(Max)
-  createdBy        String?  @db.VarChar(64)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  id           Int      @id @default(autoincrement())
+  academicYear String   @unique @db.VarChar(20)
+  yearValue    Int
+  isActive     Boolean  @default(false)
+  description  String?  @db.VarChar(Max)
+  createdBy    String?  @db.VarChar(64)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
