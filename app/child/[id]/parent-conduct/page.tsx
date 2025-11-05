@@ -565,6 +565,30 @@ export default function ParentConductPage() {
 
       await notifyParent(base64);
 
+      // Update conduct status in PP system
+      if (resolvedStudentId) {
+        try {
+          const conductStatusResponse = await fetch(`/api/PP/conduct-status/${encodeURIComponent(resolvedStudentId)}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+              status: 1,
+              isConductAgreementSigned: true,
+            }),
+          });
+
+          if (!conductStatusResponse.ok) {
+            const errorData = await conductStatusResponse.json().catch(() => null);
+            console.error('Failed to update conduct status in PP:', errorData);
+            // Don't block the user flow if this fails, just log it
+          }
+        } catch (error) {
+          console.error('Error updating conduct status in PP:', error);
+          // Don't block the user flow if this fails
+        }
+      }
+
       if (studentNumber) {
         await mutateCharter();
       }
@@ -592,6 +616,7 @@ export default function ParentConductPage() {
     mutateCharter,
     parentContacts.email,
     parentContacts.phone,
+    resolvedStudentId,
     studentNumber,
   ]);
 

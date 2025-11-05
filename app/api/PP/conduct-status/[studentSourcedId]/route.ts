@@ -6,10 +6,10 @@ type PPTokenResponse = {
 };
 
 /**
- * POST /api/PP/conduct-status/[studentSourcedId]
+ * PATCH /api/PP/conduct-status/[studentSourcedId]
  * Updates student conduct agreement status via PP API
  */
-export async function POST(
+export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ studentSourcedId: string }> }
 ) {
@@ -22,6 +22,11 @@ export async function POST(
         { status: 400 }
       );
     }
+
+    // Parse request body to get dynamic status and isConductAgreementSigned flag
+    const body = await req.json().catch(() => ({}));
+    const status = typeof body.status === 'number' ? body.status : null;
+    const isConductAgreementSigned = typeof body.isConductAgreementSigned === 'boolean' ? body.isConductAgreementSigned : true;
 
     // Get PP token from our token endpoint
     const tokenUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:4200'}/api/PP/auth/token`;
@@ -45,9 +50,13 @@ export async function POST(
       );
     }
 
-    // Prepare payload with dynamic timestamp
-    const payload = {
-      isConductAgreementSigned: true,
+    // Prepare payload with dynamic timestamp and status
+    const payload: {
+      isConductAgreementSigned: boolean;
+      conductAgreementSignedAt: string;
+ 
+    } = {
+      isConductAgreementSigned,
       conductAgreementSignedAt: new Date().toISOString(),
     };
 
@@ -55,7 +64,7 @@ export async function POST(
     const ppUrl = `${baseUrl.replace(/\/$/, '')}/oneroster/students/${studentSourcedId}/conduct-status`;
     
     const ppRes = await fetch(ppUrl, {
-      method: 'POST',
+      method: 'PATCH',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
