@@ -5,7 +5,7 @@ import { prismaParent } from "@/lib/prisma-parent";
 
 /**
  * GET /api/admin/analytics/updates
- * Returns all update requests with parent information
+ * Returns recent student enrollment updates and activity
  */
 export async function GET(req: NextRequest) {
   try {
@@ -30,55 +30,58 @@ export async function GET(req: NextRequest) {
     const searchParams = req.nextUrl.searchParams;
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "50");
-    const status = searchParams.get("status");
     const skip = (page - 1) * limit;
 
-    // Build where clause
-    const whereClause: any = {};
-    if (status) {
-      whereClause.infoUpdateRequestStatus = parseInt(status);
-    }
-
-    // Get update requests
-    const [updateRequests, totalCount] = await Promise.all([
-      prismaParent.updateInformationRequests.findMany({
-        where: whereClause,
-        orderBy: { updateAt: "desc" },
+    // Get recent enrollments with student data
+    const [enrollments, totalCount] = await Promise.all([
+      prismaParent.studentEnrollment.findMany({
+        include: {
+          Student: {
+            select: {
+              id: true,
+              emirateId: true,
+              firstNameEnglish: true,
+              familyNameEnglish: true,
+              status: true,
+              updatedAt: true,
+            },
+          },
+        },
+        orderBy: { updatedAt: "desc" },
         skip,
         take: limit,
       }),
-      prismaParent.updateInformationRequests.count({ where: whereClause }),
+      prismaParent.studentEnrollment.count(),
     ]);
 
-    // Get statistics
-    const stats = await prismaParent.updateInformationRequests.groupBy({
-      by: ["infoUpdateRequestStatus"],
+    // Get enrollment statistics
+    const stats = await prismaParent.studentEnrollment.groupBy({
+      by: ["type"],
       _count: true,
     });
 
-    const statusCounts = {
+    const enrollmentStats = {
       total: totalCount,
-      requested: 0,
-      completed: 0,
-      pending: 0,
-      withConductAgreement: 0,
+      byType: stats.map((s) => ({
+        type: s.type || "Unknown",
+        count: s._count,
+      })),
     };
 
-    stats.forEach((stat) => {
-      if (stat.infoUpdateRequestStatus === 1) statusCounts.pending = stat._count;
-      if (stat.infoUpdateRequestStatus === 2) statusCounts.completed = stat._count;
-      if (stat.infoUpdateRequestStatus === 3) statusCounts.requested = stat._count;
+    // Get count of active enrollments
+    const activeCount = await prismaParent.studentEnrollment.count({
+      where: {
+        exitDate: null,
+      },
     });
-
-    // Count conduct agreements
-    const conductCount = await prismaParent.updateInformationRequests.count({
-      where: { isConductAgreementSigned: true },
-    });
-    statusCounts.withConductAgreement = conductCount;
 
     return NextResponse.json({
-      updates: updateRequests,
-      stats: statusCounts,
+      enrollments,
+      stats: {
+        ...enrollmentStats,
+        active: activeCount,
+        inactive: totalCount - activeCount,
+      },
       pagination: {
         page,
         limit,

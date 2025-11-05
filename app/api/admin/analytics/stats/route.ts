@@ -33,17 +33,16 @@ export async function GET(req: NextRequest) {
       totalEnrollments,
       totalAddresses,
       totalContacts,
-      totalUpdateRequests,
-      completedUpdates,
-      pendingUpdates,
       totalAdmins,
       activeAdmins,
       totalPeriods,
       activePeriods,
       totalActions,
       activeActions,
+      totalAcademicYears,
+      activeAcademicYears,
       recentStudents,
-      recentUpdates,
+      recentEnrollments,
       genderBreakdown,
       religionBreakdown,
       citizenshipBreakdown,
@@ -57,15 +56,6 @@ export async function GET(req: NextRequest) {
       prismaParent.studentAddress.count(),
       prismaParent.studentContact.count(),
       
-      // Update request counts
-      prismaParent.updateInformationRequests.count(),
-      prismaParent.updateInformationRequests.count({
-        where: { infoUpdateRequestStatus: 2 },
-      }),
-      prismaParent.updateInformationRequests.count({
-        where: { infoUpdateRequestStatus: 1 },
-      }),
-      
       // Admin counts
       prismaParent.adminUser.count(),
       prismaParent.adminUser.count({ where: { isActive: true } }),
@@ -75,6 +65,8 @@ export async function GET(req: NextRequest) {
       prismaParent.updatePeriodConfig.count({ where: { isEnabled: true } }),
       prismaParent.studentActionConfig.count(),
       prismaParent.studentActionConfig.count({ where: { isEnabled: true } }),
+      prismaParent.academicYearConfig.count(),
+      prismaParent.academicYearConfig.count({ where: { isActive: true } }),
       
       // Recent activity
       prismaParent.student.findMany({
@@ -86,16 +78,26 @@ export async function GET(req: NextRequest) {
           firstNameEnglish: true,
           familyNameEnglish: true,
           createdAt: true,
+          status: true,
         },
       }),
-      prismaParent.updateInformationRequests.findMany({
-        orderBy: { updateAt: "desc" },
+      prismaParent.studentEnrollment.findMany({
+        orderBy: { createdAt: "desc" },
         take: 5,
         select: {
-          studentEmirateId: true,
-          parentPersonId: true,
-          infoUpdateRequestStatus: true,
-          updateAt: true,
+          id: true,
+          orEnrollmentId: true,
+          schoolId: true,
+          streamGradeId: true,
+          entryDate: true,
+          createdAt: true,
+          Student: {
+            select: {
+              emirateId: true,
+              firstNameEnglish: true,
+              familyNameEnglish: true,
+            },
+          },
         },
       }),
       
@@ -149,14 +151,6 @@ export async function GET(req: NextRequest) {
           withContact: studentsWithContacts,
           withEnrollment: studentsWithEnrollments,
         },
-        updates: {
-          total: totalUpdateRequests,
-          completed: completedUpdates,
-          pending: pendingUpdates,
-          completionRate: totalUpdateRequests > 0 
-            ? ((completedUpdates / totalUpdateRequests) * 100).toFixed(2)
-            : "0",
-        },
         system: {
           admins: {
             total: totalAdmins,
@@ -169,6 +163,10 @@ export async function GET(req: NextRequest) {
           actions: {
             total: totalActions,
             enabled: activeActions,
+          },
+          academicYears: {
+            total: totalAcademicYears,
+            active: activeAcademicYears,
           },
         },
       },
@@ -188,7 +186,7 @@ export async function GET(req: NextRequest) {
       },
       recentActivity: {
         newStudents: recentStudents,
-        recentUpdates: recentUpdates,
+        recentEnrollments: recentEnrollments,
       },
       counts: {
         totalEnrollments,

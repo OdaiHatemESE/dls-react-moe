@@ -65,33 +65,8 @@ export async function GET(req: NextRequest) {
       prismaParent.student.count({ where: whereClause }),
     ]);
 
-    // Get update request info for each student
-    const studentIds = students.map((s) => s.emirateId).filter(Boolean) as string[];
-    const updateRequests = await prismaParent.updateInformationRequests.findMany({
-      where: {
-        studentEmirateId: { in: studentIds },
-      },
-    });
-
-    // Map update requests by student emirate ID
-    const updateRequestMap = new Map(
-      updateRequests.map((req) => [req.studentEmirateId, req])
-    );
-
-    // Enrich student data with update information
-    const enrichedStudents = students.map((student) => {
-      const updateReq = updateRequestMap.get(student.emirateId || "");
-      return {
-        ...student,
-        hasUpdateRequest: !!updateReq,
-        updateRequestStatus: updateReq?.infoUpdateRequestStatus,
-        lastUpdateRequestDate: updateReq?.updateAt,
-        hasConductAgreement: updateReq?.isConductAgreementSigned,
-      };
-    });
-
     return NextResponse.json({
-      students: enrichedStudents,
+      students,
       pagination: {
         page,
         limit,
