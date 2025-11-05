@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Users, Calendar, Settings, Loader2, AlertCircle, Database, FileText, BarChart3, Home } from "lucide-react";
+import { useI18n } from "@/app/i18n/I18nProvider";
 import { AdminUsersManager } from "./components/AdminUsersManager";
 import { UpdatePeriodsManager } from "./components/UpdatePeriodsManager";
 import { StudentActionsManager } from "./components/StudentActionsManager";
@@ -28,58 +29,69 @@ type AdminAccess = {
 
 type NavigationItem = {
   id: string;
-  label: string;
+  labelKey: keyof typeof navigationKeys;
   icon: typeof BarChart3;
-  description: string;
+  descKey: keyof typeof navigationKeys;
 };
 
-const navigationItems: NavigationItem[] = [
-  {
-    id: "analytics",
-    label: "Analytics",
-    icon: BarChart3,
-    description: "System overview and statistics",
-  },
-  {
-    id: "students",
-    label: "Students",
-    icon: Database,
-    description: "Student directory and information",
-  },
-  {
-    id: "logs",
-    label: "Update Logs",
-    icon: FileText,
-    description: "Activity and update tracking",
-  },
-  {
-    id: "users",
-    label: "Admin Users",
-    icon: Users,
-    description: "Manage admin access",
-  },
-  {
-    id: "periods",
-    label: "Update Periods",
-    icon: Calendar,
-    description: "Configure update windows",
-  },
-  {
-    id: "academic-year",
-    label: "Academic Year",
-    icon: Calendar,
-    description: "Set active academic year",
-  },
-  {
-    id: "actions",
-    label: "Student Actions",
-    icon: Settings,
-    description: "Manage student actions",
-  },
-];
+const navigationKeys = {
+  analytics: 'analytics' as const,
+  students: 'students' as const,
+  logs: 'logs' as const,
+  users: 'users' as const,
+  periods: 'periods' as const,
+  academicYear: 'academicYear' as const,
+  actions: 'actions' as const,
+};
 
 export default function AdminConfigPage() {
+  const { t, dir } = useI18n();
   const router = useRouter();
+  
+  const navigationItems: NavigationItem[] = [
+    {
+      id: "analytics",
+      labelKey: "analytics",
+      icon: BarChart3,
+      descKey: "analytics",
+    },
+    {
+      id: "students",
+      labelKey: "students",
+      icon: Database,
+      descKey: "students",
+    },
+    {
+      id: "logs",
+      labelKey: "logs",
+      icon: FileText,
+      descKey: "logs",
+    },
+    {
+      id: "users",
+      labelKey: "users",
+      icon: Users,
+      descKey: "users",
+    },
+    {
+      id: "periods",
+      labelKey: "periods",
+      icon: Calendar,
+      descKey: "periods",
+    },
+    {
+      id: "academic-year",
+      labelKey: "academicYear",
+      icon: Calendar,
+      descKey: "academicYear",
+    },
+    {
+      id: "actions",
+      labelKey: "actions",
+      icon: Settings,
+      descKey: "actions",
+    },
+  ];
   const [activeView, setActiveView] = useState("analytics");
   const [isCheckingAccess, setIsCheckingAccess] = useState(true);
   const [accessData, setAccessData] = useState<AdminAccess | null>(null);
@@ -113,7 +125,7 @@ export default function AdminConfigPage() {
       <div className="container mx-auto py-16 px-4">
         <div className="flex flex-col items-center justify-center space-y-4">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          <p className="text-muted-foreground">Verifying admin access...</p>
+          <p className="text-muted-foreground">{t.admin.verifyingAccess}</p>
         </div>
       </div>
     );
@@ -124,11 +136,11 @@ export default function AdminConfigPage() {
       <div className="container mx-auto py-16 px-4">
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Access Denied</AlertTitle>
+          <AlertTitle>{t.admin.accessDenied}</AlertTitle>
           <AlertDescription>
-            {accessData?.reason || "You do not have permission to access this page."}
+            {accessData?.reason || t.admin.noPermission}
             <br />
-            <span className="text-sm">Redirecting to dashboard...</span>
+            <span className="text-sm">{t.admin.redirecting}</span>
           </AlertDescription>
         </Alert>
       </div>
@@ -147,8 +159,8 @@ export default function AdminConfigPage() {
             </div>
             <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
               <div className="mb-6">
-                <h2 className="text-2xl font-bold text-foreground mb-2">System Analytics Overview</h2>
-                <p className="text-gray-600 dark:text-gray-400">Comprehensive view of system data, demographics, and activity</p>
+                <h2 className="text-2xl font-bold text-foreground mb-2">{t.admin.analytics.title}</h2>
+                <p className="text-gray-600 dark:text-gray-400">{t.admin.analytics.subtitle}</p>
               </div>
               <UpdateLogsTable />
             </div>
@@ -196,9 +208,13 @@ export default function AdminConfigPage() {
   };
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-aegold-50 via-gray-50 to-aegold-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+    <div className="flex min-h-screen bg-gradient-to-br from-aegold-50 via-gray-50 to-aegold-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900" dir={dir}>
       {/* Left Sidebar Navigation */}
-      <div className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700">
+      <div className={cn(
+        "hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0 bg-white dark:bg-gray-900",
+        dir === "rtl" ? "right-0 border-l" : "left-0 border-r",
+        "border-gray-200 dark:border-gray-700"
+      )}>
         <div className="flex flex-col flex-1 overflow-y-auto">
           {/* Logo/Header */}
           <div className="p-6 border-b border-gray-200 dark:border-gray-700">
@@ -207,8 +223,8 @@ export default function AdminConfigPage() {
                 <Settings className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h2 className="text-lg font-bold text-foreground">Admin Panel</h2>
-                <p className="text-xs text-gray-600 dark:text-gray-400">Configuration</p>
+                <h2 className="text-lg font-bold text-foreground">{t.admin.title}</h2>
+                <p className="text-xs text-gray-600 dark:text-gray-400">{t.admin.configuration}</p>
               </div>
             </div>
           </div>
@@ -216,7 +232,7 @@ export default function AdminConfigPage() {
           {/* User Info */}
           {accessData?.user && (
             <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-aegold-50 dark:bg-gray-800">
-              <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Logged in as</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">{t.admin.loggedInAs}</p>
               <p className="font-semibold text-sm text-foreground">{accessData.user.name}</p>
               <p className="text-xs text-gray-500 dark:text-gray-400 font-mono mt-1">
                 {accessData.user.emirateId}
@@ -235,7 +251,8 @@ export default function AdminConfigPage() {
                   key={item.id}
                   onClick={() => setActiveView(item.id)}
                   className={cn(
-                    "w-full flex items-start gap-3 px-4 py-3 rounded-lg transition-all text-left",
+                    "w-full flex items-start gap-3 px-4 py-3 rounded-lg transition-all",
+                    dir === "rtl" ? "text-right" : "text-left",
                     isActive
                       ? "bg-aegold-600 text-white"
                       : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
@@ -244,10 +261,10 @@ export default function AdminConfigPage() {
                   <Icon className={cn("w-5 h-5 mt-0.5 flex-shrink-0", isActive ? "text-white" : "text-gray-500 dark:text-gray-400")} />
                   <div className="flex-1 min-w-0">
                     <p className={cn("font-medium text-sm", isActive ? "text-white" : "text-gray-900 dark:text-gray-100")}>
-                      {item.label}
+                      {t.admin.navigation[item.labelKey as keyof typeof t.admin.navigation]}
                     </p>
                     <p className={cn("text-xs mt-0.5", isActive ? "text-aegold-100" : "text-gray-500 dark:text-gray-400")}>
-                      {item.description}
+                      {t.admin.navigation[`${item.descKey}Desc` as keyof typeof t.admin.navigation]}
                     </p>
                   </div>
                 </button>
@@ -262,14 +279,14 @@ export default function AdminConfigPage() {
               className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-700 transition-all text-gray-700 dark:text-gray-300"
             >
               <Home className="w-4 h-4" />
-              <span className="font-medium text-sm">Back to Portal</span>
+              <span className="font-medium text-sm">{t.admin.backToPortal}</span>
             </a>
           </div>
         </div>
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 lg:pl-64">
+      <div className={cn("flex-1", dir === "rtl" ? "lg:pr-64" : "lg:pl-64")}>
         {/* Mobile Header */}
         <div className="lg:hidden bg-gradient-to-r from-aegold-600 via-aegold-500 to-aegold-400 text-white">
           <div className="px-4 py-6">
@@ -279,8 +296,8 @@ export default function AdminConfigPage() {
                   <Settings className="w-6 h-6" />
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold">Admin Panel</h1>
-                  <p className="text-xs text-aegold-100">Configuration</p>
+                  <h1 className="text-xl font-bold">{t.admin.title}</h1>
+                  <p className="text-xs text-aegold-100">{t.admin.configuration}</p>
                 </div>
               </div>
               <a
@@ -288,12 +305,12 @@ export default function AdminConfigPage() {
                 className="inline-flex items-center gap-2 px-3 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-lg border border-white/20 transition-all text-sm"
               >
                 <Home className="w-4 h-4" />
-                <span className="hidden sm:inline">Portal</span>
+                <span className="hidden sm:inline">{t.admin.portal}</span>
               </a>
             </div>
             {accessData?.user && (
               <div className="bg-white/10 backdrop-blur-md rounded-lg px-4 py-2 border border-white/20">
-                <p className="text-xs text-aegold-100">Logged in as</p>
+                <p className="text-xs text-aegold-100">{t.admin.loggedInAs}</p>
                 <p className="font-semibold text-sm">{accessData.user.name}</p>
               </div>
             )}
@@ -304,10 +321,14 @@ export default function AdminConfigPage() {
         <div className="hidden lg:block bg-gradient-to-r from-aegold-600 via-aegold-500 to-aegold-400 text-white">
           <div className="px-8 py-8">
             <h1 className="text-3xl font-bold mb-2">
-              {navigationItems.find(item => item.id === activeView)?.label}
+              {navigationItems.find(item => item.id === activeView)
+                ? t.admin.navigation[navigationItems.find(item => item.id === activeView)!.labelKey as keyof typeof t.admin.navigation]
+                : ''}
             </h1>
             <p className="text-aegold-100">
-              {navigationItems.find(item => item.id === activeView)?.description}
+              {navigationItems.find(item => item.id === activeView)
+                ? t.admin.navigation[`${navigationItems.find(item => item.id === activeView)!.descKey}Desc` as keyof typeof t.admin.navigation]
+                : ''}
             </p>
           </div>
         </div>
@@ -321,7 +342,7 @@ export default function AdminConfigPage() {
           >
             {navigationItems.map((item) => (
               <option key={item.id} value={item.id}>
-                {item.label}
+                {t.admin.navigation[item.labelKey as keyof typeof t.admin.navigation]}
               </option>
             ))}
           </select>
