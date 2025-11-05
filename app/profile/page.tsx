@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { useToastNotifications } from '@/lib/hooks/use-toast-notifications';
 import { 
   EditIcon,
   SettingsIcon,
@@ -26,6 +27,7 @@ import clsx from 'clsx';
 
 export default function ProfilePage() {
   const { t, locale } = useI18n();
+  const toast = useToastNotifications();
 
   // Get session to extract EID (external identifier)
   const { data: session, status } = useSession();
@@ -239,6 +241,8 @@ export default function ProfilePage() {
     setFormData({ ...initialForm });
   };
 
+  const toast = useToastNotifications();
+  
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
@@ -248,7 +252,10 @@ export default function ProfilePage() {
       // In a real app, you would save this to an API
       setIsEditing(false);
       setIsSaving(false);
-      alert(t.profile.updatedSuccess);
+      toast.success(
+        locale === 'ar' ? 'تم التحديث' : 'Updated',
+        t.profile.updatedSuccess
+      );
     }, 1500);
   };
 

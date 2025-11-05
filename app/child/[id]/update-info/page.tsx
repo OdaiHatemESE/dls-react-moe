@@ -8,6 +8,7 @@ import useSWR, { mutate } from 'swr';
 
 import { useI18n } from '@/app/i18n/I18nProvider';
 import { jsonFetcher } from '@/lib/swr';
+import { useToastNotifications } from '@/lib/hooks/use-toast-notifications';
 import type { StudentAddress, StudentProfileV1 } from '@/app/types/studentprofile';
 import type { IDHInsertResponse, IDHStudent, IDHApiResponse } from '@/app/types/idh';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -213,6 +214,7 @@ type StudentProfileWithMeta = StudentProfileV1 & {
 
 export default function UpdateStudentInfoPage() {
   const { t, locale } = useI18n();
+  const toast = useToastNotifications();
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -893,14 +895,37 @@ export default function UpdateStudentInfoPage() {
           // Log warning but don't block the user flow if endpoint doesn't exist
           if (statusResponse.status === 404) {
             console.warn('Information status endpoint not available on PP API');
+            toast.warning(
+              locale === 'ar' ? 'تحديث جزئي' : 'Partial Update',
+              locale === 'ar'
+                ? 'تم حفظ البيانات محلياً. نظام التحديث المركزي غير متوفر حالياً'
+                : 'Data saved locally. Central update system not available'
+            );
           } else {
             console.warn('Failed to update information status:', errorData);
+            toast.warning(
+              locale === 'ar' ? 'تحديث جزئي' : 'Partial Update',
+              locale === 'ar'
+                ? 'تم حفظ البيانات محلياً، لكن فشل التحديث في النظام المركزي'
+                : 'Data saved locally, but failed to update central system'
+            );
           }
         } else {
-          console.log('Information status updated successfully');
+          toast.success(
+            locale === 'ar' ? 'تم بنجاح' : 'Success',
+            locale === 'ar'
+              ? 'تم تحديث المعلومات وحفظها في جميع الأنظمة بنجاح'
+              : 'Information updated and saved successfully across all systems'
+          );
         }
       } catch (statusError) {
         console.warn('Error calling information-status API:', statusError);
+        toast.warning(
+          locale === 'ar' ? 'تحديث جزئي' : 'Partial Update',
+          locale === 'ar'
+            ? 'تم حفظ البيانات محلياً، لكن حدث خطأ في الاتصال بالنظام المركزي'
+            : 'Data saved locally, but error connecting to central system'
+        );
         // Non-blocking: continue even if status update fails
       }
 
@@ -957,11 +982,19 @@ export default function UpdateStudentInfoPage() {
           ? `${upstreamMessage ?? 'الملف المرفق كبير جداً.'} حجم الملف الحالي ${rawSize || 'غير معروف'} (حوالي ${encodedSize || '—'} بعد الترميز). يرجى تقليل الحجم إلى أقل من ${ATTACHMENT_LIMIT_LABEL}.`
           : `${upstreamMessage ?? 'The attachment is too large.'} Your file size is ${rawSize || 'unknown'} (≈ ${encodedSize || '—'} once encoded). Please reduce it below ${ATTACHMENT_LIMIT_LABEL}.`;
         setErrorMessage(composed.trim());
+        toast.error(
+          locale === 'ar' ? 'خطأ' : 'Error',
+          composed.trim()
+        );
       } else {
         const msg = typeof submitError === 'object' && submitError && 'message' in submitError
           ? String((submitError as any).message)
           : fallbackMessage;
         setErrorMessage(msg || fallbackMessage);
+        toast.error(
+          locale === 'ar' ? 'خطأ' : 'Error',
+          msg || fallbackMessage
+        );
       }
       const errorEl = document.getElementById('form-error-message');
       if (errorEl) {

@@ -10,6 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import { jsonFetcher } from '@/lib/swr';
 import { useI18n } from '@/app/i18n/I18nProvider';
 import { downloadBase64PDF, type PdfFormData } from '@/lib/pdf-generator';
+import { useToastNotifications } from '@/lib/hooks/use-toast-notifications';
 import {
   type ParentConductAggregatedResponse,
 } from '@/lib/parent-conduct';
@@ -157,6 +158,7 @@ function InfoField({
 
 export default function ParentConductPage() {
   const { t, locale } = useI18n();
+  const toast = useToastNotifications();
   const params = useParams();
   const searchParams = useSearchParams();
   const routeChildId = params?.id as string | undefined;
@@ -479,15 +481,23 @@ export default function ParentConductPage() {
       downloadBase64PDF(base64, filename || `${studentFullName}_ParentConduct.pdf`);
     } catch (error) {
       console.error('Failed to download PDF:', error);
-      alert('Failed to generate PDF. Please try again.');
+      toast.error(
+        locale === 'ar' ? 'خطأ' : 'Error',
+        locale === 'ar'
+          ? 'فشل إنشاء ملف PDF. يرجى المحاولة مرة أخرى.'
+          : 'Failed to generate PDF. Please try again.'
+      );
     }
-  }, [handleGeneratePDF, latestPdfBase64, studentFullName]);
+  }, [handleGeneratePDF, latestPdfBase64, studentFullName, toast, locale]);
 
   const handleSign = React.useCallback(async () => {
     if (!isAgreed || isSigning) return;
 
     if (!studentNumber) {
-      alert(locale === 'ar' ? 'رقم الطالب غير متوفر.' : 'Student number is unavailable.');
+      toast.error(
+        locale === 'ar' ? 'خطأ' : 'Error',
+        locale === 'ar' ? 'رقم الطالب غير متوفر.' : 'Student number is unavailable.'
+      );
       return;
     }
 
@@ -581,12 +591,37 @@ export default function ParentConductPage() {
           if (!conductStatusResponse.ok) {
             const errorData = await conductStatusResponse.json().catch(() => null);
             console.error('Failed to update conduct status in PP:', errorData);
-            // Don't block the user flow if this fails, just log it
+            toast.warning(
+              locale === 'ar' ? 'تحذير' : 'Warning',
+              locale === 'ar' 
+                ? 'تم حفظ الميثاق محليًا، لكن فشل التحديث في النظام المركزي'
+                : 'Charter saved locally, but failed to update in central system'
+            );
+          } else {
+            toast.success(
+              locale === 'ar' ? 'تم بنجاح' : 'Success',
+              locale === 'ar'
+                ? 'تم توقيع الميثاق وحفظه بنجاح في جميع الأنظمة'
+                : 'Charter signed and saved successfully across all systems'
+            );
           }
         } catch (error) {
           console.error('Error updating conduct status in PP:', error);
-          // Don't block the user flow if this fails
+          toast.warning(
+            locale === 'ar' ? 'تحذير' : 'Warning',
+            locale === 'ar'
+              ? 'تم حفظ الميثاق محليًا، لكن حدث خطأ في الاتصال بالنظام المركزي'
+              : 'Charter saved locally, but error connecting to central system'
+          );
         }
+      } else {
+        // No PP integration, just show local success
+        toast.success(
+          locale === 'ar' ? 'تم بنجاح' : 'Success',
+          locale === 'ar'
+            ? 'تم توقيع الميثاق وحفظه بنجاح'
+            : 'Charter signed and saved successfully'
+        );
       }
 
       if (studentNumber) {
@@ -598,7 +633,8 @@ export default function ParentConductPage() {
       }
     } catch (error) {
       console.error('Error completing conduct signature:', error);
-      alert(
+      toast.error(
+        locale === 'ar' ? 'خطأ' : 'Error',
         locale === 'ar'
           ? 'تعذر حفظ توقيع الميثاق. يرجى المحاولة مرة أخرى.'
           : 'Failed to submit the partnership charter. Please try again.',

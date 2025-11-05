@@ -64,6 +64,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     {children}
                   </ConditionalLayout>
                   
+                  {/* Toast notifications */}
+                  <Toaster />
+                  
                   {/* Dynamically update lang/dir on client */}
                   <HtmlLangDirProvider />
                 </SWRProvider>
@@ -82,3 +85,4 @@ import IconProvider from "./components/icons/IconProvider";
 import { I18nProvider } from "./i18n/I18nProvider";
 import SWRProvider from "@/app/components/SWRProvider";
 import ThemeProvider from "@/app/components/ThemeProvider";
+import { Toaster } from "@/components/ui/toaster";
