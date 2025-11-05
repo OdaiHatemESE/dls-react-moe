@@ -32,55 +32,88 @@ export async function GET(req: NextRequest) {
     const limit = parseInt(searchParams.get("limit") || "50");
     const skip = (page - 1) * limit;
 
-    // Get recent enrollments with student data
-    const [enrollments, totalCount] = await Promise.all([
-      prismaParent.studentEnrollment.findMany({
-        include: {
-          Student: {
-            select: {
-              id: true,
-              emirateId: true,
-              firstNameEnglish: true,
-              familyNameEnglish: true,
-              status: true,
-              updatedAt: true,
-            },
-          },
+    // Get students with information updates or conduct agreements
+    const [students, totalCount] = await Promise.all([
+      prismaParent.student.findMany({
+        where: {
+          OR: [
+            { isInformationUpdated: true },
+            { isConductAgreementSigned: true },
+            { informationUpdateStatus: { not: null } },
+          ],
         },
-        orderBy: { updatedAt: "desc" },
+        select: {
+          id: true,
+          emirateId: true,
+          firstNameEnglish: true,
+          familyNameEnglish: true,
+          firstNameArabic: true,
+          lastNameArabic: true,
+          status: true,
+          updatedAt: true,
+          isInformationUpdated: true,
+          informationUpdatedAt: true,
+          informationUpdateStatus: true,
+          isConductAgreementSigned: true,
+          conductAgreementSignedAt: true,
+          username: true,
+          studentNumber: true,
+        },
+        orderBy: [
+          { informationUpdatedAt: { sort: "desc", nulls: "last" } },
+          { conductAgreementSignedAt: { sort: "desc", nulls: "last" } },
+          { updatedAt: "desc" },
+        ],
         skip,
         take: limit,
       }),
-      prismaParent.studentEnrollment.count(),
+      prismaParent.student.count({
+        where: {
+          OR: [
+            { isInformationUpdated: true },
+            { isConductAgreementSigned: true },
+            { informationUpdateStatus: { not: null } },
+          ],
+        },
+      }),
     ]);
 
-    // Get enrollment statistics
-    const stats = await prismaParent.studentEnrollment.groupBy({
-      by: ["type"],
-      _count: true,
-    });
-
-    const enrollmentStats = {
-      total: totalCount,
-      byType: stats.map((s) => ({
-        type: s.type || "Unknown",
-        count: s._count,
-      })),
-    };
-
-    // Get count of active enrollments
-    const activeCount = await prismaParent.studentEnrollment.count({
-      where: {
-        exitDate: null,
-      },
-    });
+    // Get information update statistics
+    const [infoUpdateCount, conductSignedCount, bothCompletedCount, infoUpdateStatusCounts] = await Promise.all([
+      prismaParent.student.count({
+        where: { isInformationUpdated: true },
+      }),
+      prismaParent.student.count({
+        where: { isConductAgreementSigned: true },
+      }),
+      prismaParent.student.count({
+        where: {
+          isInformationUpdated: true,
+          isConductAgreementSigned: true,
+        },
+      }),
+      prismaParent.student.groupBy({
+        by: ["informationUpdateStatus"],
+        where: {
+          informationUpdateStatus: { not: null },
+        },
+        _count: true,
+      }),
+    ]);
 
     return NextResponse.json({
-      enrollments,
+      students,
       stats: {
-        ...enrollmentStats,
-        active: activeCount,
-        inactive: totalCount - activeCount,
+        total: totalCount,
+        infoUpdated: infoUpdateCount,
+        conductSigned: conductSignedCount,
+        bothCompleted: bothCompletedCount,
+        pendingInfo: infoUpdateCount > 0 ? totalCount - infoUpdateCount : 0,
+        pendingConduct: conductSignedCount > 0 ? totalCount - conductSignedCount : 0,
+        byStatus: infoUpdateStatusCounts.map(s => ({
+          status: s.informationUpdateStatus,
+          count: s._count,
+        })),
       },
       pagination: {
         page,

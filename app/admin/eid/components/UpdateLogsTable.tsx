@@ -18,7 +18,7 @@ import { format } from "date-fns";
 export function UpdateLogsTable() {
   const { data, isLoading } = useSWR("/api/admin/analytics/updates?limit=50", jsonFetcher);
 
-  const updates = data?.updates || [];
+  const students = data?.students || [];
   const stats = data?.stats || {};
 
   const getStatusBadge = (status: number) => {
@@ -55,42 +55,42 @@ export function UpdateLogsTable() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card className="border-0 bg-card">
           <CardContent className="p-4">
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Total Updates</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Total Activity</p>
             <p className="text-2xl font-bold text-foreground">{stats.total || 0}</p>
           </CardContent>
         </Card>
         <Card className="border-0 bg-aegreen-50 dark:bg-gray-800">
           <CardContent className="p-4">
-            <p className="text-sm text-aegreen-700 dark:text-aegreen-400 mb-1">Completed</p>
+            <p className="text-sm text-aegreen-700 dark:text-aegreen-400 mb-1">Info Updated</p>
             <p className="text-2xl font-bold text-aegreen-700 dark:text-aegreen-400">
-              {stats.completed || 0}
+              {stats.infoUpdated || 0}
             </p>
           </CardContent>
         </Card>
-        <Card className="border-0 bg-yellow-50 dark:bg-gray-800">
+        <Card className="border-0 bg-blue-50 dark:bg-gray-800">
           <CardContent className="p-4">
-            <p className="text-sm text-yellow-700 dark:text-yellow-400 mb-1">Pending</p>
-            <p className="text-2xl font-bold text-yellow-700 dark:text-yellow-400">
-              {stats.pending || 0}
+            <p className="text-sm text-blue-700 dark:text-blue-400 mb-1">Conduct Signed</p>
+            <p className="text-2xl font-bold text-blue-700 dark:text-blue-400">
+              {stats.conductSigned || 0}
             </p>
           </CardContent>
         </Card>
         <Card className="border-0 bg-aegold-50 dark:bg-gray-800">
           <CardContent className="p-4">
-            <p className="text-sm text-aegold-700 dark:text-aegold-400 mb-1">With Agreement</p>
+            <p className="text-sm text-aegold-700 dark:text-aegold-400 mb-1">Both Completed</p>
             <p className="text-2xl font-bold text-aegold-700 dark:text-aegold-400">
-              {stats.withConductAgreement || 0}
+              {stats.bothCompleted || 0}
             </p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Updates Table */}
+      {/* Information Updates Table */}
       <Card className="border-0 bg-card">
         <CardHeader>
-          <CardTitle className="text-xl font-bold">Update Activity Logs</CardTitle>
+          <CardTitle className="text-xl font-bold">Information Updates & Conduct Agreements</CardTitle>
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-            Track who accessed and updated their information
+            Track student information updates and conduct agreement signatures
           </p>
         </CardHeader>
         <CardContent>
@@ -100,45 +100,93 @@ export function UpdateLogsTable() {
                 <div key={i} className="animate-pulse h-16 bg-gray-100 dark:bg-gray-800 rounded"></div>
               ))}
             </div>
-          ) : updates.length === 0 ? (
+          ) : students.length === 0 ? (
             <div className="text-center py-12">
               <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600 dark:text-gray-400">No update logs found</p>
+              <p className="text-gray-600 dark:text-gray-400">No information update records found</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Student Emirates ID</TableHead>
-                    <TableHead>Parent Person ID</TableHead>
-                    <TableHead>Status</TableHead>
+                    <TableHead>Student Info</TableHead>
+                    <TableHead>Emirates ID</TableHead>
+                    <TableHead>Student Number</TableHead>
+                    <TableHead>Info Updated</TableHead>
+                    <TableHead>Update Status</TableHead>
                     <TableHead>Conduct Agreement</TableHead>
-                    <TableHead>Citizenship</TableHead>
-                    <TableHead>Last Updated</TableHead>
-                    <TableHead>Created At</TableHead>
+                    <TableHead>Last Activity</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {updates.map((update: any) => (
-                    <TableRow key={update.Id}>
+                  {students.map((student: any) => (
+                    <TableRow key={student.id}>
+                      <TableCell>
+                        <div>
+                          <p className="font-medium text-foreground">
+                            {student.firstNameEnglish} {student.familyNameEnglish}
+                          </p>
+                          {student.firstNameArabic && (
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                              {student.firstNameArabic} {student.lastNameArabic}
+                            </p>
+                          )}
+                          <p className="text-xs text-gray-500 mt-1">
+                            Status: {student.status || "N/A"}
+                          </p>
+                        </div>
+                      </TableCell>
                       <TableCell>
                         <code className="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
-                          {update.studentEmirateId || update.studentPersonId}
+                          {student.emirateId || "N/A"}
                         </code>
                       </TableCell>
                       <TableCell>
                         <code className="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
-                          {update.parentPersonId || "N/A"}
+                          {student.studentNumber || "N/A"}
                         </code>
                       </TableCell>
-                      <TableCell>{getStatusBadge(update.infoUpdateRequestStatus)}</TableCell>
                       <TableCell>
-                        {update.isConductAgreementSigned ? (
-                          <Badge className="bg-aegreen-100 text-aegreen-700 border-aegreen-200">
-                            <CheckCircle className="w-3 h-3 mr-1" />
-                            Signed
+                        {student.isInformationUpdated ? (
+                          <div>
+                            <Badge className="bg-aegreen-100 text-aegreen-700 border-aegreen-200">
+                              <CheckCircle className="w-3 h-3 mr-1" />
+                              Yes
+                            </Badge>
+                            {student.informationUpdatedAt && (
+                              <p className="text-xs text-gray-500 mt-1">
+                                {format(new Date(student.informationUpdatedAt), "MMM dd, HH:mm")}
+                              </p>
+                            )}
+                          </div>
+                        ) : (
+                          <Badge variant="outline" className="text-gray-600">
+                            <Clock className="w-3 h-3 mr-1" />
+                            Pending
                           </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {student.informationUpdateStatus ? (
+                          getStatusBadge(student.informationUpdateStatus)
+                        ) : (
+                          <span className="text-sm text-gray-500">N/A</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {student.isConductAgreementSigned ? (
+                          <div>
+                            <Badge className="bg-blue-100 text-blue-700 border-blue-200">
+                              <CheckCircle className="w-3 h-3 mr-1" />
+                              Signed
+                            </Badge>
+                            {student.conductAgreementSignedAt && (
+                              <p className="text-xs text-gray-500 mt-1">
+                                {format(new Date(student.conductAgreementSignedAt), "MMM dd, yyyy")}
+                              </p>
+                            )}
+                          </div>
                         ) : (
                           <Badge variant="outline" className="text-gray-600">
                             Not Signed
@@ -146,22 +194,19 @@ export function UpdateLogsTable() {
                         )}
                       </TableCell>
                       <TableCell>
-                        <span className="text-sm">{update.citizenship || "N/A"}</span>
-                      </TableCell>
-                      <TableCell>
-                        {update.updateAt ? (
+                        {student.informationUpdatedAt ? (
                           <div className="flex items-center gap-1 text-sm">
                             <Calendar className="w-3 h-3 text-gray-400" />
-                            {format(new Date(update.updateAt), "MMM dd, yyyy HH:mm")}
+                            {format(new Date(student.informationUpdatedAt), "MMM dd, yyyy HH:mm")}
                           </div>
-                        ) : (
-                          "N/A"
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {update.createAt ? (
+                        ) : student.conductAgreementSignedAt ? (
+                          <div className="flex items-center gap-1 text-sm">
+                            <Calendar className="w-3 h-3 text-gray-400" />
+                            {format(new Date(student.conductAgreementSignedAt), "MMM dd, yyyy HH:mm")}
+                          </div>
+                        ) : student.updatedAt ? (
                           <span className="text-sm text-gray-600 dark:text-gray-400">
-                            {format(new Date(update.createAt), "MMM dd, yyyy")}
+                            {format(new Date(student.updatedAt), "MMM dd, yyyy")}
                           </span>
                         ) : (
                           "N/A"

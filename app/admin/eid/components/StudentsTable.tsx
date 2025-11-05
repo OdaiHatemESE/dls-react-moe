@@ -29,6 +29,7 @@ export function StudentsTable() {
 
   const students = data?.students || [];
   const pagination = data?.pagination || {};
+  const currentPageStats = data?.stats?.currentPage || {};
 
   return (
     <Card className="border-0 bg-card">
@@ -77,8 +78,9 @@ export function StudentsTable() {
                     <TableHead>Student Number</TableHead>
                     <TableHead>Gender</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Update Status</TableHead>
-                    <TableHead>Contacts</TableHead>
+                    <TableHead>Info Updated</TableHead>
+                    <TableHead>Conduct Agreement</TableHead>
+                    <TableHead>Contacts/Address</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -124,13 +126,45 @@ export function StudentsTable() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        {student.hasUpdateRequest ? (
-                          <Badge className="bg-aegold-100 text-aegold-700 border-aegold-200">
-                            Update Requested
-                          </Badge>
-                        ) : (
-                          <span className="text-sm text-gray-500">No request</span>
-                        )}
+                        <div>
+                          {student.isInformationUpdated ? (
+                            <Badge className="bg-aegreen-100 text-aegreen-700 border-aegreen-200">
+                              ✓ Updated
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-gray-600">
+                              Pending
+                            </Badge>
+                          )}
+                          {student.informationUpdatedAt && (
+                            <p className="text-xs text-gray-500 mt-1">
+                              {new Date(student.informationUpdatedAt).toLocaleDateString()}
+                            </p>
+                          )}
+                          {student.informationUpdateStatus && (
+                            <p className="text-xs text-gray-500 mt-1">
+                              Status: {student.informationUpdateStatus}
+                            </p>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          {student.isConductAgreementSigned ? (
+                            <Badge className="bg-blue-100 text-blue-700 border-blue-200">
+                              ✓ Signed
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-gray-600">
+                              Not Signed
+                            </Badge>
+                          )}
+                          {student.conductAgreementSignedAt && (
+                            <p className="text-xs text-gray-500 mt-1">
+                              {new Date(student.conductAgreementSignedAt).toLocaleDateString()}
+                            </p>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-2">
@@ -155,30 +189,42 @@ export function StudentsTable() {
             </div>
 
             {/* Pagination */}
-            <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Showing {((page - 1) * limit) + 1} to {Math.min(page * limit, pagination.totalCount)} of{" "}
-                {pagination.totalCount} students
-              </p>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage(page - 1)}
-                  disabled={page === 1}
-                >
-                  <ChevronLeft className="w-4 h-4 mr-1" />
-                  Previous
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage(page + 1)}
-                  disabled={page >= pagination.totalPages}
-                >
-                  Next
-                  <ChevronRight className="w-4 h-4 ml-1" />
-                </Button>
+            <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-between mb-4">
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  <p>
+                    Showing {((page - 1) * limit) + 1} to {Math.min(page * limit, pagination.totalCount)} of{" "}
+                    {pagination.totalCount} students
+                  </p>
+                  <div className="flex gap-4 mt-2 text-xs">
+                    <span className="text-aegreen-600">
+                      ✓ Info Updated: {currentPageStats.updated || 0}
+                    </span>
+                    <span className="text-blue-600">
+                      ✓ Conduct Signed: {currentPageStats.conductSigned || 0}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage(page - 1)}
+                    disabled={page === 1}
+                  >
+                    <ChevronLeft className="w-4 h-4 mr-1" />
+                    Previous
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage(page + 1)}
+                    disabled={page >= pagination.totalPages}
+                  >
+                    Next
+                    <ChevronRight className="w-4 h-4 ml-1" />
+                  </Button>
+                </div>
               </div>
             </div>
           </>

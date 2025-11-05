@@ -13,11 +13,14 @@ Real-time overview of the entire system:
   - Active vs inactive students
   - Students with complete profiles (address, contact, enrollment)
   
-- **Update Request Analytics**
-  - Total update requests
-  - Completed updates
-  - Pending updates  
-  - Completion rate percentage
+- **Information Update Analytics**
+  - Total students
+  - Students with updated information
+  - Pending information updates
+  - Update completion rate percentage
+  - Students with signed conduct agreements
+  - Conduct signature rate percentage
+  - Breakdown by information update status
 
 - **System Health**
   - Active admin users
@@ -31,7 +34,9 @@ Real-time overview of the entire system:
 
 - **Recent Activity**
   - Last 5 newly added students
-  - Last 5 update requests
+  - Last 5 enrollment updates
+  - Last 10 information updates
+  - Last 10 conduct agreement signatures
 
 ### 2. **Students Directory** (`/api/admin/analytics/students`)
 Searchable, paginated list of all students with:
@@ -50,36 +55,40 @@ Searchable, paginated list of all students with:
   - Enrollment history
 
 - **Update Status**
-  - Whether student has update request
-  - Update request status
-  - Last update date
-  - Conduct agreement status
+  - Information update flag (isInformationUpdated)
+  - Information update timestamp (informationUpdatedAt)
+  - Information update status code (informationUpdateStatus)
+  - Conduct agreement signed flag (isConductAgreementSigned)
+  - Conduct agreement signature timestamp (conductAgreementSignedAt)
 
 - **Search & Pagination**
   - Search by name, Emirates ID, or student number
   - Paginated results (default 50 per page)
   - Total count and page navigation
+  - Current page statistics (total, updated, conduct signed)
 
-### 3. **Update Activity Logs** (`/api/admin/analytics/updates`)
-Track parent access and information updates:
+### 3. **Information Update Activity** (`/api/admin/analytics/updates`)
+Track student information updates and conduct agreement signatures:
 
-- **Update Records**
-  - Student Emirates ID
-  - Parent person ID
-  - Request status (Pending, Completed, Requested)
-  - Conduct agreement signature status
-  - Citizenship information
-  - Created and updated timestamps
+- **Student Update Records**
+  - Student information (Emirates ID, name, student number, status)
+  - Information update status and timestamps
+  - Conduct agreement signature status and timestamps
+  - Update status codes
 
 - **Statistics**
-  - Total updates
-  - Completed updates count
-  - Pending updates count  
-  - Updates with signed conduct agreements
+  - Total students with activity
+  - Students with information updated
+  - Students with conduct agreements signed
+  - Students with both completed
+  - Pending information updates
+  - Pending conduct signatures
+  - Status code distribution
 
-- **Filtering**
-  - Filter by status
-  - Paginated results
+- **Filtering & Display**
+  - Paginated results (default 50 per page)
+  - Ordered by most recent information updates
+  - Shows only students with update activity
 
 ## API Endpoints
 
@@ -98,20 +107,32 @@ Returns comprehensive system statistics.
       "withContact": 138,
       "withEnrollment": 148
     },
-    "updates": {
-      "total": 45,
-      "completed": 30,
-      "pending": 15,
-      "completionRate": "66.67"
+    "informationUpdates": {
+      "total": 150,
+      "updated": 85,
+      "pending": 65,
+      "updateRate": "56.67",
+      "withConductSigned": 78,
+      "conductSignRate": "52.00",
+      "byStatus": [
+        { "status": 1, "count": 30 },
+        { "status": 2, "count": 55 }
+      ]
     },
     "system": {
       "admins": { "total": 3, "active": 2 },
       "periods": { "total": 2, "active": 1 },
-      "actions": { "total": 5, "enabled": 4 }
+      "actions": { "total": 5, "enabled": 4 },
+      "academicYears": { "total": 3, "active": 1 }
     }
   },
   "demographics": {...},
-  "recentActivity": {...},
+  "recentActivity": {
+    "newStudents": [...],
+    "recentEnrollments": [...],
+    "recentInfoUpdates": [...],
+    "recentConductSignatures": [...]
+  },
   "counts": {...}
 }
 ```
@@ -133,30 +154,68 @@ Returns paginated student list.
     "limit": 50,
     "totalCount": 150,
     "totalPages": 3
+  },
+  "stats": {
+    "currentPage": {
+      "total": 50,
+      "updated": 28,
+      "conductSigned": 25
+    }
   }
 }
 ```
 
 ### GET `/api/admin/analytics/updates`
-Returns update request logs.
+Returns student information update activity and conduct agreement tracking.
 
 **Query Parameters:**
 - `page` - Page number (default: 1)
 - `limit` - Items per page (default: 50)
-- `status` - Filter by status (1=pending, 2=completed, 3=requested)
 
 **Response:**
 ```json
 {
-  "updates": [...],
+  "students": [
+    {
+      "id": 1,
+      "emirateId": "784-1234-5678901-2",
+      "firstNameEnglish": "Ahmed",
+      "familyNameEnglish": "Ali",
+      "firstNameArabic": "أحمد",
+      "lastNameArabic": "علي",
+      "username": "ahmed.ali",
+      "studentNumber": "STU-12345",
+      "status": "active",
+      "updatedAt": "2024-11-05T10:30:00Z",
+      "isInformationUpdated": true,
+      "informationUpdatedAt": "2024-11-01T14:20:00Z",
+      "informationUpdateStatus": 2,
+      "isConductAgreementSigned": true,
+      "conductAgreementSignedAt": "2024-11-01T14:15:00Z"
+    }
+  ],
   "stats": {
-    "total": 45,
-    "requested": 10,
-    "completed": 30,
-    "pending": 5,
-    "withConductAgreement": 28
+    "total": 120,
+    "infoUpdated": 85,
+    "conductSigned": 78,
+    "bothCompleted": 65,
+    "pendingInfo": 35,
+    "pendingConduct": 42,
+    "byStatus": [
+      { "status": 1, "count": 30 },
+      { "status": 2, "count": 55 },
+      { "status": 3, "count": 10 }
+    ]
   },
-  "pagination": {...}
+  "pagination": {
+    "page": 1,
+    "limit": 50,
+    "totalCount": 120,
+    "totalPages": 3
+  },
+  "meta": {
+    "fetchedAt": "2024-11-05T12:00:00Z"
+  }
 }
 ```
 
@@ -177,11 +236,13 @@ Full student directory with:
 - Related data counts (contacts, addresses)
 
 ### `UpdateLogsTable`
-Activity log showing:
-- All update requests
-- Status breakdowns (stats cards)
-- Parent activity tracking
-- Timeline information
+Information update activity showing:
+- Students with information updates or conduct agreements
+- Update completion status with timestamps
+- Conduct agreement signatures with dates
+- Statistics cards (Total, Info Updated, Conduct Signed, Both Completed)
+- Sortable by most recent activity
+- Paginated results
 
 ## Access Control
 
@@ -194,14 +255,20 @@ Unauthorized requests return 401/403 status codes.
 
 ## Database Tables Used
 
-- `Student` - Student records
-- `StudentAddress` - Student addresses
-- `StudentContact` - Student contacts
-- `StudentEnrollment` - Enrollment history
-- `UpdateInformationRequests` - Update request tracking
+- `Student` - Primary table for information update tracking:
+  - `isInformationUpdated` - Boolean flag for update completion
+  - `informationUpdatedAt` - Timestamp of last information update
+  - `informationUpdateStatus` - Integer status code for update state (1=pending, 2=completed, 3=requested)
+  - `isConductAgreementSigned` - Boolean flag for conduct agreement
+  - `conductAgreementSignedAt` - Timestamp of conduct signature
+- `StudentAddress` - Student addresses (for profile completeness)
+- `StudentContact` - Student contacts (for profile completeness)
+- `StudentEnrollment` - Enrollment history (for context)
 - `AdminUser` - Admin access control
 - `UpdatePeriodConfig` - Update period settings
 - `StudentActionConfig` - Student action configurations
+- `AcademicYearConfig` - Academic year management
+- `Parent` - Parent records
 
 ## UI Features
 

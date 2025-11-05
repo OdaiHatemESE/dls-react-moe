@@ -48,7 +48,7 @@ export async function GET(req: NextRequest) {
       : {};
 
     // Get students with all related data
-    const [students, totalCount] = await Promise.all([
+    const [students, totalCount, updateStats] = await Promise.all([
       prismaParent.student.findMany({
         where: whereClause,
         include: {
@@ -63,7 +63,19 @@ export async function GET(req: NextRequest) {
         take: limit,
       }),
       prismaParent.student.count({ where: whereClause }),
+      // Get aggregate stats for information updates
+      prismaParent.student.aggregate({
+        where: whereClause,
+        _count: {
+          isInformationUpdated: true,
+          isConductAgreementSigned: true,
+        },
+      }),
     ]);
+
+    // Count students with information updated in the current result set
+    const studentsUpdated = students.filter(s => s.isInformationUpdated).length;
+    const studentsWithConduct = students.filter(s => s.isConductAgreementSigned).length;
 
     return NextResponse.json({
       students,
@@ -72,6 +84,13 @@ export async function GET(req: NextRequest) {
         limit,
         totalCount,
         totalPages: Math.ceil(totalCount / limit),
+      },
+      stats: {
+        currentPage: {
+          total: students.length,
+          updated: studentsUpdated,
+          conductSigned: studentsWithConduct,
+        },
       },
       meta: {
         fetchedAt: new Date().toISOString(),

@@ -141,6 +141,62 @@ export async function GET(req: NextRequest) {
       },
     });
 
+    // Information update statistics
+    const studentsWithInfoUpdated = await prismaParent.student.count({
+      where: { isInformationUpdated: true },
+    });
+
+    const studentsWithConductSigned = await prismaParent.student.count({
+      where: { isConductAgreementSigned: true },
+    });
+
+    // Information update status breakdown
+    const infoUpdateStatusBreakdown = await prismaParent.student.groupBy({
+      by: ["informationUpdateStatus"],
+      _count: true,
+      where: {
+        informationUpdateStatus: { not: null },
+      },
+    });
+
+    // Recent information updates
+    const recentInfoUpdates = await prismaParent.student.findMany({
+      where: {
+        isInformationUpdated: true,
+        informationUpdatedAt: { not: null },
+      },
+      orderBy: { informationUpdatedAt: "desc" },
+      take: 10,
+      select: {
+        id: true,
+        emirateId: true,
+        firstNameEnglish: true,
+        familyNameEnglish: true,
+        informationUpdatedAt: true,
+        informationUpdateStatus: true,
+        isConductAgreementSigned: true,
+        conductAgreementSignedAt: true,
+      },
+    });
+
+    // Recent conduct agreement signatures
+    const recentConductSignatures = await prismaParent.student.findMany({
+      where: {
+        isConductAgreementSigned: true,
+        conductAgreementSignedAt: { not: null },
+      },
+      orderBy: { conductAgreementSignedAt: "desc" },
+      take: 10,
+      select: {
+        id: true,
+        emirateId: true,
+        firstNameEnglish: true,
+        familyNameEnglish: true,
+        conductAgreementSignedAt: true,
+        informationUpdateStatus: true,
+      },
+    });
+
     return NextResponse.json({
       overview: {
         students: {
@@ -150,6 +206,18 @@ export async function GET(req: NextRequest) {
           withAddress: studentsWithAddresses,
           withContact: studentsWithContacts,
           withEnrollment: studentsWithEnrollments,
+        },
+        informationUpdates: {
+          total: totalStudents,
+          updated: studentsWithInfoUpdated,
+          pending: totalStudents - studentsWithInfoUpdated,
+          updateRate: totalStudents > 0 ? ((studentsWithInfoUpdated / totalStudents) * 100).toFixed(2) : "0.00",
+          withConductSigned: studentsWithConductSigned,
+          conductSignRate: totalStudents > 0 ? ((studentsWithConductSigned / totalStudents) * 100).toFixed(2) : "0.00",
+          byStatus: infoUpdateStatusBreakdown.map((s) => ({
+            status: s.informationUpdateStatus,
+            count: s._count,
+          })),
         },
         system: {
           admins: {
@@ -187,6 +255,8 @@ export async function GET(req: NextRequest) {
       recentActivity: {
         newStudents: recentStudents,
         recentEnrollments: recentEnrollments,
+        recentInfoUpdates: recentInfoUpdates,
+        recentConductSignatures: recentConductSignatures,
       },
       counts: {
         totalEnrollments,
