@@ -19,6 +19,7 @@ export default function DashboardPage() {
   const { data: session } = useSession();
   const eid = session?.user?.emiratesId as string | undefined;
   const swrKey = eid ? `/api/PP/ChildList/${encodeURIComponent(eid)}` : null;
+  const swrKeySync = eid ? `/api/PP/child/sync?emirateId=${encodeURIComponent(eid)}` : null;
   const { data: childrenData } = useSWR<any>(swrKey, jsonFetcher);
   
   // Extract meta from response
@@ -51,7 +52,7 @@ export default function DashboardPage() {
             {/* Data Refresh & Date Info - Mobile Optimized */}
             <div className="flex items-center gap-1 md:gap-2 min-w-0 overflow-hidden">
               <RefreshBar
-                swrKey={swrKey}
+                swrKey={swrKeySync}
                 meta={meta}
                 variant="compact"
                 className="flex-shrink-0 min-w-0"
