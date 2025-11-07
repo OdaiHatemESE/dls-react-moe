@@ -102,7 +102,7 @@ export async function GET(req: Request) {
       return NextResponse.json({ ok: false, error: "PP_BASE_URL not configured" }, { status: 500 });
     }
 
-    const upstreamUrl = `${baseUrl.replace(/\/$/, "")}/idh/students-partnership-charter?studentNumber=${encodeURIComponent(studentNumber)}&academicyear=${encodeURIComponent(academicyear)}`;
+    const upstreamUrl = `${baseUrl.replace(/\/$/, "")}/Idh/students-partnership-charter?studentNumber=${encodeURIComponent(studentNumber)}&academicyear=${encodeURIComponent(academicyear)}`;
     const upstreamRes = await fetch(upstreamUrl, {
       method: "GET",
       headers: {

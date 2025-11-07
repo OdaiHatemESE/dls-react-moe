@@ -118,9 +118,20 @@ export async function GET(
       return NextResponse.json({ error: 'PP_BASE_URL not configured' }, { status: 500 });
     }
 
+    // Validate token is a string
+    if (typeof accessToken !== 'string' || !accessToken) {
+      console.error('[PP School] Invalid token type:', typeof accessToken);
+      return NextResponse.json({ 
+        error: 'Invalid token format received from auth endpoint',
+        tokenType: typeof accessToken 
+      }, { status: 500 });
+    }
+
+
+
     // Fetch school data using the PP token
-    const schoolUrl = `${baseUrl.replace(/\/$/, '')}/oneroster/schools/${schoolId}`;
-    
+    const schoolUrl = `${baseUrl.replace(/\/$/, '')}/oneroster/schools/${encodeURIComponent(schoolId)}`;
+    console.log('[PP School] Fetch URL:', schoolUrl);
     const schoolRes = await fetch(schoolUrl, {
       headers: {
         'Authorization': `Bearer ${accessToken}`,

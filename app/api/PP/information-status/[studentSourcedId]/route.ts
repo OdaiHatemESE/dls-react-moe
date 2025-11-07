@@ -62,7 +62,7 @@ export async function PATCH(
     };
 
     // Call PP API endpoint
-    const ppUrl = `${baseUrl.replace(/\/$/, '')}/oneroster/students/${studentSourcedId}/information-status`;
+    const ppUrl = `${baseUrl.replace(/\/$/, '')}/oneroster/students/${studentSourcedId}/status`;
     
     const ppRes = await fetch(ppUrl, {
       method: 'PATCH',

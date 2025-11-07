@@ -83,6 +83,18 @@ export async function GET(
       return NextResponse.json({ error: 'PP_BASE_URL not configured' }, { status: 500 });
     }
 
+    // Validate token is a string
+    if (typeof accessToken !== 'string' || !accessToken) {
+      console.error('[PP ChildList] Invalid token type:', typeof accessToken);
+      return NextResponse.json({ 
+        error: 'Invalid token format received from auth endpoint',
+        tokenType: typeof accessToken 
+      }, { status: 500 });
+    }
+
+    console.log('[PP ChildList] Fetching profiles for EID:', eid);
+    console.log('[PP ChildList] Token preview:', accessToken.substring(0, 30) + '...');
+
     // Fetch student profiles using the PP token
     const profilesUrl = `${baseUrl.replace(/\/$/, '')}/oneroster/students/profiles?EmirateId=${eid}`;
     
@@ -93,8 +105,14 @@ export async function GET(
       },
     });
 
+    console.log('[PP ChildList] Profiles response status:', profilesRes.status);
+
     if (!profilesRes.ok) {
       const errorData = await profilesRes.json().catch(() => null);
+      console.error('[PP ChildList] Profiles fetch failed:', {
+        status: profilesRes.status,
+        error: errorData,
+      });
       return NextResponse.json(
         { error: errorData ?? `Upstream returned ${profilesRes.status}` },
         { status: profilesRes.status }

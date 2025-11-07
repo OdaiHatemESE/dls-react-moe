@@ -102,6 +102,8 @@ export async function GET(req: NextRequest) {
       
       if (schoolId) {
         // Fetch school information
+        console.clear();
+        console.log('Fetching school info for schoolId:', schoolId);
         schoolInfo = await fetchJson<unknown>(`${origin}`, `/api/PP/school/${encodeURIComponent(schoolId)}`, cookie).catch((error) => {
           console.warn(`Failed to fetch school info for schoolId ${schoolId}:`, error);
           return null;

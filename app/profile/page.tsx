@@ -241,7 +241,6 @@ export default function ProfilePage() {
     setFormData({ ...initialForm });
   };
 
-  const toast = useToastNotifications();
   
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
