@@ -23,7 +23,6 @@ export async function GET() {
     // Check cache first
     const cached = await cacheGetJSON<PPTokenCache>(PP_CACHE_KEY);
     if (cached && cached.exp - 30 > now) {
-      console.log('[PP Auth] Returning cached token, type:', typeof cached.token);
       // Ensure we return a string, not an object
       const tokenString = typeof cached.token === 'string' ? cached.token : String(cached.token);
       return NextResponse.json({ accessToken: tokenString });
@@ -38,9 +37,6 @@ export async function GET() {
     }
 
     const upstreamUrl = `${base.replace(/\/$/, '')}/auth/login`;
-
-    console.log('[PP Auth] Attempting login to:', upstreamUrl);
-    console.log('[PP Auth] Using username:', username);
     
     const res = await fetch(upstreamUrl, {
       method: 'POST',
@@ -68,14 +64,8 @@ export async function GET() {
       }, { status: res.status });
     }
     
-    console.log('[PP Auth] Login successful, token received');
-    console.log('[PP Auth] Response data:', JSON.stringify(data).substring(0, 200));
-
     // PP API returns AccessToken (capital A), also check other common formats
     const accessToken = data?.AccessToken ?? data?.accessToken ?? data?.token ?? data?.access_token;
-
-    console.log('[PP Auth] Extracted token type:', typeof accessToken);
-    console.log('[PP Auth] Token preview:', typeof accessToken === 'string' ? accessToken.substring(0, 30) : JSON.stringify(accessToken));
 
     if (!accessToken || typeof accessToken !== 'string') {
       console.error('[PP Auth] No valid token in response:', data);
@@ -84,11 +74,9 @@ export async function GET() {
 
     // Cache token with 50-minute TTL (similar to OneRoster pattern)
     const exp = now + 50 * 60;
-    console.log('[PP Auth] Caching token, type before cache:', typeof accessToken);
     await cacheSetJSON(PP_CACHE_KEY, { token: accessToken, exp }, { ttlSeconds: 50 * 60 });
 
     // Return just the token string, not the entire response object
-    console.log('[PP Auth] Returning fresh token, type:', typeof accessToken);
     return NextResponse.json({ accessToken });
   } catch (err: any) {
     return NextResponse.json({ error: String(err) }, { status: 500 });

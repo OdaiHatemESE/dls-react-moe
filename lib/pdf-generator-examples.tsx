@@ -34,9 +34,6 @@ export async function example1_BasicGeneration() {
       '/fonts/Cairo-Regular.ttf',
       true // auto-download
     );
-
-    console.log('PDF generated successfully!');
-    console.log('Base64 length:', base64.length);
     
     // You can store the base64 string in state, database, etc.
     return base64;
@@ -201,12 +198,10 @@ export async function example4_NoAutoDownload() {
 // Helper functions (implement as needed)
 async function saveToDatabase(base64: string) {
   // Save to your database
-  console.log('Saving to database...');
 }
 
 async function sendEmail(email: string, base64: string) {
   // Send email with PDF attachment
-  console.log('Sending email...');
 }
 
 function displayPDFInIframe(base64: string) {
@@ -329,9 +324,6 @@ export async function example7_BatchGeneration(students: Array<{
 
   const successful = results.filter(r => r.status === 'fulfilled');
   const failed = results.filter(r => r.status === 'rejected');
-
-  console.log(`Generated ${successful.length} PDFs successfully`);
-  console.log(`Failed to generate ${failed.length} PDFs`);
 
   return {
     successful: successful.map(r => (r as PromiseFulfilledResult<string>).value),

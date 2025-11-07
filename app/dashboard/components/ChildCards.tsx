@@ -85,8 +85,29 @@ export default function ChildCards() {
 
   // normalization is handled by useChildren
   const eid = status === "authenticated" ? (session?.user?.emiratesId || '') : undefined;
-  const { children, error, isLoading } = useChildren(eid);
+  const { children, error, isLoading, needsSync, emirateId } = useChildren(eid);
   const isBusy = status === "loading" || (status === "authenticated" && isLoading);
+  const [isSyncing, setIsSyncing] = React.useState(false);
+
+  const handleSync = React.useCallback(async () => {
+    if (!emirateId) return;
+    
+    setIsSyncing(true);
+    try {
+      const response = await fetch(`/api/PP/child/sync?emirateId=${encodeURIComponent(emirateId)}`);
+      if (response.ok) {
+        // Refresh the page or trigger SWR revalidation
+        window.location.reload();
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        alert(errorData.error || 'Failed to sync data');
+      }
+    } catch (err) {
+      alert('Failed to sync data');
+    } finally {
+      setIsSyncing(false);
+    }
+  }, [emirateId]);
 
   // Skeleton loaders with shimmer effect
   const SkeletonTableRow = () => (
@@ -161,17 +182,55 @@ export default function ChildCards() {
           <Card className="relative overflow-hidden border-destructive/20 ">
             <div className="absolute inset-0 bg-gradient-to-br from-destructive/5 to-destructive/10" />
             <div className="relative p-8 text-center">
-              <div className="w-20 h-20 mx-auto mb-5 bg-gradient-to-br from-destructive/20 to-destructive/30 rounded-3xl flex items-center justify-center  ring-4 ring-destructive/10">
-                <svg className="w-10 h-10 text-destructive" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+              <div className={`w-20 h-20 mx-auto mb-5 bg-gradient-to-br ${needsSync ? 'from-primary/20 to-primary/30' : 'from-destructive/20 to-destructive/30'} rounded-3xl flex items-center justify-center ring-4 ${needsSync ? 'ring-primary/10' : 'ring-destructive/10'}`}>
+                {needsSync ? (
+                  <svg className="w-10 h-10 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                  </svg>
+                ) : (
+                  <svg className="w-10 h-10 text-destructive" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                )}
               </div>
               <h3 className="text-lg font-bold text-foreground mb-3">
-                {locale === 'ar' ? 'حدث خطأ' : 'Something went wrong'}
+                {needsSync 
+                  ? (locale === 'ar' ? 'مرحباً بك!' : 'Welcome!')
+                  : (locale === 'ar' ? 'حدث خطأ' : 'Something went wrong')
+                }
               </h3>
-              <p className="text-sm text-destructive font-medium leading-relaxed">
-                {error instanceof Error ? error.message : String(error)}
+              <p className="text-sm text-muted-foreground font-medium leading-relaxed mb-2">
+                {needsSync 
+                  ? (locale === 'ar' 
+                    ? 'نحتاج إلى جلب بيانات أطفالك للمرة الأولى. قد يستغرق هذا بضع ثوانٍ.'
+                    : 'We need to fetch your children\'s data for the first time. This will only take a few seconds.')
+                  : (error instanceof Error ? error.message : String(error))
+                }
               </p>
+              {needsSync && (
+                <button
+                  onClick={handleSync}
+                  disabled={isSyncing}
+                  className="mt-6 px-6 py-3 bg-primary text-primary-foreground rounded-lg font-semibold text-sm hover:bg-primary/90 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-2"
+                >
+                  {isSyncing ? (
+                    <>
+                      <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      {locale === 'ar' ? 'جاري المزامنة...' : 'Syncing...'}
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                      {locale === 'ar' ? 'مزامنة البيانات' : 'Sync Data'}
+                    </>
+                  )}
+                </button>
+              )}
             </div>
           </Card>
         )}
@@ -299,20 +358,58 @@ export default function ChildCards() {
                   <td colSpan={3} className="px-8 py-20">
                     <div className="flex flex-col items-center gap-6">
                       <div className="relative">
-                        <div className="w-24 h-24 bg-gradient-to-br from-destructive/20 to-destructive/30 rounded-3xl flex items-center justify-center shadow-2xl ring-4 ring-destructive/10">
-                          <svg className="w-12 h-12 text-destructive" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
+                        <div className={`w-24 h-24 bg-gradient-to-br ${needsSync ? 'from-primary/20 to-primary/30' : 'from-destructive/20 to-destructive/30'} rounded-3xl flex items-center justify-center shadow-2xl ring-4 ${needsSync ? 'ring-primary/10' : 'ring-destructive/10'}`}>
+                          {needsSync ? (
+                            <svg className="w-12 h-12 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                            </svg>
+                          ) : (
+                            <svg className="w-12 h-12 text-destructive" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                          )}
                         </div>
-                        <div className="absolute inset-0 bg-destructive/20 rounded-3xl blur-xl -z-10" />
+                        <div className={`absolute inset-0 ${needsSync ? 'bg-primary/20' : 'bg-destructive/20'} rounded-3xl blur-xl -z-10`} />
                       </div>
                       <div className="text-center max-w-md">
                         <h3 className="text-xl font-bold text-foreground mb-3">
-                          {locale === 'ar' ? 'حدث خطأ' : 'Something went wrong'}
+                          {needsSync 
+                            ? (locale === 'ar' ? 'مرحباً بك!' : 'Welcome!')
+                            : (locale === 'ar' ? 'حدث خطأ' : 'Something went wrong')
+                          }
                         </h3>
-                        <p className="text-destructive font-semibold leading-relaxed">
-                          {error instanceof Error ? error.message : String(error)}
+                        <p className={needsSync ? "text-muted-foreground font-medium leading-relaxed mb-4" : "text-destructive font-semibold leading-relaxed"}>
+                          {needsSync 
+                            ? (locale === 'ar' 
+                              ? 'نحتاج إلى جلب بيانات أطفالك للمرة الأولى. الرجاء النقر على الزر أدناه للبدء. قد يستغرق هذا بضع ثوانٍ فقط.'
+                              : 'We need to fetch your children\'s data for the first time. Please click the button below to get started. This will only take a few seconds.')
+                            : (error instanceof Error ? error.message : String(error))
+                          }
                         </p>
+                        {needsSync && (
+                          <button
+                            onClick={handleSync}
+                            disabled={isSyncing}
+                            className="mt-6 px-6 py-3 bg-primary text-primary-foreground rounded-lg font-semibold hover:bg-primary/90 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-3"
+                          >
+                            {isSyncing ? (
+                              <>
+                                <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                {locale === 'ar' ? 'جاري المزامنة...' : 'Syncing...'}
+                              </>
+                            ) : (
+                              <>
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
+                                {locale === 'ar' ? 'مزامنة البيانات' : 'Sync Data'}
+                              </>
+                            )}
+                          </button>
+                        )}
                       </div>
                     </div>
                   </td>

@@ -238,8 +238,6 @@ export default function UpdateStudentInfoPage() {
   // Resolve loading and error states based on mode
   const error = studentError;
   const isLoading = mode === 'edit' ? (studentLoading || idhLoading) : studentLoading;
-  
-  console.log('Mode:', mode, 'Student:', student, 'IDH Response:', idhResp, 'Error:', idhError);
 
   const meta = (student as StudentProfileWithMeta | undefined)?.meta;
   const primaryAddress = React.useMemo<StudentAddress | null>(() => {
@@ -247,7 +245,6 @@ export default function UpdateStudentInfoPage() {
     // Find address with isPrimary flag, fallback to first address
     const primary = student.addresses.find(addr => addr.isPrimary);
     const selected = primary ?? student.addresses[0];
-    console.log('Addresses:', student.addresses, 'Primary address:', selected, 'Has isPrimary flag:', !!primary);
     return selected;
   }, [student]);
 

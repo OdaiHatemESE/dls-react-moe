@@ -88,10 +88,8 @@ export const generatePDF = async (
     // Get the form from the PDF
     const form = pdfDoc.getForm();
 
-    // Debug: Log available fields
+    // Get available fields
     const formFields = form.getFields();
-    console.log('Available PDF form fields:', formFields.map(f => f.getName()));
-    console.log('Field count:', formFields.length);
 
     if (formFields.length === 0) {
       throw new Error('PDF has no form fields. Please add fillable form fields to the PDF template using Adobe Acrobat.');
@@ -112,7 +110,6 @@ export const generatePDF = async (
           fieldValue = value?.trim() ? value.toString() : 'لا يوجد';
         }
 
-        console.log(`Setting field ${fieldMapping[fieldKey]} = ${fieldValue}`);
         formField.setText(fieldValue);
         formField.setAlignment(1); // 1 = Center alignment
         formField.updateAppearances(customFont);

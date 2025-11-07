@@ -92,9 +92,6 @@ export async function GET(
       }, { status: 500 });
     }
 
-    console.log('[PP ChildList] Fetching profiles for EID:', eid);
-    console.log('[PP ChildList] Token preview:', accessToken.substring(0, 30) + '...');
-
     // Fetch student profiles using the PP token
     const profilesUrl = `${baseUrl.replace(/\/$/, '')}/oneroster/students/profiles?EmirateId=${eid}`;
     
@@ -105,14 +102,25 @@ export async function GET(
       },
     });
 
-    console.log('[PP ChildList] Profiles response status:', profilesRes.status);
-
     if (!profilesRes.ok) {
       const errorData = await profilesRes.json().catch(() => null);
       console.error('[PP ChildList] Profiles fetch failed:', {
         status: profilesRes.status,
         error: errorData,
       });
+      
+      // For 404 errors, indicate that sync is needed
+      if (profilesRes.status === 404) {
+        return NextResponse.json(
+          { 
+            error: errorData ?? 'Student profiles not found',
+            needsSync: true,
+            emirateId: eid
+          },
+          { status: 404 }
+        );
+      }
+      
       return NextResponse.json(
         { error: errorData ?? `Upstream returned ${profilesRes.status}` },
         { status: profilesRes.status }

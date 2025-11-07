@@ -14,6 +14,12 @@ type ChildListResponse = {
   };
 };
 
+type ChildListError = {
+  error: string;
+  needsSync?: boolean;
+  emirateId?: string;
+};
+
 export function useChildren(eid?: string) {
   // If eid is provided, fetch for that eid, else return null (no session-based fallback)
   const key = eid ? `/api/PP/ChildList/${encodeURIComponent(eid)}` : null;
@@ -36,5 +42,25 @@ export function useChildren(eid?: string) {
     return undefined;
   }, [data]);
 
-  return { children, meta, error, isLoading } as const;
+  // Extract error details including needsSync flag
+  const errorDetails = React.useMemo(() => {
+    if (error && typeof error === 'object') {
+      // SWR jsonFetcher throws the parsed error object directly
+      const errorObj = error as ChildListError;
+      return {
+        needsSync: errorObj.needsSync ?? false,
+        emirateId: errorObj.emirateId,
+      };
+    }
+    return { needsSync: false, emirateId: undefined };
+  }, [error]);
+
+  return { 
+    children, 
+    meta, 
+    error, 
+    isLoading,
+    needsSync: errorDetails.needsSync,
+    emirateId: errorDetails.emirateId
+  } as const;
 }

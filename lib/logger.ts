@@ -53,7 +53,7 @@ class Logger {
 
     switch (level) {
       case 'debug':
-        console.debug(formatted);
+        // Debug logs suppressed
         break;
       case 'info':
         console.info(formatted);

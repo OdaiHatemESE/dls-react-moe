@@ -131,7 +131,6 @@ export async function GET(
 
     // Fetch school data using the PP token
     const schoolUrl = `${baseUrl.replace(/\/$/, '')}/oneroster/schools/${encodeURIComponent(schoolId)}`;
-    console.log('[PP School] Fetch URL:', schoolUrl);
     const schoolRes = await fetch(schoolUrl, {
       headers: {
         'Authorization': `Bearer ${accessToken}`,

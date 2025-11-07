@@ -105,9 +105,6 @@ export async function GET(
       }, { status: 500 });
     }
 
-    console.log('[PP Student] Fetching profiles for EID:', eid);
-    console.log('[PP Student] Token preview:', accessToken.substring(0, 30) + '...');
-
     // Fetch all student profiles for the parent
     const profilesUrl = `${baseUrl.replace(/\/$/, '')}/oneroster/students/profiles?EmirateId=${eid}`;
     
@@ -117,8 +114,6 @@ export async function GET(
         'Content-Type': 'application/json',
       },
     });
-
-    console.log('[PP Student] Profiles response status:', profilesRes.status);
 
     if (!profilesRes.ok) {
       const errorData = await profilesRes.json().catch(() => null);
@@ -143,7 +138,6 @@ export async function GET(
         { status: 404 }
       );
     }
-    console.log(student.enrollment);
     // Filter enrollments by schoolYear if provided
     if (schoolYear && student.enrollment) {
       student = {

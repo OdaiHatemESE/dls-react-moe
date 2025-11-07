@@ -128,9 +128,7 @@ export async function GET(req: Request) {
     if (schoolID) {
       try {
         const schoolPath = `/v1p1/schools/${encodeURIComponent(schoolID)}?fields=educationType`;
-        console.log("Fetching school data from:", schoolPath);
         const schoolResp = await orFetch<unknown>(schoolPath, "read");
-        console.log("School response:", schoolResp);
 
         // Tolerant extraction across various vendor envelopes and arrays
         educationType =

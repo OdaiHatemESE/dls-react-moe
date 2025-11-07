@@ -81,7 +81,6 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const studentNumber = searchParams.get("studentNumber")?.trim();
     const academicyear = searchParams.get("academicyear")?.trim() || '2025-2026';
-    console.log('*********************',searchParams.get("academicyear")?.trim())
     if (!studentNumber) {
       return NextResponse.json({ ok: false, error: "studentNumber is required" }, { status: 400 });
     }
@@ -103,7 +102,6 @@ export async function GET(req: Request) {
     }
 
     const upstreamUrl = `${baseUrl.replace(/\/$/, "")}/Idh/students-partnership-charter?studentNumber=${encodeURIComponent(studentNumber)}&academicyear=${encodeURIComponent(academicyear)}`;
-    console.log('################### Upstream URL:', upstreamUrl);
     const upstreamRes = await fetch(upstreamUrl, {
       method: "GET",
       headers: {
@@ -122,10 +120,6 @@ export async function GET(req: Request) {
         parsed = rawText;
       }
     }
-
-    console.log('[Charter GET] Status:', upstreamRes.status);
-    console.log('[Charter GET] Raw response:', rawText);
-    console.log('[Charter GET] Parsed:', JSON.stringify(parsed, null, 2));
 
     if (upstreamRes.status === 404) {
       return NextResponse.json({
@@ -152,7 +146,6 @@ export async function GET(req: Request) {
     }
 
     const normalized = normalizeCharter(parsed);
-    console.log('[Charter GET] Normalized:', JSON.stringify(normalized, null, 2));
 
     return NextResponse.json({
       ok: true,

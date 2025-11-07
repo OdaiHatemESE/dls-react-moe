@@ -19,7 +19,6 @@ export default function ThemeTestPage() {
             <button
               key={testTheme}
               onClick={() => {
-                console.log('Testing theme switch to:', testTheme);
                 switchTheme(testTheme);
               }}
               className={`p-4 rounded-lg border-2 transition-all ${
@@ -53,9 +52,7 @@ export default function ThemeTestPage() {
         
         <button
           onClick={() => {
-            console.log('HTML classes:', document.documentElement.className);
-            console.log('Body classes:', document.body.className);
-            console.log('Computed styles:', {
+            const computedStyles = {
               background: getComputedStyle(document.documentElement).getPropertyValue('--background'),
               foreground: getComputedStyle(document.documentElement).getPropertyValue('--foreground'),
               primary: getComputedStyle(document.documentElement).getPropertyValue('--primary')

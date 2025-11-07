@@ -86,8 +86,6 @@ async function handleSync(req: Request) {
       );
     }
 
-    console.log('[PP Child Sync] Syncing profiles for EID:', emirateId);
-
     // Fetch fresh student profiles from upstream PP API sync endpoint
     const profilesUrl = `${baseUrl.replace(/\/$/, '')}/oneroster/students/profiles/sync?EmirateId=${emirateId}`;
 
@@ -98,8 +96,6 @@ async function handleSync(req: Request) {
       },
       cache: 'no-store', // Force fresh data
     });
-
-    console.log('[PP Child Sync] Profiles response status:', profilesRes.status);
 
     if (!profilesRes.ok) {
       const errorData = await profilesRes.json().catch(() => null);
@@ -114,7 +110,6 @@ async function handleSync(req: Request) {
     }
 
     const responseData = await profilesRes.json();
-    console.log('[PP Child Sync] Response data type:', typeof responseData, Array.isArray(responseData));
     
     // Handle different response formats - sync endpoint might return {students: [...]} or just [...]
     let studentList: StudentProfileV1[];
@@ -176,8 +171,6 @@ async function handleSync(req: Request) {
       { data: studentList, fetchedAt },
       { ttlSeconds: 300 }
     );
-
-    console.log(`[PP Child Sync] Cached ${studentList.length} student profiles`);
 
     // Return the synced data
     return NextResponse.json({

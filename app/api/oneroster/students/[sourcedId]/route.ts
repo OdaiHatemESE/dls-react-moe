@@ -43,8 +43,6 @@ export async function GET(req: Request, ctx: RouteParams) {
     const path = `/v1p1/students/${encodeURIComponent(sourcedId)}${query ? `?${query}` : ""}`;
     const data = await orFetch<unknown>(path, "read");
 
-    console.debug(`OREST: Fetched student ${sourcedId} from upstream`);
-
     // Cache the payload (best-effort)
     await cacheSetJSON(key, data, { ttlSeconds: TTL_SECONDS });
 

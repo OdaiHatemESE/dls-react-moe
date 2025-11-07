@@ -427,7 +427,6 @@ export default function MyLandPicker({
       });
       if (!match) return;
       if (normalize(district) !== target) {
-        console.log("🔄 Applying pending district:", match.value);
         isApplyingMapDataRef.current = true;
         userInteractedRef.current = false;
         setDistrict(match.value);
@@ -450,7 +449,6 @@ export default function MyLandPicker({
       });
       if (!match) return;
       if (normalize(community) !== target) {
-        console.log("🔄 Applying pending community:", match.value);
         isApplyingMapDataRef.current = true;
         userInteractedRef.current = false;
         setCommunity(match.value);
@@ -468,7 +466,6 @@ export default function MyLandPicker({
       const match = roads.find((r) => normalize(r) === target);
       if (!match) return;
       if (normalize(roadId) !== target) {
-        console.log("🔄 Applying pending road:", match);
         isApplyingMapDataRef.current = true;
         userInteractedRef.current = false;
         setRoadId(match);
@@ -490,7 +487,6 @@ export default function MyLandPicker({
       });
       if (!match) return;
       if (normalize(plot) !== target) {
-        console.log("🔄 Applying pending plot:", match.value);
         isApplyingMapDataRef.current = true;
         userInteractedRef.current = false;
         setPlot(match.value);
@@ -533,8 +529,6 @@ export default function MyLandPicker({
             }
           }
         }
-
-        console.log("📩 MyLand message received", data);
 
         if (
           typeof data === "object" &&
@@ -583,8 +577,6 @@ export default function MyLandPicker({
           const normalizedType = addressType?.toLowerCase();
           const handledTypes = ["onwani", "plot", "pin", "pindrop", "coordinates", "coordinate"];
           if (normalizedType && handledTypes.includes(normalizedType)) {
-            console.log("📍 Map pin placed - applying address data:", d);
-            
             // Mark that we're applying map data to prevent loops
             isApplyingMapDataRef.current = true;
             userInteractedRef.current = false; // Map action, not user
@@ -658,8 +650,6 @@ export default function MyLandPicker({
               setPlotOptions((prev) => mergePlotOptions(prev, [{ label: normalizedPlot, value: normalizedPlot }]));
             }
 
-            console.log("📦 Pending selections queued:", pendingRef.current);
-
             // Kick off cascade by setting municipality (forces district refetch when it changes)
             if (municipality !== m) {
               setMunicipality(m);
@@ -671,7 +661,6 @@ export default function MyLandPicker({
             // Reset flag after cascade completes (allow time for all effects to run)
             setTimeout(() => {
               isApplyingMapDataRef.current = false;
-              console.log("✅ Map data application complete - ready for user interaction");
             }, 100);
           }
         }
@@ -711,7 +700,6 @@ export default function MyLandPicker({
 
   // Handlers for user interactions - these set the flag to allow smart resets
   const handleMunicipalityChange = (v: Municipality) => {
-    console.log("👤 User changed municipality to:", v);
     userInteractedRef.current = true;
     clearMapSelection();
     setMunicipality(v);
@@ -727,7 +715,6 @@ export default function MyLandPicker({
   };
 
   const handleDistrictChange = (v: string | undefined) => {
-    console.log("👤 User changed district to:", v);
     userInteractedRef.current = true;
     clearMapSelection();
     setDistrict(v);
@@ -741,7 +728,6 @@ export default function MyLandPicker({
   };
 
   const handleCommunityChange = (v: string | undefined) => {
-    console.log("👤 User changed community to:", v);
     userInteractedRef.current = true;
     clearMapSelection();
     setCommunity(v);
@@ -753,7 +739,6 @@ export default function MyLandPicker({
   };
 
   const handleRoadChange = (v: string | undefined) => {
-    console.log("👤 User changed road to:", v);
     userInteractedRef.current = true;
     clearMapSelection();
     setRoadId(v);
@@ -762,7 +747,6 @@ export default function MyLandPicker({
   };
 
   const handlePlotChange = (v: string) => {
-    console.log("👤 User changed plot to:", v);
     userInteractedRef.current = true;
     clearMapSelection();
     setPlot(v);

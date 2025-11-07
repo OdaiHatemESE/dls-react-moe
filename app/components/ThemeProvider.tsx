@@ -79,11 +79,6 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
         root.classList.add(`theme-${theme}`);
         body.classList.add(`theme-${theme}`);
       }
-      
-      console.log('Theme applied in ThemeProvider:', theme, {
-        htmlClasses: Array.from(root.classList),
-        bodyClasses: Array.from(body.classList)
-      });
     };
 
     // Initialize immediately

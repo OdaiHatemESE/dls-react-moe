@@ -67,16 +67,9 @@ export function useTheme() {
       root.classList.add(`theme-${theme}`);
       body.classList.add(`theme-${theme}`);
     }
-    
-    // Log for debugging
-    console.log(`Applied theme: ${theme}`, {
-      htmlClasses: root.className,
-      bodyClasses: body.className
-    });
   };
 
   const switchTheme = (newTheme: Theme) => {
-    console.log('switchTheme called with:', newTheme);
     
     // Update state
     setTheme(newTheme);
@@ -90,8 +83,6 @@ export function useTheme() {
     } catch (error) {
       console.error('Failed to save theme to localStorage:', error);
     }
-    
-    console.log('Theme switch completed for:', newTheme);
   };
 
   return { theme, switchTheme };

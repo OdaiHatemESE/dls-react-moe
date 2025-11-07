@@ -222,8 +222,6 @@ export async function getChildActionsSummary(options: ChildActionRequestOptions)
     ? String(activeAcademicYear) === schoolYear
     : true;
 
-  console.debug("Active academic year:", activeAcademicYear, "Student's schoolYear:", schoolYear, "Is active:", isActiveYear);
-
   // Load configs based on education type
   const configs = await loadActionConfigs(educationType);
 
@@ -310,56 +308,17 @@ function resolveChildActions(context: ResolveContext): ChildActionResponse {
   const hasPdf = !!updateRequest.pdfBase64;
   const debugLogsEnabled = process.env.CHILD_ACTIONS_DEBUG === "true";
 
-  if (debugLogsEnabled) {
-    console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-    console.log("🎬 RESOLVING CHILD ACTIONS");
-    console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-    console.log("📊 Context:");
-    console.log("  Student ID:", student.studentPersonId);
-    console.log("  Education Type:", student.educationType ?? "null");
-    console.log("  IDH Status ID:", status === null ? "null (no record)" : status);
-    console.log("  Status Meaning:", getStatusMeaning(status));
-    console.log("  Update Period Active:", updatePeriodActive ? "✅ YES" : "❌ NO");
-    console.log("  Has PDF:", hasPdf ? "✅ YES" : "❌ NO");
-    console.log("  Conduct Signed:", updateRequest.isConductAgreementSigned ? "✅ YES" : "❌ NO");
-    console.log("  Configs Loaded:", configs.length);
-  }
-
   const reasons = new Set<string>();
   const actionsFromConfig = buildConfiguredActions(context, configs, status, hasPdf, reasons);
 
   let actions = actionsFromConfig;
   if (!actions.length) {
-    if (debugLogsEnabled) {
-      console.log("⚠️  No configured actions found, using fallback");
-    }
     actions = [buildFallbackViewProfileAction(student)];
   }
 
   let statusBanner = deriveStatusBannerForStatus(status);
   if (!updatePeriodActive) {
     statusBanner = null;
-  }
-
-  if (debugLogsEnabled) {
-    console.log("\n🎯 RESOLVED ACTIONS:");
-    actions.forEach((action, index) => {
-      console.log(`\n  [${index + 1}] ${action.key.toUpperCase()}`);
-      console.log(`      Label: ${action.label}`);
-      console.log(`      Type: ${action.action.type}`);
-      console.log(`      Hidden: ${action.hidden ? "🚫 YES" : "✅ NO"}`);
-      console.log(`      Disabled: ${action.disabled ? "🔒 YES" : "✅ NO"}`);
-      if (action.disabled && action.disabledReason) {
-        console.log(`      Reason: ${action.disabledReason.en}`);
-      }
-      console.log(`      Href: ${action.href ?? "N/A"}`);
-      console.log(`      Variant: ${action.variant ?? "default"}`);
-      console.log(`      Color: ${action.style.color ?? "default"}`);
-    });
-
-    console.log("📢 BANNER:", statusBanner ? `${statusBanner.message} (${statusBanner.severity})` : "None");
-    console.log("💾 DOWNLOADS:", hasPdf ? "Conduct PDF available" : "No PDFs");
-    console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
   }
 
   return {
@@ -540,35 +499,27 @@ function buildDescriptorFromConfig(
   let disabledReason: LocalizedText | null = null;
   let reasonKey: string | null = null;
 
-  console.log(`\n  🔍 Evaluating action: ${config.row.actionKey}`);
-  console.log(`     Current status: ${status}`);
-
   // Check status inclusion
   if (availability.includeStatuses && !availability.includeStatuses.some((value) => value === status)) {
-    console.log(`     ❌ HIDDEN: Status ${status} not in include list [${availability.includeStatuses.join(", ")}]`);
     hidden = true;
   }
 
   // Check status exclusion
   if (availability.excludeStatuses && availability.excludeStatuses.some((value) => value === status)) {
-    console.log(`     ❌ HIDDEN: Status ${status} in exclude list [${availability.excludeStatuses.join(", ")}]`);
     hidden = true;
   }
 
   // Check conduct signature requirements
   if (availability.requiresConductSignature === "signed" && !context.updateRequest.isConductAgreementSigned) {
-    console.log(`     ❌ HIDDEN: Requires signed conduct but not signed`);
     hidden = true;
   }
 
   if (availability.requiresConductSignature === "unsigned" && context.updateRequest.isConductAgreementSigned) {
-    console.log(`     ❌ HIDDEN: Requires unsigned conduct but already signed`);
     hidden = true;
   }
 
   // Check update period requirement
   if (availability.requiresUpdatePeriod && !context.updatePeriodActive) {
-    console.log(`     🔒 DISABLED: Requires update period but period is closed`);
     disabled = true;
     disabledReason = UPDATE_DISABLED_REASON;
     reasonKey = UPDATE_DISABLED_REASON_KEY;
@@ -577,10 +528,8 @@ function buildDescriptorFromConfig(
   // Check PDF requirement
   if (availability.requiresPdf && !hasPdf) {
     if (availability.requiresPdfMode === "hide") {
-      console.log(`     ❌ HIDDEN: Requires PDF but not available (mode: hide)`);
       hidden = true;
     } else {
-      console.log(`     🔒 DISABLED: Requires PDF but not available (mode: disable)`);
       disabled = true;
       disabledReason = availability.requiresPdfReason ?? DEFAULT_PDF_REASON;
       if (!availability.requiresPdfReason) {
@@ -596,23 +545,16 @@ function buildDescriptorFromConfig(
   const resolvedDownloadFileName = resolveTemplateValue(config.action.downloadFileName ?? null, templateContext);
 
   if (config.action.type === "href" && !resolvedHref) {
-    console.log(`     ❌ HIDDEN: Action type is href but no href resolved`);
     hidden = true;
   }
 
   if (config.action.type !== "href" && !config.action.handlerKey && !resolvedHref) {
-    console.log(`     ❌ HIDDEN+DISABLED: No handler or href for non-href action`);
     hidden = true;
     disabled = true;
   }
 
   if (config.action.type === "href" && !resolvedHref) {
     disabled = true;
-  }
-
-  console.log(`     Result: ${hidden ? "🚫 HIDDEN" : disabled ? "🔒 DISABLED" : "✅ ENABLED"}`);
-  if (resolvedHref) {
-    console.log(`     Href: ${resolvedHref}`);
   }
 
   const action: ChildActionAction = {
@@ -919,10 +861,7 @@ function buildFallbackViewProfileAction(student: ChildActionStudentSummary): Chi
 }
 
 function deriveStatusBannerForStatus(status: number | null): ChildStatusBannerDescriptor | null {
-  console.log(`\n📢 Deriving status banner for status: ${status}`);
-  
   if (status === 1 || status === 3) {
-    console.log(`   ✅ Banner: "In Progress" (status ${status})`);
     return {
       key: "childActions.status.inProgress",
       messageKey: "childActions.status.inProgress",
@@ -931,7 +870,6 @@ function deriveStatusBannerForStatus(status: number | null): ChildStatusBannerDe
     };
   }
 
-  console.log(`   ℹ️  No banner for status ${status}`);
   return null;
 }
 

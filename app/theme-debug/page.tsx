@@ -50,9 +50,6 @@ export default function ThemeDebugger() {
   };
 
   const switchTheme = (theme: Theme) => {
-    console.log('=== Theme Switch Debug ===');
-    console.log('Switching to:', theme);
-    
     // Apply theme immediately
     applyThemeToDOM(theme);
     
@@ -64,8 +61,6 @@ export default function ThemeDebugger() {
     
     // Log current state
     setTimeout(() => {
-      console.log('HTML classes:', Array.from(document.documentElement.classList));
-      console.log('Body classes:', Array.from(document.body.classList));
       updateCssVariables();
     }, 100);
   };

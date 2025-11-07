@@ -415,18 +415,6 @@ export function ChildStatusBadge({ studentPersonId, parentPersonId, studentEmira
 
   const badge = data?.badge;
   
-  React.useEffect(() => {
-    if (badge) {
-      console.log("🏷️  ChildStatusBadge Rendering:");
-      console.log("   Student:", studentPersonId);
-      console.log("   Badge Key:", badge.key);
-      console.log("   Badge Label:", badge.label);
-      console.log("   Badge Tone:", badge.tone);
-      console.log("   Is Urgent:", badge.tone === "urgent");
-      console.log("   Is Signature Required:", badge.key === "childActions.badge.signatureRequired");
-    }
-  }, [badge, studentPersonId]);
-  
   if (!badge) return null;
 
   const label = getBadgeLabel(badge, locale);
