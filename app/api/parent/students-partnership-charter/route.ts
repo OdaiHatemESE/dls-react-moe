@@ -77,11 +77,11 @@ export async function GET(req: Request) {
     if (!session) {
       return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
     }
-
+ 
     const { searchParams } = new URL(req.url);
     const studentNumber = searchParams.get("studentNumber")?.trim();
     const academicyear = searchParams.get("academicyear")?.trim() || '2025-2026';
-
+    console.log('*********************',searchParams.get("academicyear")?.trim())
     if (!studentNumber) {
       return NextResponse.json({ ok: false, error: "studentNumber is required" }, { status: 400 });
     }
@@ -103,6 +103,7 @@ export async function GET(req: Request) {
     }
 
     const upstreamUrl = `${baseUrl.replace(/\/$/, "")}/Idh/students-partnership-charter?studentNumber=${encodeURIComponent(studentNumber)}&academicyear=${encodeURIComponent(academicyear)}`;
+    console.log('################### Upstream URL:', upstreamUrl);
     const upstreamRes = await fetch(upstreamUrl, {
       method: "GET",
       headers: {

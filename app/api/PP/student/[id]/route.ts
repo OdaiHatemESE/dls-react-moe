@@ -143,7 +143,7 @@ export async function GET(
         { status: 404 }
       );
     }
-
+    console.log(student.enrollment);
     // Filter enrollments by schoolYear if provided
     if (schoolYear && student.enrollment) {
       student = {

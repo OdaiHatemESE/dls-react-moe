@@ -77,7 +77,8 @@ export async function GET(req: NextRequest) {
   if (nocache) queryParams.set("nocache", nocache);
   if (schoolYear) queryParams.set("schoolYear", schoolYear);
   const querySuffix = queryParams.toString() ? `?${queryParams.toString()}` : "";
-  
+  console.log('Query suffix for student API:', schoolYear, nocache, querySuffix);
+   
   const cookie = req.headers.get("cookie") ?? "";
   const origin = req.nextUrl.origin;
 
@@ -95,8 +96,11 @@ export async function GET(req: NextRequest) {
 
     // Extract schoolId from student's enrollment data
     let schoolInfo = null;
+    
     if (studentInfo && studentInfo.enrollment && studentInfo.enrollment.length > 0) {
       // Get the most recent enrollment (you can adjust this logic if needed)
+      console.clear();
+      console.log('Student enrollments:', studentInfo.enrollment);
       const latestEnrollment = studentInfo.enrollment[0];
       const schoolId = latestEnrollment.schoolId;
       

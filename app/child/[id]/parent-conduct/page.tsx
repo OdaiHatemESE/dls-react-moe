@@ -13,54 +13,13 @@ import { downloadBase64PDF, type PdfFormData } from '@/lib/pdf-generator';
 import { useToastNotifications } from '@/lib/hooks/use-toast-notifications';
 import {
   type ParentConductAggregatedResponse,
+  extractOrgFromAny,
+  extractSchoolContact,
+  formatOrgAddress,
+  resolveSchoolName,
 } from '@/lib/parent-conduct';
 import type { StudentProfileV1 } from '@/app/types/studentprofile';
-
-type SchoolContact = {
-  note: string;
-  contactType: string;
-  isPrivate: boolean;
-  value: string;
-};
-
-type SchoolAddress = {
-  country: string;
-  zipCode: string;
-  city: string;
-  isVerified: boolean;
-  latitude: string;
-  poBox: string;
-  roadNumber: string;
-  plotId: string;
-  addressLine1: string;
-  plotNumber: string;
-  addressLine2: string;
-  addressLine3: string;
-  state: string;
-  region: string;
-  sector: string;
-  longitude: string;
-};
-
-type SchoolMetadata = {
-  shortName: string;
-  contacts: SchoolContact[];
-  addresses: SchoolAddress[];
-  englishName: string;
-};
-
-type SchoolInfo = {
-  sourcedId: string;
-  identifier: string;
-  metadata: SchoolMetadata;
-  name: string;
-  meta?: {
-    cache?: {
-      source: string;
-      lastUpdated: string | null;
-    };
-  };
-};
+import type { Org } from '@/types';
 
 type AggregatedApiResponse = {
   ok: boolean;
@@ -92,6 +51,37 @@ type GeneratePdfResult = {
   base64: string;
   filename: string;
 };
+
+function findSchoolOrg(value: unknown, seen = new WeakSet<object>()): Org | null {
+  if (value === null || value === undefined) {
+    return null;
+  }
+
+  const direct = extractOrgFromAny(value);
+  if (direct) {
+    return direct;
+  }
+
+  if (typeof value !== 'object') {
+    return null;
+  }
+
+  const objectRef = value as object;
+  if (seen.has(objectRef)) {
+    return null;
+  }
+  seen.add(objectRef);
+
+  const record = value as Record<string, unknown>;
+  for (const nested of Object.values(record)) {
+    const resolved = findSchoolOrg(nested, seen);
+    if (resolved) {
+      return resolved;
+    }
+  }
+
+  return null;
+}
 
 async function requestConductPdf(body: PdfRequestBody): Promise<GeneratePdfResult> {
   const response = await fetch(GENERATE_CONDUCT_PDF_ENDPOINT, {
@@ -192,7 +182,9 @@ export default function ParentConductPage() {
           : undefined;
 
   const studentInfo = aggregated?.studentInfo ?? null;
-  const schoolInfo = aggregated?.schoolInfo as SchoolInfo | null;
+  const schoolInfoRaw = aggregated?.schoolInfo ?? null;
+
+  const schoolOrg = React.useMemo<Org | null>(() => findSchoolOrg(schoolInfoRaw), [schoolInfoRaw]);
 
   // Helper functions for StudentProfileV1
   const isStudentProfile = (data: any): data is StudentProfileV1 => {
@@ -352,53 +344,32 @@ export default function ParentConductPage() {
   
   // Extract school information from API response
   const schoolName = React.useMemo(() => {
-    if (!schoolInfo) return latestEnrollment?.schoolId || PLACEHOLDER;
-    if (locale === 'ar') {
-      return schoolInfo.name || schoolInfo.metadata?.englishName || PLACEHOLDER;
-    }
-    return schoolInfo.metadata?.englishName || schoolInfo.name || PLACEHOLDER;
-  }, [schoolInfo, latestEnrollment, locale]);
+    if (!schoolOrg) return latestEnrollment?.schoolId || PLACEHOLDER;
+    const resolvedLocale = locale === 'ar' ? 'ar' : 'en';
+    const resolved = resolveSchoolName(schoolOrg, resolvedLocale).trim();
+    return resolved.length > 0 ? resolved : latestEnrollment?.schoolId || PLACEHOLDER;
+  }, [locale, schoolOrg, latestEnrollment]);
 
   const schoolYearLabel = latestEnrollment?.schoolYear || PLACEHOLDER;
   
   const schoolAddress = React.useMemo(() => {
-    if (!schoolInfo?.metadata?.addresses?.length) return PLACEHOLDER;
-    const address = schoolInfo.metadata.addresses[0];
-    const parts = [
-      address.addressLine1,
-      address.addressLine2,
-      address.addressLine3,
-      address.city,
-      address.state,
-      address.country,
-    ].filter(Boolean).join(', ');
-    return parts || PLACEHOLDER;
-  }, [schoolInfo]);
+    if (!schoolOrg) return PLACEHOLDER;
+    const formatted = formatOrgAddress(schoolOrg).trim();
+    return formatted.length > 0 ? formatted : PLACEHOLDER;
+  }, [schoolOrg]);
   
   const schoolContact = React.useMemo(() => {
-    if (!schoolInfo?.metadata?.contacts?.length) {
+    if (!schoolOrg) {
       return { phone: undefined, email: undefined };
     }
-    
-    let phone: string | undefined;
-    let email: string | undefined;
-    
-    for (const contact of schoolInfo.metadata.contacts) {
-      const type = contact.contactType?.toLowerCase() || '';
-      
-      if (!email && (type.includes('email') || contact.value.includes('@'))) {
-        email = contact.value;
-      }
-      
-      if (!phone && (type.includes('phone') || type.includes('mobile') || type.includes('tel'))) {
-        phone = contact.value;
-      }
-      
-      if (phone && email) break;
-    }
-    
-    return { phone, email };
-  }, [schoolInfo]);
+    const contact = extractSchoolContact(schoolOrg);
+    const phone = contact.phone?.trim();
+    const email = contact.email?.trim();
+    return {
+      phone: phone && phone.length > 0 ? phone : undefined,
+      email: email && email.length > 0 ? email : undefined,
+    };
+  }, [schoolOrg]);
   
   const latestStreamGradeName = latestEnrollment?.streamGradeId || PLACEHOLDER;
 
