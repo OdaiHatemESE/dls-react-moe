@@ -3,9 +3,10 @@ import { cacheGetJSON, cacheSetJSON } from '@/lib/cache';
 
 type PPLoginResponse = {
   accessToken?: string;
-  AccessToken?: string;  // PP API returns capital A
-  token?: string;
-  access_token?: string;
+  tokenType?: string;
+  expiresIn?: number;
+  scope?: string;
+  refreshToken?: string | null;
   [key: string]: any;
 };
 
@@ -28,12 +29,12 @@ export async function GET() {
       return NextResponse.json({ accessToken: tokenString });
     }
 
-    const username = process.env.PP_USERNAME;
-    const password = process.env.PP_PASSWORD;
+    const clientId = process.env.PP_CLIENT_ID;
+    const clientSecret = process.env.PP_CLIENT_SECRET;
     const base = process.env.PP_BASE_URL;
 
-    if (!base || !username || !password) {
-      return NextResponse.json({ error: 'Missing PP_BASE_URL or credentials in env' }, { status: 500 });
+    if (!base || !clientId || !clientSecret) {
+      return NextResponse.json({ error: 'Missing PP_BASE_URL, PP_CLIENT_ID, or PP_CLIENT_SECRET in env' }, { status: 500 });
     }
 
     const upstreamUrl = `${base.replace(/\/$/, '')}/auth/login`;
@@ -41,7 +42,7 @@ export async function GET() {
     const res = await fetch(upstreamUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify({ clientId, clientSecret }),
     });
 
     const data = (await res.json().catch(() => null)) as PPLoginResponse | null;
@@ -51,7 +52,6 @@ export async function GET() {
         status: res.status,
         statusText: res.statusText,
         url: upstreamUrl,
-        username,
         response: data,
       });
       return NextResponse.json({ 
@@ -64,17 +64,20 @@ export async function GET() {
       }, { status: res.status });
     }
     
-    // PP API returns AccessToken (capital A), also check other common formats
-    const accessToken = data?.AccessToken ?? data?.accessToken ?? data?.token ?? data?.access_token;
+    // Extract access token from response
+    const accessToken = data?.accessToken;
 
     if (!accessToken || typeof accessToken !== 'string') {
       console.error('[PP Auth] No valid token in response:', data);
       return NextResponse.json({ error: 'No access token in response', received: data }, { status: 500 });
     }
 
-    // Cache token with 50-minute TTL (similar to OneRoster pattern)
-    const exp = now + 50 * 60;
-    await cacheSetJSON(PP_CACHE_KEY, { token: accessToken, exp }, { ttlSeconds: 50 * 60 });
+    // Use expiresIn from response, or default to 50 minutes
+    const expiresIn = data?.expiresIn || 3000; // default to 50 minutes (3000 seconds)
+    const exp = now + expiresIn;
+    
+    // Cache token with TTL based on expiresIn
+    await cacheSetJSON(PP_CACHE_KEY, { token: accessToken, exp }, { ttlSeconds: expiresIn });
 
     // Return just the token string, not the entire response object
     return NextResponse.json({ accessToken });
