@@ -7,7 +7,7 @@ pool:
   name: 'Default'
   demands:
     - agent.os -equals Windows_NT
-    - agent.name -equals MOESTGPARPOTN01
+    - Agent.ComputerName -equals MOESTGPARPOTN01
 
 variables:
   NODE_VERSION: '20.x'
