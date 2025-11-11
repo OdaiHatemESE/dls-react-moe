@@ -146,6 +146,17 @@ stages:
                         exit 1
                       }
                       
+                      Write-Host "Verifying build output..."
+                      if (-not (Test-Path ".next")) {
+                        Write-Error ".next build directory not found after build."
+                        exit 1
+                      }
+                      if (-not (Test-Path "node_modules\next\dist\bin\next")) {
+                        Write-Error "Next.js binary not found in node_modules."
+                        exit 1
+                      }
+                      Write-Host "Build verification successful."
+                      
                       Write-Host "Ensuring PM2 is installed..."
                       $pm2Cmd = Get-Pm2Command
                       if (-not $pm2Cmd) {
@@ -158,21 +169,21 @@ stages:
                         exit 1
                       }
 
-                      Write-Host "Managing PM2 process..."
+                      Write-Host "Managing PM2 process using ecosystem.config.js..."
                       $restartSucceeded = $false
                       try {
-                        & $pm2Cmd restart "$(APP_NAME)" --update-env
+                        & $pm2Cmd restart ecosystem.config.js --update-env
                         if ($LASTEXITCODE -eq 0) {
                           $restartSucceeded = $true
-                          Write-Host "Restarted existing PM2 process."
+                          Write-Host "Restarted existing PM2 process using ecosystem config."
                         }
                       } catch {
                         Write-Host "PM2 restart failed or process not found."
                       }
 
                       if (-not $restartSucceeded) {
-                        Write-Host "Starting new PM2 process..."
-                        & $pm2Cmd start node --name "$(APP_NAME)" -- node_modules/next/dist/bin/next start -p 4200
+                        Write-Host "Starting new PM2 process using ecosystem config..."
+                        & $pm2Cmd start ecosystem.config.js --env production
                         if ($LASTEXITCODE -ne 0) {
                           Write-Error "Failed to start PM2 process."
                           exit 1
