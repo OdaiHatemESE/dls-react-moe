@@ -93,27 +93,26 @@ stages:
                       Write-Host "Building application..."
                       npm run build
                       
-                      Write-Host "Restarting PM2..."
-                      $pm2Installed = $false
-                      try {
-                        & npm list -g pm2 2>&1 | Out-Null
-                        $pm2Installed = ($LASTEXITCODE -eq 0)
-                      } catch {
-                        $pm2Installed = $false
-                      }
-                      
-                      if (-not $pm2Installed) {
+                      Write-Host "Ensuring PM2 is installed..."
+                      $pm2Path = Get-Command pm2 -ErrorAction SilentlyContinue
+                      if (-not $pm2Path) {
                         Write-Host "Installing PM2 globally..."
                         npm install -g pm2
+                        # Refresh PATH to include npm global packages
+                        $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
                       }
                       
-                      try {
-                        & pm2 restart "$(APP_NAME)"
-                        Write-Host "Restarted existing PM2 process"
-                      } catch {
+                      Write-Host "Managing PM2 process..."
+                      $processExists = pm2 list | Select-String -Pattern "$(APP_NAME)" -Quiet
+                      
+                      if ($processExists) {
+                        Write-Host "Restarting existing PM2 process..."
+                        pm2 restart "$(APP_NAME)"
+                      } else {
                         Write-Host "Starting new PM2 process..."
-                        & pm2 start node --name "$(APP_NAME)" -- node_modules/next/dist/bin/next start -p 4200
+                        pm2 start node --name "$(APP_NAME)" -- node_modules/next/dist/bin/next start -p 4200
                       }
+                      
                       pm2 save --force
                       
                       Write-Host "Deployment complete!"
