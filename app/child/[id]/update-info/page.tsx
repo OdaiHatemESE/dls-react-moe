@@ -3,6 +3,7 @@
 import React from 'react';
 import clsx from 'clsx';
 import Link from 'next/link';
+import { useSession } from 'next-auth/react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import useSWR, { mutate } from 'swr';
 
@@ -18,7 +19,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
- 
+import type { ChildActionResponse } from '@/types/child-actions';
+
 
 import { LoadingSkeleton } from '../components/LoadingSkeleton';
 import { AddressPicker } from '@/app/components/forms/AddressPicker';
@@ -138,6 +140,25 @@ function normalizeTransportation(raw?: string | null): { value: 'car' | 'bus' | 
   return { value: 'other', otherText: t };
 }
 
+function getDisplayName(profile: StudentProfileV1, locale: string): string {
+  const arabic = [profile.firstNameArabic, profile.middleNameArabic, profile.lastNameArabic]
+    .filter(Boolean)
+    .join(' ');
+  const english = [
+    profile.firstNameEnglish,
+    profile.middleNameEnglish,
+    profile.thirdNameEnglish,
+    profile.fourthNameEnglish,
+    profile.familyNameEnglish,
+  ]
+    .filter(Boolean)
+    .join(' ');
+  const fallback = profile.id ?? '';
+  return locale === 'ar'
+    ? (arabic || english || fallback)
+    : (english || arabic || fallback);
+}
+
 async function fileToBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -202,6 +223,12 @@ type PreparedPayload = {
   transportation: string;
 };
 
+type EligibleChild = {
+  profile: StudentProfileV1;
+  idhStatusId: number | null;
+  educationType: string | null;
+};
+
 type StudentProfileWithMeta = StudentProfileV1 & {
   meta?: {
     cache?: {
@@ -215,6 +242,7 @@ type StudentProfileWithMeta = StudentProfileV1 & {
 export default function UpdateStudentInfoPage() {
   const { t, locale } = useI18n();
   const toast = useToastNotifications();
+  const { data: sessionData } = useSession();
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -285,7 +313,19 @@ export default function UpdateStudentInfoPage() {
   const [showConfirmDialog, setShowConfirmDialog] = React.useState<boolean>(false);
   const [preparedPayload, setPreparedPayload] = React.useState<PreparedPayload | null>(null);
   const [idhAttachmentUrl, setIdhAttachmentUrl] = React.useState<string | null>(null);
+  const [eligibleChildren, setEligibleChildren] = React.useState<EligibleChild[]>([]);
+  const [selectedChildIds, setSelectedChildIds] = React.useState<string[]>([]);
+  const [applyToAllChildren, setApplyToAllChildren] = React.useState<boolean>(false);
+  const [isFetchingChildren, setIsFetchingChildren] = React.useState<boolean>(false);
+  const [childFetchError, setChildFetchError] = React.useState<string | null>(null);
   const idhAttachmentSize = React.useMemo(() => estimateBytesFromBase64(idhResp?.data?.attachment01 ?? null), [idhResp]);
+  const eligibleChildIds = React.useMemo(
+    () =>
+      eligibleChildren
+        .map((entry) => entry.profile.id)
+        .filter((value): value is string => typeof value === 'string' && value.trim().length > 0),
+    [eligibleChildren]
+  );
 
   // ========== INIT MODE: Initialize form from OneRoster data ==========
   React.useEffect(() => {
@@ -398,6 +438,24 @@ export default function UpdateStudentInfoPage() {
       setSupportingDocument(null);
     }
   }, [addressChanged]);
+
+  React.useEffect(() => {
+    if (!showConfirmDialog) {
+      setApplyToAllChildren(false);
+      setSelectedChildIds([]);
+      setEligibleChildren([]);
+      setChildFetchError(null);
+      setIsFetchingChildren(false);
+    }
+  }, [showConfirmDialog]);
+
+  React.useEffect(() => {
+    setSelectedChildIds((prev) => {
+      if (prev.length === 0) return prev;
+      const valid = prev.filter((id) => eligibleChildIds.includes(id));
+      return valid.length === prev.length ? prev : valid;
+    });
+  }, [eligibleChildIds]);
 
   // ========== Build PDF attachment URL (EDIT MODE only) ==========
   React.useEffect(() => {
@@ -676,6 +734,101 @@ export default function UpdateStudentInfoPage() {
     return { source: 'empty' as const, data: empty };
   }, [preparedPayload, mode, idhResp, primaryAddress]);
 
+  const fetchEligibleChildren = React.useCallback(async (): Promise<EligibleChild[]> => {
+    if (!sessionData?.user?.emiratesId || !sourcedId) {
+      setEligibleChildren([]);
+      setChildFetchError(null);
+      return [];
+    }
+
+    setIsFetchingChildren(true);
+    setChildFetchError(null);
+
+    try {
+      const parentEid = sessionData.user.emiratesId;
+      const listResponse = await fetch(`/api/PP/ChildList/${encodeURIComponent(parentEid)}`);
+      if (!listResponse.ok) {
+        throw new Error('childlist request failed');
+      }
+
+      const raw = (await listResponse.json()) as { students?: StudentProfileV1[] } | StudentProfileV1[];
+      const children = Array.isArray(raw)
+        ? raw
+        : Array.isArray(raw?.students)
+          ? raw.students
+          : [];
+
+      const otherChildren = children.filter((child) => child.id && child.id !== sourcedId);
+      if (otherChildren.length === 0) {
+        setEligibleChildren([]);
+        return [];
+      }
+
+      const eligibilityResults = await Promise.all(
+        otherChildren.map(async (child) => {
+          try {
+            const params = new URLSearchParams({ studentPersonId: child.id });
+            if (sessionData.user?.emiratesId) {
+              params.set('parentPersonId', sessionData.user.emiratesId);
+            }
+            const actionsResponse = await fetch(`/api/parent/child-actions?${params.toString()}`);
+            if (!actionsResponse.ok) {
+              throw new Error('actions request failed');
+            }
+            const actionsData = (await actionsResponse.json()) as ChildActionResponse;
+            const hasUpdateInfo = Array.isArray(actionsData.actions)
+              ? actionsData.actions.some(
+                  (action) => action.key === 'update-info' && !action.hidden && !action.disabled
+                )
+              : false;
+            const statusEligible = actionsData.idhStatusId === null || actionsData.idhStatusId === 2 || actionsData.idhStatusId === 5;
+            const educationType = actionsData.educationType ?? null;
+            const notPrivate = (educationType ?? '').toLowerCase() !== 'private';
+            const eligible = hasUpdateInfo && statusEligible && notPrivate;
+            return {
+              child,
+              eligible,
+              idhStatusId: actionsData.idhStatusId ?? null,
+              educationType,
+            };
+          } catch {
+            return { child, eligible: false, idhStatusId: null, educationType: null };
+          }
+        })
+      );
+
+      const eligibleList = eligibilityResults
+        .filter((result) => result.eligible && result.child.id)
+        .map<EligibleChild>((result) => ({
+          profile: result.child,
+          idhStatusId: result.idhStatusId,
+          educationType: result.educationType,
+        }));
+
+      setEligibleChildren(eligibleList);
+      return eligibleList;
+    } catch (error) {
+      const message =
+        locale === 'ar'
+          ? 'تعذر التحقق من الأطفال الآخرين حالياً. يمكنك متابعة الطلب لطفل واحد.'
+          : 'Unable to check other children right now. You can continue with a single-child submission.';
+      setChildFetchError(message);
+      setEligibleChildren([]);
+      return [];
+    } finally {
+      setIsFetchingChildren(false);
+    }
+  }, [locale, sessionData?.user?.emiratesId, sourcedId]);
+
+  const handleChildSelectionChange = React.useCallback((childId: string, checked: boolean) => {
+    setSelectedChildIds((prev) => {
+      if (checked) {
+        return prev.includes(childId) ? prev : [...prev, childId];
+      }
+      return prev.filter((id) => id !== childId);
+    });
+  }, []);
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setErrorMessage(null);
@@ -731,6 +884,10 @@ export default function UpdateStudentInfoPage() {
 
     setPreparedPayload(payload);
     setShowConfirmDialog(true);
+    setApplyToAllChildren(false);
+    setSelectedChildIds([]);
+    setChildFetchError(null);
+    setEligibleChildren([]);
   };
 
   const handleConfirmSubmit = async () => {
@@ -743,6 +900,7 @@ export default function UpdateStudentInfoPage() {
     const primaryEnrollment = student.enrollment?.find((enrollment) => textOrNull(enrollment.schoolId));
     const schoolId = primaryEnrollment ? textOrNull(primaryEnrollment.schoolId) : null;
     const sourceId = textOrNull(preparedPayload.studentId) ?? textOrNull(student.id);
+    const normalizedSourceId = sourceId ?? '';
 
     const missingFields: string[] = [];
     if (!studentNumber) missingFields.push(locale === 'ar' ? 'رقم الطالب' : 'student number');
@@ -876,9 +1034,16 @@ export default function UpdateStudentInfoPage() {
 
       await submitToIDH(idhPayload);
 
+      const selectedBulkChildren = applyToAllChildren && selectedChildIds.length > 0
+        ? eligibleChildren.filter((entry) => {
+            const childId = textOrNull(entry.profile.id) ?? entry.profile.id;
+            return childId && selectedChildIds.includes(childId) && childId !== normalizedSourceId;
+          })
+        : [];
+
       // IDH submission successful - now update information status via PP API (if endpoint exists)
       try {
-        const statusResponse = await fetch(`/api/PP/information-status/${encodeURIComponent(sourceId ?? '')}`, {
+        const statusResponse = await fetch(`/api/PP/information-status/${encodeURIComponent(normalizedSourceId)}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -926,11 +1091,80 @@ export default function UpdateStudentInfoPage() {
         // Non-blocking: continue even if status update fails
       }
 
+      if (selectedBulkChildren.length > 0) {
+        const bulkSuccessNames: string[] = [];
+        const bulkFailedNames: string[] = [];
+
+        for (const entry of selectedBulkChildren) {
+          const childProfile = entry.profile;
+          const childName = getDisplayName(childProfile, locale);
+          const childId = textOrNull(childProfile.id) ?? childProfile.id;
+          const childStudentNumber = textOrNull(childProfile.studentNumber);
+          const childEnrollment = childProfile.enrollment?.find((enrollment) => textOrNull(enrollment.schoolId));
+          const childSchoolId = childEnrollment ? textOrNull(childEnrollment.schoolId) : null;
+
+          if (!childStudentNumber || !childSchoolId || !childId) {
+            bulkFailedNames.push(childName);
+            continue;
+          }
+
+          const childPayload: IDHStudent = {
+            ...idhPayload,
+            studentNumber: childStudentNumber,
+            schoolId: childSchoolId,
+            sourceId: childId,
+          };
+
+          try {
+            await submitToIDH(childPayload);
+
+            try {
+              const childStatusResponse = await fetch(`/api/PP/information-status/${encodeURIComponent(childId)}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  status: idhPayload.statusId,
+                  isInformationUpdated: true,
+                }),
+              });
+
+              if (!childStatusResponse.ok) {
+                console.warn('Failed to update information status for child', childId);
+              }
+            } catch (childStatusError) {
+              console.warn('Error calling information-status API for child', childId, childStatusError);
+            }
+
+            bulkSuccessNames.push(childName);
+          } catch (childError) {
+            console.error('Bulk IDH submission failed for child', childId, childError);
+            bulkFailedNames.push(childName);
+          }
+        }
+
+        if (bulkSuccessNames.length > 0) {
+          toast.success(
+            locale === 'ar' ? 'تم التحديث للأطفال الآخرين' : 'Other children updated',
+            locale === 'ar'
+              ? `تم تحديث ${bulkSuccessNames.length} من الأطفال المحددين: ${bulkSuccessNames.join('، ')}.`
+              : `Updated ${bulkSuccessNames.length} selected child(ren): ${bulkSuccessNames.join(', ')}.`
+          );
+        }
+
+        if (bulkFailedNames.length > 0) {
+          toast.warning(
+            locale === 'ar' ? 'تعذر تحديث بعض الأطفال' : 'Some children were not updated',
+            locale === 'ar'
+              ? `يرجى المحاولة لاحقًا للأطفال: ${bulkFailedNames.join('، ')}.`
+              : `Please try again for: ${bulkFailedNames.join(', ')}.`
+          );
+        }
+      }
+
       setShowSuccessToast(true);
       setHasUnsavedChanges(false);
 
       // Clear SWR cache for student data and IDH data to ensure fresh data on next load
-      const studentId = sourcedId ?? '';
       await mutate(
         (key) => {
           if (typeof key === 'string') {
@@ -940,6 +1174,12 @@ export default function UpdateStudentInfoPage() {
           }
           return false;
         },
+        undefined,
+        { revalidate: true }
+      );
+
+      await mutate(
+        (key) => typeof key === 'string' && key.startsWith('/api/PP/ChildList'),
         undefined,
         { revalidate: true }
       );
@@ -1033,17 +1273,7 @@ export default function UpdateStudentInfoPage() {
     );
   }
 
-  const displayName = locale === 'ar'
-    ? [student.firstNameArabic, student.middleNameArabic, student.lastNameArabic].filter(Boolean).join(' ')
-    : [
-        student.firstNameEnglish,
-        student.middleNameEnglish,
-        student.thirdNameEnglish,
-        student.fourthNameEnglish,
-        student.familyNameEnglish,
-      ]
-        .filter(Boolean)
-        .join(' ');
+  const displayName = getDisplayName(student, locale);
 
   return (
     <div className={clsx('min-h-screen bg-gradient-to-br from-background/40 via-background to-background/60 relative overflow-hidden', locale === 'ar' && 'direction-rtl')}>
@@ -1978,6 +2208,149 @@ export default function UpdateStudentInfoPage() {
               </div>
             </div>
 
+            <div className="rounded-lg border-2 border-primary/30 bg-card/30 overflow-hidden">
+              <div className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-primary/5 to-transparent border-b border-border/40">
+                <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                  <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8h2a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2v-9a2 2 0 012-2h2" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 12v9" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16h.01M16 16h.01" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8l5-5 5 5" />
+                  </svg>
+                </div>
+                <h4 className="font-semibold text-base text-foreground">
+                  {locale === 'ar' ? 'تطبيق على جميع أطفالي' : 'Apply to all my children'}
+                </h4>
+              </div>
+              <div className="p-4 space-y-3">
+                <label
+                  className={clsx(
+                    'flex items-start gap-3 text-sm font-medium text-foreground cursor-pointer',
+                    locale === 'ar' && 'flex-row-reverse text-right'
+                  )}
+                >
+                  <input
+                    type="checkbox"
+                    checked={applyToAllChildren}
+                    onChange={(event) => {
+                      const { checked } = event.target;
+                      setApplyToAllChildren(checked);
+                      setSelectedChildIds([]);
+                      setChildFetchError(null);
+                      if (checked) {
+                        if (eligibleChildren.length === 0 && !isFetchingChildren) {
+                          void fetchEligibleChildren();
+                        }
+                      }
+                    }}
+                    className="mt-1 h-4 w-4 rounded border-primary/40 text-primary focus:ring-primary"
+                  />
+                  <div className="space-y-1">
+                    <span>
+                      {locale === 'ar'
+                        ? 'تطبيق نفس التحديث على الأطفال المؤهلين'
+                        : 'Apply the same update to eligible children'}
+                    </span>
+                    {!applyToAllChildren && (
+                      <p className="text-xs text-muted-foreground">
+                        {locale === 'ar'
+                          ? 'سيتم التحقق من الأطفال المؤهلين بعد تحديد هذا الخيار.'
+                          : 'Eligibility is checked once you enable this option.'}
+                      </p>
+                    )}
+                  </div>
+                </label>
+
+                {applyToAllChildren && (
+                  <div
+                    className={clsx(
+                      'space-y-2 rounded-lg border border-border/40 bg-background/50 p-3',
+                      locale === 'ar' && 'text-right'
+                    )}
+                  >
+                    {isFetchingChildren && (
+                      <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                        <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span>{locale === 'ar' ? 'جارٍ التحقق من أهلية الأطفال...' : 'Checking which children are eligible...'}</span>
+                      </div>
+                    )}
+
+                    {!isFetchingChildren && childFetchError && (
+                      <p className="text-sm text-destructive">{childFetchError}</p>
+                    )}
+
+                    {!isFetchingChildren && !childFetchError && eligibleChildren.length === 0 && (
+                      <p className="text-sm text-muted-foreground">
+                        {locale === 'ar'
+                          ? 'لا يوجد أطفال آخرون مؤهلون في الوقت الحالي.'
+                          : 'No other children are eligible at the moment.'}
+                      </p>
+                    )}
+
+                    {!isFetchingChildren && !childFetchError && eligibleChildren.length > 0 && (
+                      <>
+                        {eligibleChildren.map((entry) => {
+                          const childId = textOrNull(entry.profile.id) ?? entry.profile.id;
+                          if (!childId) return null;
+                          const name = getDisplayName(entry.profile, locale);
+                          const details: string[] = [];
+                          if (entry.profile.studentNumber) {
+                            details.push(
+                              locale === 'ar'
+                                ? `رقم الطالب: ${entry.profile.studentNumber}`
+                                : `Student #: ${entry.profile.studentNumber}`
+                            );
+                          }
+                          if (entry.educationType) {
+                            details.push(
+                              locale === 'ar'
+                                ? `نوع التعليم: ${entry.educationType}`
+                                : `Education: ${entry.educationType}`
+                            );
+                          }
+                          const isChecked = selectedChildIds.includes(childId);
+                          return (
+                            <label
+                              key={childId}
+                              className={clsx(
+                                'flex items-start gap-3 rounded-md border border-border/30 bg-card/40 px-3 py-2 transition-colors hover:border-primary/40',
+                                locale === 'ar' && 'flex-row-reverse text-right'
+                              )}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={(event) => handleChildSelectionChange(childId, event.target.checked)}
+                                className="mt-1 h-4 w-4 rounded border-primary/40 text-primary focus:ring-primary"
+                              />
+                              <div className="flex-1 space-y-1">
+                                <p className="font-medium text-sm text-foreground">{name}</p>
+                                {details.length > 0 && (
+                                  <p className="text-xs text-muted-foreground">
+                                    {details.join(' | ')}
+                                  </p>
+                                )}
+                              </div>
+                            </label>
+                          );
+                        })}
+                        {selectedChildIds.length === 0 && (
+                          <p className="text-xs text-destructive">
+                            {locale === 'ar'
+                              ? 'يرجى اختيار طفل واحد على الأقل للتطبيق.'
+                              : 'Select at least one child to continue.'}
+                          </p>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
             {/* Warning Message */}
             <div className="rounded-lg border-2 border-amber-500/40 bg-gradient-to-r from-amber-50 to-amber-100/50 dark:from-amber-950/30 dark:to-amber-900/20 p-5">
               <div className={clsx("flex gap-4", locale === 'ar' && 'flex-row-reverse')}>
@@ -2008,7 +2381,7 @@ export default function UpdateStudentInfoPage() {
             <Button
               type="button"
               onClick={handleConfirmSubmit}
-              disabled={isSubmitting}
+              disabled={isSubmitting || (applyToAllChildren && selectedChildIds.length === 0)}
               className="min-w-[200px] h-11"
             >
               {isSubmitting ? (
