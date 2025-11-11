@@ -22,16 +22,15 @@ output: "standalone"
 
 ### 2. **NPM Caching** 🚀
 - **Before**: Fresh `npm install` on every build (~2-3 minutes)
-- **After**: Cached `node_modules` restored from previous builds
+- **After**: Custom PowerShell caching to local disk on build agent
 - **Savings**: ~70-80% reduction in dependency installation time
 - **Time saved**: 1.5-2 minutes per build
 
-**Implementation**:
-```yaml
-- task: Cache@2
-  inputs:
-    key: 'npm | "$(Agent.OS)" | package-lock.json'
-    path: $(Build.SourcesDirectory)/node_modules
+**Implementation** (Self-hosted agent compatible):
+```powershell
+# Creates hash-based cache in C:\BuildCache\PPApp\node_modules
+# Automatically cleans old cache files (keeps last 3)
+# Works on on-premises Azure DevOps Server
 ```
 
 ### 3. **Faster NPM Install**
@@ -48,13 +47,13 @@ output: "standalone"
 
 ### 5. **Fast Compression**
 - **Before**: Default compression
-- **After**: `compressionLevel: 'fastest'`
-- **Time saved**: 30-60 seconds
+- **After**: Standard compression (optimized for self-hosted agents)
+- **Note**: Removed hosted-only features for on-premises compatibility
 
-### 6. **Parallel Artifact Upload**
+### 6. **Artifact Publishing**
 - **Before**: Sequential upload
-- **After**: Parallel upload with 8 threads
-- **Time saved**: 1-2 minutes
+- **After**: Standard upload (self-hosted agent compatible)
+- **Note**: Removed parallel upload settings (hosted-only feature)
 
 ### 7. **Production Dependencies on Deploy**
 - **Before**: Copying all dependencies in artifact
@@ -81,6 +80,14 @@ output: "standalone"
 ---
 
 ## Additional Optimizations to Consider
+
+### Important Note: Self-Hosted Agent Configuration
+This pipeline is optimized for **on-premises Azure DevOps Server** with self-hosted agents. The custom caching solution stores files in `C:\BuildCache\PPApp\node_modules` on the build agent.
+
+**Agent Requirements**:
+- Sufficient disk space on `C:\BuildCache` (recommend 5-10GB)
+- Permissions to create directories and files
+- PowerShell 5.1 or higher
 
 ### Future Improvements:
 

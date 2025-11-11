@@ -6,11 +6,10 @@ Your pipeline is now **60-75% faster** thanks to these optimizations:
 
 ### ✅ Implemented:
 1. ✅ **Next.js Standalone Build** - Reduces artifact size by 80%
-2. ✅ **NPM Dependency Caching** - Skips reinstalling unchanged packages
-3. ✅ **Fast Compression** - Speeds up artifact archiving
-4. ✅ **Parallel Upload** - Uploads artifacts faster
-5. ✅ **Optimized Copying** - Only copies necessary files
-6. ✅ **Production-only Dependencies** - Installs only what's needed on servers
+2. ✅ **Custom NPM Caching** - PowerShell-based caching for self-hosted agents
+3. ✅ **Optimized Copying** - Only copies necessary files
+4. ✅ **Production-only Dependencies** - Installs only what's needed on servers
+5. ✅ **Self-Hosted Agent Compatible** - Works on-premises Azure DevOps Server
 
 ---
 
@@ -47,15 +46,17 @@ Watch for these in the build logs:
 
 ### ✅ Good Signs:
 ```
-Cache restored successfully (npm)
+Cache hit! Restoring node_modules...
 Artifact size: 50-80MB
 npm ci completed in 30-60s
 Build artifacts: .next/standalone
+Cache saved successfully
 ```
 
 ### ⚠️ Watch For:
 ```
-Cache miss - first build after package.json changes is slower (normal)
+Cache miss - first build or after package.json changes (normal)
+Creating cache directory - first time setup
 Installing production dependencies - added step, but overall still faster
 ```
 
@@ -64,11 +65,23 @@ Installing production dependencies - added step, but overall still faster
 ## 🎯 First Build After Changes
 
 **Important**: The first build after these changes will:
-- Create new cache (takes normal time)
+- Create cache directory on build agent (`C:\BuildCache\PPApp\node_modules`)
 - Build standalone output for the first time
+- Cache node_modules for future builds
 - Establish new baseline
 
-**Subsequent builds** will be much faster!
+**Subsequent builds** will be much faster when dependencies haven't changed!
+
+---
+
+## 🔧 Build Agent Requirements
+
+**Ensure your self-hosted agent has**:
+- Disk space: 5-10GB available on C: drive for caching
+- Permissions: Can create folders in `C:\BuildCache`
+- PowerShell: Version 5.1 or higher
+
+The cache is automatically cleaned (keeps last 3 versions only).
 
 ---
 
