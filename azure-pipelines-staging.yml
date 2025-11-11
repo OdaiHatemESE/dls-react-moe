@@ -77,6 +77,13 @@ stages:
                       
                       cd "$(DEPLOY_PATH)"
                       
+                      $pm2Home = Join-Path "$(DEPLOY_PATH)" ".pm2"
+                      if (-not (Test-Path $pm2Home)) {
+                        New-Item -Path $pm2Home -ItemType Directory -Force | Out-Null
+                      }
+                      $env:PM2_HOME = $pm2Home
+                      Write-Host "PM2 home set to $pm2Home"
+
                       Write-Host "Pulling latest from staging-release..."
                       git fetch origin
                       git reset --hard origin/staging-release
@@ -127,9 +134,17 @@ stages:
                       
                       Write-Host "Generating Prisma clients..."
                       npm run prisma:gen:all
+                      if ($LASTEXITCODE -ne 0) {
+                        Write-Error "Prisma client generation failed."
+                        exit 1
+                      }
                       
                       Write-Host "Building application..."
                       npm run build
+                      if ($LASTEXITCODE -ne 0) {
+                        Write-Error "Next.js build failed."
+                        exit 1
+                      }
                       
                       Write-Host "Ensuring PM2 is installed..."
                       $pm2Cmd = Get-Pm2Command
@@ -158,6 +173,10 @@ stages:
                       if (-not $restartSucceeded) {
                         Write-Host "Starting new PM2 process..."
                         & $pm2Cmd start node --name "$(APP_NAME)" -- node_modules/next/dist/bin/next start -p 4200
+                        if ($LASTEXITCODE -ne 0) {
+                          Write-Error "Failed to start PM2 process."
+                          exit 1
+                        }
                       }
 
                       & $pm2Cmd save --force
