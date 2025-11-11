@@ -105,8 +105,8 @@ stages:
                       $pm2Cmd = Get-Pm2Command
                       if ($pm2Cmd) {
                         try {
-                          & $pm2Cmd stop "$(APP_NAME)" 2>$null
-                          & $pm2Cmd delete "$(APP_NAME)" 2>$null
+                          & $pm2Cmd stop ecosystem.config.js 2>$null
+                          & $pm2Cmd delete ecosystem.config.js 2>$null
                         } catch {
                           Write-Host "PM2 stop/delete failed or app not running"
                         }
