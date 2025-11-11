@@ -29,13 +29,23 @@ stages:
             inputs:
               versionSpec: $(NODE_VERSION)
 
-          - task: Cache@2
-            displayName: 'Cache node_modules'
+          - task: PowerShell@2
+            displayName: 'Restore node_modules cache (custom)'
             inputs:
-              key: 'npm | "$(Agent.OS)" | package-lock.json'
-              restoreKeys: |
-                npm | "$(Agent.OS)"
-              path: $(Build.SourcesDirectory)/node_modules
+              targetType: 'inline'
+              script: |
+                $cacheDir = "C:\BuildCache\PPApp\node_modules"
+                $lockFileHash = (Get-FileHash "package-lock.json" -Algorithm MD5).Hash
+                $cacheFile = "$cacheDir\cache-$lockFileHash.zip"
+                
+                if (Test-Path $cacheFile) {
+                  Write-Host "Cache hit! Restoring node_modules..."
+                  Expand-Archive -Path $cacheFile -DestinationPath "." -Force
+                  Write-Host "node_modules restored from cache"
+                } else {
+                  Write-Host "Cache miss - will install fresh and cache after build"
+                }
+              workingDirectory: '$(Build.SourcesDirectory)'
 
           - task: Npm@1
             displayName: 'npm ci (clean install)'
@@ -43,6 +53,34 @@ stages:
               command: 'custom'
               customCommand: 'ci --prefer-offline'
               workingDir: '$(Build.SourcesDirectory)'
+
+          - task: PowerShell@2
+            displayName: 'Save node_modules cache (custom)'
+            inputs:
+              targetType: 'inline'
+              script: |
+                $cacheDir = "C:\BuildCache\PPApp\node_modules"
+                $lockFileHash = (Get-FileHash "package-lock.json" -Algorithm MD5).Hash
+                $cacheFile = "$cacheDir\cache-$lockFileHash.zip"
+                
+                if (-not (Test-Path $cacheFile)) {
+                  Write-Host "Creating cache directory..."
+                  New-Item -Path $cacheDir -ItemType Directory -Force | Out-Null
+                  
+                  Write-Host "Caching node_modules for future builds..."
+                  Compress-Archive -Path "node_modules" -DestinationPath $cacheFile -CompressionLevel Fastest -Force
+                  
+                  # Clean old cache files (keep only last 3)
+                  Get-ChildItem -Path $cacheDir -Filter "cache-*.zip" | 
+                    Sort-Object LastWriteTime -Descending | 
+                    Select-Object -Skip 3 | 
+                    Remove-Item -Force
+                  
+                  Write-Host "Cache saved successfully"
+                } else {
+                  Write-Host "Cache already exists, skipping save"
+                }
+              workingDirectory: '$(Build.SourcesDirectory)'
 
           - task: DownloadSecureFile@1
             displayName: 'Download .env.test'
@@ -121,8 +159,6 @@ stages:
               archiveType: 'zip'
               archiveFile: '$(Build.ArtifactStagingDirectory)/staging-build-$(Build.BuildId).zip'
               replaceExistingArchive: true
-              # Enable fast compression for speed
-              compressionLevel: 'fastest'
 
           - task: PublishBuildArtifacts@1
             displayName: 'Publish artifacts'
@@ -130,9 +166,6 @@ stages:
               PathtoPublish: '$(Build.ArtifactStagingDirectory)/staging-build-$(Build.BuildId).zip'
               ArtifactName: 'staging-drop'
               publishLocation: 'Container'
-              # Enable parallel upload
-              parallel: true
-              parallelCount: 8
 
   - stage: DeployToStagingServer1
     displayName: 'Deploy to Staging Server 1'
