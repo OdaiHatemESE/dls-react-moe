@@ -1,7 +1,7 @@
 module.exports = {
   apps: [
     {
-      name: 'PPApp-staging',
+      name: 'PPApp-st',
       script: 'node_modules/next/dist/bin/next',
       args: 'start -p 4200',
       cwd: './',
