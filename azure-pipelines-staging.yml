@@ -79,8 +79,8 @@ stages:
                       
                       Write-Host "Pulling latest from staging-release..."
                       git fetch origin
-                      git checkout staging-release
-                      git pull origin staging-release
+                      git reset --hard origin/staging-release
+                      git clean -fd
                       
                       Write-Host "Copying environment files..."
                       if (Test-Path ".env.test") {
