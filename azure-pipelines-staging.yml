@@ -10,7 +10,7 @@ pool:
 
 variables:
   NODE_VERSION: '20.x'
-  DEPLOY_PATH: 'C:\inetpub\wwwroot\PPApp'
+  DEPLOY_PATH: 'C:\inetpub\wwwroot\SuperParent\Adeed'
   APP_NAME: 'PPApp-st'
 
 stages:
