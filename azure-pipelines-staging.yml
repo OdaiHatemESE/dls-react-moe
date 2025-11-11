@@ -1,0 +1,681 @@
+# Azure DevOps Pipeline for Staging Deployment
+# Triggers on push to staging-release branch
+# Deploys to two Windows IIS servers
+
+trigger:
+  branches:
+    include:
+      - staging-release
+
+pool:
+  vmImage: 'windows-latest'
+
+variables:
+  NODE_VERSION: '20.x'
+  BUILD_OUTPUT: '$(Build.ArtifactStagingDirectory)/build'
+  IIS_DEPLOY_PATH: 'C:\inetpub\wwwroot\PPApp'
+
+stages:
+  - stage: Build
+    displayName: 'Build Next.js Application'
+    jobs:
+      - job: BuildJob
+        displayName: 'Build and Package'
+        steps:
+          - task: NodeTool@0
+            displayName: 'Install Node.js'
+            inputs:
+              versionSpec: $(NODE_VERSION)
+
+          - task: Npm@1
+            displayName: 'npm install'
+            inputs:
+              command: 'install'
+              workingDir: '$(Build.SourcesDirectory)'
+
+          - task: DownloadSecureFile@1
+            displayName: 'Download .env.test'
+            name: envTest
+            inputs:
+              secureFile: '.env.test'
+
+          - task: PowerShell@2
+            displayName: 'Copy .env.test to workspace'
+            inputs:
+              targetType: 'inline'
+              script: |
+                Copy-Item "$(envTest.secureFilePath)" "$(Build.SourcesDirectory)\.env.test" -Force
+                Write-Host ".env.test copied to workspace"
+              workingDirectory: '$(Build.SourcesDirectory)'
+
+          - task: PowerShell@2
+            displayName: 'Generate Prisma Clients'
+            inputs:
+              targetType: 'inline'
+              script: |
+                npm run prisma:gen:all
+              workingDirectory: '$(Build.SourcesDirectory)'
+
+          - task: PowerShell@2
+            displayName: 'Configure staging environment'
+            inputs:
+              targetType: 'inline'
+              script: |
+                # Copy .env.test to .env.production for Next.js build
+                # Next.js reads .env.production during production builds
+                if (Test-Path ".env.test") {
+                  Copy-Item ".env.test" ".env.production" -Force
+                  Write-Host "Staging environment configured (.env.test -> .env.production)"
+                } else {
+                  Write-Warning ".env.test not found - build will use existing environment variables"
+                }
+              workingDirectory: '$(Build.SourcesDirectory)'
+
+          - task: Npm@1
+            displayName: 'npm build (staging)'
+            inputs:
+              command: 'custom'
+              customCommand: 'run build'
+              workingDir: '$(Build.SourcesDirectory)'
+            env:
+              NODE_ENV: 'production'
+
+          - task: Npm@1
+            displayName: 'Install PM2 globally'
+            inputs:
+              command: 'custom'
+              customCommand: 'install -g pm2'
+
+          - task: CopyFiles@2
+            displayName: 'Copy build artifacts'
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)'
+              Contents: |
+                .next/**
+                public/**
+                node_modules/**
+                package.json
+                package-lock.json
+                next.config.ts
+                prisma/**
+                ecosystem.config.js
+                .env.test
+                !node_modules/.cache/**
+              TargetFolder: '$(BUILD_OUTPUT)'
+              CleanTargetFolder: true
+
+          - task: ArchiveFiles@2
+            displayName: 'Archive build artifacts'
+            inputs:
+              rootFolderOrFile: '$(BUILD_OUTPUT)'
+              includeRootFolder: false
+              archiveType: 'zip'
+              archiveFile: '$(Build.ArtifactStagingDirectory)/staging-build-$(Build.BuildId).zip'
+              replaceExistingArchive: true
+
+          - task: PublishBuildArtifacts@1
+            displayName: 'Publish artifacts'
+            inputs:
+              PathtoPublish: '$(Build.ArtifactStagingDirectory)/staging-build-$(Build.BuildId).zip'
+              ArtifactName: 'staging-drop'
+              publishLocation: 'Container'
+
+  - stage: DeployToStagingServer1
+    displayName: 'Deploy to Staging Server 1'
+    dependsOn: Build
+    condition: succeeded()
+    jobs:
+      - deployment: DeployServer1
+        displayName: 'Deploy to Server 1'
+        environment: 'Staging-Server-1'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: DownloadBuildArtifacts@1
+                  displayName: 'Download build artifacts'
+                  inputs:
+                    buildType: 'current'
+                    downloadType: 'single'
+                    artifactName: 'staging-drop'
+                    downloadPath: '$(System.ArtifactsDirectory)'
+
+                - task: PowerShell@2
+                  displayName: 'Install PM2 globally'
+                  inputs:
+                    targetType: 'inline'
+                    script: |
+                      try {
+                        $pm2Version = & npm list -g pm2 --depth=0 2>&1
+                        if ($LASTEXITCODE -ne 0) {
+                          Write-Host "PM2 not found, installing..."
+                          npm install -g pm2
+                          npm install -g pm2-windows-startup
+                        } else {
+                          Write-Host "PM2 is already installed"
+                        }
+                      } catch {
+                        Write-Host "Installing PM2..."
+                        npm install -g pm2
+                        npm install -g pm2-windows-startup
+                      }
+
+                - task: PowerShell@2
+                  displayName: 'Stop PM2 process'
+                  inputs:
+                    targetType: 'inline'
+                    script: |
+                      try {
+                        pm2 stop PPApp-staging 2>&1 | Out-Null
+                        Write-Host "PM2 process PPApp-staging stopped"
+                      } catch {
+                        Write-Host "PM2 process not running or not found, continuing..."
+                      }
+
+                - task: PowerShell@2
+                  displayName: 'Stop IIS Application Pool'
+                  inputs:
+                    targetType: 'inline'
+                    script: |
+                      Import-Module WebAdministration
+                      $appPoolName = "PPApp"
+                      if (Test-Path IIS:\AppPools\$appPoolName) {
+                        Stop-WebAppPool -Name $appPoolName
+                        Write-Host "App pool $appPoolName stopped"
+                      } else {
+                        Write-Host "App pool $appPoolName not found, skipping stop"
+                      }
+
+                - task: PowerShell@2
+                  displayName: 'Backup existing deployment'
+                  inputs:
+                    targetType: 'inline'
+                    script: |
+                      $deployPath = "$(IIS_DEPLOY_PATH)"
+                      $backupPath = "$(IIS_DEPLOY_PATH)_backup_$(Build.BuildId)"
+                      if (Test-Path $deployPath) {
+                        Write-Host "Creating backup at $backupPath"
+                        Copy-Item -Path $deployPath -Destination $backupPath -Recurse -Force
+                      } else {
+                        Write-Host "No existing deployment to backup"
+                        New-Item -Path $deployPath -ItemType Directory -Force
+                      }
+
+                - task: ExtractFiles@1
+                  displayName: 'Extract build artifacts'
+                  inputs:
+                    archiveFilePatterns: '$(System.ArtifactsDirectory)/staging-drop/staging-build-$(Build.BuildId).zip'
+                    destinationFolder: '$(IIS_DEPLOY_PATH)'
+                    cleanDestinationFolder: false
+                    overwriteExistingFiles: true
+
+                - task: PowerShell@2
+                  displayName: 'Configure environment variables'
+                  inputs:
+                    targetType: 'inline'
+                    script: |
+                      # Create or update web.config with environment variables
+                      $webConfigPath = "$(IIS_DEPLOY_PATH)\web.config"
+                      
+                      $webConfigContent = @"
+                      <?xml version="1.0" encoding="utf-8"?>
+                      <configuration>
+                        <system.webServer>
+                          <handlers>
+                            <add name="iisnode" path="server.js" verb="*" modules="iisnode" />
+                          </handlers>
+                          <rewrite>
+                            <rules>
+                              <rule name="NodeInspector" patternSyntax="ECMAScript" stopProcessing="true">
+                                <match url="^server.js\/debug[\/]?" />
+                              </rule>
+                              <rule name="StaticContent">
+                                <action type="Rewrite" url="public{REQUEST_URI}" />
+                              </rule>
+                              <rule name="DynamicContent">
+                                <conditions>
+                                  <add input="{REQUEST_FILENAME}" matchType="IsFile" negate="True" />
+                                </conditions>
+                                <action type="Rewrite" url="server.js" />
+                              </rule>
+                            </rules>
+                          </rewrite>
+                          <iisnode 
+                            nodeProcessCommandLine="&quot;C:\Program Files\nodejs\node.exe&quot;"
+                            loggingEnabled="true"
+                            logDirectory="iisnode"
+                          />
+                          <security>
+                            <requestFiltering>
+                              <hiddenSegments>
+                                <remove segment="bin" />
+                              </hiddenSegments>
+                            </requestFiltering>
+                          </security>
+                          <httpErrors existingResponse="PassThrough" />
+                        </system.webServer>
+                      </configuration>
+                      "@
+                      
+                      Set-Content -Path $webConfigPath -Value $webConfigContent
+                      Write-Host "web.config created/updated"
+
+                - task: PowerShell@2
+                  displayName: 'Create server.js for IIS'
+                  inputs:
+                    targetType: 'inline'
+                    script: |
+                      $serverJsPath = "$(IIS_DEPLOY_PATH)\server.js"
+                      $serverJsContent = @"
+                      const { createServer } = require('http');
+                      const { parse } = require('url');
+                      const next = require('next');
+                      
+                      const dev = false;
+                      const hostname = 'localhost';
+                      const port = process.env.PORT || 3000;
+                      
+                      const app = next({ dev, hostname, port });
+                      const handle = app.getRequestHandler();
+                      
+                      app.prepare().then(() => {
+                        createServer(async (req, res) => {
+                          try {
+                            const parsedUrl = parse(req.url, true);
+                            await handle(req, res, parsedUrl);
+                          } catch (err) {
+                            console.error('Error occurred handling', req.url, err);
+                            res.statusCode = 500;
+                            res.end('internal server error');
+                          }
+                        }).listen(port, (err) => {
+                          if (err) throw err;
+                          console.log('> Ready on http://' + hostname + ':' + port);
+                        });
+                      });
+                      "@
+                      
+                      Set-Content -Path $serverJsPath -Value $serverJsContent
+                      Write-Host "server.js created for IIS"
+
+                - task: PowerShell@2
+                  displayName: 'Create logs directory'
+                  inputs:
+                    targetType: 'inline'
+                    script: |
+                      $logsPath = "$(IIS_DEPLOY_PATH)\logs"
+                      if (-not (Test-Path $logsPath)) {
+                        New-Item -Path $logsPath -ItemType Directory -Force
+                        Write-Host "Logs directory created"
+                      }
+
+                - task: PowerShell@2
+                  displayName: 'Configure runtime environment (Server 1)'
+                  inputs:
+                    targetType: 'inline'
+                    script: |
+                      cd "$(IIS_DEPLOY_PATH)"
+                      # Copy .env.test to .env.production for runtime
+                      if (Test-Path ".env.test") {
+                        Copy-Item ".env.test" ".env.production" -Force
+                        Write-Host "Runtime environment configured for staging (Server 1)"
+                      } else {
+                        Write-Warning ".env.test not found in deployment"
+                      }
+
+                - task: PowerShell@2
+                  displayName: 'Start application with PM2'
+                  inputs:
+                    targetType: 'inline'
+                    script: |
+                      cd "$(IIS_DEPLOY_PATH)"
+                      
+                      # Delete old PM2 process if exists
+                      pm2 delete PPApp-staging 2>&1 | Out-Null
+                      
+                      # Start with PM2 using ecosystem config
+                      pm2 start ecosystem.config.js --env production
+                      
+                      # Save PM2 process list
+                      pm2 save --force
+                      
+                      # Show status
+                      pm2 list
+                      
+                      Write-Host "Application started with PM2"
+
+                - task: PowerShell@2
+                  displayName: 'Configure PM2 startup'
+                  inputs:
+                    targetType: 'inline'
+                    script: |
+                      try {
+                        pm2-startup install
+                        Write-Host "PM2 startup configured"
+                      } catch {
+                        Write-Host "PM2 startup configuration skipped (may require manual setup)"
+                      }
+
+                - task: PowerShell@2
+                  displayName: 'Start IIS Application Pool'
+                  inputs:
+                    targetType: 'inline'
+                    script: |
+                      Import-Module WebAdministration
+                      $appPoolName = "PPApp"
+                      if (Test-Path IIS:\AppPools\$appPoolName) {
+                        Start-WebAppPool -Name $appPoolName
+                        Write-Host "App pool $appPoolName started"
+                      } else {
+                        Write-Host "App pool $appPoolName not found, creating..."
+                        New-WebAppPool -Name $appPoolName
+                        Start-WebAppPool -Name $appPoolName
+                      }
+                      
+                      # Wait for services to start
+                      Start-Sleep -Seconds 5
+
+                - task: PowerShell@2
+                  displayName: 'Verify deployment'
+                  inputs:
+                    targetType: 'inline'
+                    script: |
+                      $deployPath = "$(IIS_DEPLOY_PATH)"
+                      $requiredFiles = @(".next", "package.json", "server.js", "web.config", "ecosystem.config.js")
+                      
+                      foreach ($file in $requiredFiles) {
+                        $filePath = Join-Path $deployPath $file
+                        if (Test-Path $filePath) {
+                          Write-Host "✓ $file exists"
+                        } else {
+                          Write-Error "✗ $file is missing!"
+                          exit 1
+                        }
+                      }
+                      
+                      # Check PM2 status
+                      Write-Host "`nPM2 Status:"
+                      pm2 list
+                      pm2 info PPApp-staging
+                      
+                      Write-Host "`nDeployment verification completed successfully"
+
+  - stage: DeployToStagingServer2
+    displayName: 'Deploy to Staging Server 2'
+    dependsOn: Build
+    condition: succeeded()
+    jobs:
+      - deployment: DeployServer2
+        displayName: 'Deploy to Server 2'
+        environment: 'Staging-Server-2'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: DownloadBuildArtifacts@1
+                  displayName: 'Download build artifacts'
+                  inputs:
+                    buildType: 'current'
+                    downloadType: 'single'
+                    artifactName: 'staging-drop'
+                    downloadPath: '$(System.ArtifactsDirectory)'
+
+                - task: PowerShell@2
+                  displayName: 'Install PM2 globally'
+                  inputs:
+                    targetType: 'inline'
+                    script: |
+                      try {
+                        $pm2Version = & npm list -g pm2 --depth=0 2>&1
+                        if ($LASTEXITCODE -ne 0) {
+                          Write-Host "PM2 not found, installing..."
+                          npm install -g pm2
+                          npm install -g pm2-windows-startup
+                        } else {
+                          Write-Host "PM2 is already installed"
+                        }
+                      } catch {
+                        Write-Host "Installing PM2..."
+                        npm install -g pm2
+                        npm install -g pm2-windows-startup
+                      }
+
+                - task: PowerShell@2
+                  displayName: 'Stop PM2 process'
+                  inputs:
+                    targetType: 'inline'
+                    script: |
+                      try {
+                        pm2 stop PPApp-staging 2>&1 | Out-Null
+                        Write-Host "PM2 process PPApp-staging stopped"
+                      } catch {
+                        Write-Host "PM2 process not running or not found, continuing..."
+                      }
+
+                - task: PowerShell@2
+                  displayName: 'Stop IIS Application Pool'
+                  inputs:
+                    targetType: 'inline'
+                    script: |
+                      Import-Module WebAdministration
+                      $appPoolName = "PPApp"
+                      if (Test-Path IIS:\AppPools\$appPoolName) {
+                        Stop-WebAppPool -Name $appPoolName
+                        Write-Host "App pool $appPoolName stopped"
+                      } else {
+                        Write-Host "App pool $appPoolName not found, skipping stop"
+                      }
+
+                - task: PowerShell@2
+                  displayName: 'Backup existing deployment'
+                  inputs:
+                    targetType: 'inline'
+                    script: |
+                      $deployPath = "$(IIS_DEPLOY_PATH)"
+                      $backupPath = "$(IIS_DEPLOY_PATH)_backup_$(Build.BuildId)"
+                      if (Test-Path $deployPath) {
+                        Write-Host "Creating backup at $backupPath"
+                        Copy-Item -Path $deployPath -Destination $backupPath -Recurse -Force
+                      } else {
+                        Write-Host "No existing deployment to backup"
+                        New-Item -Path $deployPath -ItemType Directory -Force
+                      }
+
+                - task: ExtractFiles@1
+                  displayName: 'Extract build artifacts'
+                  inputs:
+                    archiveFilePatterns: '$(System.ArtifactsDirectory)/staging-drop/staging-build-$(Build.BuildId).zip'
+                    destinationFolder: '$(IIS_DEPLOY_PATH)'
+                    cleanDestinationFolder: false
+                    overwriteExistingFiles: true
+
+                - task: PowerShell@2
+                  displayName: 'Configure environment variables'
+                  inputs:
+                    targetType: 'inline'
+                    script: |
+                      # Create or update web.config with environment variables
+                      $webConfigPath = "$(IIS_DEPLOY_PATH)\web.config"
+                      
+                      $webConfigContent = @"
+                      <?xml version="1.0" encoding="utf-8"?>
+                      <configuration>
+                        <system.webServer>
+                          <handlers>
+                            <add name="iisnode" path="server.js" verb="*" modules="iisnode" />
+                          </handlers>
+                          <rewrite>
+                            <rules>
+                              <rule name="NodeInspector" patternSyntax="ECMAScript" stopProcessing="true">
+                                <match url="^server.js\/debug[\/]?" />
+                              </rule>
+                              <rule name="StaticContent">
+                                <action type="Rewrite" url="public{REQUEST_URI}" />
+                              </rule>
+                              <rule name="DynamicContent">
+                                <conditions>
+                                  <add input="{REQUEST_FILENAME}" matchType="IsFile" negate="True" />
+                                </conditions>
+                                <action type="Rewrite" url="server.js" />
+                              </rule>
+                            </rules>
+                          </rewrite>
+                          <iisnode 
+                            nodeProcessCommandLine="&quot;C:\Program Files\nodejs\node.exe&quot;"
+                            loggingEnabled="true"
+                            logDirectory="iisnode"
+                          />
+                          <security>
+                            <requestFiltering>
+                              <hiddenSegments>
+                                <remove segment="bin" />
+                              </hiddenSegments>
+                            </requestFiltering>
+                          </security>
+                          <httpErrors existingResponse="PassThrough" />
+                        </system.webServer>
+                      </configuration>
+                      "@
+                      
+                      Set-Content -Path $webConfigPath -Value $webConfigContent
+                      Write-Host "web.config created/updated"
+
+                - task: PowerShell@2
+                  displayName: 'Create server.js for IIS'
+                  inputs:
+                    targetType: 'inline'
+                    script: |
+                      $serverJsPath = "$(IIS_DEPLOY_PATH)\server.js"
+                      $serverJsContent = @"
+                      const { createServer } = require('http');
+                      const { parse } = require('url');
+                      const next = require('next');
+                      
+                      const dev = false;
+                      const hostname = 'localhost';
+                      const port = process.env.PORT || 3000;
+                      
+                      const app = next({ dev, hostname, port });
+                      const handle = app.getRequestHandler();
+                      
+                      app.prepare().then(() => {
+                        createServer(async (req, res) => {
+                          try {
+                            const parsedUrl = parse(req.url, true);
+                            await handle(req, res, parsedUrl);
+                          } catch (err) {
+                            console.error('Error occurred handling', req.url, err);
+                            res.statusCode = 500;
+                            res.end('internal server error');
+                          }
+                        }).listen(port, (err) => {
+                          if (err) throw err;
+                          console.log('> Ready on http://' + hostname + ':' + port);
+                        });
+                      });
+                      "@
+                      
+                      Set-Content -Path $serverJsPath -Value $serverJsContent
+                      Write-Host "server.js created for IIS"
+
+                - task: PowerShell@2
+                  displayName: 'Create logs directory'
+                  inputs:
+                    targetType: 'inline'
+                    script: |
+                      $logsPath = "$(IIS_DEPLOY_PATH)\logs"
+                      if (-not (Test-Path $logsPath)) {
+                        New-Item -Path $logsPath -ItemType Directory -Force
+                        Write-Host "Logs directory created"
+                      }
+
+                - task: PowerShell@2
+                  displayName: 'Configure runtime environment (Server 2)'
+                  inputs:
+                    targetType: 'inline'
+                    script: |
+                      cd "$(IIS_DEPLOY_PATH)"
+                      # Copy .env.test to .env.production for runtime
+                      if (Test-Path ".env.test") {
+                        Copy-Item ".env.test" ".env.production" -Force
+                        Write-Host "Runtime environment configured for staging (Server 2)"
+                      } else {
+                        Write-Warning ".env.test not found in deployment"
+                      }
+
+                - task: PowerShell@2
+                  displayName: 'Start application with PM2'
+                  inputs:
+                    targetType: 'inline'
+                    script: |
+                      cd "$(IIS_DEPLOY_PATH)"
+                      
+                      # Delete old PM2 process if exists
+                      pm2 delete PPApp-staging 2>&1 | Out-Null
+                      
+                      # Start with PM2 using ecosystem config
+                      pm2 start ecosystem.config.js --env production
+                      
+                      # Save PM2 process list
+                      pm2 save --force
+                      
+                      # Show status
+                      pm2 list
+                      
+                      Write-Host "Application started with PM2"
+
+                - task: PowerShell@2
+                  displayName: 'Configure PM2 startup'
+                  inputs:
+                    targetType: 'inline'
+                    script: |
+                      try {
+                        pm2-startup install
+                        Write-Host "PM2 startup configured"
+                      } catch {
+                        Write-Host "PM2 startup configuration skipped (may require manual setup)"
+                      }
+
+                - task: PowerShell@2
+                  displayName: 'Start IIS Application Pool'
+                  inputs:
+                    targetType: 'inline'
+                    script: |
+                      Import-Module WebAdministration
+                      $appPoolName = "PPApp"
+                      if (Test-Path IIS:\AppPools\$appPoolName) {
+                        Start-WebAppPool -Name $appPoolName
+                        Write-Host "App pool $appPoolName started"
+                      } else {
+                        Write-Host "App pool $appPoolName not found, creating..."
+                        New-WebAppPool -Name $appPoolName
+                        Start-WebAppPool -Name $appPoolName
+                      }
+                      
+                      # Wait for services to start
+                      Start-Sleep -Seconds 5
+
+                - task: PowerShell@2
+                  displayName: 'Verify deployment'
+                  inputs:
+                    targetType: 'inline'
+                    script: |
+                      $deployPath = "$(IIS_DEPLOY_PATH)"
+                      $requiredFiles = @(".next", "package.json", "server.js", "web.config", "ecosystem.config.js")
+                      
+                      foreach ($file in $requiredFiles) {
+                        $filePath = Join-Path $deployPath $file
+                        if (Test-Path $filePath) {
+                          Write-Host "✓ $file exists"
+                        } else {
+                          Write-Error "✗ $file is missing!"
+                          exit 1
+                        }
+                      }
+                      
+                      # Check PM2 status
+                      Write-Host "`nPM2 Status:"
+                      pm2 list
+                      pm2 info PPApp-staging
+                      
+                      Write-Host "`nDeployment verification completed successfully"
