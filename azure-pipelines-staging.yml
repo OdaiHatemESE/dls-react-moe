@@ -33,6 +33,16 @@ stages:
                   inputs:
                     targetType: 'inline'
                     script: |
+                      # Log server information
+                      Write-Host "========================================="
+                      Write-Host "Deploying to Server: $env:COMPUTERNAME"
+                      Write-Host "Server IP Addresses:"
+                      Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.IPAddress -ne '127.0.0.1' } | ForEach-Object {
+                        Write-Host "  - $($_.IPAddress) ($($_.InterfaceAlias))"
+                      }
+                      Write-Host "Agent Name: $env:AGENT_NAME"
+                      Write-Host "========================================="
+                      
                       # Ensure deployment directory exists
                       if (-not (Test-Path "$(DEPLOY_PATH)")) {
                         Write-Host "Deployment directory does not exist."
