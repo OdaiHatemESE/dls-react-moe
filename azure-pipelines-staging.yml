@@ -29,10 +29,19 @@ stages:
             inputs:
               versionSpec: $(NODE_VERSION)
 
-          - task: Npm@1
-            displayName: 'npm install'
+          - task: Cache@2
+            displayName: 'Cache node_modules'
             inputs:
-              command: 'install'
+              key: 'npm | "$(Agent.OS)" | package-lock.json'
+              restoreKeys: |
+                npm | "$(Agent.OS)"
+              path: $(Build.SourcesDirectory)/node_modules
+
+          - task: Npm@1
+            displayName: 'npm ci (clean install)'
+            inputs:
+              command: 'custom'
+              customCommand: 'ci --prefer-offline'
               workingDir: '$(Build.SourcesDirectory)'
 
           - task: DownloadSecureFile@1
@@ -89,20 +98,18 @@ stages:
               customCommand: 'install -g pm2'
 
           - task: CopyFiles@2
-            displayName: 'Copy build artifacts'
+            displayName: 'Copy build artifacts (standalone)'
             inputs:
               SourceFolder: '$(Build.SourcesDirectory)'
               Contents: |
-                .next/**
+                .next/standalone/**
+                .next/static/**
                 public/**
-                node_modules/**
                 package.json
-                package-lock.json
                 next.config.ts
                 prisma/**
                 ecosystem.config.js
                 .env.test
-                !node_modules/.cache/**
               TargetFolder: '$(BUILD_OUTPUT)'
               CleanTargetFolder: true
 
@@ -114,6 +121,8 @@ stages:
               archiveType: 'zip'
               archiveFile: '$(Build.ArtifactStagingDirectory)/staging-build-$(Build.BuildId).zip'
               replaceExistingArchive: true
+              # Enable fast compression for speed
+              compressionLevel: 'fastest'
 
           - task: PublishBuildArtifacts@1
             displayName: 'Publish artifacts'
@@ -121,6 +130,9 @@ stages:
               PathtoPublish: '$(Build.ArtifactStagingDirectory)/staging-build-$(Build.BuildId).zip'
               ArtifactName: 'staging-drop'
               publishLocation: 'Container'
+              # Enable parallel upload
+              parallel: true
+              parallelCount: 8
 
   - stage: DeployToStagingServer1
     displayName: 'Deploy to Staging Server 1'
@@ -210,6 +222,20 @@ stages:
                     destinationFolder: '$(IIS_DEPLOY_PATH)'
                     cleanDestinationFolder: false
                     overwriteExistingFiles: true
+
+                - task: PowerShell@2
+                  displayName: 'Install production dependencies'
+                  inputs:
+                    targetType: 'inline'
+                    script: |
+                      cd "$(IIS_DEPLOY_PATH)\.next\standalone"
+                      if (Test-Path "package.json") {
+                        Write-Host "Installing production dependencies..."
+                        npm ci --omit=dev --prefer-offline
+                        Write-Host "Production dependencies installed"
+                      } else {
+                        Write-Warning "No package.json found in standalone build"
+                      }
 
                 - task: PowerShell@2
                   displayName: 'Configure environment variables'
@@ -490,6 +516,20 @@ stages:
                     destinationFolder: '$(IIS_DEPLOY_PATH)'
                     cleanDestinationFolder: false
                     overwriteExistingFiles: true
+
+                - task: PowerShell@2
+                  displayName: 'Install production dependencies'
+                  inputs:
+                    targetType: 'inline'
+                    script: |
+                      cd "$(IIS_DEPLOY_PATH)\.next\standalone"
+                      if (Test-Path "package.json") {
+                        Write-Host "Installing production dependencies..."
+                        npm ci --omit=dev --prefer-offline
+                        Write-Host "Production dependencies installed"
+                      } else {
+                        Write-Warning "No package.json found in standalone build"
+                      }
 
                 - task: PowerShell@2
                   displayName: 'Configure environment variables'
