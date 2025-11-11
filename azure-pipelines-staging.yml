@@ -8,7 +8,9 @@ trigger:
       - staging-release
 
 pool:
-  vmImage: 'windows-latest'
+  name: 'Default'
+  demands:
+  - agent.os -equals Windows_NT
 
 variables:
   NODE_VERSION: '20.x'

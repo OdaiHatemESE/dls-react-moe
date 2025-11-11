@@ -1,5 +1,7 @@
 # Azure DevOps Setup Guide - Quick Start
 
+> **💡 First Time Setup**: When you first run the pipeline, Azure DevOps will prompt you to authorize resources (Agent Pool, Environments, Secure Files). Simply click **"Permit"** or **"Authorize"** for each prompt. This is a one-time security authorization.
+
 ## Step 1: Upload .env Files to Azure DevOps Secure Files
 
 Since `.env.test` and `.env.production` contain secrets, they should NOT be committed to your repository. Instead, you'll store them securely in Azure DevOps Library.
@@ -190,6 +192,30 @@ Get-Content "C:\inetpub\wwwroot\PPApp\logs\pm2-out.log" -Tail 50
 ---
 
 ## Common Issues & Solutions
+
+### Issue: "Could not find a pool with name Azure Pipelines"
+**Solution**: This happens when the pipeline needs authorization. Follow these steps:
+
+1. **Go to Azure DevOps** → Your Project → **Project Settings** (bottom left)
+2. **Click "Agent pools"** under Pipelines
+3. **Click "Azure Pipelines"** (the Microsoft-hosted pool)
+4. **Click "Security"** tab
+5. **Add your pipeline or project** with appropriate permissions
+6. **OR** Grant permissions when prompted:
+   - Go back to your pipeline run
+   - Click "View" on the authorization error
+   - Click "Permit" to authorize the pool for this pipeline
+
+**Alternative**: Update your pipeline to explicitly request permission:
+- When you first run the pipeline, Azure DevOps will ask for permission to use resources
+- Click "Permit" for each resource (Agent pool, Environments, Secure files)
+
+### Issue: "Secure file not authorized"
+**Solution**: 
+1. Go to Pipelines → Library → Secure files
+2. Click on `.env.test`
+3. Check "Authorize for use in all pipelines"
+4. Or authorize for specific pipeline only
 
 ### Issue: Pipeline can't find .env.test
 **Solution**: Make sure you uploaded the secure file or created the variable group correctly.
