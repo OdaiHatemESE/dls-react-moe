@@ -10,104 +10,12 @@ pool:
 
 variables:
   NODE_VERSION: '20.x'
-  BUILD_ARTIFACT_NAME: 'staging-drop'
-  BUILD_ZIP_NAME: 'staging-build-$(Build.BuildId).zip'
-  BUILD_OUTPUT_DIR: '$(Build.ArtifactStagingDirectory)/app'
-  IIS_DEPLOY_PATH: 'C:\inetpub\wwwroot\PPApp'
+  DEPLOY_PATH: 'C:\inetpub\wwwroot\PPApp'
   APP_NAME: 'PPApp-staging'
-  APP_PORT: '4200'
 
 stages:
-  # =========================
-  # Build Stage
-  # =========================
-  - stage: Build
-    displayName: 'Build Next.js Application'
-    jobs:
-      - job: BuildJob
-        displayName: 'Build and Package'
-        steps:
-          - task: NodeTool@0
-            displayName: 'Install Node.js'
-            inputs:
-              versionSpec: '$(NODE_VERSION)'
-
-          - task: Npm@1
-            displayName: 'npm ci'
-            inputs:
-              command: 'custom'
-              customCommand: 'ci'
-              workingDir: '$(Build.SourcesDirectory)'
-
-          - task: PowerShell@2
-            displayName: 'Generate Prisma Clients'
-            inputs:
-              targetType: 'inline'
-              script: |
-                npm run prisma:gen:all
-            workingDirectory: '$(Build.SourcesDirectory)'
-
-          # Secure env for BUILD (staging)
-          - task: DownloadSecureFile@1
-            displayName: 'Download .env.test for build'
-            name: envTestBuild
-            inputs:
-              secureFile: '.env.test'
-
-          - task: PowerShell@2
-            displayName: 'Configure env for build'
-            inputs:
-              targetType: 'inline'
-              script: |
-                Copy-Item "$(envTestBuild.secureFilePath)" "$(Build.SourcesDirectory)\.env.production" -Force
-                Write-Host ".env.production prepared for staging build"
-            workingDirectory: '$(Build.SourcesDirectory)'
-
-          - task: Npm@1
-            displayName: 'npm run build (Next.js standalone)'
-            inputs:
-              command: 'custom'
-              customCommand: 'run build'
-              workingDir: '$(Build.SourcesDirectory)'
-            env:
-              NODE_ENV: 'production'
-
-          # Collect standalone runtime bundle
-          - task: CopyFiles@2
-            displayName: 'Copy build artifacts'
-            inputs:
-              SourceFolder: '$(Build.SourcesDirectory)'
-              Contents: |
-                .next/standalone/**
-                .next/static/**
-                public/**
-                prisma/**
-              TargetFolder: '$(BUILD_OUTPUT_DIR)'
-              CleanTargetFolder: true
-
-          - task: ArchiveFiles@2
-            displayName: 'Archive build artifacts'
-            inputs:
-              rootFolderOrFile: '$(BUILD_OUTPUT_DIR)'
-              includeRootFolder: false
-              archiveType: 'zip'
-              archiveFile: '$(Build.ArtifactStagingDirectory)/$(BUILD_ZIP_NAME)'
-              replaceExistingArchive: true
-
-          - task: PublishBuildArtifacts@1
-            displayName: 'Publish artifacts'
-            inputs:
-              PathtoPublish: '$(Build.ArtifactStagingDirectory)/$(BUILD_ZIP_NAME)'
-              ArtifactName: '$(BUILD_ARTIFACT_NAME)'
-              publishLocation: 'Container'
-
-  # =========================
-  # Deploy to Staging Server 1
-  # =========================
-  - stage: DeployToStagingServer1
-    displayName: 'Deploy to Staging Server 1'
-    dependsOn: Build
-    condition: succeeded()
+  - stage: DeployServer1
+    displayName: 'Deploy to Server 1'
     jobs:
       - deployment: DeployServer1
         displayName: 'Deploy to Server 1'
@@ -116,179 +24,41 @@ stages:
           runOnce:
             deploy:
               steps:
-                - task: DownloadBuildArtifacts@1
-                  displayName: 'Download build artifacts'
-                  inputs:
-                    buildType: 'current'
-                    downloadType: 'single'
-                    artifactName: '$(BUILD_ARTIFACT_NAME)'
-                    downloadPath: '$(System.ArtifactsDirectory)'
+                - checkout: self
+                  clean: false
+                  fetchDepth: 1
 
                 - task: PowerShell@2
-                  displayName: 'Ensure PM2 installed'
+                  displayName: 'Pull latest from staging-release & rebuild'
                   inputs:
                     targetType: 'inline'
                     script: |
-                      try {
-                        npm list -g pm2 --depth=0 2>&1 | Out-Null
-                        if ($LASTEXITCODE -ne 0) {
-                          Write-Host "PM2 not found, installing..."
-                          npm install -g pm2
-                          npm install -g pm2-windows-startup
-                        } else {
-                          Write-Host "PM2 already installed"
-                        }
-                      } catch {
-                        Write-Host "Installing PM2..."
-                        npm install -g pm2
-                        npm install -g pm2-windows-startup
-                      }
-
-                - task: PowerShell@2
-                  displayName: 'Stop existing PM2 app'
-                  inputs:
-                    targetType: 'inline'
-                    script: |
-                      pm2 delete "$(APP_NAME)" 2>&1 | Out-Null
-                      Write-Host "Stopped existing $(APP_NAME) if it was running"
-
-                - task: PowerShell@2
-                  displayName: 'Backup existing deployment'
-                  inputs:
-                    targetType: 'inline'
-                    script: |
-                      $deployPath = "$(IIS_DEPLOY_PATH)"
-                      if (Test-Path $deployPath) {
-                        $backupPath = "${deployPath}_backup_$(Build.BuildId)"
-                        Write-Host "Creating backup at $backupPath"
-                        Copy-Item -Path $deployPath -Destination $backupPath -Recurse -Force
-                      } else {
-                        Write-Host "No existing deployment, creating directory..."
-                        New-Item -Path $deployPath -ItemType Directory -Force | Out-Null
-                      }
-
-                - task: ExtractFiles@1
-                  displayName: 'Extract build artifacts'
-                  inputs:
-                    archiveFilePatterns: '$(System.ArtifactsDirectory)/$(BUILD_ARTIFACT_NAME)/$(BUILD_ZIP_NAME)'
-                    destinationFolder: '$(IIS_DEPLOY_PATH)'
-                    cleanDestinationFolder: true
-                    overwriteExistingFiles: true
-
-                # Runtime env (staging) on server, not baked in artifact
-                - task: DownloadSecureFile@1
-                  displayName: 'Download .env.test for runtime'
-                  name: envTestRuntime1
-                  inputs:
-                    secureFile: '.env.test'
-
-                - task: PowerShell@2
-                  displayName: 'Place runtime env file'
-                  inputs:
-                    targetType: 'inline'
-                    script: |
-                      Copy-Item "$(envTestRuntime1.secureFilePath)" "$(IIS_DEPLOY_PATH)\.env" -Force
-                      Write-Host ".env placed for runtime (Server 1)"
-
-                - task: PowerShell@2
-                  displayName: 'Install production dependencies'
-                  inputs:
-                    targetType: 'inline'
-                    script: |
-                      $standalonePath = "$(IIS_DEPLOY_PATH)\.next\standalone"
-                      if (Test-Path (Join-Path $standalonePath "package.json")) {
-                        Write-Host "Installing production dependencies in $standalonePath ..."
-                        cd $standalonePath
-                        npm ci --omit=dev
-                        Write-Host "Production dependencies installed"
-                      } else {
-                        Write-Error "package.json not found in .next/standalone. Check your Next.js standalone build."
-                        exit 1
-                      }
-
-                - task: PowerShell@2
-                  displayName: 'Configure IIS web.config (reverse proxy -> 4200)'
-                  inputs:
-                    targetType: 'inline'
-                    script: |
-                      $webConfigPath = "$(IIS_DEPLOY_PATH)\web.config"
-                      $webConfigContent = @"
-                      <?xml version="1.0" encoding="utf-8"?>
-                      <configuration>
-                        <system.webServer>
-                          <rewrite>
-                            <rules>
-                              <rule name="ReverseProxyToNode" stopProcessing="true">
-                                <match url="(.*)" />
-                                <action type="Rewrite" url="http://localhost:$(APP_PORT)/{R:1}" logRewrittenUrl="true" />
-                              </rule>
-                            </rules>
-                          </rewrite>
-                          <httpErrors existingResponse="PassThrough" />
-                        </system.webServer>
-                      </configuration>
-                      "@
-                      Set-Content -Path $webConfigPath -Value $webConfigContent -Encoding UTF8
-                      Write-Host "web.config updated to proxy to http://localhost:$(APP_PORT)"
-
-                - task: PowerShell@2
-                  displayName: 'Start application with PM2 (Server 1)'
-                  inputs:
-                    targetType: 'inline'
-                    script: |
-                      $standalonePath = "$(IIS_DEPLOY_PATH)\.next\standalone"
-                      $serverFile = Join-Path $standalonePath "server.js"
-
-                      if (-not (Test-Path $serverFile)) {
-                        Write-Error "Standalone server.js not found at $serverFile"
-                        exit 1
-                      }
-
-                      cd $standalonePath
-
-                      $env:PORT = "$(APP_PORT)"
-                      $env:NODE_ENV = "production"
-
-                      pm2 start $serverFile --name "$(APP_NAME)" --time
+                      cd "$(DEPLOY_PATH)"
+                      
+                      Write-Host "Pulling latest from staging-release..."
+                      git fetch origin
+                      git checkout staging-release
+                      git pull origin staging-release
+                      
+                      Write-Host "Installing dependencies..."
+                      npm ci
+                      
+                      Write-Host "Generating Prisma clients..."
+                      npm run prisma:gen:all
+                      
+                      Write-Host "Building application..."
+                      npm run build
+                      
+                      Write-Host "Restarting PM2..."
+                      pm2 restart "$(APP_NAME)" || pm2 start npm --name "$(APP_NAME)" -- start
                       pm2 save --force
-
-                      Write-Host "Started $(APP_NAME) on port $(APP_PORT)"
+                      
+                      Write-Host "Deployment complete!"
                       pm2 list
 
-                - task: PowerShell@2
-                  displayName: 'Verify deployment (Server 1)'
-                  inputs:
-                    targetType: 'inline'
-                    script: |
-                      $deployPath = "$(IIS_DEPLOY_PATH)"
-                      $paths = @(
-                        ".next",
-                        ".next\standalone",
-                        ".next\static",
-                        "web.config"
-                      )
-
-                      foreach ($p in $paths) {
-                        $full = Join-Path $deployPath $p
-                        if (Test-Path $full) {
-                          Write-Host "✓ Found $p"
-                        } else {
-                          Write-Error "✗ Missing $p"
-                          exit 1
-                        }
-                      }
-
-                      Write-Host "`nPM2 status:"
-                      pm2 list
-                      pm2 info "$(APP_NAME)"
-
-  # =========================
-  # Deploy to Staging Server 2
-  # =========================
-  - stage: DeployToStagingServer2
-    displayName: 'Deploy to Staging Server 2'
-    dependsOn: Build
-    condition: succeeded()
+  - stage: DeployServer2
+    displayName: 'Deploy to Server 2'
+    dependsOn: DeployServer1
     jobs:
       - deployment: DeployServer2
         displayName: 'Deploy to Server 2'
@@ -297,167 +67,34 @@ stages:
           runOnce:
             deploy:
               steps:
-                - task: DownloadBuildArtifacts@1
-                  displayName: 'Download build artifacts'
-                  inputs:
-                    buildType: 'current'
-                    downloadType: 'single'
-                    artifactName: '$(BUILD_ARTIFACT_NAME)'
-                    downloadPath: '$(System.ArtifactsDirectory)'
+                - checkout: self
+                  clean: false
+                  fetchDepth: 1
 
                 - task: PowerShell@2
-                  displayName: 'Ensure PM2 installed'
+                  displayName: 'Pull latest from staging-release & rebuild'
                   inputs:
                     targetType: 'inline'
                     script: |
-                      try {
-                        npm list -g pm2 --depth=0 2>&1 | Out-Null
-                        if ($LASTEXITCODE -ne 0) {
-                          Write-Host "PM2 not found, installing..."
-                          npm install -g pm2
-                          npm install -g pm2-windows-startup
-                        } else {
-                          Write-Host "PM2 already installed"
-                        }
-                      } catch {
-                        Write-Host "Installing PM2..."
-                        npm install -g pm2
-                        npm install -g pm2-windows-startup
-                      }
-
-                - task: PowerShell@2
-                  displayName: 'Stop existing PM2 app'
-                  inputs:
-                    targetType: 'inline'
-                    script: |
-                      pm2 delete "$(APP_NAME)" 2>&1 | Out-Null
-                      Write-Host "Stopped existing $(APP_NAME) if it was running"
-
-                - task: PowerShell@2
-                  displayName: 'Backup existing deployment'
-                  inputs:
-                    targetType: 'inline'
-                    script: |
-                      $deployPath = "$(IIS_DEPLOY_PATH)"
-                      if (Test-Path $deployPath) {
-                        $backupPath = "${deployPath}_backup_$(Build.BuildId)"
-                        Write-Host "Creating backup at $backupPath"
-                        Copy-Item -Path $deployPath -Destination $backupPath -Recurse -Force
-                      } else {
-                        Write-Host "No existing deployment, creating directory..."
-                        New-Item -Path $deployPath -ItemType Directory -Force | Out-Null
-                      }
-
-                - task: ExtractFiles@1
-                  displayName: 'Extract build artifacts'
-                  inputs:
-                    archiveFilePatterns: '$(System.ArtifactsDirectory)/$(BUILD_ARTIFACT_NAME)/$(BUILD_ZIP_NAME)'
-                    destinationFolder: '$(IIS_DEPLOY_PATH)'
-                    cleanDestinationFolder: true
-                    overwriteExistingFiles: true
-
-                - task: DownloadSecureFile@1
-                  displayName: 'Download .env.test for runtime'
-                  name: envTestRuntime2
-                  inputs:
-                    secureFile: '.env.test'
-
-                - task: PowerShell@2
-                  displayName: 'Place runtime env file'
-                  inputs:
-                    targetType: 'inline'
-                    script: |
-                      Copy-Item "$(envTestRuntime2.secureFilePath)" "$(IIS_DEPLOY_PATH)\.env" -Force
-                      Write-Host ".env placed for runtime (Server 2)"
-
-                - task: PowerShell@2
-                  displayName: 'Install production dependencies'
-                  inputs:
-                    targetType: 'inline'
-                    script: |
-                      $standalonePath = "$(IIS_DEPLOY_PATH)\.next\standalone"
-                      if (Test-Path (Join-Path $standalonePath "package.json")) {
-                        Write-Host "Installing production dependencies in $standalonePath ..."
-                        cd $standalonePath
-                        npm ci --omit=dev
-                        Write-Host "Production dependencies installed"
-                      } else {
-                        Write-Error "package.json not found in .next/standalone. Check your Next.js standalone build."
-                        exit 1
-                      }
-
-                - task: PowerShell@2
-                  displayName: 'Configure IIS web.config (reverse proxy -> 4200)'
-                  inputs:
-                    targetType: 'inline'
-                    script: |
-                      $webConfigPath = "$(IIS_DEPLOY_PATH)\web.config"
-                      $webConfigContent = @"
-                      <?xml version="1.0" encoding="utf-8"?>
-                      <configuration>
-                        <system.webServer>
-                          <rewrite>
-                            <rules>
-                              <rule name="ReverseProxyToNode" stopProcessing="true">
-                                <match url="(.*)" />
-                                <action type="Rewrite" url="http://localhost:$(APP_PORT)/{R:1}" logRewrittenUrl="true" />
-                              </rule>
-                            </rules>
-                          </rewrite>
-                          <httpErrors existingResponse="PassThrough" />
-                        </system.webServer>
-                      </configuration>
-                      "@
-                      Set-Content -Path $webConfigPath -Value $webConfigContent -Encoding UTF8
-                      Write-Host "web.config updated to proxy to http://localhost:$(APP_PORT)"
-
-                - task: PowerShell@2
-                  displayName: 'Start application with PM2 (Server 2)'
-                  inputs:
-                    targetType: 'inline'
-                    script: |
-                      $standalonePath = "$(IIS_DEPLOY_PATH)\.next\standalone"
-                      $serverFile = Join-Path $standalonePath "server.js"
-
-                      if (-not (Test-Path $serverFile)) {
-                        Write-Error "Standalone server.js not found at $serverFile"
-                        exit 1
-                      }
-
-                      cd $standalonePath
-
-                      $env:PORT = "$(APP_PORT)"
-                      $env:NODE_ENV = "production"
-
-                      pm2 start $serverFile --name "$(APP_NAME)" --time
+                      cd "$(DEPLOY_PATH)"
+                      
+                      Write-Host "Pulling latest from staging-release..."
+                      git fetch origin
+                      git checkout staging-release
+                      git pull origin staging-release
+                      
+                      Write-Host "Installing dependencies..."
+                      npm ci
+                      
+                      Write-Host "Generating Prisma clients..."
+                      npm run prisma:gen:all
+                      
+                      Write-Host "Building application..."
+                      npm run build
+                      
+                      Write-Host "Restarting PM2..."
+                      pm2 restart "$(APP_NAME)" || pm2 start npm --name "$(APP_NAME)" -- start
                       pm2 save --force
-
-                      Write-Host "Started $(APP_NAME) on port $(APP_PORT)"
+                      
+                      Write-Host "Deployment complete!"
                       pm2 list
-
-                - task: PowerShell@2
-                  displayName: 'Verify deployment (Server 2)'
-                  inputs:
-                    targetType: 'inline'
-                    script: |
-                      $deployPath = "$(IIS_DEPLOY_PATH)"
-                      $paths = @(
-                        ".next",
-                        ".next\standalone",
-                        ".next\static",
-                        "web.config"
-                      )
-
-                      foreach ($p in $paths) {
-                        $full = Join-Path $deployPath $p
-                        if (Test-Path $full) {
-                          Write-Host "✓ Found $p"
-                        } else {
-                          Write-Error "✗ Missing $p"
-                          exit 1
-                        }
-                      }
-
-                      Write-Host "`nPM2 status:"
-                      pm2 list
-                      pm2 info "$(APP_NAME)"
