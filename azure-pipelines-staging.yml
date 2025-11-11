@@ -30,6 +30,31 @@ stages:
                   inputs:
                     targetType: 'inline'
                     script: |
+                      function Get-Pm2Command {
+                        try {
+                          $pm2Cmd = (Get-Command pm2.cmd -ErrorAction Stop).Source
+                          return $pm2Cmd
+                        } catch {
+                          $candidates = @()
+                          if ($env:APPDATA) {
+                            $candidates += (Join-Path $env:APPDATA "npm\pm2.cmd")
+                          }
+                          try {
+                            $prefix = npm config get prefix 2>$null
+                            if ($prefix) {
+                              $candidates += (Join-Path $prefix "pm2.cmd")
+                            }
+                          } catch {}
+                          $candidates += "C:\Program Files\nodejs\pm2.cmd"
+                          foreach ($candidate in $candidates | Select-Object -Unique) {
+                            if ($candidate -and (Test-Path $candidate)) {
+                              return $candidate
+                            }
+                          }
+                        }
+                        return $null
+                      }
+
                       # Log server information
                       Write-Host "========================================="
                       Write-Host "Deploying to Server: $env:COMPUTERNAME"
@@ -68,24 +93,37 @@ stages:
                       }
                       
                       Write-Host "Stopping PM2 processes to release file locks..."
-                      try {
-                        & npm list -g pm2 2>&1 | Out-Null
-                        if ($LASTEXITCODE -eq 0) {
-                          & pm2 stop all
-                          Start-Sleep -Seconds 2
+                      $pm2Cmd = Get-Pm2Command
+                      if ($pm2Cmd) {
+                        try {
+                          & $pm2Cmd stop "$(APP_NAME)" 2>$null
+                          & $pm2Cmd delete "$(APP_NAME)" 2>$null
+                        } catch {
+                          Write-Host "PM2 stop/delete failed or app not running"
                         }
-                      } catch {
-                        Write-Host "PM2 not available or no processes running"
+                      } else {
+                        Write-Host "PM2 not available; skipping stop/delete"
                       }
+                      Get-Process node -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+                      Start-Sleep -Seconds 1
                       
                       Write-Host "Cleaning node_modules..."
                       if (Test-Path "node_modules") {
-                        Remove-Item -Path "node_modules" -Recurse -Force -ErrorAction SilentlyContinue
-                        Start-Sleep -Seconds 1
+                        cmd /c rmdir /s /q node_modules 2>$null
+                        Start-Sleep -Seconds 2
                       }
                       
                       Write-Host "Installing dependencies..."
                       npm ci
+                      if ($LASTEXITCODE -ne 0) {
+                        Write-Host "npm ci failed; retrying once after cleaning npm cache..."
+                        npm cache clean --force
+                        npm ci
+                        if ($LASTEXITCODE -ne 0) {
+                          Write-Error "npm ci failed after retry. Aborting deployment."
+                          exit 1
+                        }
+                      }
                       
                       Write-Host "Generating Prisma clients..."
                       npm run prisma:gen:all
@@ -94,26 +132,35 @@ stages:
                       npm run build
                       
                       Write-Host "Ensuring PM2 is installed..."
-                      $pm2Path = Get-Command pm2 -ErrorAction SilentlyContinue
-                      if (-not $pm2Path) {
+                      $pm2Cmd = Get-Pm2Command
+                      if (-not $pm2Cmd) {
                         Write-Host "Installing PM2 globally..."
                         npm install -g pm2
-                        # Refresh PATH to include npm global packages
-                        $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+                        $pm2Cmd = Get-Pm2Command
                       }
-                      
+                      if (-not $pm2Cmd) {
+                        Write-Error "Unable to locate pm2 executable even after installation."
+                        exit 1
+                      }
+
                       Write-Host "Managing PM2 process..."
-                      $processExists = pm2 list | Select-String -Pattern "$(APP_NAME)" -Quiet
-                      
-                      if ($processExists) {
-                        Write-Host "Restarting existing PM2 process..."
-                        pm2 restart "$(APP_NAME)"
-                      } else {
-                        Write-Host "Starting new PM2 process..."
-                        pm2 start node --name "$(APP_NAME)" -- node_modules/next/dist/bin/next start -p 4200
+                      $restartSucceeded = $false
+                      try {
+                        & $pm2Cmd restart "$(APP_NAME)" --update-env
+                        if ($LASTEXITCODE -eq 0) {
+                          $restartSucceeded = $true
+                          Write-Host "Restarted existing PM2 process."
+                        }
+                      } catch {
+                        Write-Host "PM2 restart failed or process not found."
                       }
-                      
-                      pm2 save --force
-                      
+
+                      if (-not $restartSucceeded) {
+                        Write-Host "Starting new PM2 process..."
+                        & $pm2Cmd start node --name "$(APP_NAME)" -- node_modules/next/dist/bin/next start -p 4200
+                      }
+
+                      & $pm2Cmd save --force
+                      & $pm2Cmd status
+
                       Write-Host "Deployment complete!"
-                      pm2 list
