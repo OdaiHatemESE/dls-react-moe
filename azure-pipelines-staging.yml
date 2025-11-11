@@ -11,7 +11,7 @@ pool:
 variables:
   NODE_VERSION: '20.x'
   DEPLOY_PATH: 'C:\inetpub\wwwroot\PPApp'
-  APP_NAME: 'PPApp-staging'
+  APP_NAME: 'PPApp-st'
 
 stages:
   - stage: DeployServer1
@@ -35,11 +35,12 @@ stages:
                     script: |
                       # Ensure deployment directory exists
                       if (-not (Test-Path "$(DEPLOY_PATH)")) {
-                        Write-Host "Creating deployment directory..."
-                        New-Item -Path "$(DEPLOY_PATH)" -ItemType Directory -Force | Out-Null
-                        
-                        Write-Host "Cloning repository..."
-                        git clone --branch staging-release $(Build.Repository.Uri) "$(DEPLOY_PATH)"
+                        Write-Host "Deployment directory does not exist."
+                        Write-Host "Please manually create C:\inetpub\wwwroot\PPApp and clone the repository:"
+                        Write-Host "  mkdir C:\inetpub\wwwroot\PPApp"
+                        Write-Host "  git clone --branch staging-release $(Build.Repository.Uri) C:\inetpub\wwwroot\PPApp"
+                        Write-Error "Deployment directory not found. Manual setup required."
+                        exit 1
                       }
                       
                       cd "$(DEPLOY_PATH)"
@@ -49,63 +50,15 @@ stages:
                       git checkout staging-release
                       git pull origin staging-release
                       
-                      Write-Host "Installing dependencies..."
-                      npm ci
-                      
-                      Write-Host "Generating Prisma clients..."
-                      npm run prisma:gen:all
-                      
-                      Write-Host "Building application..."
-                      npm run build
-                      
-                      Write-Host "Restarting PM2..."
-                      try {
-                        pm2 restart "$(APP_NAME)"
-                        Write-Host "Restarted existing PM2 process"
-                      } catch {
-                        Write-Host "Starting new PM2 process..."
-                        pm2 start npm --name "$(APP_NAME)" -- start
+                      Write-Host "Copying environment files..."
+                      if (Test-Path ".env.test") {
+                        Copy-Item ".env.test" ".env.production" -Force
+                        Copy-Item ".env.test" ".env.local" -Force
+                        Copy-Item ".env.test" ".env" -Force
+                        Write-Host "Environment files copied (.env.production, .env.local, .env)"
+                      } else {
+                        Write-Warning ".env.test not found - ensure it exists in the repository"
                       }
-                      pm2 save --force
-                      
-                      Write-Host "Deployment complete!"
-                      pm2 list
-
-  - stage: DeployServer2
-    displayName: 'Deploy to Server 2'
-    dependsOn: DeployServer1
-    jobs:
-      - deployment: DeployServer2
-        displayName: 'Deploy to Server 2'
-        environment: 'Staging-Server-2'
-        strategy:
-          runOnce:
-            deploy:
-              steps:
-                - checkout: self
-                  clean: false
-                  fetchDepth: 1
-
-                - task: PowerShell@2
-                  displayName: 'Pull latest from staging-release & rebuild'
-                  inputs:
-                    targetType: 'inline'
-                    script: |
-                      # Ensure deployment directory exists
-                      if (-not (Test-Path "$(DEPLOY_PATH)")) {
-                        Write-Host "Creating deployment directory..."
-                        New-Item -Path "$(DEPLOY_PATH)" -ItemType Directory -Force | Out-Null
-                        
-                        Write-Host "Cloning repository..."
-                        git clone --branch staging-release $(Build.Repository.Uri) "$(DEPLOY_PATH)"
-                      }
-                      
-                      cd "$(DEPLOY_PATH)"
-                      
-                      Write-Host "Pulling latest from staging-release..."
-                      git fetch origin
-                      git checkout staging-release
-                      git pull origin staging-release
                       
                       Write-Host "Installing dependencies..."
                       npm ci
