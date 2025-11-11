@@ -22,7 +22,7 @@ export function StudentsTable() {
   const [search, setSearch] = useState("");
   const limit = 20;
 
-  const { data, isLoading } = useSWR(
+  const { data, isLoading } = useSWR<any>(
     `/api/admin/analytics/students?page=${page}&limit=${limit}&search=${search}`,
     jsonFetcher
   );

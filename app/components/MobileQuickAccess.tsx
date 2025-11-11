@@ -30,13 +30,13 @@ export default function MobileQuickAccess() {
             <div className="absolute bottom-16 right-0 mb-2 space-y-2">
               {children.slice(0, 3).map((child, index) => {
                 const displayName = locale === 'ar'
-                  ? [child.givenName, child.middleName, child.familyName].filter(Boolean).join(' ')
-                  : [child.metadata?.englishFirstName, child.metadata?.englishSecondName, child.metadata?.englishThirdName, child.metadata?.englishFamilyName].filter(Boolean).join(' ');
+                  ? [child.firstNameArabic, child.middleNameArabic, child.lastNameArabic].filter(Boolean).join(' ')
+                  : [child.firstNameEnglish, child.middleNameEnglish, child.thirdNameEnglish, child.fourthNameEnglish, child.familyNameEnglish].filter(Boolean).join(' ');
                 
                 return (
                   <Link
-                    key={child.sourcedId}
-                    href={`/child/${child.sourcedId}`}
+                    key={child.id}
+                    href={`/child/${child.id}`}
                     onClick={() => setIsOpen(false)}
                     className={clsx(
                       "flex items-center gap-3 px-4 py-3 bg-card shadow-lg rounded-2xl border border-border",

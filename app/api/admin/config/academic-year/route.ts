@@ -66,11 +66,18 @@ export async function POST(request: Request) {
         });
       }
 
-      // Use createMany to insert all at once, skipping duplicates
-      await prisma.academicYearConfig.createMany({
-        data: years,
-        skipDuplicates: true,
+      // Check for existing years and insert only new ones
+      const existingYears = await prisma.academicYearConfig.findMany({
+        select: { academicYear: true },
       });
+      const existingYearSet = new Set(existingYears.map(y => y.academicYear));
+      const newYears = years.filter(y => !existingYearSet.has(y.academicYear));
+
+      if (newYears.length > 0) {
+        await prisma.academicYearConfig.createMany({
+          data: newYears,
+        });
+      }
 
       const allYears = await prisma.academicYearConfig.findMany({
         orderBy: { yearValue: "desc" },

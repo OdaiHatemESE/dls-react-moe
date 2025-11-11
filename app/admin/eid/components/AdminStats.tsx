@@ -5,9 +5,9 @@ import useSWR from "swr";
 import { jsonFetcher } from "@/lib/swr";
 
 export function AdminStats() {
-  const { data: users } = useSWR("/api/admin/config/users", jsonFetcher);
-  const { data: periods } = useSWR("/api/admin/config/periods", jsonFetcher);
-  const { data: actions } = useSWR("/api/admin/config/actions", jsonFetcher);
+  const { data: users } = useSWR<any[]>("/api/admin/config/users", jsonFetcher);
+  const { data: periods } = useSWR<any[]>("/api/admin/config/periods", jsonFetcher);
+  const { data: actions } = useSWR<any[]>("/api/admin/config/actions", jsonFetcher);
 
   const activeUsers = users?.filter((u: any) => u.isActive).length || 0;
   const activePeriods = periods?.filter((p: any) => p.isEnabled).length || 0;

@@ -55,7 +55,7 @@ type Zone = {
   RegionId: number;
 };
 
-type AddressValue = {
+export type AddressValue = {
   emirateId?: number;
   areaId?: number;
   streetName?: string;

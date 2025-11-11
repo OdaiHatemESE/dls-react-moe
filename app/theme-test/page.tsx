@@ -56,7 +56,8 @@ export default function ThemeTestPage() {
               background: getComputedStyle(document.documentElement).getPropertyValue('--background'),
               foreground: getComputedStyle(document.documentElement).getPropertyValue('--foreground'),
               primary: getComputedStyle(document.documentElement).getPropertyValue('--primary')
-            });
+            };
+            console.log('Computed styles:', computedStyles);
           }}
           className="px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90"
         >

@@ -16,7 +16,7 @@ import { jsonFetcher } from "@/lib/swr";
 import { format } from "date-fns";
 
 export function UpdateLogsTable() {
-  const { data, isLoading } = useSWR("/api/admin/analytics/updates?limit=50", jsonFetcher);
+  const { data, isLoading } = useSWR<any>("/api/admin/analytics/updates?limit=50", jsonFetcher);
 
   const students = data?.students || [];
   const stats = data?.stats || {};

@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useChildren } from "@/lib/hooks/useChildren";
 import { useRouter, usePathname } from "next/navigation";
-import type { Person } from "@/types";
+import type { StudentProfileV1 } from "@/app/types/studentprofile";
 
 // Fixed position switcher for parent to switch between kids
 export default function Switcher() {
@@ -129,21 +129,21 @@ export default function Switcher() {
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    {children.map((child: Person) => {
-                      const isCurrentStudent = currentStudentId === child.sourcedId;
-                      const displayName = child.givenName || child.familyName || child.username || "Student";
+                    {children.map((child: StudentProfileV1) => {
+                      const isCurrentStudent = currentStudentId === child.id;
+                      const displayName = child.firstNameArabic || child.firstNameEnglish || child.familyNameEnglish || child.username || "Student";
                       
                       return (
                         <button
-                          key={child.sourcedId}
+                          key={child.id}
                           className={`w-full text-left p-4 rounded-xl transition-all duration-200 flex items-center space-x-4 ${
                             isCurrentStudent
                               ? 'bg-blue-50 text-primary-900 border-2 border-blue-200 shadow-sm'
                               : 'hover:bg-gray-50 text-gray-700 hover:text-gray-900 border-2 border-transparent'
                           }`}
                           onClick={() => {
-                            if (child.sourcedId && !isCurrentStudent) {
-                              router.push(getSwitchUrl(child.sourcedId));
+                            if (child.id && !isCurrentStudent) {
+                              router.push(getSwitchUrl(child.id));
                               setIsOpen(false);
                             }
                           }}
@@ -168,7 +168,7 @@ export default function Switcher() {
                             <p className={`text-sm truncate ${
                               isCurrentStudent ? 'text-primary-600' : 'text-gray-500'
                             }`}>
-                              Student ID: {child.sourcedId}
+                              Student ID: {child.id}
                             </p>
                           </div>
 

@@ -7,7 +7,7 @@ import useSWR from "swr";
 import { jsonFetcher } from "@/lib/swr";
 
 export function SystemStats() {
-  const { data, isLoading } = useSWR("/api/admin/analytics/stats", jsonFetcher);
+  const { data, isLoading } = useSWR<any>("/api/admin/analytics/stats", jsonFetcher);
 
   if (isLoading) {
     return (

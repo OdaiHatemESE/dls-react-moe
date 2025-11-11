@@ -8,10 +8,10 @@ export const dynamic = "force-dynamic";
 // Basic TTL for student lookups (10 minutes)
 const TTL_SECONDS = 10 * 60;
 
-type RouteParams = { params: { sourcedId: string } };
+type RouteParams = { params: Promise<{ sourcedId: string }> };
 
 export async function GET(req: Request, ctx: RouteParams) {
-  const { sourcedId } = ctx.params || {};
+  const { sourcedId } = await ctx.params;
   const url = new URL(req.url);
   const searchParams = url.searchParams;
   const noCache = ["1", "true", "yes"].includes((searchParams.get("nocache") || "").toLowerCase());
