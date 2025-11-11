@@ -67,6 +67,23 @@ stages:
                         Write-Warning ".env.test not found - ensure it exists in the repository"
                       }
                       
+                      Write-Host "Stopping PM2 processes to release file locks..."
+                      try {
+                        & npm list -g pm2 2>&1 | Out-Null
+                        if ($LASTEXITCODE -eq 0) {
+                          & pm2 stop all
+                          Start-Sleep -Seconds 2
+                        }
+                      } catch {
+                        Write-Host "PM2 not available or no processes running"
+                      }
+                      
+                      Write-Host "Cleaning node_modules..."
+                      if (Test-Path "node_modules") {
+                        Remove-Item -Path "node_modules" -Recurse -Force -ErrorAction SilentlyContinue
+                        Start-Sleep -Seconds 1
+                      }
+                      
                       Write-Host "Installing dependencies..."
                       npm ci
                       
@@ -77,12 +94,25 @@ stages:
                       npm run build
                       
                       Write-Host "Restarting PM2..."
+                      $pm2Installed = $false
                       try {
-                        pm2 restart "$(APP_NAME)"
+                        & npm list -g pm2 2>&1 | Out-Null
+                        $pm2Installed = ($LASTEXITCODE -eq 0)
+                      } catch {
+                        $pm2Installed = $false
+                      }
+                      
+                      if (-not $pm2Installed) {
+                        Write-Host "Installing PM2 globally..."
+                        npm install -g pm2
+                      }
+                      
+                      try {
+                        & pm2 restart "$(APP_NAME)"
                         Write-Host "Restarted existing PM2 process"
                       } catch {
                         Write-Host "Starting new PM2 process..."
-                        pm2 start npm --name "$(APP_NAME)" -- start
+                        & pm2 start npm --name "$(APP_NAME)" -- start
                       }
                       pm2 save --force
                       
