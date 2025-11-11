@@ -33,6 +33,15 @@ stages:
                   inputs:
                     targetType: 'inline'
                     script: |
+                      # Ensure deployment directory exists
+                      if (-not (Test-Path "$(DEPLOY_PATH)")) {
+                        Write-Host "Creating deployment directory..."
+                        New-Item -Path "$(DEPLOY_PATH)" -ItemType Directory -Force | Out-Null
+                        
+                        Write-Host "Cloning repository..."
+                        git clone --branch staging-release $(Build.Repository.Uri) "$(DEPLOY_PATH)"
+                      }
+                      
                       cd "$(DEPLOY_PATH)"
                       
                       Write-Host "Pulling latest from staging-release..."
@@ -82,6 +91,15 @@ stages:
                   inputs:
                     targetType: 'inline'
                     script: |
+                      # Ensure deployment directory exists
+                      if (-not (Test-Path "$(DEPLOY_PATH)")) {
+                        Write-Host "Creating deployment directory..."
+                        New-Item -Path "$(DEPLOY_PATH)" -ItemType Directory -Force | Out-Null
+                        
+                        Write-Host "Cloning repository..."
+                        git clone --branch staging-release $(Build.Repository.Uri) "$(DEPLOY_PATH)"
+                      }
+                      
                       cd "$(DEPLOY_PATH)"
                       
                       Write-Host "Pulling latest from staging-release..."
