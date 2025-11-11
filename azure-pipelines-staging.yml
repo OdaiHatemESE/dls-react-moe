@@ -112,7 +112,7 @@ stages:
                         Write-Host "Restarted existing PM2 process"
                       } catch {
                         Write-Host "Starting new PM2 process..."
-                        & pm2 start npm --name "$(APP_NAME)" -- start
+                        & pm2 start node --name "$(APP_NAME)" -- node_modules/next/dist/bin/next start -p 4200
                       }
                       pm2 save --force
                       
