@@ -77,12 +77,14 @@ stages:
                       
                       cd "$(DEPLOY_PATH)"
                       
+                      # Use deployment folder for PM2_HOME to ensure consistency across users
                       $pm2Home = Join-Path "$(DEPLOY_PATH)" ".pm2"
                       if (-not (Test-Path $pm2Home)) {
                         New-Item -Path $pm2Home -ItemType Directory -Force | Out-Null
                       }
                       $env:PM2_HOME = $pm2Home
                       Write-Host "PM2 home set to $pm2Home"
+                      Write-Host "Current user: $env:USERNAME"
 
                       Write-Host "Pulling latest from staging-release..."
                       git fetch origin
