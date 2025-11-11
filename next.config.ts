@@ -8,7 +8,7 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: true,
   },
   // Standalone output for optimized deployments
-  output: "standalone",
+  
 };
 
 export default nextConfig;
