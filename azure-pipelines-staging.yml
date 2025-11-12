@@ -68,8 +68,7 @@ stages:
                       }
                       
                       Write-Host "Skipping PM2 process management (handled manually)."
-                      Get-Process node -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
-                      Start-Sleep -Seconds 1
+                      Write-Host "Leaving existing Node/PM2 processes untouched."
                       
                       Write-Host "Cleaning node_modules..."
                       if (Test-Path "node_modules") {

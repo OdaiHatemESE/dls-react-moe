@@ -302,7 +302,7 @@ export default function ChildCards() {
 
       {/* Desktop Table Layout (Hidden on Mobile) */}
       <div className="hidden lg:block relative !mt-0      ">
-        {/* Elegant Background Pattern */}  ODAI ODAI ODAI
+        {/* Elegant Background Pattern */}  
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-secondary/5" />
         <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-primary/10 to-transparent rounded-full -translate-y-48 translate-x-48 blur-3xl" />
         <div className="absolute bottom-0 left-0 w-80 h-80 bg-gradient-to-tr from-secondary/8 to-transparent rounded-full translate-y-40 -translate-x-40 blur-3xl" />
