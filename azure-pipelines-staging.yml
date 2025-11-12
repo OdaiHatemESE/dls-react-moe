@@ -175,8 +175,12 @@ stages:
                       
                       # Always delete old processes and start fresh to ensure clean state
                       Write-Host "Cleaning up any existing PM2 processes..."
-                      & $pm2Cmd delete all 2>$null
-                      $LASTEXITCODE = 0  # Ignore exit code from delete
+                      try {
+                        & $pm2Cmd delete all 2>&1 | Out-Null
+                      } catch {
+                        # Ignore errors - process may not exist
+                      }
+                      $LASTEXITCODE = 0  # Reset exit code
                       
                       Write-Host "Starting PM2 process from ecosystem config..."
                       & $pm2Cmd start ecosystem.config.js --env production
@@ -192,8 +196,12 @@ stages:
                       }
                       
                       Write-Host "Setting PM2 to startup on system boot..."
-                      & $pm2Cmd startup 2>$null
-                      $LASTEXITCODE = 0  # Ignore exit code from startup
+                      try {
+                        & $pm2Cmd startup 2>&1 | Out-Null
+                      } catch {
+                        # Ignore errors from startup command
+                      }
+                      $LASTEXITCODE = 0  # Reset exit code
                       
                       Write-Host "Current PM2 status:"
                       & $pm2Cmd status
