@@ -192,7 +192,13 @@ stages:
                       } else {
                         Write-Host "No existing PM2 process found, starting fresh..."
                         # Kill any orphaned PM2 daemon and start clean
-                        & $pm2Cmd kill 2>$null
+                        try {
+                          & $pm2Cmd kill 2>$null
+                        } catch {
+                          Write-Host "PM2 kill command completed (daemon may not have been running)"
+                        }
+                        # Reset exit code - pm2 kill returns 1 even on success sometimes
+                        $LASTEXITCODE = 0
                         Start-Sleep -Seconds 2
                         
                         & $pm2Cmd start ecosystem.config.js --env production
