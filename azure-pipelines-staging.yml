@@ -7,6 +7,8 @@ variables:
   NODE_VERSION: '20.x'
   DEPLOY_PATH: 'C:\inetpub\wwwroot\SuperParent\Adeed'
   APP_NAME: 'PPApp-st'
+  release.disableProcessJobObject: 'true'
+  agent.disableProcessCleanup: 'true'
 
 stages:
   - stage: DeployServer1
