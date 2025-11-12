@@ -583,6 +583,10 @@ const REASON_LABELS: Record<string, { en: string; ar: string }> = {
     en: "Conduct PDF not available yet.",
     ar: "ملف السلوك غير متوفر بعد.",
   },
+  "childActions.reasons.noActiveEnrollment": {
+    en: "No active enrollment for the current academic year.",
+    ar: "لا يوجد تسجيل نشط للعام الدراسي الحالي.",
+  },
 };
 
 const BADGE_LABELS: Record<string, { label: { en: string; ar: string }; tooltip: { en: string; ar: string } }> = {

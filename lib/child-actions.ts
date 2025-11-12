@@ -31,6 +31,7 @@ type ChildActionRequestOptions = {
   idhFetchedAt?: string | null;
   activeAcademicYear?: number | null;
   updatePeriodActive?: boolean;
+  hasActiveEnrollment?: boolean;
 };
 
 type ResolveContext = {
@@ -40,6 +41,7 @@ type ResolveContext = {
   configs: StudentActionConfig[];
   idhStatusId: number | null;
   idhFetchedAt: string | null;
+  hasActiveEnrollment: boolean;
 };
 
 const DEFAULT_PDF_REASON: LocalizedText = {
@@ -52,8 +54,14 @@ const UPDATE_DISABLED_REASON: LocalizedText = {
   ar: "تم إيقاف التحديثات مؤقتًا.",
 };
 
+const NO_ACTIVE_ENROLLMENT_REASON: LocalizedText = {
+  en: "No active enrollment found for the current academic year.",
+  ar: "لا يوجد تسجيل نشط للعام الدراسي الحالي.",
+};
+
 const UPDATE_DISABLED_REASON_KEY = "childActions.reasons.updateDisabled";
 const PDF_UNAVAILABLE_REASON_KEY = "childActions.reasons.pdfUnavailable";
+const NO_ACTIVE_ENROLLMENT_REASON_KEY = "childActions.reasons.noActiveEnrollment";
 
 type ParsedAvailability = {
   includeStatuses: Array<number | null> | null;
@@ -63,6 +71,7 @@ type ParsedAvailability = {
   requiresPdfMode: "disable" | "hide";
   requiresPdfReason: LocalizedText | null;
   requiresConductSignature: "signed" | "unsigned" | "any";
+  requiresActiveEnrollment: boolean;
 };
 
 type ParsedActionConfig = {
@@ -127,6 +136,7 @@ const FALLBACK_CONFIGS: Record<string, AdminActionConfigSchema> = {
     availability: {
       status: { include: [null, 2, 5] },
       requiresUpdatePeriod: true,
+      requiresActiveEnrollment: true,
     },
   },
   "sign-conduct": {
@@ -147,6 +157,7 @@ const FALLBACK_CONFIGS: Record<string, AdminActionConfigSchema> = {
     availability: {
       // REMOVED: status requirement - conduct signature is independent of IDH status
       requiresConductSignature: "unsigned",
+      requiresActiveEnrollment: true,
     },
   },
   "download-conduct": {
@@ -170,6 +181,7 @@ const FALLBACK_CONFIGS: Record<string, AdminActionConfigSchema> = {
       requiresPdf: true,
       requiresPdfMode: "disable",
       requiresPdfReason: DEFAULT_PDF_REASON,
+      requiresActiveEnrollment: true,
     },
   },
   "view-profile": {
@@ -222,6 +234,15 @@ export async function getChildActionsSummary(options: ChildActionRequestOptions)
     ? String(activeAcademicYear) === schoolYear
     : true;
 
+  // Check if student has active enrollment (non-private education type + matching active academic year)
+  const hasActiveEnrollment = options.hasActiveEnrollment ?? (
+    educationType !== null &&
+    educationType.toLowerCase() !== 'private' &&
+    schoolYear !== null &&
+    activeAcademicYear !== null &&
+    String(activeAcademicYear) === schoolYear
+  );
+
   // Load configs based on education type
   const configs = await loadActionConfigs(educationType);
 
@@ -247,6 +268,7 @@ export async function getChildActionsSummary(options: ChildActionRequestOptions)
     configs,
     idhStatusId: options.idhStatusId ?? null,
     idhFetchedAt: options.idhFetchedAt ?? null,
+    hasActiveEnrollment,
   };
 
   return resolveChildActions(context);
@@ -382,6 +404,16 @@ function buildConfiguredActions(
     const descriptor = buildDescriptorFromConfig(config, context, status, hasPdf);
     if (!descriptor) {
       continue;
+    }
+
+    // If student has no active enrollment, hide all actions except view-profile
+    if (!context.hasActiveEnrollment && descriptor.key !== "view-profile") {
+      descriptor.hidden = true;
+      if (!descriptor.disabledReason) {
+        descriptor.disabled = true;
+        descriptor.disabledReason = NO_ACTIVE_ENROLLMENT_REASON;
+        descriptor.reasonKey = NO_ACTIVE_ENROLLMENT_REASON_KEY;
+      }
     }
 
     if (!descriptor.hidden) {
@@ -525,6 +557,13 @@ function buildDescriptorFromConfig(
     reasonKey = UPDATE_DISABLED_REASON_KEY;
   }
 
+  // Check active enrollment requirement (view-profile is exempt)
+  if (availability.requiresActiveEnrollment && !context.hasActiveEnrollment && config.row.actionKey !== "view-profile") {
+    disabled = true;
+    disabledReason = NO_ACTIVE_ENROLLMENT_REASON;
+    reasonKey = NO_ACTIVE_ENROLLMENT_REASON_KEY;
+  }
+
   // Check PDF requirement
   if (availability.requiresPdf && !hasPdf) {
     if (availability.requiresPdfMode === "hide") {
@@ -603,6 +642,7 @@ function normalizeAvailability(input: AdminActionConfigSchema["availability"] | 
     input?.requiresConductSignature === "signed" || input?.requiresConductSignature === "unsigned"
       ? input.requiresConductSignature
       : "any";
+  const requiresActiveEnrollment = Boolean(input?.requiresActiveEnrollment);
 
   return {
     includeStatuses,
@@ -612,6 +652,7 @@ function normalizeAvailability(input: AdminActionConfigSchema["availability"] | 
     requiresPdfMode,
     requiresPdfReason,
     requiresConductSignature,
+    requiresActiveEnrollment,
   };
 }
 

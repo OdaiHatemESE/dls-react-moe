@@ -81,6 +81,10 @@ export interface StudentProfileV1 {
 
   enrollment: StudentEnrollment[]; // array as you modeled
   parent?: StudentParentInfo | null;
+  
+  // Enrollment status flags (added by ChildList API)
+  isActive?: boolean;
+  hasActiveEnrollment?: boolean;
 }
 
 

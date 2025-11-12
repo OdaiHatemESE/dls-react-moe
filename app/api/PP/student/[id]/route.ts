@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import type { StudentProfileV1 } from '@/app/types/studentprofile';
 import { cacheGetJSON, cacheSetJSON } from '@/lib/cache';
+import { getActiveAcademicYearValue } from '@/lib/admin-config';
 
 type PPTokenResponse = {
   accessToken?: string;
@@ -48,14 +49,29 @@ export async function GET(
     if (!skipCache) {
       const cachedAny = await cacheGetJSON<unknown>(cacheKey);
       if (cachedAny) {
+        // Get active academic year for isActive calculation
+        const activeAcademicYear = await getActiveAcademicYearValue();
+        const activeYearStr = String(activeAcademicYear);
+        
         // Check if it's the new wrapped format with metadata
         if (
           typeof cachedAny === "object" && cachedAny !== null &&
           "data" in cachedAny && "fetchedAt" in cachedAny
         ) {
           const wrapped = cachedAny as Wrapped<StudentProfileV1>;
+          const cachedStudent = wrapped.data;
+          
+          // Calculate isActive for cached data if not present
+          const hasActiveEnrollment = cachedStudent.enrollment?.some(
+            (enr) => 
+              enr.schoolYear === activeYearStr && 
+              enr.educationType?.toLowerCase() !== 'private'
+          ) ?? false;
+          
           return NextResponse.json({
-            ...wrapped.data,
+            ...cachedStudent,
+            isActive: hasActiveEnrollment,
+            hasActiveEnrollment: hasActiveEnrollment,
             meta: {
               cache: {
                 source: "cache",
@@ -65,8 +81,19 @@ export async function GET(
           });
         }
         // Backwards compatibility: old cache format without wrapper
+        const cachedStudent = cachedAny as StudentProfileV1;
+        
+        // Calculate isActive for old cached data
+        const hasActiveEnrollment = cachedStudent.enrollment?.some(
+          (enr) => 
+            enr.schoolYear === activeYearStr && 
+            enr.educationType?.toLowerCase() !== 'private'
+        ) ?? false;
+        
         return NextResponse.json({
-          ...(cachedAny as StudentProfileV1),
+          ...cachedStudent,
+          isActive: hasActiveEnrollment,
+          hasActiveEnrollment: hasActiveEnrollment,
           meta: {
             cache: {
               source: "cache",
@@ -138,6 +165,7 @@ export async function GET(
         { status: 404 }
       );
     }
+    
     // Filter enrollments by schoolYear if provided
     if (schoolYear && student.enrollment) {
       student = {
@@ -148,16 +176,33 @@ export async function GET(
       };
     }
 
+    // Calculate isActive and hasActiveEnrollment
+    const activeAcademicYear = await getActiveAcademicYearValue();
+    const activeYearStr = String(activeAcademicYear);
+    
+    const hasActiveEnrollment = student.enrollment?.some(
+      (enr) => 
+        enr.schoolYear === activeYearStr && 
+        enr.educationType?.toLowerCase() !== 'private'
+    ) ?? false;
+
+    // Add isActive and hasActiveEnrollment to student object
+    const studentWithActiveStatus = {
+      ...student,
+      isActive: hasActiveEnrollment,
+      hasActiveEnrollment: hasActiveEnrollment,
+    };
+
     // Cache the student data for 5 minutes with metadata
     const fetchedAt = new Date().toISOString();
     await cacheSetJSON<Wrapped<StudentProfileV1>>(
       cacheKey,
-      { data: student, fetchedAt },
+      { data: studentWithActiveStatus, fetchedAt },
       { ttlSeconds: 300 }
     );
 
     return NextResponse.json({
-      ...student,
+      ...studentWithActiveStatus,
       meta: {
         cache: {
           source: "upstream",

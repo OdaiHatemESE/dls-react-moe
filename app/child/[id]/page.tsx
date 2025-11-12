@@ -15,6 +15,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { getActiveAcademicYearValue } from '@/lib/admin-config';
 
 import SchoolInfo from './SchoolInfo';
 import StreamGrades from './StreamGrades';
@@ -221,18 +222,23 @@ export default function ChildDetailPage() {
                       </svg>
                       {student.role || (locale === 'ar' ? 'طالب' : 'Student')}
                     </Badge>
-                    
-                    {student.status && (
-                      <Badge className={clsx(
-                        "px-2 py-1 font-medium text-xs",
-                        student.status === 'active' 
-                          ? "bg-green-50 text-green-700 border-green-200 hover:bg-green-100" 
-                          : "bg-muted text-muted-foreground border-border"
-                      )}>
-                        <div className={clsx("w-1.5 h-1.5 rounded-full me-1", 
-                          student.status === 'active' ? 'bg-green-500' : 'bg-muted-foreground'
-                        )}></div>
-                        {student.status === 'active' ? (locale === 'ar' ? 'نشط' : 'Active') : student.status}
+
+                    {student.isActive !== undefined && (
+                      <Badge 
+                        variant={student.isActive ? "default" : "secondary"}
+                        className={clsx(
+                          "px-2.5 py-1 font-semibold text-xs",
+                          student.isActive 
+                            ? "bg-emerald-500/15 text-emerald-700 border-emerald-500/30" 
+                            : "bg-slate-500/15 text-slate-600 border-slate-400/30"
+                        )}
+                      >
+                        <svg className="w-3 h-3 me-1" fill="currentColor" viewBox="0 0 20 20">
+                          <circle cx="10" cy="10" r="4" />
+                        </svg>
+                        {student.isActive 
+                          ? (locale === 'ar' ? 'نشط' : 'Active')
+                          : (locale === 'ar' ? 'غير نشط' : 'Inactive')}
                       </Badge>
                     )}
 
@@ -243,21 +249,6 @@ export default function ChildDetailPage() {
                 {/* Parent Actions Section - Mobile Optimized */}
                 <div className="flex-shrink-0 w-full sm:w-auto">
                   <div className="bg-card/80 backdrop-blur-sm rounded-xl border border-border/80 p-3 md:p-4 shadow-sm touch-manipulation space-y-3">
-                    {/* Edit Profile Button */}
-                    {/* <Link 
-                      href={`/child/${student.id}/edit`}
-                      className={clsx(
-                        "w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm transition-all duration-200",
-                        "bg-primary text-primary-foreground hover:bg-primary/90 active:scale-95",
-                        "focus:outline-none focus:ring-2 focus:ring-primary/20 touch-manipulation shadow-sm"
-                      )}
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                      </svg>
-                      <span>{locale === 'ar' ? 'تعديل الملف الشخصي' : 'Edit Profile'}</span>
-                    </Link> */}
-
                     {/* Documents Section */}
                     <div>
                       <div className="flex items-center gap-2 md:gap-3 mb-2">
@@ -275,12 +266,27 @@ export default function ChildDetailPage() {
                           </p>
                         </div>
                       </div>
-                      <SignConductSection 
-                        locale={locale} 
-                        studentId={student.id}
-                        studentNumber={student.studentNumber}
-                        academicYear={deriveAcademicYear(student.enrollment)}
-                      />
+                      
+                      {/* Show actions only for active students */}
+                      {student.isActive ? (
+                        <SignConductSection 
+                          locale={locale} 
+                          studentId={student.id}
+                          studentNumber={student.studentNumber}
+                          academicYear={deriveAcademicYear(student.enrollment)}
+                        />
+                      ) : (
+                        <div className="text-center py-4 px-3 bg-muted/50 rounded-lg border border-border/50">
+                          <svg className="w-8 h-8 mx-auto mb-2 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <p className="text-xs text-muted-foreground">
+                            {locale === 'ar' 
+                              ? 'الإجراءات متاحة فقط للطلاب ذوي التسجيل النشط' 
+                              : 'Actions available only for students with active enrollment'}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

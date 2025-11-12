@@ -55,6 +55,7 @@ export interface AdminActionConfigSchema {
     requiresPdfMode?: "disable" | "hide";
     requiresPdfReason?: LocalizedInput;
     requiresConductSignature?: "signed" | "unsigned" | "any";
+    requiresActiveEnrollment?: boolean;
   };
   metadata?: Record<string, unknown> | null;
   order?: number | null;

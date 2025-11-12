@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import { useChildren } from "@/lib/hooks/useChildren";
 import type { StudentProfileV1 } from "@/app/types/studentprofile";
 import { Card } from "@/components/ui/card";
@@ -88,6 +89,26 @@ export default function ChildCards() {
   const { children, error, isLoading, needsSync, emirateId } = useChildren(eid);
   const isBusy = status === "loading" || (status === "authenticated" && isLoading);
   const [isSyncing, setIsSyncing] = React.useState(false);
+
+  // Group children by active status
+  const groupedChildren = React.useMemo(() => {
+    if (!children || children.length === 0) {
+      return { active: [], inactive: [] };
+    }
+
+    const active: StudentProfileV1[] = [];
+    const inactive: StudentProfileV1[] = [];
+
+    children.forEach((child) => {
+      if (child.isActive) {
+        active.push(child);
+      } else {
+        inactive.push(child);
+      }
+    });
+
+    return { active, inactive };
+  }, [children]);
 
   const handleSync = React.useCallback(async () => {
     if (!emirateId) return;
@@ -235,8 +256,110 @@ export default function ChildCards() {
           </Card>
         )}
 
-        {/* Mobile Student Cards */}
-        {(children ?? []).map((child: StudentProfileV1) => {
+        {/* Mobile Student Cards - Grouped by Status */}
+        {groupedChildren.active.length > 0 && (
+          <div className="mb-6">
+            <div className="flex items-center gap-2 mb-3 px-1">
+              <div className="w-1 h-6 bg-emerald-500 rounded-full"></div>
+              <h3 className="text-sm font-bold text-emerald-700 uppercase tracking-wide">
+                {locale === 'ar' ? 'الطلاب النشطون' : 'Active Students'} ({groupedChildren.active.length})
+              </h3>
+            </div>
+            <div className="space-y-4">
+              {groupedChildren.active.map((child: StudentProfileV1) => {
+                const displayName = locale === 'ar'
+                  ? [child.firstNameArabic, child.middleNameArabic, child.lastNameArabic].filter(Boolean).join(' ')
+                  : [child.firstNameEnglish, child.middleNameEnglish, child.thirdNameEnglish, child.fourthNameEnglish, child.familyNameEnglish].filter(Boolean).join(' ');
+
+                const resolvedStudentNumber = child.studentNumber?.trim() || null;
+                const resolvedAcademicYear = resolvedStudentNumber ? deriveAcademicYear(child.enrollment) : undefined;
+                const latestEnrollment = resolveLatestEnrollment(child.enrollment);
+                const educationType = latestEnrollment?.educationType ?? null;
+                const schoolYear = latestEnrollment?.schoolYear ?? null;
+
+                return (
+                  <Card 
+                    key={child.id} 
+                    className={clsx(
+                      "group relative overflow-hidden transition-all duration-300",
+                      "border-border/60  hover:shadow-2xl",
+                      "touch-manipulation active:scale-[0.98]"
+                    )}
+                  >
+                    {/* Background gradient */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl -translate-y-16 translate-x-16 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    
+                    <div className="relative p-5">
+                      {/* Student Header */}
+                      <div className="flex items-center gap-4 mb-5">
+                        {/* Avatar with status indicator */}
+                        <ChildAvatar displayName={displayName} />
+
+                        {/* Student Info */}
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-lg font-bold text-foreground truncate mb-3 group-hover:text-primary transition-colors">
+                            {displayName}
+                          </h3>
+                          {/* ID and Status Badge on same line */}
+                          <div className="flex flex-wrap items-center gap-2">
+                            <Badge variant="outline" className="text-xs px-2.5 py-1 font-medium bg-muted/50 border-border/70">
+                              <svg className={clsx("w-3 h-3", locale === 'ar' ? 'ml-1' : 'mr-1')} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
+                              </svg>
+                              {child.studentNumber || child.id?.slice(-6) || '—'}
+                            </Badge>
+                            {child.isActive !== undefined && (
+                              <Badge 
+                                variant={child.isActive ? "default" : "secondary"}
+                                className={clsx(
+                                  "text-xs px-2.5 py-1 font-semibold",
+                                  child.isActive 
+                                    ? "bg-emerald-500/15 text-emerald-700 border-emerald-500/30" 
+                                    : "bg-slate-500/15 text-slate-600 border-slate-400/30"
+                                )}
+                              >
+                                <svg className={clsx("w-3 h-3", locale === 'ar' ? 'ml-1' : 'mr-1')} fill="currentColor" viewBox="0 0 20 20">
+                                  <circle cx="10" cy="10" r="4" />
+                                </svg>
+                                {child.isActive 
+                                  ? (locale === 'ar' ? 'نشط' : 'Active')
+                                  : (locale === 'ar' ? 'غير نشط' : 'Inactive')}
+                              </Badge>
+                            )}
+                            <ChildStatusBadge studentPersonId={child.id} variant="mobile" />
+                          </div>
+                        </div>
+                      </div>
+                      {/* Actions Section - Simplified */}
+                      <div className="mt-4 pt-4 border-t border-border/50">
+                        <ChildActions
+                          studentPersonId={child.id}
+                          studentNumber={resolvedStudentNumber}
+                          academicYear={resolvedAcademicYear}
+                          educationType={educationType}
+                          schoolYear={schoolYear}
+                          className="w-full"
+                        />
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {groupedChildren.inactive.length > 0 && (
+          <div>
+            <div className="flex items-center gap-2 mb-3 px-1">
+              <div className="w-1 h-6 bg-slate-400 rounded-full"></div>
+              <h3 className="text-sm font-bold text-slate-600 uppercase tracking-wide">
+                {locale === 'ar' ? 'الطلاب غير النشطين' : 'Inactive Students'} ({groupedChildren.inactive.length})
+              </h3>
+            </div>
+            <div className="space-y-4">
+              {groupedChildren.inactive.map((child: StudentProfileV1) => {
           const displayName = locale === 'ar'
             ? [child.firstNameArabic, child.middleNameArabic, child.lastNameArabic].filter(Boolean).join(' ')
             : [child.firstNameEnglish, child.middleNameEnglish, child.thirdNameEnglish, child.fourthNameEnglish, child.familyNameEnglish].filter(Boolean).join(' ');
@@ -279,25 +402,53 @@ export default function ChildCards() {
                         </svg>
                         {child.studentNumber || child.id?.slice(-6) || '—'}
                       </Badge>
+                      {child.isActive !== undefined && (
+                        <Badge 
+                          variant={child.isActive ? "default" : "secondary"}
+                          className={clsx(
+                            "text-xs px-2.5 py-1 font-semibold",
+                            child.isActive 
+                              ? "bg-emerald-500/15 text-emerald-700 border-emerald-500/30" 
+                              : "bg-slate-500/15 text-slate-600 border-slate-400/30"
+                          )}
+                        >
+                          <svg className={clsx("w-3 h-3", locale === 'ar' ? 'ml-1' : 'mr-1')} fill="currentColor" viewBox="0 0 20 20">
+                            <circle cx="10" cy="10" r="4" />
+                          </svg>
+                          {child.isActive 
+                            ? (locale === 'ar' ? 'نشط' : 'Active')
+                            : (locale === 'ar' ? 'غير نشط' : 'Inactive')}
+                        </Badge>
+                      )}
                       <ChildStatusBadge studentPersonId={child.id} variant="mobile" />
                     </div>
                   </div>
                 </div>
                 {/* Actions Section - Simplified */}
                 <div className="mt-4 pt-4 border-t border-border/50">
-                  <ChildActions
-                    studentPersonId={child.id}
-                    studentNumber={resolvedStudentNumber}
-                    academicYear={resolvedAcademicYear}
-                    educationType={educationType}
-                    schoolYear={schoolYear}
-                    className="w-full"
-                  />
+                  <Link
+                    href={`/child/${child.id}`}
+                    className={clsx(
+                      "flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium text-sm transition-all duration-200",
+                      "bg-muted/60 hover:bg-muted text-muted-foreground hover:text-foreground",
+                      "border border-border/60 hover:border-border shadow-sm hover:shadow-md",
+                      "touch-manipulation active:scale-95"
+                    )}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                    <span>{locale === 'ar' ? 'عرض الملف الشخصي' : 'View Profile'}</span>
+                  </Link>
                 </div>
               </div>
             </Card>
           );
         })}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Desktop Table Layout (Hidden on Mobile) */}
@@ -416,8 +567,20 @@ export default function ChildCards() {
                 </tr>
               )}
               
-              {/* Students Data */}
-              {(children ?? []).map((child: StudentProfileV1) => {
+              {/* Students Data - Grouped */}
+              {groupedChildren.active.length > 0 && (
+                <>
+                  <tr className="bg-gradient-to-r from-emerald-50/50 to-emerald-50/20">
+                    <td colSpan={2} className="px-8 py-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-1 h-6 bg-emerald-500 rounded-full"></div>
+                        <h3 className="text-sm font-bold text-emerald-700 uppercase tracking-wide">
+                          {locale === 'ar' ? 'الطلاب النشطون' : 'Active Students'} ({groupedChildren.active.length})
+                        </h3>
+                      </div>
+                    </td>
+                  </tr>
+                  {groupedChildren.active.map((child: StudentProfileV1) => {
                 const displayName = locale === 'ar'
                   ? [child.firstNameArabic, child.middleNameArabic, child.lastNameArabic].filter(Boolean).join(' ')
                   : [child.firstNameEnglish, child.middleNameEnglish, child.thirdNameEnglish, child.fourthNameEnglish, child.familyNameEnglish].filter(Boolean).join(' ');
@@ -452,6 +615,24 @@ export default function ChildCards() {
                               </svg>
                               {child.studentNumber || child.id?.slice(-6) || '—'}
                             </Badge>
+                            {child.isActive !== undefined && (
+                              <Badge 
+                                variant={child.isActive ? "default" : "secondary"}
+                                className={clsx(
+                                  "text-xs px-2.5 py-1 font-semibold",
+                                  child.isActive 
+                                    ? "bg-emerald-500/15 text-emerald-700 border-emerald-500/30" 
+                                    : "bg-slate-500/15 text-slate-600 border-slate-400/30"
+                                )}
+                              >
+                                <svg className={clsx("w-3 h-3", locale === 'ar' ? 'ml-1' : 'mr-1')} fill="currentColor" viewBox="0 0 20 20">
+                                  <circle cx="10" cy="10" r="4" />
+                                </svg>
+                                {child.isActive 
+                                  ? (locale === 'ar' ? 'نشط' : 'Active')
+                                  : (locale === 'ar' ? 'غير نشط' : 'Inactive')}
+                              </Badge>
+                            )}
                             <ChildStatusBadge studentPersonId={child.id} />
                           </div>
                         </div>
@@ -474,6 +655,104 @@ export default function ChildCards() {
                   </tr>
                 );
               })}
+                </>
+              )}
+
+              {groupedChildren.inactive.length > 0 && (
+                <>
+                  <tr className="bg-gradient-to-r from-slate-50/50 to-slate-50/20">
+                    <td colSpan={2} className="px-8 py-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-1 h-6 bg-slate-400 rounded-full"></div>
+                        <h3 className="text-sm font-bold text-slate-600 uppercase tracking-wide">
+                          {locale === 'ar' ? 'الطلاب غير النشطين' : 'Inactive Students'} ({groupedChildren.inactive.length})
+                        </h3>
+                      </div>
+                    </td>
+                  </tr>
+                  {groupedChildren.inactive.map((child: StudentProfileV1) => {
+                    const displayName = locale === 'ar'
+                      ? [child.firstNameArabic, child.middleNameArabic, child.lastNameArabic].filter(Boolean).join(' ')
+                      : [child.firstNameEnglish, child.middleNameEnglish, child.thirdNameEnglish, child.fourthNameEnglish, child.familyNameEnglish].filter(Boolean).join(' ');
+
+                    const resolvedStudentNumber = child.studentNumber?.trim() || null;
+                    const resolvedAcademicYear = resolvedStudentNumber ? deriveAcademicYear(child.enrollment) : undefined;
+                    const latestEnrollment = resolveLatestEnrollment(child.enrollment);
+                    const educationType = latestEnrollment?.educationType ?? null;
+                    const schoolYear = latestEnrollment?.schoolYear ?? null;
+
+                    return (
+                      <tr 
+                        key={child.id}
+                        className="group border-b border-border/40 hover:bg-gradient-to-r hover:from-primary/8 hover:via-primary/5 hover:to-transparent transition-all duration-300"
+                      >
+                        {/* Enhanced Student Name & Avatar */}
+                        <td className="px-8 py-6">
+                          <div className={clsx("flex items-center gap-5", locale === 'ar' && '')}>
+                            <ChildAvatarDesktop displayName={displayName} />
+                            <div className="flex-1 min-w-0">
+                              <div className={clsx(
+                                "font-bold text-foreground group-hover:text-primary transition-colors mb-3",
+                                locale === 'ar' ? 'text-lg' : 'text-xl'
+                              )}>
+                                {displayName}
+                              </div>
+                              {/* ID and Status Badge on same line */}
+                              <div className="flex flex-wrap items-center gap-2.5">
+                                <Badge variant="outline" className="text-xs px-2.5 py-1 font-medium bg-muted/50 border-border/70">
+                                  <svg className={clsx("w-3 h-3", locale === 'ar' ? 'ml-1' : 'mr-1')} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
+                                  </svg>
+                                  {child.studentNumber || child.id?.slice(-6) || '—'}
+                                </Badge>
+                                {child.isActive !== undefined && (
+                                  <Badge 
+                                    variant={child.isActive ? "default" : "secondary"}
+                                    className={clsx(
+                                      "text-xs px-2.5 py-1 font-semibold",
+                                      child.isActive 
+                                        ? "bg-emerald-500/15 text-emerald-700 border-emerald-500/30" 
+                                        : "bg-slate-500/15 text-slate-600 border-slate-400/30"
+                                    )}
+                                  >
+                                    <svg className={clsx("w-3 h-3", locale === 'ar' ? 'ml-1' : 'mr-1')} fill="currentColor" viewBox="0 0 20 20">
+                                      <circle cx="10" cy="10" r="4" />
+                                    </svg>
+                                    {child.isActive 
+                                      ? (locale === 'ar' ? 'نشط' : 'Active')
+                                      : (locale === 'ar' ? 'غير نشط' : 'Inactive')}
+                                  </Badge>
+                                )}
+                                <ChildStatusBadge studentPersonId={child.id} />
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* Enhanced Actions */}
+                        <td className="px-8 py-6">
+                          <div className="flex items-center justify-center">
+                            <Link
+                              href={`/child/${child.id}`}
+                              className={clsx(
+                                "inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200",
+                                "bg-muted/60 hover:bg-muted text-muted-foreground hover:text-foreground",
+                                "border border-border/60 hover:border-border shadow-sm hover:shadow-md"
+                              )}
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                              </svg>
+                              <span>{locale === 'ar' ? 'عرض الملف' : 'View Profile'}</span>
+                            </Link>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </>
+              )}
             </tbody>
           </table>
         </div>
