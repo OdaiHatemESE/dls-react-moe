@@ -172,27 +172,41 @@ stages:
                       }
 
                       Write-Host "Managing PM2 process using ecosystem.config.js..."
-                      $restartSucceeded = $false
-                      try {
+                      
+                      # Check if PM2 daemon is running and if our app exists in process list
+                      $pm2List = & $pm2Cmd list 2>&1 | Out-String
+                      $appExists = $pm2List -match "PPApp-st"
+                      
+                      Write-Host "PM2 process list check - App exists: $appExists"
+                      
+                      if ($appExists) {
+                        Write-Host "Restarting existing PM2 process..."
                         & $pm2Cmd restart ecosystem.config.js --update-env
                         if ($LASTEXITCODE -eq 0) {
-                          $restartSucceeded = $true
-                          Write-Host "Restarted existing PM2 process using ecosystem config."
+                          Write-Host "Successfully restarted PM2 process."
+                        } else {
+                          Write-Host "Restart failed, will try to start fresh..."
+                          & $pm2Cmd delete all 2>$null
+                          & $pm2Cmd start ecosystem.config.js --env production
                         }
-                      } catch {
-                        Write-Host "PM2 restart failed or process not found."
-                      }
-
-                      if (-not $restartSucceeded) {
-                        Write-Host "Starting new PM2 process using ecosystem config..."
+                      } else {
+                        Write-Host "No existing PM2 process found, starting fresh..."
+                        # Kill any orphaned PM2 daemon and start clean
+                        & $pm2Cmd kill 2>$null
+                        Start-Sleep -Seconds 2
+                        
                         & $pm2Cmd start ecosystem.config.js --env production
                         if ($LASTEXITCODE -ne 0) {
                           Write-Error "Failed to start PM2 process."
                           exit 1
                         }
+                        Write-Host "Successfully started new PM2 process."
                       }
 
+                      Write-Host "Saving PM2 process list..."
                       & $pm2Cmd save --force
+                      
+                      Write-Host "Current PM2 status:"
                       & $pm2Cmd status
 
                       Write-Host "Deployment complete!"
