@@ -7,8 +7,6 @@ variables:
   NODE_VERSION: '20.x'
   DEPLOY_PATH: 'C:\inetpub\wwwroot\SuperParent\Adeed'
   APP_NAME: 'PPApp-st'
-  release.disableProcessJobObject: 'true'
-  agent.disableProcessCleanup: 'true'
 
 stages:
   - stage: DeployServer1
@@ -32,31 +30,6 @@ stages:
                   inputs:
                     targetType: 'inline'
                     script: |
-                      function Get-Pm2Command {
-                        try {
-                          $pm2Cmd = (Get-Command pm2.cmd -ErrorAction Stop).Source
-                          return $pm2Cmd
-                        } catch {
-                          $candidates = @()
-                          if ($env:APPDATA) {
-                            $candidates += (Join-Path $env:APPDATA "npm\pm2.cmd")
-                          }
-                          try {
-                            $prefix = npm config get prefix 2>$null
-                            if ($prefix) {
-                              $candidates += (Join-Path $prefix "pm2.cmd")
-                            }
-                          } catch {}
-                          $candidates += "C:\Program Files\nodejs\pm2.cmd"
-                          foreach ($candidate in $candidates | Select-Object -Unique) {
-                            if ($candidate -and (Test-Path $candidate)) {
-                              return $candidate
-                            }
-                          }
-                        }
-                        return $null
-                      }
-
                       # Log server information
                       Write-Host "========================================="
                       Write-Host "Deploying to Server: $env:COMPUTERNAME"
@@ -79,15 +52,6 @@ stages:
                       
                       cd "$(DEPLOY_PATH)"
                       
-                      # Use service account's PM2_HOME for consistent process management
-                      $pm2Home = "C:\Users\SVC-PARENTPORTAL\.pm2"
-                      if (-not (Test-Path $pm2Home)) {
-                        New-Item -Path $pm2Home -ItemType Directory -Force | Out-Null
-                      }
-                      $env:PM2_HOME = $pm2Home
-                      Write-Host "PM2 home set to $pm2Home"
-                      Write-Host "Current user: $env:USERNAME"
-
                       Write-Host "Pulling latest from staging-release..."
                       git fetch origin
                       git reset --hard origin/staging-release
@@ -103,18 +67,7 @@ stages:
                         Write-Warning ".env.test not found - ensure it exists in the repository"
                       }
                       
-                      Write-Host "Stopping PM2 processes to release file locks..."
-                      $pm2Cmd = Get-Pm2Command
-                      if ($pm2Cmd) {
-                        try {
-                          & $pm2Cmd stop ecosystem.config.js 2>$null
-                          & $pm2Cmd delete ecosystem.config.js 2>$null
-                        } catch {
-                          Write-Host "PM2 stop/delete failed or app not running"
-                        }
-                      } else {
-                        Write-Host "PM2 not available; skipping stop/delete"
-                      }
+                      Write-Host "Skipping PM2 process management (handled manually)."
                       Get-Process node -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
                       Start-Sleep -Seconds 1
                       
@@ -161,57 +114,6 @@ stages:
                       }
                       Write-Host "Build verification successful."
                       
-                      Write-Host "Ensuring PM2 is installed..."
-                      $pm2Cmd = Get-Pm2Command
-                      if (-not $pm2Cmd) {
-                        Write-Host "Installing PM2 globally..."
-                        npm install -g pm2
-                        $pm2Cmd = Get-Pm2Command
-                      }
-                      if (-not $pm2Cmd) {
-                        Write-Error "Unable to locate pm2 executable even after installation."
-                        exit 1
-                      }
-
-                      Write-Host "Managing PM2 process using ecosystem.config.js..."
-                      
-                      # Always delete old processes and start fresh to ensure clean state
-                      Write-Host "Cleaning up any existing PM2 processes..."
-                      try {
-                        & $pm2Cmd delete all 2>&1 | Out-Null
-                      } catch {
-                        # Ignore errors - process may not exist
-                      }
-                      $LASTEXITCODE = 0  # Reset exit code
-                      
-                      Write-Host "Starting PM2 process from ecosystem config..."
-                      & $pm2Cmd start ecosystem.config.js --env production
-                      if ($LASTEXITCODE -ne 0) {
-                        Write-Error "Failed to start PM2 process."
-                        exit 1
-                      }
-                      
-                      Write-Host "Saving PM2 process list for auto-resurrection..."
-                      & $pm2Cmd save --force
-                      if ($LASTEXITCODE -ne 0) {
-                        Write-Warning "PM2 save failed, but continuing..."
-                      }
-                      
-                      Write-Host "Setting PM2 to startup on system boot..."
-                      try {
-                        & $pm2Cmd startup 2>&1 | Out-Null
-                      } catch {
-                        # Ignore errors from startup command
-                      }
-                      $LASTEXITCODE = 0  # Reset exit code
-                      
-                      Write-Host "Current PM2 status:"
-                      & $pm2Cmd status
-                      
-                      Write-Host ""
-                      Write-Host "PM2 Management Info:"
-                      Write-Host "  PM2_HOME: $pm2Home"
-                      Write-Host "  To check status later, run: `$env:PM2_HOME = '$pm2Home'; pm2 status"
-                      Write-Host "  Saved process list: $pm2Home\dump.pm2"
+                      Write-Host "Skipping PM2 provisioning (handled manually after deployment)."
 
                       Write-Host "Deployment complete!"
