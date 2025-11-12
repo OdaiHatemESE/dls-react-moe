@@ -911,6 +911,24 @@ function deriveStatusBannerForStatus(status: number | null): ChildStatusBannerDe
     };
   }
 
+  if (status === 4) {
+    return {
+      key: "childActions.status.approved",
+      messageKey: "childActions.status.approved",
+      message: "Information approved successfully",
+      severity: "success",
+    };
+  }
+
+  if (status === 2) {
+    return {
+      key: "childActions.status.returnToUpdate",
+      messageKey: "childActions.status.returnToUpdate",
+      message: "You can now update your information",
+      severity: "info",
+    };
+  }
+
   return null;
 }
 

@@ -248,6 +248,14 @@ export function ChildActions({
   const statusBanner = data?.statusBanner ?? null;
   const actionsLabel = locale === "ar" ? "إجراءات الطالب" : "Student Actions";
 
+  const statusTooltipText = React.useMemo(() => {
+    const statusId = data?.idhStatusId;
+    if (locale === "ar") {
+      return `حالة تحديث المعلومات - الحالة: ${statusId ?? "لا يوجد"}`;
+    }
+    return `Information Update - Status: ${statusId ?? "None"}`;
+  }, [locale, data?.idhStatusId]);
+
   if (isLoading) {
     return (
       <div className={clsx("inline-flex items-center gap-2", className)}>
@@ -279,22 +287,46 @@ export function ChildActions({
     if (!statusBanner) return null;
 
     const message = getStatusMessage(statusBanner, locale);
+    const isInProgress = statusBanner.messageKey === "childActions.status.inProgress";
+    const isApproved = statusBanner.messageKey === "childActions.status.approved";
+    const isReturned = statusBanner.messageKey === "childActions.status.returnToUpdate";
 
     return (
       <div
         className={clsx(
           "inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium transition-all",
-          "bg-gradient-to-r from-chart-1/10 to-chart-1/5 border border-chart-1/20",
+          isInProgress && "bg-gradient-to-r from-amber-500/10 to-amber-500/5 border border-amber-500/20",
+          isApproved && "bg-gradient-to-r from-emerald-500/10 to-emerald-500/5 border border-emerald-500/20",
+          isReturned && "bg-gradient-to-r from-chart-1/10 to-chart-1/5 border border-chart-1/20",
           compact ? "text-xs" : "text-sm"
         )}
       >
-        <div className="relative">
-          <svg className="w-4 h-4 text-chart-1 animate-spin" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+        <span title={statusTooltipText} className="inline-flex cursor-help">
+          <svg 
+            className={clsx(
+              "w-4 h-4",
+              isInProgress && "text-amber-600",
+              isApproved && "text-emerald-600",
+              isReturned && "text-chart-1"
+            )} 
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24"
+            aria-label={statusTooltipText}
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-        </div>
-        <span className="text-chart-1 font-semibold">{message}</span>
+        </span>
+        <span 
+          className={clsx(
+            "font-semibold",
+            isInProgress && "text-amber-600",
+            isApproved && "text-emerald-600",
+            isReturned && "text-chart-1"
+          )}
+        >
+          {message}
+        </span>
       </div>
     );
   };
@@ -569,8 +601,16 @@ const FALLBACK_ACTION_DESCRIPTIONS: Record<string, { en: string; ar: string }> =
 
 const STATUS_MESSAGES: Record<string, { en: string; ar: string }> = {
   "childActions.status.inProgress": {
-    en: "Update request in progress...",
-    ar: "طلب تحديث البيانات قيد المعالجة...",
+    en: "In Progress",
+    ar: "قيد المعالجة",
+  },
+  "childActions.status.approved": {
+    en: "Approved",
+    ar: "تمت الموافقة",
+  },
+  "childActions.status.returnToUpdate": {
+    en: "Returned",
+    ar: "تم الإرجاع",
   },
 };
 
