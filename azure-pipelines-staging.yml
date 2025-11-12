@@ -173,46 +173,35 @@ stages:
 
                       Write-Host "Managing PM2 process using ecosystem.config.js..."
                       
-                      # Check if PM2 daemon is running and if our app exists in process list
-                      $pm2List = & $pm2Cmd list 2>&1 | Out-String
-                      $appExists = $pm2List -match "PPApp-st"
+                      # Always delete old processes and start fresh to ensure clean state
+                      Write-Host "Cleaning up any existing PM2 processes..."
+                      & $pm2Cmd delete all 2>$null
+                      $LASTEXITCODE = 0  # Ignore exit code from delete
                       
-                      Write-Host "PM2 process list check - App exists: $appExists"
-                      
-                      if ($appExists) {
-                        Write-Host "Restarting existing PM2 process..."
-                        & $pm2Cmd restart ecosystem.config.js --update-env
-                        if ($LASTEXITCODE -eq 0) {
-                          Write-Host "Successfully restarted PM2 process."
-                        } else {
-                          Write-Host "Restart failed, will try to start fresh..."
-                          & $pm2Cmd delete all 2>$null
-                          & $pm2Cmd start ecosystem.config.js --env production
-                        }
-                      } else {
-                        Write-Host "No existing PM2 process found, starting fresh..."
-                        # Kill any orphaned PM2 daemon and start clean
-                        try {
-                          & $pm2Cmd kill 2>$null
-                        } catch {
-                          Write-Host "PM2 kill command completed (daemon may not have been running)"
-                        }
-                        # Reset exit code - pm2 kill returns 1 even on success sometimes
-                        $LASTEXITCODE = 0
-                        Start-Sleep -Seconds 2
-                        
-                        & $pm2Cmd start ecosystem.config.js --env production
-                        if ($LASTEXITCODE -ne 0) {
-                          Write-Error "Failed to start PM2 process."
-                          exit 1
-                        }
-                        Write-Host "Successfully started new PM2 process."
+                      Write-Host "Starting PM2 process from ecosystem config..."
+                      & $pm2Cmd start ecosystem.config.js --env production
+                      if ($LASTEXITCODE -ne 0) {
+                        Write-Error "Failed to start PM2 process."
+                        exit 1
                       }
-
-                      Write-Host "Saving PM2 process list..."
+                      
+                      Write-Host "Saving PM2 process list for auto-resurrection..."
                       & $pm2Cmd save --force
+                      if ($LASTEXITCODE -ne 0) {
+                        Write-Warning "PM2 save failed, but continuing..."
+                      }
+                      
+                      Write-Host "Setting PM2 to startup on system boot..."
+                      & $pm2Cmd startup 2>$null
+                      $LASTEXITCODE = 0  # Ignore exit code from startup
                       
                       Write-Host "Current PM2 status:"
                       & $pm2Cmd status
+                      
+                      Write-Host ""
+                      Write-Host "PM2 Management Info:"
+                      Write-Host "  PM2_HOME: $pm2Home"
+                      Write-Host "  To check status later, run: `$env:PM2_HOME = '$pm2Home'; pm2 status"
+                      Write-Host "  Saved process list: $pm2Home\dump.pm2"
 
                       Write-Host "Deployment complete!"
