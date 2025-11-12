@@ -77,10 +77,13 @@ stages:
                       
                       cd "$(DEPLOY_PATH)"
                       
-                      # Use deployment folder for PM2_HOME to ensure consistency across users
-                      $pm2Home = Join-Path "$(DEPLOY_PATH)" ".pm2"
+                      # Use a shared PM2_HOME location accessible to all users
+                      # This allows both deployment and manual PM2 commands to see the same processes
+                      $pm2Home = "C:\ProgramData\pm2-ppapp-staging"
                       if (-not (Test-Path $pm2Home)) {
                         New-Item -Path $pm2Home -ItemType Directory -Force | Out-Null
+                        # Grant appropriate permissions to service account
+                        icacls $pm2Home /grant "SVC-PARENTPORTAL:(OI)(CI)F" /T
                       }
                       $env:PM2_HOME = $pm2Home
                       Write-Host "PM2 home set to $pm2Home"
