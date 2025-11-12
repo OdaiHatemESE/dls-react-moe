@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { authorizeStudentAccess } from "@/lib/student-authorization";
+import type { StudentProfileV1 } from "@/app/types/studentprofile";
 
 export const dynamic = "force-dynamic";
 
@@ -191,6 +193,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, error: "datetime is required" }, { status: 400 });
     }
 
+    // Get parent's Emirates ID from session
+    const parentEid = session?.user?.emiratesId;
+    if (!parentEid) {
+      return NextResponse.json(
+        { ok: false, error: "Parent Emirates ID not found in session" },
+        { status: 401 },
+      );
+    }
+
+    // Get PP token first for authorization check
     const tokenUrl = buildTokenUrl(req);
     const tokenRes = await fetch(tokenUrl);
     const tokenData: PPTokenResponse = await tokenRes.json();
@@ -202,11 +214,53 @@ export async function POST(req: Request) {
       );
     }
 
+    // Find student by studentNumber to get their ID for authorization
+    // Fetch all students for this parent
     const baseUrl = process.env.PP_BASE_URL;
     if (!baseUrl) {
       return NextResponse.json({ ok: false, error: "PP_BASE_URL not configured" }, { status: 500 });
     }
 
+    const profilesUrl = `${baseUrl.replace(/\/$/, '')}/oneroster/students/profiles?EmirateId=${parentEid}`;
+    const profilesRes = await fetch(profilesUrl, {
+      headers: {
+        'Authorization': `Bearer ${tokenData.accessToken}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!profilesRes.ok) {
+      return NextResponse.json(
+        { ok: false, error: "Failed to fetch parent's children" },
+        { status: profilesRes.status },
+      );
+    }
+
+    const studentList: StudentProfileV1[] = await profilesRes.json();
+    const student = studentList.find(s => s.studentNumber === studentNumber);
+
+    if (!student) {
+      return NextResponse.json(
+        { ok: false, error: "Student not found or not authorized for this parent" },
+        { status: 404 },
+      );
+    }
+
+    // Now authorize with the student ID
+    const authResult = await authorizeStudentAccess(
+      student.id,
+      parentEid,
+      tokenData.accessToken
+    );
+
+    if (!authResult.authorized) {
+      return NextResponse.json(
+        { ok: false, error: authResult.error.message },
+        { status: authResult.error.status },
+      );
+    }
+
+    // Use token and baseUrl from authorization check
     const upstreamUrl = `${baseUrl.replace(/\/$/, "")}/idh/students-partnership-charter`;
     const upstreamRes = await fetch(upstreamUrl, {
       method: "POST",

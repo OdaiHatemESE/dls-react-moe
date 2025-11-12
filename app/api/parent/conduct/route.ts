@@ -1,10 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import type {
   ParentConductAggregatedResponse,
 } from "@/lib/parent-conduct";
 import type { StudentProfileV1 } from "@/app/types/studentprofile";
+import { authorizeStudentOwnership } from "@/lib/student-authorization";
 
 export const dynamic = "force-dynamic";
+
+type PPTokenResponse = {
+  accessToken?: string;
+  error?: string;
+};
 
 class UpstreamFetchError extends Error {
   constructor(
@@ -66,6 +74,49 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(
       { ok: false, error: "studentPersonId query parameter is required" },
       { status: 400 },
+    );
+  }
+
+  // Get session and validate parent
+  const session = await getServerSession(authOptions);
+  if (!session?.user) {
+    return NextResponse.json(
+      { ok: false, error: "Unauthorized" },
+      { status: 401 },
+    );
+  }
+
+  const parentEid = session?.user?.emiratesId;
+  if (!parentEid) {
+    return NextResponse.json(
+      { ok: false, error: "Parent Emirates ID not found in session" },
+      { status: 401 },
+    );
+  }
+
+  // Get PP token for authorization
+  const tokenUrl = new URL('/api/PP/auth/token', req.nextUrl.origin).toString();
+  const tokenRes = await fetch(tokenUrl);
+  const tokenData: PPTokenResponse = await tokenRes.json();
+
+  if (!tokenRes.ok || !tokenData.accessToken) {
+    return NextResponse.json(
+      { ok: false, error: tokenData.error || 'Failed to get PP access token' },
+      { status: 500 },
+    );
+  }
+
+  // Authorize: Check student ownership (read-only, so just ownership not active enrollment)
+  const authResult = await authorizeStudentOwnership(
+    studentPersonId,
+    parentEid,
+    tokenData.accessToken
+  );
+
+  if (!authResult.authorized) {
+    return NextResponse.json(
+      { ok: false, error: authResult.error.message },
+      { status: authResult.error.status },
     );
   }
 

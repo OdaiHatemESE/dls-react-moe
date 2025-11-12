@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth/next';
 import type { Session } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import type { IDHStudent } from '@/app/types/idh';
+import { authorizeStudentAccess } from '@/lib/student-authorization';
 
 type PPTokenResponse = {
   accessToken?: string;
@@ -188,6 +189,41 @@ export async function POST(req: Request) {
       );
     }
 
+    // Get parent's Emirates ID from session
+    const parentEid = session?.user?.emiratesId;
+    if (!parentEid) {
+      return NextResponse.json(
+        { error: 'Parent Emirates ID not found in session' },
+        { status: 401 }
+      );
+    }
+
+    // Get PP token first for authorization check
+    const tokenUrl = buildTokenUrl(req);
+    const tokenRes = await fetch(tokenUrl);
+    const tokenData: PPTokenResponse = await tokenRes.json();
+
+    if (!tokenRes.ok || !tokenData.accessToken) {
+      return NextResponse.json(
+        { error: tokenData.error || 'Failed to get PP access token' },
+        { status: 500 }
+      );
+    }
+
+    // Authorize: Check student ownership and active enrollment
+    const authResult = await authorizeStudentAccess(
+      body.sourceId,
+      parentEid,
+      tokenData.accessToken
+    );
+
+    if (!authResult.authorized) {
+      return NextResponse.json(
+        { error: authResult.error.message },
+        { status: authResult.error.status }
+      );
+    }
+
     // Validate required fields
     const requiredFields: (keyof IDHStudent)[] = [
       'studentNumber',
@@ -204,18 +240,7 @@ export async function POST(req: Request) {
       }
     }
 
-    // Get PP token from our token endpoint
-    const tokenUrl = buildTokenUrl(req);
-    const tokenRes = await fetch(tokenUrl);
-    const tokenData: PPTokenResponse = await tokenRes.json();
-
-    if (!tokenRes.ok || !tokenData.accessToken) {
-      return NextResponse.json(
-        { error: tokenData.error || 'Failed to get PP access token' },
-        { status: 500 }
-      );
-    }
-
+    // Use token from authorization check
     const accessToken = tokenData.accessToken;
     const baseUrl = process.env.PP_BASE_URL;
 

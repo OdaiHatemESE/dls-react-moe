@@ -282,25 +282,31 @@ export default function ChildCards() {
                     key={child.id} 
                     className={clsx(
                       "group relative overflow-hidden transition-all duration-300",
-                      "border-border/60  hover:shadow-2xl",
+                      "border-border/60 hover:shadow-2xl",
                       "touch-manipulation active:scale-[0.98]"
                     )}
                   >
-                    {/* Background gradient */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl -translate-y-16 translate-x-16 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    {/* Background gradient - muted for inactive */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-slate-100/50 via-transparent to-slate-50/30" />
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-slate-200/20 rounded-full blur-3xl -translate-y-16 translate-x-16" />
                     
                     <div className="relative p-5">
                       {/* Student Header */}
                       <div className="flex items-center gap-4 mb-5">
-                        {/* Avatar with status indicator */}
-                        <ChildAvatar displayName={displayName} />
+                        {/* Avatar with muted colors */}
+                        <div className="relative flex-shrink-0">
+                          <div className="w-20 h-20 bg-gradient-to-br from-slate-400 via-slate-400/90 to-slate-400/70 rounded-2xl flex items-center justify-center shadow-xl ring-2 ring-card">
+                            <span className="text-2xl font-bold text-slate-100">
+                              {displayName.charAt(0).toUpperCase()}
+                            </span>
+                          </div>
+                        </div>
 
-                        {/* Student Info */}
-                        <div className="flex-1 min-w-0">
-                          <h3 className="text-lg font-bold text-foreground truncate mb-3 group-hover:text-primary transition-colors">
-                            {displayName}
-                          </h3>
+                      {/* Student Info */}
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-lg font-bold text-muted-foreground truncate mb-3">
+                          {displayName}
+                        </h3>
                           {/* ID and Status Badge on same line */}
                           <div className="flex flex-wrap items-center gap-2">
                             <Badge variant="outline" className="text-xs px-2.5 py-1 font-medium bg-muted/50 border-border/70">
@@ -684,15 +690,21 @@ export default function ChildCards() {
                     return (
                       <tr 
                         key={child.id}
-                        className="group border-b border-border/40 hover:bg-gradient-to-r hover:from-primary/8 hover:via-primary/5 hover:to-transparent transition-all duration-300"
+                        className="group border-b border-border/40 hover:bg-muted/30 transition-all duration-300"
                       >
                         {/* Enhanced Student Name & Avatar */}
                         <td className="px-8 py-6">
                           <div className={clsx("flex items-center gap-5", locale === 'ar' && '')}>
-                            <ChildAvatarDesktop displayName={displayName} />
+                            <div className="relative flex-shrink-0">
+                              <div className="w-16 h-16 bg-gradient-to-br from-slate-400 via-slate-400/90 to-slate-400/70 rounded-2xl flex items-center justify-center shadow-lg ring-2 ring-card">
+                                <span className="text-2xl font-bold text-slate-100">
+                                  {displayName.charAt(0).toUpperCase()}
+                                </span>
+                              </div>
+                            </div>
                             <div className="flex-1 min-w-0">
                               <div className={clsx(
-                                "font-bold text-foreground group-hover:text-primary transition-colors mb-3",
+                                "font-bold text-muted-foreground mb-3",
                                 locale === 'ar' ? 'text-lg' : 'text-xl'
                               )}>
                                 {displayName}
