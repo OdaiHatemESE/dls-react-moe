@@ -97,10 +97,7 @@ export default function VerticalHeader() {
   const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
   const { data: session } = useSession();
   const { theme: currentTheme, switchTheme } = useTheme();
-  const { unread } = useNotificationCount({ 
-    showToast: true,
-    locale: locale 
-  });
+  const { unread } = useNotificationCount();
   
   // Check admin access
   const { data: adminAccess } = useSWR<{ hasAccess: boolean }>('/api/admin/check-access', jsonFetcher);

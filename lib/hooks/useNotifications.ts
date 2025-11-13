@@ -5,11 +5,8 @@
  * Supports auto-refresh, optimistic updates, and filtering.
  */
 
-import { useEffect, useRef } from "react";
 import useSWR from "swr";
 import { jsonFetcher } from "@/lib/swr";
-import { toast } from "@/lib/hooks/use-toast";
-import { Bell } from "lucide-react";
 import type {
   Notification,
   NotificationCount,
@@ -142,9 +139,6 @@ export function useNotificationCount(config?: {
   showToast?: boolean;
   locale?: string;
 }) {
-  const previousUnreadRef = useRef<number | undefined>(undefined);
-  const isFirstLoadRef = useRef(true);
-  
   const { data, error, isLoading, mutate } = useSWR<NotificationCount>(
     "/api/notifications/count",
     jsonFetcher,
@@ -155,45 +149,9 @@ export function useNotificationCount(config?: {
     }
   );
 
-  // Show toast when new notifications arrive
-  useEffect(() => {
-    const showToast = config?.showToast !== false; // Default true
-    const locale = config?.locale || "en";
-    
-    if (showToast && data) {
-      // On first load, just set the initial count without showing toast
-      if (isFirstLoadRef.current) {
-        isFirstLoadRef.current = false;
-        previousUnreadRef.current = data.unread;
-        return;
-      }
-      
-      // Check if there are new notifications
-      if (previousUnreadRef.current !== undefined) {
-        const newUnread = data.unread - previousUnreadRef.current;
-        
-        if (newUnread > 0) {
-          const isArabic = locale === "ar";
-          const title = isArabic 
-            ? newUnread === 1 ? "🔔 إشعار جديد" : "🔔 إشعارات جديدة"
-            : newUnread === 1 ? "🔔 New Notification" : "🔔 New Notifications";
-          
-          const description = isArabic 
-            ? `لديك ${newUnread} إشعار${newUnread > 1 ? 'ات' : ''} جديد${newUnread > 1 ? 'ة' : ''}`
-            : `You have ${newUnread} new notification${newUnread > 1 ? 's' : ''}`;
-          
-          toast({
-            title,
-            description,
-            duration: 5000,
-          });
-        }
-      }
-      
-      // Update the previous count
-      previousUnreadRef.current = data.unread;
-    }
-  }, [data?.unread, config?.showToast, config?.locale]);
+  // Note: Toast notifications are now handled by NotificationToastListener component
+  // to prevent duplicate toasts when multiple components use this hook.
+  // The showToast and locale options are kept for backward compatibility but ignored.
 
   return {
     count: data,

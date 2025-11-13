@@ -8,54 +8,69 @@ import { useI18n } from '@/app/i18n/I18nProvider';
 import { 
   DashboardIcon,
   SummaryIcon,
-  MessagesIcon, 
-  AnnouncementsIcon,
-  CalendarIcon, 
   ProfileIcon
 } from './icons';
+import { Settings } from 'lucide-react';
+import useSWR from 'swr';
+import { jsonFetcher } from '@/lib/swr';
+import { useNotificationCount } from '@/lib/hooks/useNotifications';
 
 export default function MobileBottomNav() {
   const { t, locale } = useI18n();
   const pathname = usePathname();
+  const { unread } = useNotificationCount();
+  
+  // Check admin access
+  const { data: adminAccess } = useSWR<{ hasAccess: boolean }>('/api/admin/check-access', jsonFetcher);
 
-  const navigation = [
+  type NavItem = { 
+    key: keyof typeof t.nav | 'admin' | 'notifications'; 
+    href: string; 
+    icon: typeof DashboardIcon | typeof Settings | (() => JSX.Element);
+    label: string;
+    isAdminOnly?: boolean;
+    badge?: string;
+  };
+
+  // Build navigation items matching VerticalHeader
+  const navigation: NavItem[] = [
     { 
-      key: 'dashboard' as keyof typeof t.nav, 
+      key: 'dashboard', 
       href: '/dashboard', 
       icon: DashboardIcon,
-      label: locale === 'ar' ? 'الرئيسية' : 'Home'
+      label: t.nav.dashboard
     },
     { 
-      key: 'summary' as keyof typeof t.nav, 
+      key: 'summary', 
       href: '/parent/summary', 
       icon: SummaryIcon,
-      label: locale === 'ar' ? 'الملخص' : 'Summary'
+      label: t.nav.summary
     },
-    { 
-      key: 'announcements' as keyof typeof t.nav, 
-      href: '/announcements', 
-      icon: AnnouncementsIcon,
-      label: locale === 'ar' ? 'الإعلانات' : 'News',
-      badge: '3'
-    },
-    { 
-      key: 'calendar' as keyof typeof t.nav, 
-      href: '/calendar', 
-      icon: CalendarIcon,
-      label: locale === 'ar' ? 'التقويم' : 'Calendar'
-    },
+    // Admin panel link - only shown if user has admin access
+    ...(adminAccess?.hasAccess ? [{
+      key: 'admin' as const,
+      href: '/admin/eid',
+      icon: Settings as any,
+      label: locale === 'ar' ? 'إدارة' : 'Admin',
+      isAdminOnly: true
+    }] : []),
+    // Notifications
     {
-      key: 'messages' as keyof typeof t.nav,
-      href: '/messages',
-      icon: MessagesIcon,
-      label: locale === 'ar' ? 'الرسائل' : 'Messages',
-      badge: '5'
+      key: 'notifications' as const,
+      href: '/notifications',
+      icon: () => (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+        </svg>
+      ),
+      label: locale === 'ar' ? 'إشعارات' : 'Alerts',
+      badge: unread > 0 ? unread.toString() : undefined
     },
     { 
-      key: 'profile' as keyof typeof t.nav, 
+      key: 'profile', 
       href: '/profile', 
       icon: ProfileIcon,
-      label: locale === 'ar' ? 'الملف' : 'Profile'
+      label: t.nav.profile
     }
   ];
 
@@ -66,7 +81,6 @@ export default function MobileBottomNav() {
         <div className="px-2 py-1">
           <nav className="flex justify-between items-center">
             {navigation.map((item) => {
-              const Icon = item.icon;
               const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href));
               
               return (
@@ -77,19 +91,32 @@ export default function MobileBottomNav() {
                     "relative flex flex-col items-center justify-center p-2.5 rounded-xl transition-all duration-200 min-w-0 flex-1 mx-0.5",
                     "touch-manipulation select-none active:scale-95",
                     isActive
-                      ? "text-primary bg-primary/10 shadow-sm"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                      ? item.isAdminOnly
+                        ? "text-white bg-gradient-to-r from-aegold-500 to-aegold-600 shadow-md"
+                        : "text-primary bg-primary/10 shadow-sm"
+                      : item.isAdminOnly
+                        ? "text-muted-foreground hover:text-aegold-600 hover:bg-aegold-50"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                   )}
                   aria-current={isActive ? 'page' : undefined}
                 >
                   <div className="relative">
-                    <Icon 
-                      className={clsx(
-                        "w-5 h-5 transition-all duration-200",
+                    {typeof item.icon === 'function' ? (
+                      <div className={clsx(
+                        "transition-all duration-200",
                         isActive && "scale-110"
-                      )} 
-                      aria-hidden="true" 
-                    />
+                      )}>
+                        {item.icon()}
+                      </div>
+                    ) : (
+                      <item.icon
+                        className={clsx(
+                          "w-5 h-5 transition-all duration-200",
+                          isActive && "scale-110"
+                        )} 
+                        aria-hidden="true" 
+                      />
+                    )}
                     {item.badge && (
                       <span className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground text-xs rounded-full h-4 w-4 flex items-center justify-center font-medium animate-pulse">
                         {item.badge}

@@ -60,6 +60,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <I18nProvider defaultLocale="ar">
               <IconProvider>
                 <SWRProvider>
+                  <NotificationToastListener />
                   <ConditionalLayout>
                     {children}
                   </ConditionalLayout>
@@ -86,3 +87,4 @@ import { I18nProvider } from "./i18n/I18nProvider";
 import SWRProvider from "@/app/components/SWRProvider";
 import ThemeProvider from "@/app/components/ThemeProvider";
 import { Toaster } from "@/components/ui/toaster";
+import { NotificationToastListener } from "@/app/components/NotificationToastListener";
