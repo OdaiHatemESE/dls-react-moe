@@ -5,7 +5,7 @@
 
 import { toast } from "@/lib/hooks/use-toast"
 
-type ToastVariant = "default" | "destructive"
+type ToastVariant = "default" | "success" | "error" | "warning" | "info"
 
 interface ToastConfig {
   successTitle?: string
@@ -41,20 +41,17 @@ export async function handleApiResponse<T = any>(
     toast({
       title: config?.errorTitle || "Error",
       description: config?.errorDescription || errorMessage,
-      variant: "destructive",
+      variant: "error",
     })
 
     throw new Error(errorMessage)
   }
 
   if (config?.successTitle) {
-    const className = "border-green-500 bg-green-50 dark:bg-green-950 text-green-900 dark:text-green-100"
-    
     toast({
       title: config.successTitle,
       description: config.successDescription,
-      variant: "default",
-      className,
+      variant: "success",
     })
   }
 
@@ -89,7 +86,7 @@ export function showLoadingToast(message: string) {
   return toast({
     title: message,
     duration: Infinity,
-    className: "border-blue-500 bg-blue-50 dark:bg-blue-950 text-blue-900 dark:text-blue-100",
+    variant: "info",
   })
 }
 
@@ -100,8 +97,7 @@ export function showSuccessToast(title: string, description?: string) {
   return toast({
     title,
     description,
-    variant: "default",
-    className: "border-green-500 bg-green-50 dark:bg-green-950 text-green-900 dark:text-green-100",
+    variant: "success",
   })
 }
 
@@ -112,7 +108,7 @@ export function showErrorToast(title: string, description?: string) {
   return toast({
     title,
     description,
-    variant: "destructive",
+    variant: "error",
   })
 }
 
@@ -123,7 +119,7 @@ export function showWarningToast(title: string, description?: string) {
   return toast({
     title,
     description,
-    className: "border-yellow-500 bg-yellow-50 dark:bg-yellow-950 text-yellow-900 dark:text-yellow-100",
+    variant: "warning",
   })
 }
 
@@ -134,6 +130,6 @@ export function showInfoToast(title: string, description?: string) {
   return toast({
     title,
     description,
-    className: "border-blue-500 bg-blue-50 dark:bg-blue-950 text-blue-900 dark:text-blue-100",
+    variant: "info",
   })
 }

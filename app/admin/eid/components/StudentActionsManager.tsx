@@ -523,7 +523,7 @@ export function StudentActionsManager() {
       toast({
         title: "Invalid configuration",
         description: message,
-        variant: "destructive",
+        variant: "error",
       });
       setIsSubmitting(false);
       return;
@@ -571,7 +571,7 @@ export function StudentActionsManager() {
       toast({
         title: "Error",
         description: message,
-        variant: "destructive",
+        variant: "error",
       });
     } finally {
       setIsSubmitting(false);
@@ -602,7 +602,7 @@ export function StudentActionsManager() {
       toast({
         title: "Error",
         description: message,
-        variant: "destructive",
+        variant: "error",
       });
     }
   };
@@ -626,7 +626,7 @@ export function StudentActionsManager() {
       toast({
         title: "Error",
         description: message,
-        variant: "destructive",
+        variant: "error",
       });
     }
   };

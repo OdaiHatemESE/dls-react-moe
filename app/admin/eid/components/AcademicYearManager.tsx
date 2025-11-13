@@ -146,7 +146,7 @@ export function AcademicYearManager() {
       toast({
         title: "Error",
         description: error.message,
-        variant: "destructive",
+        variant: "error",
       });
     } finally {
       setIsInitializing(false);
@@ -160,7 +160,7 @@ export function AcademicYearManager() {
       toast({
         title: "Error",
         description: "Please select an academic year",
-        variant: "destructive",
+        variant: "error",
       });
       return;
     }
@@ -196,7 +196,7 @@ export function AcademicYearManager() {
       toast({
         title: "Error",
         description: error.message,
-        variant: "destructive",
+        variant: "error",
       });
     } finally {
       setIsSubmitting(false);
@@ -226,7 +226,7 @@ export function AcademicYearManager() {
       toast({
         title: "Error",
         description: error.message,
-        variant: "destructive",
+        variant: "error",
       });
     }
   };
@@ -256,7 +256,7 @@ export function AcademicYearManager() {
       toast({
         title: "Error",
         description: error.message,
-        variant: "destructive",
+        variant: "error",
       });
     }
   };

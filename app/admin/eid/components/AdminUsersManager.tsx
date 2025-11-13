@@ -111,7 +111,7 @@ export function AdminUsersManager() {
       toast({
         title: "Error",
         description: error.message,
-        variant: "destructive",
+        variant: "error",
       });
     } finally {
       setIsSubmitting(false);
@@ -141,7 +141,7 @@ export function AdminUsersManager() {
       toast({
         title: "Error",
         description: error.message,
-        variant: "destructive",
+        variant: "error",
       });
     }
   };
@@ -164,7 +164,7 @@ export function AdminUsersManager() {
       toast({
         title: "Error",
         description: error.message,
-        variant: "destructive",
+        variant: "error",
       });
     }
   };

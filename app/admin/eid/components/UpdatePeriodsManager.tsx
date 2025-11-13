@@ -121,7 +121,7 @@ export function UpdatePeriodsManager() {
       toast({
         title: "Error",
         description: error.message,
-        variant: "destructive",
+        variant: "error",
       });
     } finally {
       setIsSubmitting(false);
@@ -151,7 +151,7 @@ export function UpdatePeriodsManager() {
       toast({
         title: "Error",
         description: error.message,
-        variant: "destructive",
+        variant: "error",
       });
     }
   };
@@ -174,7 +174,7 @@ export function UpdatePeriodsManager() {
       toast({
         title: "Error",
         description: error.message,
-        variant: "destructive",
+        variant: "error",
       });
     }
   };

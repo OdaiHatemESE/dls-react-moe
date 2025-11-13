@@ -26,7 +26,7 @@ export default function MobileBottomNav() {
   type NavItem = { 
     key: keyof typeof t.nav | 'admin' | 'notifications'; 
     href: string; 
-    icon: typeof DashboardIcon | typeof Settings | (() => JSX.Element);
+    icon: React.ComponentType<{ className?: string }> | (() => React.JSX.Element);
     label: string;
     isAdminOnly?: boolean;
     badge?: string;
@@ -101,12 +101,12 @@ export default function MobileBottomNav() {
                   aria-current={isActive ? 'page' : undefined}
                 >
                   <div className="relative">
-                    {typeof item.icon === 'function' ? (
+                    {typeof item.icon === 'function' && item.icon.length === 0 ? (
                       <div className={clsx(
                         "transition-all duration-200",
                         isActive && "scale-110"
                       )}>
-                        {item.icon()}
+                        {(item.icon as () => React.JSX.Element)()}
                       </div>
                     ) : (
                       <item.icon
