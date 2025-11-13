@@ -427,3 +427,6 @@ export interface OnwaniSelection {
   // Optional backend response attached when map lookup succeeds
   dbPlotResponse?: PlotLookupResponse;
 }
+
+// Re-export notification types
+export type { Notification, NotificationType, NotificationData, NotificationCount, NotificationFilter } from "./notification";

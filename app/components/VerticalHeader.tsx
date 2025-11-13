@@ -21,6 +21,8 @@ import { useI18n } from '@/app/i18n/I18nProvider';
 import { useTheme } from '@/lib/hooks/useTheme';
 import useSWR from 'swr';
 import { jsonFetcher } from '@/lib/swr';
+import { NotificationDropdown } from '@/app/components/notifications';
+import { useNotificationCount } from '@/lib/hooks/useNotifications';
 
 type Theme = 'light' | 'blue' | 'green' | 'purple' | 'dark';
 
@@ -95,6 +97,10 @@ export default function VerticalHeader() {
   const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
   const { data: session } = useSession();
   const { theme: currentTheme, switchTheme } = useTheme();
+  const { unread } = useNotificationCount({ 
+    showToast: true,
+    locale: locale 
+  });
   
   // Check admin access
   const { data: adminAccess } = useSWR<{ hasAccess: boolean }>('/api/admin/check-access', jsonFetcher);
@@ -135,6 +141,18 @@ export default function VerticalHeader() {
     // { key: 'profile', href: '/profile', icon: ProfileIcon }
   ];
 
+  // Create notifications navigation item
+  const notificationsNav = {
+    key: 'notifications' as const,
+    href: '/notifications',
+    icon: () => (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+      </svg>
+    ),
+    badge: unread > 0 ? unread.toString() : undefined
+  };
+
   return (
     <>
       {/* Professional Mobile Header */}
@@ -157,22 +175,28 @@ export default function VerticalHeader() {
               </Link>
             </div>
 
-            {/* Professional Menu Button */}
-            <button 
-              className="p-2.5 text-muted-foreground hover:text-primary hover:bg-muted/80 rounded-xl border border-border hover:border-border/80 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:ring-offset-2 transition-all duration-300"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              aria-expanded={isMenuOpen}
-              aria-label="Toggle menu"
-            >
-              <div className="relative w-6 h-6">
-                <div className={`absolute inset-0 transition-all duration-300 ${isMenuOpen ? 'rotate-180 opacity-0' : 'rotate-0 opacity-100'}`}>
-                  <MenuIcon className="w-6 h-6" />
+            {/* Mobile Actions */}
+            <div className="flex items-center gap-2">
+              {/* Notification Bell */}
+              <NotificationDropdown />
+              
+              {/* Professional Menu Button */}
+              <button 
+                className="p-2.5 text-muted-foreground hover:text-primary hover:bg-muted/80 rounded-xl border border-border hover:border-border/80 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:ring-offset-2 transition-all duration-300"
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                aria-expanded={isMenuOpen}
+                aria-label="Toggle menu"
+              >
+                <div className="relative w-6 h-6">
+                  <div className={`absolute inset-0 transition-all duration-300 ${isMenuOpen ? 'rotate-180 opacity-0' : 'rotate-0 opacity-100'}`}>
+                    <MenuIcon className="w-6 h-6" />
+                  </div>
+                  <div className={`absolute inset-0 transition-all duration-300 ${isMenuOpen ? 'rotate-0 opacity-100' : 'rotate-180 opacity-0'}`}>
+                    <XIcon className="w-6 h-6" />
+                  </div>
                 </div>
-                <div className={`absolute inset-0 transition-all duration-300 ${isMenuOpen ? 'rotate-0 opacity-100' : 'rotate-180 opacity-0'}`}>
-                  <XIcon className="w-6 h-6" />
-                </div>
-              </div>
-            </button>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -430,6 +454,53 @@ export default function VerticalHeader() {
                         </li>
                       );
                     })}
+                    
+                    {/* Notifications Menu Item */}
+                    <li key={notificationsNav.href}>
+                      <Link
+                        href={notificationsNav.href}
+                        className={clsx(
+                          'group relative flex items-center gap-x-4 rounded-2xl px-5 py-4 transition-all duration-300 overflow-hidden',
+                          locale === 'ar' ? 'text-base font-semibold tracking-wide' : 'text-base font-semibold',
+                          pathname === notificationsNav.href || pathname.startsWith('/notifications')
+                            ? 'bg-gradient-to-r from-primary to-primary/90 text-primary-foreground shadow-lg shadow-primary/25 scale-105'
+                            : 'text-foreground hover:bg-gradient-to-r hover:from-primary/10 hover:to-transparent hover:text-primary hover:scale-102 hover:shadow-md'
+                        )}
+                        aria-current={pathname === notificationsNav.href ? 'page' : undefined}
+                      >
+                        {/* Active indicator */}
+                        {(pathname === notificationsNav.href || pathname.startsWith('/notifications')) && (
+                          <div className="absolute left-0 top-0 bottom-0 w-1.5 rounded-r-full bg-primary-foreground" />
+                        )}
+                        
+                        {/* Icon with background */}
+                        <div className={clsx(
+                          'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-all duration-300',
+                          pathname === notificationsNav.href || pathname.startsWith('/notifications')
+                            ? 'bg-primary-foreground/20 text-primary-foreground shadow-inner'
+                            : 'bg-muted/50 text-muted-foreground group-hover:bg-primary/20 group-hover:text-primary group-hover:scale-110 group-hover:rotate-3'
+                        )}>
+                          <notificationsNav.icon />
+                        </div>
+                        
+                        <span className="truncate font-semibold flex-1">
+                          {locale === 'ar' ? 'الإشعارات' : 'Notifications'}
+                        </span>
+                        
+                        {notificationsNav.badge && (
+                          <span className="ml-auto inline-flex items-center justify-center min-w-6 h-6 px-2 text-xs font-bold text-white bg-gradient-to-r from-red-500 to-red-600 rounded-full shadow-lg animate-pulse">
+                            {notificationsNav.badge}
+                          </span>
+                        )}
+                        
+                        {/* Hover arrow */}
+                        {!(pathname === notificationsNav.href || pathname.startsWith('/notifications')) && (
+                          <svg className="w-4 h-4 opacity-0 group-hover:opacity-100 transform translate-x-0 group-hover:translate-x-1 transition-all duration-300 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d={locale === 'ar' ? "M15 19l-7-7 7-7" : "M9 5l7 7-7 7"} />
+                          </svg>
+                        )}
+                      </Link>
+                    </li>
                   </ul>
                 </li>
 

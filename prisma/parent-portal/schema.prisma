@@ -25,16 +25,6 @@ model UpdateInformationRequests {
   @@id([Id, studentPersonId], map: "PK_UpdateInformationRequests")
 }
 
-model ApiKey {
-  id        Int      @id @default(autoincrement())
-  name      String
-  keyHash   String
-  scopes    String?
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime
-}
-
 model Student {
   id                       Int                 @id @default(autoincrement())
   orSourcedId              String              @unique
@@ -70,6 +60,7 @@ model Student {
   conductAgreementSignedAt DateTime?
   informationUpdateStatus  Int?
   parentId                 Int?
+  LastSyncedAt             DateTime?
   Parent                   Parent?             @relation(fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   StudentAddress           StudentAddress[]
   StudentContact           StudentContact[]
@@ -127,6 +118,7 @@ model StudentEnrollment {
   studentId            Int
   createdAt            DateTime  @default(now())
   updatedAt            DateTime
+  SchoolYear           String?   @db.NVarChar(50)
   Student              Student   @relation(fields: [studentId], references: [id])
 }
 
@@ -204,6 +196,7 @@ model Parent {
   familyNameEnglish String?
   createdAt         DateTime        @default(now())
   updatedAt         DateTime
+  LastSyncedAt      DateTime?
   ParentContact     ParentContact[]
   Student           Student[]
 }
@@ -216,4 +209,32 @@ model ParentContact {
   createdAt DateTime @default(now())
   updatedAt DateTime
   Parent    Parent   @relation(fields: [parentId], references: [id])
+}
+
+model EFMigrationsHistory {
+  MigrationId    String @id(map: "PK___EFMigrationsHistory") @db.NVarChar(150)
+  ProductVersion String @db.NVarChar(32)
+
+  @@map("__EFMigrationsHistory")
+}
+
+model BackofficeSyncState {
+  id            String   @id @db.VarChar(64)
+  lastHistoryId BigInt   @default(0)
+  updatedAt     DateTime
+}
+
+model Notification {
+  id        Int       @id @default(autoincrement())
+  userId    String    @db.VarChar(64)
+  type      String    @db.VarChar(100)
+  title     String    @db.VarChar(500)
+  body      String    @db.VarChar(Max)
+  data      String    @db.VarChar(Max)
+  isRead    Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  readAt    DateTime?
+
+  @@index([createdAt])
+  @@index([userId, isRead])
 }
