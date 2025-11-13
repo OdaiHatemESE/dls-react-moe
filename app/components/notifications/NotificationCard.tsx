@@ -19,7 +19,6 @@ import {
   Calendar,
 } from "lucide-react";
 import type { KeyboardEvent } from "react";
-import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type { Notification, NotificationType } from "@/types/notification";
 import { useRouter } from "next/navigation";
@@ -131,7 +130,7 @@ const getStatusColorClass = (status: string): string => {
   }
   
   // Pending/In Progress states
-  if (statusLower.includes('قيد') || statusLower.includes('pending') || statusLower.includes('in progress') || statusLower.includes('processing')) {
+  if (statusLower.includes('قيد') || statusLower.includes('مرتجع') || statusLower.includes('pending') || statusLower.includes('in progress') || statusLower.includes('processing') || statusLower.includes('returned')) {
     return "bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300";
   }
   
@@ -198,6 +197,123 @@ export function NotificationCard({
   const isUnread = !notification.isRead;
   const statusTone = statusBadgeClassMap[notification.type as NotificationType] ?? "bg-gray-100 text-gray-700 dark:bg-gray-900/40 dark:text-gray-300";
   const statusDescriptionColor = data?.statusDescription ? getStatusColorClass(data.statusDescription) : statusTone;
+  
+  // Get icon based on status
+  const getStatusIcon = () => {
+    if (!data?.statusDescription) return CheckCircle; // Default to status change icon
+    
+    const status = data.statusDescription.toLowerCase();
+    
+    if (status.includes('موافق') || status.includes('مقبول') || status.includes('approved') || status.includes('accepted')) {
+      return CheckCircle;
+    }
+    
+    if (status.includes('قيد') || status.includes('مرتجع') || status.includes('pending') || status.includes('in progress') || status.includes('processing') || status.includes('returned')) {
+      return Clock;
+    }
+    
+    if (status.includes('مرفوض') || status.includes('ملغى') || status.includes('rejected') || status.includes('cancelled')) {
+      return XCircle;
+    }
+    
+    return CheckCircle; // Default to check circle for status changes
+  };
+  
+  const StatusIcon = getStatusIcon();
+  
+  // Get icon color based on status
+  const getStatusIconColor = (): string => {
+    if (!data?.statusDescription) return "text-blue-600 dark:text-blue-500"; // Default blue
+    
+    const status = data.statusDescription.toLowerCase();
+    
+    if (status.includes('موافق') || status.includes('مقبول') || status.includes('approved') || status.includes('accepted')) {
+      return "text-green-600 dark:text-green-500";
+    }
+    
+    if (status.includes('قيد') || status.includes('مرتجع') || status.includes('pending') || status.includes('in progress') || status.includes('processing') || status.includes('returned')) {
+      return "text-amber-600 dark:text-amber-500";
+    }
+    
+    if (status.includes('مرفوض') || status.includes('ملغى') || status.includes('rejected') || status.includes('cancelled')) {
+      return "text-red-600 dark:text-red-500";
+    }
+    
+    return "text-blue-600 dark:text-blue-500"; // Default blue
+  };
+  
+  const statusIconColor = getStatusIconColor();
+  const statusRingColor = statusIconColor.replace(/text-/g, "ring-");
+  
+  // Get border color based on status
+  const getStatusBorderColor = (): string => {
+    if (!data?.statusDescription) return "border-primary/40";
+    
+    const status = data.statusDescription.toLowerCase();
+    
+    if (status.includes('موافق') || status.includes('مقبول') || status.includes('approved') || status.includes('accepted')) {
+      return "border-green-500/50 dark:border-green-500/40";
+    }
+    
+    if (status.includes('قيد') || status.includes('مرتجع') || status.includes('pending') || status.includes('in progress') || status.includes('processing') || status.includes('returned')) {
+      return "border-amber-500/50 dark:border-amber-500/40";
+    }
+    
+    if (status.includes('مرفوض') || status.includes('ملغى') || status.includes('rejected') || status.includes('cancelled')) {
+      return "border-red-500/50 dark:border-red-500/40";
+    }
+    
+    return "border-blue-500/50 dark:border-blue-500/40";
+  };
+  
+  const statusBorderColor = getStatusBorderColor();
+  
+  // Get accent bar color based on status (for top bar)
+  const getStatusAccentColor = (): string => {
+    if (!data?.statusDescription) return accentColor;
+    
+    const status = data.statusDescription.toLowerCase();
+    
+    if (status.includes('موافق') || status.includes('مقبول') || status.includes('approved') || status.includes('accepted')) {
+      return "bg-green-500";
+    }
+    
+    if (status.includes('قيد') || status.includes('مرتجع') || status.includes('pending') || status.includes('in progress') || status.includes('processing') || status.includes('returned')) {
+      return "bg-amber-500";
+    }
+    
+    if (status.includes('مرفوض') || status.includes('ملغى') || status.includes('rejected') || status.includes('cancelled')) {
+      return "bg-red-500";
+    }
+    
+    return "bg-blue-500";
+  };
+  
+  const statusAccentColor = getStatusAccentColor();
+  
+  // Get background color based on status
+  const getStatusBackgroundColor = (): string => {
+    if (!data?.statusDescription) return "bg-gradient-to-br from-primary-50/50 via-primary-50/30 to-background dark:from-primary-950/20 dark:via-primary-950/10 dark:to-background";
+    
+    const status = data.statusDescription.toLowerCase();
+    
+    if (status.includes('موافق') || status.includes('مقبول') || status.includes('approved') || status.includes('accepted')) {
+      return "bg-gradient-to-br from-green-50/80 via-green-50/50 to-green-50/20 dark:from-green-950/30 dark:via-green-950/20 dark:to-green-950/10";
+    }
+    
+    if (status.includes('قيد') || status.includes('مرتجع') || status.includes('pending') || status.includes('in progress') || status.includes('processing') || status.includes('returned')) {
+      return "bg-gradient-to-br from-amber-50/80 via-amber-50/50 to-amber-50/20 dark:from-amber-950/30 dark:via-amber-950/20 dark:to-amber-950/10";
+    }
+    
+    if (status.includes('مرفوض') || status.includes('ملغى') || status.includes('rejected') || status.includes('cancelled')) {
+      return "bg-gradient-to-br from-red-50/80 via-red-50/50 to-red-50/20 dark:from-red-950/30 dark:via-red-950/20 dark:to-red-950/10";
+    }
+    
+    return "bg-gradient-to-br from-blue-50/80 via-blue-50/50 to-blue-50/20 dark:from-blue-950/30 dark:via-blue-950/20 dark:to-blue-950/10";
+  };
+  
+  const statusBackgroundColor = getStatusBackgroundColor();
+  
   const preferredStudentName = locale === "ar"
     ? notification.studentNameAr ?? notification.studentName
     : notification.studentName ?? notification.studentNameAr;
@@ -219,164 +335,149 @@ export function NotificationCard({
     : null);
 
   return (
-    <Card
+    <div
       role="button"
       tabIndex={0}
       onClick={handleClick}
       onKeyDown={handleKeyDown}
       className={cn(
-        "group relative overflow-hidden rounded-xl border transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+        "group relative overflow-hidden rounded-xl border-2 transition-all duration-300 hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary cursor-pointer",
+        statusBorderColor,
+        statusBackgroundColor,
         isUnread 
-          ? "border-border bg-background shadow-lg backdrop-blur-sm" + " " + bgColor
-          : "border-border/30 bg-background/60 shadow-sm opacity-90",
-        borderColor
+          ? "shadow-lg hover:shadow-2xl hover:-translate-y-0.5 opacity-100" 
+          : " opacity-60 hover:opacity-100"
       )}
     >
-      <span
-        className={cn(
-          "absolute inset-y-0 left-0 rounded-r-full transition-all duration-200",
-          accentColor,
-          isUnread ? "w-1.5 opacity-100" : "w-1 opacity-40"
-        )}
-        aria-hidden="true"
-      />
+      {/* Top gradient accent bar */}
+      
 
-      <div className="flex items-start gap-4 px-5 py-4">
-        <div
-          className={cn(
-            "flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl shadow-sm transition-all duration-200",
-            "ring-2",
-            ringColor,
-            isUnread 
-              ? "bg-white dark:bg-gray-950/90 scale-100" 
-              : "bg-white/80 dark:bg-gray-950/50 scale-95 opacity-80"
-          )}
-        >
-          <Icon className={cn("h-6 w-6 transition-all duration-200", iconColor, isUnread ? "" : "opacity-70")} />
-        </div>
-
-        <div className="flex-1 min-w-0 space-y-3">
-          {/* Header Row */}
-          <div className="flex flex-wrap items-start justify-between gap-2">
-            <div className="flex min-w-0 items-center gap-2 flex-wrap">
-              <Badge
-                variant="outline"
-                className={cn(
-                  "h-6 rounded-full border-none px-3 text-[11px] font-bold uppercase tracking-wider shadow-sm transition-all duration-200",
-                  statusTone
-                )}
-              >
-                {typeLabel}
-              </Badge>
+      {/* Header Section: Student Name & Location */}
+      <div className="px-6 pt-5 pb-4 border-b border-border/30">
+        <div className="flex items-start justify-between gap-4">
+          {/* Left: Student Info */}
+          <div className="flex-1 min-w-0 space-y-1.5">
+            <div className="flex items-center gap-2 flex-wrap">
+              {(preferredStudentName || fallbackStudentName) && (
+                <h3 className={cn(
+                  "text-lg font-bold leading-tight tracking-tight transition-colors",
+                  isUnread ? "text-foreground" : "text-foreground/80"
+                )}>
+                  {preferredStudentName || fallbackStudentName}
+                </h3>
+              )}
               {isUnread && (
                 <Badge
-                  variant="default"
-                  className="h-6 rounded-full bg-foreground text-background px-3 text-[10px] font-bold uppercase tracking-wider shadow-md animate-in fade-in zoom-in duration-300"
+                  variant="outline"
+                  className="h-5 rounded-md bg-gray-800 text-white border-gray-700 px-2 text-[9px] font-bold uppercase tracking-wider"
                 >
                   {locale === "ar" ? "جديد" : "NEW"}
                 </Badge>
               )}
             </div>
-
-            <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground/80">
-              <Clock className="h-3.5 w-3.5" />
-              <span>{timeAgo}</span>
-            </div>
-          </div>
-
-          {/* Main Message - Student and Action */}
-          <div className="space-y-2">
-            {(preferredStudentName || fallbackStudentName) && (
-              <div className="flex items-center gap-2">
-                <User className="h-4 w-4 text-muted-foreground" />
-                <span className={cn(
-                  "text-base font-bold transition-colors duration-200",
-                  isUnread ? "text-foreground" : "text-foreground/70"
-                )}>
-                  {preferredStudentName || fallbackStudentName}
-                </span>
-                {locationParts.length > 0 && (
-                  <span className="text-sm text-muted-foreground/70">
-                    ({locationParts.join(", ")})
-                  </span>
-                )}
+            {data?.mainRecord?.studentNumber && (
+              <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                <User className="h-3.5 w-3.5 flex-shrink-0" />
+                <span>{locale === "ar" ? "رقم الطالب:" : "Student #"} {data.mainRecord.studentNumber}</span>
               </div>
             )}
-            
-            <p className={cn(
-              "text-[15px] leading-relaxed font-medium transition-colors duration-200",
-              isUnread ? "text-foreground" : "text-foreground/70"
-            )}>
-              {notification.title}
-            </p>
           </div>
 
-          {/* Status Change Information */}
-          {data?.statusDescription && (
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">
-                {locale === "ar" ? "الحالة:" : "Status:"}
-              </span>
+          {/* Right: Type Badge & Icon */}
+          <div className="flex items-center gap-2.5">
+            <div
+              className={cn(
+                "flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl shadow-lg transition-all duration-300",
+                "ring-2 ring-offset-2 ring-offset-background",
+                statusRingColor,
+                isUnread 
+                  ? "bg-gradient-to-br from-white to-primary/15 dark:from-gray-900 dark:to-primary/25 group-hover:scale-105" 
+                  : "bg-white/50 dark:bg-gray-950/30 opacity-75 group-hover:opacity-100"
+              )}
+            >
+              <StatusIcon className={cn("h-5 w-5 transition-all", statusIconColor)} />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Office Note Compact Section */}
+      {note && (
+        <div className="px-6 py-3">
+          <div className={cn(
+            "rounded-lg px-3 py-2 transition-all duration-300 flex items-center gap-2.5",
+            isUnread 
+              ? "bg-white/50 dark:bg-gray-900/50" 
+              : "bg-white/30 dark:bg-gray-900/30"
+          )}>
+            <div className={cn(
+              "flex-shrink-0 rounded-md p-1.5",
+              isUnread ? "bg-primary/20" : "bg-muted"
+            )}>
+              <FileEdit className={cn(
+                "h-3.5 w-3.5",
+                isUnread ? "text-primary" : "text-muted-foreground"
+              )} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className={cn(
+                "text-xs leading-snug line-clamp-1",
+                isUnread ? "text-foreground font-medium" : "text-foreground/75"
+              )}>
+                {note}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Description/Body (if different from title and no status) */}
+      {notification.body && notification.body !== notification.title && !data?.statusDescription && (
+        <div className="px-6 py-4">
+          <p className={cn(
+            "text-sm leading-relaxed",
+            isUnread ? "text-foreground/90 font-medium" : "text-muted-foreground",
+            !showFullBody && "line-clamp-3"
+          )}>
+            {notification.body}
+          </p>
+        </div>
+      )}
+
+      {/* Footer: Type, Current Status & Timestamp */}
+      <div className="px-6 py-3.5 border-t border-border/20 bg-muted/10">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <Badge
+            variant="outline"
+            className={cn(
+              "border-none px-3 py-1 text-[10px] font-bold uppercase tracking-wider shadow-sm",
+              statusTone
+            )}
+          >
+            {typeLabel}
+          </Badge>
+          
+          <div className="flex items-center gap-3 flex-wrap">
+            {/* Current Status Badge */}
+            {data?.statusDescription && (
               <Badge
-                variant="outline"
                 className={cn(
-                  "border-none px-3 py-1 text-[11px] font-bold uppercase tracking-wider shadow-sm transition-all duration-200",
+                  "px-3 py-1 text-xs font-bold rounded-lg shadow-sm",
                   statusDescriptionColor
                 )}
               >
                 {data.statusDescription}
               </Badge>
+            )}
+            
+            {/* Timestamp */}
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground" title={fullDate}>
+              <Calendar className="h-3.5 w-3.5 flex-shrink-0" />
+              <span className="font-medium">{fullDate}</span>
             </div>
-          )}
-
-          {/* Description/Body */}
-          {notification.body && notification.body !== notification.title && (
-            <p className={cn(
-              "text-sm leading-relaxed transition-colors duration-200",
-              isUnread ? "text-muted-foreground" : "text-muted-foreground/60",
-              !showFullBody && "line-clamp-2"
-            )}>
-              {notification.body}
-            </p>
-          )}
-
-          {/* Office Comment/Note - Bordered Section */}
-          {note && (
-            <div className={cn(
-              "mt-3 rounded-lg border-2 p-3 transition-all duration-200",
-              isUnread 
-                ? "border-primary/30 bg-primary/5 dark:bg-primary/10" 
-                : "border-border/50 bg-muted/30"
-            )}>
-              <div className="flex items-start gap-2">
-                <div className={cn(
-                  "flex-shrink-0 rounded-full p-1",
-                  isUnread ? "bg-primary/20" : "bg-muted"
-                )}>
-                  <Info className="h-3.5 w-3.5 text-primary" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold text-muted-foreground mb-1">
-                    {locale === "ar" ? "ملاحظة من المكتب الخلفي:" : "Back Office Note:"}
-                  </p>
-                  <p className={cn(
-                    "text-sm leading-relaxed",
-                    isUnread ? "text-foreground font-medium" : "text-foreground/70"
-                  )}>
-                    {note}
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Footer - Date */}
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground/60 pt-1">
-            <Calendar className="h-3 w-3" />
-            <span>{fullDate}</span>
           </div>
         </div>
       </div>
-    </Card>
+    </div>
   );
 }

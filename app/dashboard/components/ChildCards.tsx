@@ -57,8 +57,8 @@ function deriveAcademicYear(enrollments?: StudentProfileV1["enrollment"]): strin
  * Mobile avatar component (status indicator removed).
  */
 const ChildAvatar = ({ displayName }: { displayName: string }) => (
-  <div className="relative flex-shrink-0">
-    <div className="w-20 h-20 bg-gradient-to-br from-primary via-primary/90 to-primary/70 rounded-2xl flex items-center justify-center shadow-xl ring-2 ring-card transition-transform duration-300">
+  <div className="relative flex-shrink-0 group/avatar">
+    <div className="w-20 h-20 bg-gradient-to-br from-primary via-primary/90 to-primary/70 rounded-2xl flex items-center justify-center shadow-xl ring-2 ring-card transition-all duration-300 group-hover/avatar:shadow-2xl group-hover/avatar:ring-primary/50">
       <span className="text-2xl font-bold text-primary-foreground">
         {displayName.charAt(0).toUpperCase()}
       </span>
@@ -70,8 +70,8 @@ const ChildAvatar = ({ displayName }: { displayName: string }) => (
  * Desktop avatar component (status indicator removed).
  */
 const ChildAvatarDesktop = ({ displayName }: { displayName: string }) => (
-  <div className="relative flex-shrink-0">
-    <div className="w-16 h-16 bg-gradient-to-br from-primary via-primary/90 to-primary/70 rounded-2xl flex items-center justify-center shadow-lg transition-all duration-300 ring-2 ring-card">
+  <div className="relative flex-shrink-0 group/avatar">
+    <div className="w-16 h-16 bg-gradient-to-br from-primary via-primary/90 to-primary/70 rounded-2xl flex items-center justify-center shadow-lg transition-all duration-300 ring-2 ring-card group-hover/avatar:shadow-xl group-hover/avatar:ring-primary/50">
       <span className="text-2xl font-bold text-primary-foreground">
         {displayName.charAt(0).toUpperCase()}
       </span>
@@ -288,68 +288,67 @@ export default function ChildCards() {
                   <Card 
                     key={child.id} 
                     className={clsx(
-                      "group relative overflow-hidden transition-all duration-300",
-                      "border-border/60 hover:shadow-2xl",
+                      "group relative overflow-hidden transition-all duration-300 hover:scale-[1.01]",
+                      "border-border/40 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5",
                       "touch-manipulation active:scale-[0.98]"
                     )}
                   >
-                    {/* Background gradient */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl -translate-y-16 translate-x-16 opacity-0 group-hover:opacity-100 transition-opacity" />
-                    
-                    <div className="relative p-5">
-                      {/* Student Header */}
-                      <div className="flex items-center gap-4 mb-5">
-                        {/* Avatar */}
-                        <ChildAvatar displayName={displayName} />
-
-                      {/* Student Info */}
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-lg font-bold text-foreground truncate mb-3 group-hover:text-primary transition-colors">
-                          {displayName}
-                        </h3>
-                          {/* ID and Status Badge on same line */}
-                          <div className="flex flex-wrap items-center gap-2">
-                            <Badge variant="outline" className="text-xs px-2.5 py-1 font-medium bg-muted/50 border-border/70">
-                              <svg className={clsx("w-3 h-3", locale === 'ar' ? 'ml-1' : 'mr-1')} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
-                              </svg>
-                              {child.studentNumber || child.id?.slice(-6) || '—'}
-                            </Badge>
-                            {isPrivateEducation ? (
-                              <Badge 
-                                variant="secondary"
-                                className="text-xs px-2.5 py-1 font-semibold bg-violet-500/15 text-violet-700 border-violet-500/30"
-                              >
-                                <svg className={clsx("w-3 h-3", locale === 'ar' ? 'ml-1' : 'mr-1')} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                                </svg>
-                                {locale === 'ar' ? 'مدرسة خاصة' : 'Private School'}
-                              </Badge>
-                            ) : child.isActive !== undefined && (
-                              <Badge 
-                                variant={child.isActive ? "default" : "secondary"}
-                                className={clsx(
-                                  "text-xs px-2.5 py-1 font-semibold",
-                                  child.isActive 
-                                    ? "bg-emerald-500/15 text-emerald-700 border-emerald-500/30" 
-                                    : "bg-slate-500/15 text-slate-600 border-slate-400/30"
-                                )}
-                              >
-                                <svg className={clsx("w-3 h-3", locale === 'ar' ? 'ml-1' : 'mr-1')} fill="currentColor" viewBox="0 0 20 20">
-                                  <circle cx="10" cy="10" r="4" />
-                                </svg>
-                                {child.isActive 
-                                  ? (locale === 'ar' ? 'نشط' : 'Active')
-                                  : (locale === 'ar' ? 'غير نشط' : 'Inactive')}
-                              </Badge>
-                            )}
-                            <ChildStatusBadge studentPersonId={child.id} variant="mobile" />
+                    <div className="relative">
+                      {/* Student Header Section */}
+                      <div className="p-4 bg-gradient-to-r from-primary/5 via-transparent to-secondary/5 border-b border-border/50">
+                        <div className="flex items-center gap-3 mb-3">
+                          <ChildAvatar displayName={displayName} />
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-base font-bold text-foreground truncate group-hover:text-primary transition-colors">
+                              {displayName}
+                            </h3>
                           </div>
                         </div>
+                        
+                        {/* Status Badges Row */}
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <Badge variant="outline" className="text-xs px-2 py-0.5 font-medium bg-muted/60 border-border/60">
+                            <svg className={clsx("w-3 h-3", locale === 'ar' ? 'ml-1' : 'mr-1')} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
+                            </svg>
+                            {child.studentNumber || child.id?.slice(-6) || '—'}
+                          </Badge>
+                          
+                          {isPrivateEducation ? (
+                            <Badge 
+                              variant="secondary"
+                              className="text-xs px-2 py-0.5 font-semibold bg-violet-500/15 text-violet-700 border-violet-500/30"
+                            >
+                              <svg className={clsx("w-3 h-3", locale === 'ar' ? 'ml-1' : 'mr-1')} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                              </svg>
+                              {locale === 'ar' ? 'خاص' : 'Private'}
+                            </Badge>
+                          ) : child.isActive !== undefined && (
+                            <Badge 
+                              variant={child.isActive ? "default" : "secondary"}
+                              className={clsx(
+                                "text-xs px-2 py-0.5 font-semibold",
+                                child.isActive 
+                                  ? "bg-emerald-500/15 text-emerald-700 border-emerald-500/30" 
+                                  : "bg-slate-500/15 text-slate-600 border-slate-400/30"
+                              )}
+                            >
+                              <svg className={clsx("w-3 h-3", locale === 'ar' ? 'ml-1' : 'mr-1')} fill="currentColor" viewBox="0 0 20 20">
+                                <circle cx="10" cy="10" r="4" />
+                              </svg>
+                              {child.isActive 
+                                ? (locale === 'ar' ? 'نشط' : 'Active')
+                                : (locale === 'ar' ? 'غير نشط' : 'Inactive')}
+                            </Badge>
+                          )}
+                          
+                          <ChildStatusBadge studentPersonId={child.id} variant="mobile" />
+                        </div>
                       </div>
-                      {/* Actions Section - Simplified */}
-                      <div className="mt-4 pt-4 border-t border-border/50">
+
+                      {/* Actions Section */}
+                      <div className="p-4">
                         <ChildActions
                           studentPersonId={child.id}
                           studentNumber={resolvedStudentNumber}
@@ -391,64 +390,63 @@ export default function ChildCards() {
             <Card 
               key={child.id} 
               className={clsx(
-                "group relative overflow-hidden transition-all duration-300",
-                "border-border/60  hover:shadow-2xl",
+                "group relative overflow-hidden transition-all duration-300 hover:scale-[1.01]",
+                "border-border/40 hover:border-muted-foreground/30 hover:shadow-lg hover:shadow-muted/5",
                 "touch-manipulation active:scale-[0.98]"
               )}
             >
-              {/* Background gradient */}
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl -translate-y-16 translate-x-16 opacity-0 group-hover:opacity-100 transition-opacity" />
-              
-              <div className="relative p-5">
-                {/* Student Header */}
-                <div className="flex items-center gap-4 mb-5">
-                  {/* Avatar with status indicator */}
-                  <ChildAvatar displayName={displayName} />
-
-                  {/* Student Info */}
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-lg font-bold text-foreground truncate mb-3 group-hover:text-primary transition-colors">
-                      {displayName}
-                    </h3>
-                    {/* ID and Status Badge on same line */}
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Badge variant="outline" className="text-xs px-2.5 py-1 font-medium bg-muted/50 border-border/70">
-                        <svg className={clsx("w-3 h-3", locale === 'ar' ? 'ml-1' : 'mr-1')} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
-                        </svg>
-                        {child.studentNumber || child.id?.slice(-6) || '—'}
-                      </Badge>
-                      {child.isActive !== undefined && (
-                        <Badge 
-                          variant={child.isActive ? "default" : "secondary"}
-                          className={clsx(
-                            "text-xs px-2.5 py-1 font-semibold",
-                            child.isActive 
-                              ? "bg-emerald-500/15 text-emerald-700 border-emerald-500/30" 
-                              : "bg-slate-500/15 text-slate-600 border-slate-400/30"
-                          )}
-                        >
-                          <svg className={clsx("w-3 h-3", locale === 'ar' ? 'ml-1' : 'mr-1')} fill="currentColor" viewBox="0 0 20 20">
-                            <circle cx="10" cy="10" r="4" />
-                          </svg>
-                          {child.isActive 
-                            ? (locale === 'ar' ? 'نشط' : 'Active')
-                            : (locale === 'ar' ? 'غير نشط' : 'Inactive')}
-                        </Badge>
-                      )}
-                      <ChildStatusBadge studentPersonId={child.id} variant="mobile" />
+              <div className="relative">
+                {/* Student Header Section */}
+                <div className="p-4 bg-gradient-to-r from-slate-50/5 via-transparent to-slate-50/5 border-b border-border/50">
+                  <div className="flex items-center gap-3 mb-3">
+                    <ChildAvatar displayName={displayName} />
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-base font-bold text-foreground truncate group-hover:text-primary transition-colors">
+                        {displayName}
+                      </h3>
                     </div>
                   </div>
+                  
+                  {/* Status Badges Row */}
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <Badge variant="outline" className="text-xs px-2 py-0.5 font-medium bg-muted/60 border-border/60">
+                      <svg className={clsx("w-3 h-3", locale === 'ar' ? 'ml-1' : 'mr-1')} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
+                      </svg>
+                      {child.studentNumber || child.id?.slice(-6) || '—'}
+                    </Badge>
+                    
+                    {child.isActive !== undefined && (
+                      <Badge 
+                        variant={child.isActive ? "default" : "secondary"}
+                        className={clsx(
+                          "text-xs px-2 py-0.5 font-semibold",
+                          child.isActive 
+                            ? "bg-emerald-500/15 text-emerald-700 border-emerald-500/30" 
+                            : "bg-slate-500/15 text-slate-600 border-slate-400/30"
+                        )}
+                      >
+                        <svg className={clsx("w-3 h-3", locale === 'ar' ? 'ml-1' : 'mr-1')} fill="currentColor" viewBox="0 0 20 20">
+                          <circle cx="10" cy="10" r="4" />
+                        </svg>
+                        {child.isActive 
+                          ? (locale === 'ar' ? 'نشط' : 'Active')
+                          : (locale === 'ar' ? 'غير نشط' : 'Inactive')}
+                      </Badge>
+                    )}
+                    
+                    <ChildStatusBadge studentPersonId={child.id} variant="mobile" />
+                  </div>
                 </div>
-                {/* Actions Section - Simplified */}
-                <div className="mt-4 pt-4 border-t border-border/50">
+
+                {/* Actions Section */}
+                <div className="p-4">
                   <Link
                     href={`/child/${child.id}`}
                     className={clsx(
-                      "flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium text-sm transition-all duration-200",
-                      "bg-muted/60 hover:bg-muted text-muted-foreground hover:text-foreground",
-                      "border border-border/60 hover:border-border shadow-sm hover:shadow-md",
+                      "flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-semibold text-sm transition-all duration-200 w-full",
+                      "bg-gradient-to-r from-primary/10 to-primary/5 hover:from-primary/20 hover:to-primary/10 text-primary hover:text-primary",
+                      "border border-primary/20 hover:border-primary/40 shadow-sm hover:shadow-md hover:shadow-primary/10",
                       "touch-manipulation active:scale-95"
                     )}
                   >
@@ -456,7 +454,7 @@ export default function ChildCards() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                     </svg>
-                    <span>{locale === 'ar' ? 'عرض الملف الشخصي' : 'View Profile'}</span>
+                    <span>{locale === 'ar' ? 'عرض الملف' : 'View Profile'}</span>
                   </Link>
                 </div>
               </div>
@@ -479,13 +477,13 @@ export default function ChildCards() {
           <table className={clsx("w-full", locale === 'ar' ? 'direction-rtl' : 'direction-ltr')}>
             {/* Professional Table Header */}
             <thead>
-              <tr className="border-b-2 border-border/70 bg-gradient-to-r from-muted/70 via-muted/50 to-muted/30 backdrop-blur-md">
+              <tr className="border-b-2 border-border/70 bg-gradient-to-r from-muted/60 via-muted/40 to-muted/20 backdrop-blur-md hover:bg-gradient-to-r hover:from-muted/70 hover:via-muted/50 hover:to-muted/30 transition-colors duration-300">
                 <th className={clsx(
-                  "px-8 py-5 text-left uppercase tracking-wide",
+                  "px-8 py-5 text-left uppercase tracking-widest",
                   locale === 'ar' ? 'text-right' : '',
-                  "text-sm font-bold text-foreground"
+                  "text-xs font-extrabold text-foreground/80"
                 )}>
-                  <div className={clsx("flex items-center gap-3", locale === 'ar' && '')}>
+                <div className={clsx("flex items-center gap-3", locale === 'ar' && '')}>
                     <div className="p-2 bg-primary/15 rounded-xl shadow-sm">
                       <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -612,7 +610,7 @@ export default function ChildCards() {
                 return (
                   <tr 
                     key={child.id}
-                    className="group border-b border-border/40 hover:bg-gradient-to-r hover:from-primary/8 hover:via-primary/5 hover:to-transparent transition-all duration-300"
+                    className="group border-b border-border/40 hover:border-primary/50 hover:bg-gradient-to-r hover:from-primary/8 hover:via-primary/5 hover:to-transparent transition-all duration-300 hover:shadow-md hover:shadow-primary/5 hover:-translate-y-0.5"
                   >
                     {/* Enhanced Student Name & Avatar */}
                     <td className="px-8 py-6">
@@ -712,7 +710,7 @@ export default function ChildCards() {
                     return (
                       <tr 
                         key={child.id}
-                        className="group border-b border-border/40 hover:bg-muted/30 transition-all duration-300"
+                        className="group border-b border-border/40 hover:border-muted-foreground/30 hover:bg-muted/30 transition-all duration-300 hover:shadow-sm hover:shadow-muted/10 hover:-translate-y-0.5"
                       >
                         {/* Enhanced Student Name & Avatar */}
                         <td className="px-8 py-6">
@@ -769,9 +767,9 @@ export default function ChildCards() {
                             <Link
                               href={`/child/${child.id}`}
                               className={clsx(
-                                "inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200",
-                                "bg-muted/60 hover:bg-muted text-muted-foreground hover:text-foreground",
-                                "border border-border/60 hover:border-border shadow-sm hover:shadow-md"
+                                "inline-flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm transition-all duration-200",
+                                "bg-gradient-to-r from-primary/10 to-primary/5 hover:from-primary/20 hover:to-primary/10 text-primary hover:text-primary",
+                                "border border-primary/20 hover:border-primary/40 shadow-sm hover:shadow-md hover:shadow-primary/10"
                               )}
                             >
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
