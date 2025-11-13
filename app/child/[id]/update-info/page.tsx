@@ -354,7 +354,6 @@ export default function UpdateStudentInfoPage() {
   // ========== EDIT MODE: Initialize form from IDH data ==========
   React.useEffect(() => {
     if (mode !== 'edit') return;
-    if (contactsInitialized.current) return;
     
     const idh = idhResp?.data;
     if (!idh) return;
@@ -371,8 +370,6 @@ export default function UpdateStudentInfoPage() {
     const { value, otherText } = normalizeTransportation(idh.transportationType);
     setTransportation(value);
     setOtherTransportation(value === 'other' ? otherText : '');
-
-    contactsInitialized.current = true;
   }, [mode, idhResp]);
 
   // ========== Track unsaved changes (mode-specific baseline) ==========
@@ -1774,6 +1771,7 @@ export default function UpdateStudentInfoPage() {
                   <span className="text-destructive" aria-label={locale === 'ar' ? 'مطلوب' : 'required'}>*</span>
                 </Label> 
                 <Select 
+                  key={`transportation-${mode}-${transportation}`}
                   value={transportation} 
                   onValueChange={(value) => setTransportation(value)}
                   disabled={isSubmitting}
