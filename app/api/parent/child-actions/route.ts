@@ -20,8 +20,12 @@ export const dynamic = "force-dynamic";
 
 const TRUE_VALUES = new Set(["1", "true", "yes", "on"]);
 const ALLOWED_DEBUG_USERS = new Set(process.env.ALLOWED_DEBUG_USER_IDS?.split(',').map(id => id.trim()) ?? []);
-const REQUEST_TIMEOUT_MS = 15000; // 15 seconds for student profile
-const IDH_TIMEOUT_MS = 10000; // 10 seconds for IDH
+
+// Timeout configuration - increased for staging environment
+const isProduction = process.env.NODE_ENV === 'production';
+const REQUEST_TIMEOUT_MS = isProduction ? 20000 : 15000; // 20s prod, 15s dev for student profile
+const IDH_TIMEOUT_MS = isProduction ? 12000 : 10000; // 12s prod, 10s dev for IDH
+const TOKEN_TIMEOUT_MS = 8000; // 8 seconds for token fetch
 
 Logger.debug("child-actions route loaded");
 export async function GET(req: Request) {
@@ -202,8 +206,20 @@ export async function GET(req: Request) {
     
     log.error('Request failed', { duration: totalDuration }, err);
     
-    const message = error instanceof Error ? error.message : "Unknown error";
-    const status = error instanceof FetchTimeoutError ? 504 : 500;
+    let message = error instanceof Error ? error.message : "Unknown error";
+    let status = 500;
+    
+    // Provide more specific error status codes
+    if (error instanceof FetchTimeoutError) {
+      status = 504;
+      message = `Request timed out: ${message}`;
+    } else if (err.message.includes('ECONNREFUSED')) {
+      status = 503;
+      message = 'Service temporarily unavailable';
+    } else if (err.message.includes('ETIMEDOUT')) {
+      status = 504;
+      message = 'Gateway timeout - service took too long to respond';
+    }
     
     return NextResponse.json(
       { ok: false, error: message },
@@ -251,15 +267,10 @@ async function fetchIdhStatus(studentPersonId: string, req: Request, options?: F
 
     // Use localhost for internal API calls to avoid DNS/SSL issues on staging
     const origin = new URL(req.url).origin;
-    const isExternalOrigin = origin.includes('parent-stg.moe.gov.ae') || 
-                             origin.includes('parent.moe.gov.ae');
-    const apiOrigin = isExternalOrigin 
-      ? `http://localhost:${process.env.PORT || 4200}` 
-      : origin;
       
     const tokenRes = await fetchWithTimeout(buildInternalApiUrl(origin, '/api/PP/auth/token'), { 
       cache: "no-store",
-      timeoutMs: 5000 // 5 second timeout for token fetch
+      timeoutMs: TOKEN_TIMEOUT_MS
     });
     const tokenJson = (await tokenRes.json().catch(() => null)) as { accessToken?: string } | null;
 

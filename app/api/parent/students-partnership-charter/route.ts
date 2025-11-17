@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { authorizeStudentAccess } from "@/lib/student-authorization";
 import { buildInternalApiUrl } from "@/lib/internal-api-url";
+import { fetchWithTimeout, FetchTimeoutError } from "@/lib/fetch-with-timeout";
 import type { StudentProfileV1 } from "@/app/types/studentprofile";
 
 export const dynamic = "force-dynamic";
@@ -25,6 +26,10 @@ type CharterRecord = {
   attachment01?: string | null;
   datetime?: string | null;
 };
+
+const TOKEN_TIMEOUT_MS = 8000;
+const CHARTER_TIMEOUT_MS = 15000;
+const PROFILES_TIMEOUT_MS = 15000;
 
 function buildTokenUrl(req: Request): string {
   const origin = new URL(req.url).origin;
@@ -90,12 +95,27 @@ export async function GET(req: Request) {
     }
 
     const tokenUrl = buildTokenUrl(req);
-    const tokenRes = await fetch(tokenUrl);
-    const tokenData: PPTokenResponse = await tokenRes.json();
+    let tokenRes: Response;
+    let tokenData: PPTokenResponse | null = null;
 
-    if (!tokenRes.ok || !tokenData.accessToken) {
+    try {
+      tokenRes = await fetchWithTimeout(tokenUrl, {
+        cache: "no-store",
+        timeoutMs: TOKEN_TIMEOUT_MS,
+      });
+      tokenData = (await tokenRes.json().catch(() => null)) as PPTokenResponse | null;
+    } catch (error) {
+      const status = error instanceof FetchTimeoutError ? 504 : 502;
+      const message =
+        error instanceof FetchTimeoutError
+          ? "Timed out while requesting PP token"
+          : "Failed to reach PP token endpoint";
+      return NextResponse.json({ ok: false, error: message }, { status });
+    }
+
+    if (!tokenRes.ok || !tokenData?.accessToken) {
       return NextResponse.json(
-        { ok: false, error: tokenData.error || "Failed to acquire PP token" },
+        { ok: false, error: tokenData?.error || "Failed to acquire PP token" },
         { status: 500 },
       );
     }
@@ -106,14 +126,25 @@ export async function GET(req: Request) {
     }
 
     const upstreamUrl = `${baseUrl.replace(/\/$/, "")}/Idh/students-partnership-charter?studentNumber=${encodeURIComponent(studentNumber)}&academicyear=${encodeURIComponent(academicyear)}`;
-    const upstreamRes = await fetch(upstreamUrl, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${tokenData.accessToken}`,
-        "Content-Type": "application/json",
-      },
-      cache: "no-store",
-    });
+    let upstreamRes: Response;
+    try {
+      upstreamRes = await fetchWithTimeout(upstreamUrl, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${tokenData.accessToken}`,
+          "Content-Type": "application/json",
+        },
+        cache: "no-store",
+        timeoutMs: CHARTER_TIMEOUT_MS,
+      });
+    } catch (error) {
+      const status = error instanceof FetchTimeoutError ? 504 : 502;
+      const message =
+        error instanceof FetchTimeoutError
+          ? "Timed out while fetching partnership charter"
+          : "Failed to reach partnership charter endpoint";
+      return NextResponse.json({ ok: false, error: message }, { status });
+    }
 
     const rawText = await upstreamRes.text();
     let parsed: unknown = null;
@@ -162,7 +193,8 @@ export async function GET(req: Request) {
   } catch (error: unknown) {
     const message =
       error instanceof Error ? error.message : typeof error === "string" ? error : "Unknown error";
-    return NextResponse.json({ ok: false, error: message }, { status: 500 });
+    const status = error instanceof FetchTimeoutError ? 504 : 500;
+    return NextResponse.json({ ok: false, error: message }, { status });
   }
 }
 
@@ -206,12 +238,27 @@ export async function POST(req: Request) {
 
     // Get PP token first for authorization check
     const tokenUrl = buildTokenUrl(req);
-    const tokenRes = await fetch(tokenUrl);
-    const tokenData: PPTokenResponse = await tokenRes.json();
+    let tokenRes: Response;
+    let tokenData: PPTokenResponse | null = null;
 
-    if (!tokenRes.ok || !tokenData.accessToken) {
+    try {
+      tokenRes = await fetchWithTimeout(tokenUrl, {
+        cache: "no-store",
+        timeoutMs: TOKEN_TIMEOUT_MS,
+      });
+      tokenData = (await tokenRes.json().catch(() => null)) as PPTokenResponse | null;
+    } catch (error) {
+      const status = error instanceof FetchTimeoutError ? 504 : 502;
+      const message =
+        error instanceof FetchTimeoutError
+          ? "Timed out while requesting PP token"
+          : "Failed to reach PP token endpoint";
+      return NextResponse.json({ ok: false, error: message }, { status });
+    }
+
+    if (!tokenRes.ok || !tokenData?.accessToken) {
       return NextResponse.json(
-        { ok: false, error: tokenData.error || "Failed to acquire PP token" },
+        { ok: false, error: tokenData?.error || "Failed to acquire PP token" },
         { status: 500 },
       );
     }
@@ -224,12 +271,24 @@ export async function POST(req: Request) {
     }
 
     const profilesUrl = `${baseUrl.replace(/\/$/, '')}/oneroster/students/profiles?EmirateId=${parentEid}`;
-    const profilesRes = await fetch(profilesUrl, {
-      headers: {
-        'Authorization': `Bearer ${tokenData.accessToken}`,
-        'Content-Type': 'application/json',
-      },
-    });
+    let profilesRes: Response;
+    try {
+      profilesRes = await fetchWithTimeout(profilesUrl, {
+        headers: {
+          'Authorization': `Bearer ${tokenData.accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        cache: 'no-store',
+        timeoutMs: PROFILES_TIMEOUT_MS,
+      });
+    } catch (error) {
+      const status = error instanceof FetchTimeoutError ? 504 : 502;
+      const message =
+        error instanceof FetchTimeoutError
+          ? 'Timed out while fetching parent students'
+          : 'Failed to reach PP student profiles endpoint';
+      return NextResponse.json({ ok: false, error: message }, { status });
+    }
 
     if (!profilesRes.ok) {
       return NextResponse.json(
@@ -264,15 +323,26 @@ export async function POST(req: Request) {
 
     // Use token and baseUrl from authorization check
     const upstreamUrl = `${baseUrl.replace(/\/$/, "")}/idh/students-partnership-charter`;
-    const upstreamRes = await fetch(upstreamUrl, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${tokenData.accessToken}`,
-        "Content-Type": "application/json",
-      },
-      cache: "no-store",
-      body: JSON.stringify({ academicyear, studentNumber, attachment01, datetime }),
-    });
+    let upstreamRes: Response;
+    try {
+      upstreamRes = await fetchWithTimeout(upstreamUrl, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${tokenData.accessToken}`,
+          "Content-Type": "application/json",
+        },
+        cache: "no-store",
+        timeoutMs: CHARTER_TIMEOUT_MS,
+        body: JSON.stringify({ academicyear, studentNumber, attachment01, datetime }),
+      });
+    } catch (error) {
+      const status = error instanceof FetchTimeoutError ? 504 : 502;
+      const message =
+        error instanceof FetchTimeoutError
+          ? "Timed out while submitting partnership charter"
+          : "Failed to reach partnership charter endpoint";
+      return NextResponse.json({ ok: false, error: message }, { status });
+    }
 
     const upstreamJson = await upstreamRes.json().catch(() => null);
 
@@ -293,6 +363,7 @@ export async function POST(req: Request) {
   } catch (error: unknown) {
     const message =
       error instanceof Error ? error.message : typeof error === "string" ? error : "Unknown error";
-    return NextResponse.json({ ok: false, error: message }, { status: 500 });
+    const status = error instanceof FetchTimeoutError ? 504 : 500;
+    return NextResponse.json({ ok: false, error: message }, { status });
   }
 }

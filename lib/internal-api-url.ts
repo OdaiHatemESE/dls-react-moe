@@ -24,17 +24,13 @@ export function getInternalApiOrigin(requestOrigin: string): string {
     'moe.gov.ae', // Catch any subdomain
   ];
   
-  // Always use localhost for same-server API calls to avoid DNS/network issues
-  // Only use the original origin if it's already localhost/127.0.0.1
+  // Always use HTTP localhost for same-server API calls to avoid DNS/SSL issues
+  // Even if the request origin is localhost, normalize to HTTP to prevent SSL errors
   const isLocalhost = requestOrigin.includes('localhost') || 
                       requestOrigin.includes('127.0.0.1');
   
-  if (isLocalhost) {
-    return requestOrigin;
-  }
-  
-  // For all non-localhost origins, use localhost to avoid loopback issues
-  // This is safe because these are internal API calls on the same server
+  // For all origins (localhost or external), use HTTP localhost for internal calls
+  // This prevents SSL certificate issues and DNS loopback problems
   const port = process.env.PORT || '4200';
   return `http://localhost:${port}`;
 }

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { cacheGetJSON, cacheSetJSON } from '@/lib/cache';
+import { fetchWithTimeout, FetchTimeoutError } from '@/lib/fetch-with-timeout';
 
 type PPLoginResponse = {
   accessToken?: string;
@@ -39,10 +40,11 @@ export async function GET() {
 
     const upstreamUrl = `${base.replace(/\/$/, '')}/auth/login`;
     
-    const res = await fetch(upstreamUrl, {
+    const res = await fetchWithTimeout(upstreamUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ clientId, clientSecret }),
+      timeoutMs: 10000,
     });
 
     const data = (await res.json().catch(() => null)) as PPLoginResponse | null;
@@ -82,6 +84,7 @@ export async function GET() {
     // Return just the token string, not the entire response object
     return NextResponse.json({ accessToken });
   } catch (err: any) {
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+    const status = err instanceof FetchTimeoutError ? 504 : 500;
+    return NextResponse.json({ error: String(err) }, { status });
   }
 }

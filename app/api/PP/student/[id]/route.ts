@@ -4,11 +4,16 @@ import { authOptions } from '@/lib/auth';
 import type { StudentProfileV1 } from '@/app/types/studentprofile';
 import { cacheGetJSON, cacheSetJSON } from '@/lib/cache';
 import { getActiveAcademicYearValue } from '@/lib/admin-config';
+import { buildInternalApiUrl } from '@/lib/internal-api-url';
+import { fetchWithTimeout, FetchTimeoutError } from '@/lib/fetch-with-timeout';
 
 type PPTokenResponse = {
   accessToken?: string;
   error?: string;
 };
+
+const TOKEN_TIMEOUT_MS = 8000;
+const PROFILES_TIMEOUT_MS = 15000;
 
 export async function GET(
   req: Request,
@@ -105,13 +110,28 @@ export async function GET(
     }
 
     // Get PP token from our token endpoint
-    const tokenUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:4200'}/api/PP/auth/token`;
-    const tokenRes = await fetch(tokenUrl);
-    const tokenData: PPTokenResponse = await tokenRes.json();
+    const tokenUrl = buildInternalApiUrl(new URL(req.url).origin, '/api/PP/auth/token');
+    let tokenRes: Response;
+    let tokenData: PPTokenResponse | null = null;
 
-    if (!tokenRes.ok || !tokenData.accessToken) {
+    try {
+      tokenRes = await fetchWithTimeout(tokenUrl, {
+        cache: 'no-store',
+        timeoutMs: TOKEN_TIMEOUT_MS,
+      });
+      tokenData = (await tokenRes.json().catch(() => null)) as PPTokenResponse | null;
+    } catch (error) {
+      const status = error instanceof FetchTimeoutError ? 504 : 502;
+      const message =
+        error instanceof FetchTimeoutError
+          ? 'Timed out while requesting PP token'
+          : 'Failed to reach PP token endpoint';
+      return NextResponse.json({ error: message }, { status });
+    }
+
+    if (!tokenRes.ok || !tokenData?.accessToken) {
       return NextResponse.json(
-        { error: tokenData.error || 'Failed to get PP access token' },
+        { error: tokenData?.error || 'Failed to get PP access token' },
         { status: 500 }
       );
     }
@@ -135,12 +155,24 @@ export async function GET(
     // Fetch all student profiles for the parent
     const profilesUrl = `${baseUrl.replace(/\/$/, '')}/oneroster/students/profiles?EmirateId=${eid}`;
     
-    const profilesRes = await fetch(profilesUrl, {
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-    });
+    let profilesRes: Response;
+    try {
+      profilesRes = await fetchWithTimeout(profilesUrl, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        cache: 'no-store',
+        timeoutMs: PROFILES_TIMEOUT_MS,
+      });
+    } catch (error) {
+      const status = error instanceof FetchTimeoutError ? 504 : 502;
+      const message =
+        error instanceof FetchTimeoutError
+          ? 'Timed out while fetching student profiles'
+          : 'Failed to reach PP student profiles endpoint';
+      return NextResponse.json({ error: message }, { status });
+    }
 
     if (!profilesRes.ok) {
       const errorData = await profilesRes.json().catch(() => null);
