@@ -46,6 +46,11 @@ export async function fetchStudentProfile(
   const url = buildInternalApiUrl(origin, `/api/PP/student/${encodeURIComponent(studentPersonId)}`);
   let lastError: Error | null = null;
 
+  // Debug logging to help diagnose staging issues
+  console.log('[fetchStudentProfile] Request origin:', origin);
+  console.log('[fetchStudentProfile] Resolved URL:', url);
+  console.log('[fetchStudentProfile] PORT env:', process.env.PORT);
+
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
       const headers: Record<string, string> = {};

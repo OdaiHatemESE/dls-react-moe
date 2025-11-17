@@ -18,21 +18,30 @@ GET /api/parent/students-partnership-charter 500 (Internal Server Error)
 ## Solution Implemented
 
 ### New Utility: `lib/internal-api-url.ts`
-Created a helper that detects production/staging environments and automatically uses `localhost` for same-server API calls.
+Created a helper that automatically uses `localhost` for all same-server API calls (except when already on localhost).
 
 **Key Functions:**
-- `getInternalApiOrigin(requestOrigin)` - Returns localhost for prod/staging, original origin for dev
+- `getInternalApiOrigin(requestOrigin)` - Returns localhost for any non-localhost origin
 - `buildInternalApiUrl(requestOrigin, path)` - Builds complete internal API URL
 
 **Detection Logic:**
 ```typescript
-// Detects these domains as external:
-- parent-stg.moe.gov.ae (staging)
-- parent.moe.gov.ae (production)
+// Uses localhost for ALL non-localhost origins
+// This prevents any DNS/network loopback issues
 
-// For these, returns: http://localhost:${PORT}
-// For others (dev), returns: original origin
+if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+  return origin; // Already localhost, use as-is
+}
+
+// For ANY other origin (staging, production, or even dev servers)
+return `http://localhost:${PORT}`;
 ```
+
+**Why this approach:**
+- **Safer**: Works regardless of domain configuration
+- **Simpler**: No need to maintain a list of production domains
+- **Faster**: Localhost calls are always faster than loopback via external IP
+- **More reliable**: Avoids DNS, SSL, and network configuration issues
 
 ## Files Modified
 

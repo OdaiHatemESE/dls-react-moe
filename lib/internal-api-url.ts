@@ -21,20 +21,22 @@ export function getInternalApiOrigin(requestOrigin: string): string {
   const externalDomains = [
     'parent-stg.moe.gov.ae',
     'parent.moe.gov.ae',
+    'moe.gov.ae', // Catch any subdomain
   ];
   
-  // Check if the origin matches any external domain
-  const isExternalOrigin = externalDomains.some(domain => 
-    requestOrigin.includes(domain)
-  );
+  // Always use localhost for same-server API calls to avoid DNS/network issues
+  // Only use the original origin if it's already localhost/127.0.0.1
+  const isLocalhost = requestOrigin.includes('localhost') || 
+                      requestOrigin.includes('127.0.0.1');
   
-  // For external domains, use localhost; otherwise use the original origin
-  if (isExternalOrigin) {
-    const port = process.env.PORT || '4200';
-    return `http://localhost:${port}`;
+  if (isLocalhost) {
+    return requestOrigin;
   }
   
-  return requestOrigin;
+  // For all non-localhost origins, use localhost to avoid loopback issues
+  // This is safe because these are internal API calls on the same server
+  const port = process.env.PORT || '4200';
+  return `http://localhost:${port}`;
 }
 
 /**

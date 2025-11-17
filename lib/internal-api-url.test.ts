@@ -52,9 +52,10 @@ describe('internal-api-url', () => {
       expect(result).toBe('http://localhost:3000');
     });
 
-    it('should return original origin for dev.example.com', () => {
+    it('should use localhost for dev.example.com (any non-localhost domain)', () => {
+      process.env.PORT = '4200';
       const result = getInternalApiOrigin('https://dev.example.com');
-      expect(result).toBe('https://dev.example.com');
+      expect(result).toBe('http://localhost:4200');
     });
 
     it('should handle URLs with ports', () => {
@@ -121,8 +122,9 @@ describe('internal-api-url', () => {
     });
 
     it('should work with non-production origins unchanged', () => {
+      process.env.PORT = '4200';
       const result = buildInternalApiUrl('https://dev.example.com', '/api/test');
-      expect(result).toBe('https://dev.example.com/api/test');
+      expect(result).toBe('http://localhost:4200/api/test');
     });
   });
 
