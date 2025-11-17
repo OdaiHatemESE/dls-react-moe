@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { buildInternalApiUrl } from "@/lib/internal-api-url";
 import type {
   ParentConductAggregatedResponse,
 } from "@/lib/parent-conduct";
@@ -95,7 +96,8 @@ export async function GET(req: NextRequest) {
   }
 
   // Get PP token for authorization
-  const tokenUrl = new URL('/api/PP/auth/token', req.nextUrl.origin).toString();
+  const origin = req.nextUrl.origin;
+  const tokenUrl = buildInternalApiUrl(origin, '/api/PP/auth/token');
   const tokenRes = await fetch(tokenUrl);
   const tokenData: PPTokenResponse = await tokenRes.json();
 

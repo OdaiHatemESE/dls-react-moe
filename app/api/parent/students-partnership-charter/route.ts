@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { authorizeStudentAccess } from "@/lib/student-authorization";
+import { buildInternalApiUrl } from "@/lib/internal-api-url";
 import type { StudentProfileV1 } from "@/app/types/studentprofile";
 
 export const dynamic = "force-dynamic";
@@ -26,7 +27,8 @@ type CharterRecord = {
 };
 
 function buildTokenUrl(req: Request): string {
-  return new URL("/api/PP/auth/token", req.url).toString();
+  const origin = new URL(req.url).origin;
+  return buildInternalApiUrl(origin, "/api/PP/auth/token");
 }
 
 function normalizeCharter(input: unknown): CharterRecord | null {

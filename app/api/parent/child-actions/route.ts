@@ -5,6 +5,7 @@ import { getChildActionsSummary } from "@/lib/child-actions";
 import { getActiveAcademicYearValue } from "@/lib/admin-config";
 import { fetchStudentProfile } from "@/lib/fetch-student-profile";
 import { fetchWithTimeout, FetchTimeoutError } from "@/lib/fetch-with-timeout";
+import { buildInternalApiUrl } from "@/lib/internal-api-url";
 import Logger, { createScopedLogger } from "@/lib/logger";
 import { safeValidateChildActionResponse } from "@/lib/child-actions-schema";
 import type { StudentProfileV1 } from "@/app/types/studentprofile";
@@ -248,8 +249,15 @@ async function fetchIdhStatus(studentPersonId: string, req: Request, options?: F
       return { statusId: null, fetchedAt: null, trace: trace ?? undefined };
     }
 
+    // Use localhost for internal API calls to avoid DNS/SSL issues on staging
     const origin = new URL(req.url).origin;
-    const tokenRes = await fetchWithTimeout(`${origin}/api/PP/auth/token`, { 
+    const isExternalOrigin = origin.includes('parent-stg.moe.gov.ae') || 
+                             origin.includes('parent.moe.gov.ae');
+    const apiOrigin = isExternalOrigin 
+      ? `http://localhost:${process.env.PORT || 4200}` 
+      : origin;
+      
+    const tokenRes = await fetchWithTimeout(buildInternalApiUrl(origin, '/api/PP/auth/token'), { 
       cache: "no-store",
       timeoutMs: 5000 // 5 second timeout for token fetch
     });

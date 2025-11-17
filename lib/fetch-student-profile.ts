@@ -5,6 +5,7 @@
 
 import type { StudentProfileV1 } from '@/app/types/studentprofile';
 import { fetchWithTimeout, FetchTimeoutError } from './fetch-with-timeout';
+import { buildInternalApiUrl } from './internal-api-url';
 
 export type StudentProfileFetchResult =
   | { ok: true; profile: StudentProfileV1 }
@@ -41,7 +42,8 @@ export async function fetchStudentProfile(
     retries = DEFAULT_RETRIES,
   } = options;
 
-  const url = `${origin}/api/PP/student/${encodeURIComponent(studentPersonId)}`;
+  // Use helper to get the correct origin for internal API calls
+  const url = buildInternalApiUrl(origin, `/api/PP/student/${encodeURIComponent(studentPersonId)}`);
   let lastError: Error | null = null;
 
   for (let attempt = 0; attempt <= retries; attempt++) {
