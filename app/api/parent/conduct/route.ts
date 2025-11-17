@@ -132,7 +132,6 @@ export async function GET(req: NextRequest) {
   const querySuffix = queryParams.toString() ? `?${queryParams.toString()}` : "";
    
   const cookie = req.headers.get("cookie") ?? "";
-  const origin = req.nextUrl.origin;
 
   try {
     // Fetch student info from PP API instead of OneRoster
