@@ -102,6 +102,10 @@ export default function MyLandPicker({
   const [shape, setShape] = React.useState<unknown>(initialSelection?.shapeGeoJSON ?? undefined);
   const [submitting, setSubmitting] = React.useState<boolean>(false);
   const [loading, setLoading] = React.useState<{ districts?: boolean; communities?: boolean; roads?: boolean; shape?: boolean }>({});
+  
+  // Capture full address strings from Onwani
+  const [addressValueEn, setAddressValueEn] = React.useState<string | undefined>(initialSelection?.addressValueEn);
+  const [addressValueAr, setAddressValueAr] = React.useState<string | undefined>(initialSelection?.addressValueAr);
 
   // ---------------------------------------------------------------------------
   // Internal refs for async coordination and map sync
@@ -583,6 +587,12 @@ export default function MyLandPicker({
             mapSelectionActiveRef.current = true;
             
             const addrEn = typeof d.AddressValue_EN === "string" ? (d.AddressValue_EN as string) : "";
+            const addrAr = typeof d.AddressValue_AR === "string" ? (d.AddressValue_AR as string) : "";
+            
+            // Store the full address values
+            setAddressValueEn(addrEn || undefined);
+            setAddressValueAr(addrAr || undefined);
+            
             const parts = addrEn.split(",").map((s) => s.trim()).filter(Boolean);
             const municipalityName = parts[parts.length - 1] ?? "";
             const onwaniAddr = isRecord(d.OnwaniAddress) ? (d.OnwaniAddress as Record<string, unknown>) : undefined;
@@ -799,6 +809,8 @@ export default function MyLandPicker({
         communityEn: community!,
         roadId: municipality === "AAM" ? roadId : undefined,
         plot: plot.trim() || undefined,
+        addressValueEn: addressValueEn,
+        addressValueAr: addressValueAr,
         shapeGeoJSON: shape,
       };
       // Attach typed API payload when available so forms can auto-fill hierarchy data.

@@ -422,6 +422,9 @@ export interface OnwaniSelection {
   roadId?: string;
   // Plot is user-entered; there is no public endpoint in this app for lookups
   plot?: string;
+  // Full formatted address from Onwani
+  addressValueEn?: string;
+  addressValueAr?: string;
   // Optional overlay geometry returned by the getcommunityshape endpoint
   shapeGeoJSON?: unknown;
   // Optional backend response attached when map lookup succeeds

@@ -1668,7 +1668,7 @@ export default function UpdateStudentInfoPage() {
               </div>
 
               {addressChanged && (
-                <div className="grid gap-4 lg:grid-cols-2 animate-in fade-in-50 duration-300">
+                <div className="animate-in fade-in-50 duration-300">
                   <div className="space-y-3">
                     <Label className={clsx("text-sm font-medium text-foreground flex items-center gap-2", locale === 'ar' && 'flex-row-reverse justify-end')}>
                       <span>{updateInfo.addressSection.newAddressLabel}</span>
@@ -1680,29 +1680,6 @@ export default function UpdateStudentInfoPage() {
                       disabled={!addressChanged || isSubmitting}
                       required={{ emirate: true, area: true }}
                     />
-                  </div>
-                  <div className="p-4 sm:p-5 rounded-lg border border-border/70 bg-muted/30 h-full">
-                    <div className="text-sm font-medium mb-3 flex items-center justify-between">
-                      <span>{updateInfo.addressSection.summaryLabel}</span>
-                      <Badge variant={badgeVariant} className="text-xs">
-                        {badgeLabel}
-                      </Badge>
-                    </div>
-                    <dl className="space-y-2 text-sm text-muted-foreground">
-                      {summaryRows.map((row) =>
-                        row.value ? (
-                          <div key={row.label} className="flex justify-between gap-3">
-                            <dt className="font-medium text-foreground/80">{row.label}</dt>
-                            <dd className="text-right">{row.value}</dd>
-                          </div>
-                        ) : null
-                      )}
-                      {summaryRows.every((row) => !row.value) && (
-                        <div className="text-sm text-muted-foreground/80 italic">
-                          {summaryPlaceholder}
-                        </div>
-                      )}
-                    </dl>
                   </div>
                 </div>
               )}
@@ -2035,18 +2012,10 @@ export default function UpdateStudentInfoPage() {
                           <span className="text-foreground font-medium">{confirmAddress.data.emirate}</span>
                         </div>
                       )}
-                      {confirmAddress.data.area && (
-                        <div className={clsx("flex gap-3", locale === 'ar' && 'flex-row-reverse text-right')}>
-                          <span className="font-medium text-muted-foreground min-w-[120px] shrink-0">
-                            {locale === 'ar' ? 'المنطقة:' : 'Area:'}
-                          </span>
-                          <span className="text-foreground font-medium">{confirmAddress.data.area}</span>
-                        </div>
-                      )}
                       {confirmAddress.data.region && (
                         <div className={clsx("flex gap-3", locale === 'ar' && 'flex-row-reverse text-right')}>
                           <span className="font-medium text-muted-foreground min-w-[120px] shrink-0">
-                            {locale === 'ar' ? 'المنطقة الإدارية:' : 'Region:'}
+                            {locale === 'ar' ? 'المدينة:' : 'City:'}
                           </span>
                           <span className="text-foreground font-medium">{confirmAddress.data.region}</span>
                         </div>
@@ -2054,9 +2023,57 @@ export default function UpdateStudentInfoPage() {
                       {confirmAddress.data.zone && (
                         <div className={clsx("flex gap-3", locale === 'ar' && 'flex-row-reverse text-right')}>
                           <span className="font-medium text-muted-foreground min-w-[120px] shrink-0">
-                            {locale === 'ar' ? 'الحي/القطاع:' : 'Zone:'}
+                            {locale === 'ar' ? 'المنطقة:' : 'Region:'}
                           </span>
                           <span className="text-foreground font-medium">{confirmAddress.data.zone}</span>
+                        </div>
+                      )}
+                      {confirmAddress.data.area && (
+                        <div className={clsx("flex gap-3", locale === 'ar' && 'flex-row-reverse text-right')}>
+                          <span className="font-medium text-muted-foreground min-w-[120px] shrink-0">
+                            {locale === 'ar' ? 'الحي/القطاع:' : 'Sector:'}
+                          </span>
+                          <span className="text-foreground font-medium">{confirmAddress.data.area}</span>
+                        </div>
+                      )}
+                      {confirmAddress.data.longitude && (
+                        <div className={clsx("flex gap-3", locale === 'ar' && 'flex-row-reverse text-right')}>
+                          <span className="font-medium text-muted-foreground min-w-[120px] shrink-0">
+                            {locale === 'ar' ? 'خط الطول:' : 'Longitude:'}
+                          </span>
+                          <span className="text-foreground font-medium font-mono text-sm">{confirmAddress.data.longitude}</span>
+                        </div>
+                      )}
+                      {confirmAddress.data.latitude && (
+                        <div className={clsx("flex gap-3", locale === 'ar' && 'flex-row-reverse text-right')}>
+                          <span className="font-medium text-muted-foreground min-w-[120px] shrink-0">
+                            {locale === 'ar' ? 'خط العرض:' : 'Latitude:'}
+                          </span>
+                          <span className="text-foreground font-medium font-mono text-sm">{confirmAddress.data.latitude}</span>
+                        </div>
+                      )}
+                      {confirmAddress.data.premises && (
+                        <div className={clsx("flex gap-3", locale === 'ar' && 'flex-row-reverse text-right')}>
+                          <span className="font-medium text-muted-foreground min-w-[120px] shrink-0">
+                            {locale === 'ar' ? 'الموقع/المبنى:' : 'Premises:'}
+                          </span>
+                          <span className="text-foreground font-medium">{confirmAddress.data.premises}</span>
+                        </div>
+                      )}
+                      {confirmAddress.data.mainPlot && (
+                        <div className={clsx("flex gap-3", locale === 'ar' && 'flex-row-reverse text-right')}>
+                          <span className="font-medium text-muted-foreground min-w-[120px] shrink-0">
+                            {locale === 'ar' ? 'القطعة الرئيسية:' : 'Main Plot:'}
+                          </span>
+                          <span className="text-foreground font-medium">{confirmAddress.data.mainPlot}</span>
+                        </div>
+                      )}
+                      {confirmAddress.data.plot && (
+                        <div className={clsx("flex gap-3", locale === 'ar' && 'flex-row-reverse text-right')}>
+                          <span className="font-medium text-muted-foreground min-w-[120px] shrink-0">
+                            {locale === 'ar' ? 'القطعة:' : 'Plot:'}
+                          </span>
+                          <span className="text-foreground font-medium">{confirmAddress.data.plot}</span>
                         </div>
                       )}
                       {confirmAddress.data.street && (
@@ -2070,49 +2087,9 @@ export default function UpdateStudentInfoPage() {
                       {confirmAddress.data.houseBuilding && (
                         <div className={clsx("flex gap-3", locale === 'ar' && 'flex-row-reverse text-right')}>
                           <span className="font-medium text-muted-foreground min-w-[120px] shrink-0">
-                            {locale === 'ar' ? 'المبنى/المنزل:' : 'House/Building:'}
+                            {locale === 'ar' ? 'المبنى/المنزل:' : 'House / Building:'}
                           </span>
                           <span className="text-foreground font-medium">{confirmAddress.data.houseBuilding}</span>
-                        </div>
-                      )}
-                      {confirmAddress.data.plot && (
-                        <div className={clsx("flex gap-3", locale === 'ar' && 'flex-row-reverse text-right')}>
-                          <span className="font-medium text-muted-foreground min-w-[120px] shrink-0">
-                            {locale === 'ar' ? 'القطعة:' : 'Plot:'}
-                          </span>
-                          <span className="text-foreground font-medium">{confirmAddress.data.plot}</span>
-                        </div>
-                      )}
-                      {confirmAddress.data.mainPlot && (
-                        <div className={clsx("flex gap-3", locale === 'ar' && 'flex-row-reverse text-right')}>
-                          <span className="font-medium text-muted-foreground min-w-[120px] shrink-0">
-                            {locale === 'ar' ? 'القطعة الرئيسية:' : 'Main Plot:'}
-                          </span>
-                          <span className="text-foreground font-medium">{confirmAddress.data.mainPlot}</span>
-                        </div>
-                      )}
-                      {confirmAddress.data.premises && (
-                        <div className={clsx("flex gap-3", locale === 'ar' && 'flex-row-reverse text-right')}>
-                          <span className="font-medium text-muted-foreground min-w-[120px] shrink-0">
-                            {locale === 'ar' ? 'الموقع/المبنى:' : 'Premises:'}
-                          </span>
-                          <span className="text-foreground font-medium">{confirmAddress.data.premises}</span>
-                        </div>
-                      )}
-                      {confirmAddress.data.latitude && (
-                        <div className={clsx("flex gap-3", locale === 'ar' && 'flex-row-reverse text-right')}>
-                          <span className="font-medium text-muted-foreground min-w-[120px] shrink-0">
-                            {locale === 'ar' ? 'خط العرض:' : 'Latitude:'}
-                          </span>
-                          <span className="text-foreground font-medium font-mono text-sm">{confirmAddress.data.latitude}</span>
-                        </div>
-                      )}
-                      {confirmAddress.data.longitude && (
-                        <div className={clsx("flex gap-3", locale === 'ar' && 'flex-row-reverse text-right')}>
-                          <span className="font-medium text-muted-foreground min-w-[120px] shrink-0">
-                            {locale === 'ar' ? 'خط الطول:' : 'Longitude:'}
-                          </span>
-                          <span className="text-foreground font-medium font-mono text-sm">{confirmAddress.data.longitude}</span>
                         </div>
                       )}
                       {preparedPayload.documentName && (

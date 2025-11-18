@@ -22,6 +22,7 @@ import {
 import { useI18n } from "@/app/i18n/I18nProvider";
 import MyLandPicker from "@/app/components/Onwani/MyLandPicker";
 import type { OnwaniSelection, PlotLookupResponse } from "@/types";
+import { DubaiNorthernEmiratesFields, AbuDhabiEmirateFields } from "./AddressPickerComponents";
 
 type Emirate = {
   Id: number;
@@ -75,6 +76,8 @@ export type AddressValue = {
   regionNameAr?: string | null;
   zoneNameEn?: string | null;
   zoneNameAr?: string | null;
+  fullAddressEn?: string | null;
+  fullAddressAr?: string | null;
 };
 
 type AddressLookups = {
@@ -682,16 +685,6 @@ export function AddressPicker(props: AddressPickerProps) {
     const normalizedZoneId = (typeof zoneId === "number" && zoneId > 0) ? zoneId : undefined;
     const normalizedAreaId = (typeof areaId === "number" && areaId > 0) ? areaId : undefined;
 
-    // Determine if THIS selection is Abu Dhabi based on the plot response data
-    const isThisSelectionAbuDhabi = (() => {
-      const regionTitles = record.hierarchy.region?.titles;
-      if (!regionTitles) return false;
-      const en = (regionTitles.en || "").toLowerCase().replace(/\s+/g, "");
-      const ar = (regionTitles.ar || "").replace(/\s+/g, "").replace(/[\u0640\u061F]/g, "");
-      const abuDhabiArForms = ["أبوظبي", "ابوظبي", "أبوظبي", "ابوظبي".replace(/\s+/g, ""), "أبوظبي".replace(/\s+/g, "")];
-      return en.includes("abudhabi") || abuDhabiArForms.some((f) => ar.includes(f));
-    })();
-
     const updates: Partial<AddressValue> = {
       emirateId: normalizedEmirateId,
       regionId: normalizedRegionId,
@@ -712,6 +705,25 @@ export function AddressPicker(props: AddressPickerProps) {
       updates.emirateNameEn = emirateLookup.TitleEn ?? null;
       updates.emirateNameAr = emirateLookup.TitleAr ?? null;
     }
+
+    // Determine if THIS selection is Abu Dhabi EMIRATE (not region!)
+    // Abu Dhabi emirate includes: Abu Dhabi City, Al Ain, and Western Region
+    const isThisSelectionAbuDhabi = (() => {
+      // Check emirate ID first (most reliable)
+      if (normalizedEmirateId === 1) return true; // Abu Dhabi emirate ID is 1
+      
+      // Fallback: check emirate name from lookup
+      const emirateName = emirateLookup?.TitleEn || "";
+      if (emirateName.toLowerCase().includes("abu dhabi")) return true;
+      
+      // Last resort: check region (but this is less reliable for Al Ain/Western)
+      const regionTitles = record.hierarchy.region?.titles;
+      if (!regionTitles) return false;
+      const en = (regionTitles.en || "").toLowerCase().replace(/\s+/g, "");
+      const ar = (regionTitles.ar || "").replace(/\s+/g, "").replace(/[\u0640\u061F]/g, "");
+      const abuDhabiArForms = ["أبوظبي", "ابوظبي"];
+      return en.includes("abudhabi") || en.includes("alain") || en.includes("ain") || abuDhabiArForms.some((f) => ar.includes(f));
+    })();
 
     const areaTitles = record.hierarchy.area?.titles;
     if (areaTitles && (areaTitles.en || areaTitles.ar)) {
@@ -741,10 +753,15 @@ export function AddressPicker(props: AddressPickerProps) {
     }
 
     if (isThisSelectionAbuDhabi) {
+      // Abu Dhabi: Keep ALL data from map (region, zone, area, road, plot)
       updates.plotId = typeof plotId === "number" && plotId > 0 ? plotId : undefined;
-      updates.streetName = undefined;
-      updates.houseNumber = undefined;
+      updates.streetName = streetName?.trim() || undefined;
+      updates.houseNumber = houseNumberSource?.trim() || undefined;
+      // Capture full address values from Onwani
+      updates.fullAddressEn = pendingSelection.addressValueEn || null;
+      updates.fullAddressAr = pendingSelection.addressValueAr || null;
     } else {
+      // Other Emirates: Clear region/zone, keep area, street, house
       updates.regionId = undefined;
       updates.zoneId = undefined;
       updates.plotId = undefined;
@@ -756,6 +773,8 @@ export function AddressPicker(props: AddressPickerProps) {
       updates.houseNumber = houseNumberSource?.trim() || undefined;
       updates.mainPlotId = null;
       updates.premisesPlotId = null;
+      updates.fullAddressEn = null;
+      updates.fullAddressAr = null;
     }
 
     emit(updates);
@@ -911,8 +930,56 @@ export function AddressPicker(props: AddressPickerProps) {
           </p>
         )}
       </div>
+      {/* Emirate-specific field layouts */}
       {!isAbuDhabiSelected && (
-        <div id="DubaiNorthEmirate" className="space-y-5 animate-in fade-in-50 duration-300">
+        <DubaiNorthernEmiratesFields
+          local={local}
+          emit={emit}
+          disabled={disabled}
+          touched={touched}
+          setTouched={setTouched}
+          areas={areas}
+          areasLoading={areasLoading}
+          emiratesLoading={emiratesLoading}
+          areaError={!!areaError}
+          streetError={!!streetError}
+          houseError={!!houseError}
+          l={l}
+          req={req}
+          isRTL={isRTL}
+          locale={locale}
+          t={t}
+        />
+      )}
+
+      {isAbuDhabiSelected && (
+        <AbuDhabiEmirateFields
+          local={local}
+          emit={emit}
+          disabled={disabled}
+          hasMapSelection={hasMapSelection}
+          setIsMapDialogOpen={setIsMapDialogOpen}
+          pendingSelection={pendingSelection}
+          regions={regions}
+          zones={zones}
+          abuDhabiAreas={abuDhabiAreas}
+          regionsLoading={regionsLoading}
+          zonesLoading={zonesLoading}
+          abuDhabiAreasLoading={abuDhabiAreasLoading}
+          lockAbuDhabiFields={lockAbuDhabiFields}
+          touched={touched}
+          setTouched={setTouched}
+          regionPlaceholder={""}
+          zonePlaceholder={""}
+          areaPlaceholder={""}
+          isRTL={isRTL}
+          locale={locale}
+          t={t}
+        />
+      )}
+
+      {!isAbuDhabiSelected && false && (
+        <div id="DubaiNorthEmirate-old" className="space-y-5 animate-in fade-in-50 duration-300" style={{display: 'none'}}>
           {/* Area select (depends on emirate) */}
           <div className="flex flex-col gap-2.5">
             <label className="text-sm font-medium text-foreground flex items-center gap-1.5">
@@ -1057,9 +1124,9 @@ export function AddressPicker(props: AddressPickerProps) {
         </div>
       )}
 
-      {isAbuDhabiSelected && (
-        <div className="space-y-6 animate-in fade-in-50 duration-300">
-          {/* Abu Dhabi Section Header */}
+      {isAbuDhabiSelected && false && (
+        <div className="space-y-6 animate-in fade-in-50 duration-300" style={{display: 'none'}}>
+          {/* Abu Dhabi Section Header - OLD VERSION HIDDEN */}
           <div className="flex items-center gap-2 pt-4 pb-2 border-t border-border/50">
             <svg className="w-5 h-5 text-aegreen-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
@@ -1153,7 +1220,7 @@ export function AddressPicker(props: AddressPickerProps) {
               dir={isRTL ? "rtl" : "ltr"}
               disabled={disabled || regionsLoading || lockAbuDhabiFields}
               value={
-                typeof local.regionId === "number" && local.regionId > 0
+                (local.regionId ?? 0) > 0
                   ? String(local.regionId)
                   : undefined
               }
@@ -1223,7 +1290,7 @@ export function AddressPicker(props: AddressPickerProps) {
                 lockAbuDhabiFields
               }
               value={
-                typeof local.zoneId === "number" && local.zoneId > 0
+                (local.zoneId ?? 0) > 0
                   ? String(local.zoneId)
                   : undefined
               }
@@ -1290,7 +1357,7 @@ export function AddressPicker(props: AddressPickerProps) {
                 lockAbuDhabiFields
               }
               value={
-                typeof local.areaId === "number" && local.areaId > 0
+                (local.areaId ?? 0) > 0
                   ? String(local.areaId)
                   : undefined
               }
