@@ -40,12 +40,12 @@ export default function MobileBottomNav() {
       icon: DashboardIcon,
       label: t.nav.dashboard
     },
-    { 
-      key: 'summary', 
-      href: '/parent/summary', 
-      icon: SummaryIcon,
-      label: t.nav.summary
-    },
+    // { 
+    //   key: 'summary', 
+    //   href: '/parent/summary', 
+    //   icon: SummaryIcon,
+    //   label: t.nav.summary
+    // },
     // Admin panel link - only shown if user has admin access
     ...(adminAccess?.hasAccess ? [{
       key: 'admin' as const,

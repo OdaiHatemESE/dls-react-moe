@@ -130,7 +130,7 @@ export default function VerticalHeader() {
   type NavItem = { key: keyof typeof t.nav | 'admin'; href: string; icon: typeof DashboardIcon; isAdminOnly?: boolean } & ({ badge: string } | { badge?: undefined });
   const navigation: NavItem[] = [
     { key: 'dashboard', href: '/dashboard', icon: DashboardIcon },
-    { key: 'summary', href: '/parent/summary', icon: SummaryIcon },
+    // { key: 'summary', href: '/parent/summary', icon: SummaryIcon },
     // Admin panel link - only shown if user has admin access
     ...(adminAccess?.hasAccess ? [{ key: 'admin' as const, href: '/admin/eid', icon: Settings as any, isAdminOnly: true }] : []),
     // { key: 'announcements', href: '/announcements', icon: AnnouncementsIcon },

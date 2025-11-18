@@ -1,0 +1,334 @@
+{
+  "description": "The application follows a client-server architecture, primarily built with Next.js. The UI Components form the foundational visual elements, assembled into Pages/Views to create user-facing screens. Client-Side Application Logic handles interactive behavior and state management within the browser, often interacting with API Routes for server-side data operations. These API Routes serve as the backend interface, orchestrating data persistence through the Data Access Layer (using Prisma) and ensuring data integrity with Schema & Validation (using Zod) across both client and server interactions.",
+  "components": [
+    {
+      "name": "UI Components",
+      "description": "Reusable, atomic React components forming the visual building blocks of the application.",
+      "referenced_source_code": [
+        {
+          "qualified_name": "components",
+          "reference_file": "components",
+          "reference_start_line": null,
+          "reference_end_line": null
+        }
+      ],
+      "assigned_files": [
+        "app/admin/eid/components/StudentsTable.tsx",
+        "app/admin/eid/components/StudentActionsManager.tsx",
+        "app/admin/eid/components/UpdatePeriodsManager.tsx",
+        "app/admin/eid/components/AdminUsersManager.tsx",
+        "app/admin/eid/components/AcademicYearManager.tsx",
+        "app/components/notifications/index.ts",
+        "app/components/header/menuUtils.ts",
+        "app/admin/eid/components/AdminStats.tsx",
+        "app/admin/eid/components/SystemStats.tsx",
+        "app/admin/eid/components/UpdateLogsTable.tsx",
+        "app/dashboard/components/ChildCards.tsx",
+        "app/dashboard/components/UpcomingEvents.tsx",
+        "app/dashboard/components/ChildActions.tsx",
+        "app/dashboard/components/RecentAnnouncements.tsx",
+        "app/components/ThemeSwitcher.tsx",
+        "app/components/ConditionalLayout.tsx",
+        "app/components/HtmlLangDirProvider.tsx",
+        "app/components/MobileBottomNav.tsx",
+        "app/components/MobilePullToRefresh.tsx",
+        "app/components/NotificationToastListener.tsx",
+        "app/components/Switcher.tsx",
+        "app/components/Footer.tsx",
+        "app/components/MobileQuickAccess.tsx",
+        "app/components/MainContent.tsx",
+        "app/components/ThemeProvider.tsx",
+        "app/components/AuthButtons.tsx",
+        "app/components/Header.tsx",
+        "app/components/VerticalHeader.tsx",
+        "app/components/SwipeHandler.tsx",
+        "app/components/forms/AddressPicker.tsx",
+        "app/components/Onwani/MyLandPicker.tsx",
+        "app/components/icons/index.tsx",
+        "app/components/icons/IconProvider.tsx",
+        "app/components/custom/States.tsx",
+        "app/components/custom/Breadcrumb.tsx",
+        "app/components/custom/UpdatePeriodStatus.tsx",
+        "app/components/custom/Badge.tsx",
+        "app/components/notifications/NotificationCard.tsx",
+        "app/components/notifications/NotificationBell.tsx",
+        "app/components/notifications/NotificationDropdown.tsx",
+        "app/components/header/LanguageModal.tsx",
+        "app/components/header/DesktopHeader.tsx",
+        "app/components/header/MobileHeader.tsx",
+        "app/components/header/GoldStarModal.tsx",
+        "app/components/header/LogoGroup.tsx",
+        "app/components/header/SearchForm.tsx",
+        "app/child/[id]/StreamGrades.tsx",
+        "app/child/[id]/SchoolInfo.tsx",
+        "app/child/[id]/components/conductDetails.tsx",
+        "app/child/[id]/components/SignConductSection.tsx",
+        "app/child/[id]/components/InfoCard.tsx",
+        "app/child/[id]/components/InfoTab.tsx",
+        "app/child/[id]/components/LoadingSkeleton.tsx",
+        "components/RefreshBar.tsx",
+        "components/ui/tabs.tsx",
+        "components/ui/card.tsx",
+        "components/ui/popover.tsx",
+        "components/ui/toaster.tsx",
+        "components/ui/sheet.tsx",
+        "components/ui/label.tsx",
+        "components/ui/alert.tsx",
+        "components/ui/combobox.tsx",
+        "components/ui/switch.tsx",
+        "components/ui/breadcrumb.tsx",
+        "components/ui/command.tsx",
+        "components/ui/avatar.tsx",
+        "components/ui/dialog.tsx",
+        "components/ui/badge.tsx",
+        "components/ui/table.tsx",
+        "components/ui/separator.tsx",
+        "components/ui/button.tsx",
+        "components/ui/toast.tsx",
+        "components/ui/spinner.tsx",
+        "components/ui/select.tsx",
+        "components/ui/textarea.tsx",
+        "components/ui/input.tsx",
+        "components/ui/skeleton.tsx"
+      ],
+      "can_expand": false
+    },
+    {
+      "name": "Pages/Views",
+      "description": "Next.js pages that compose UI Components to create routable application screens and handle user interactions.",
+      "referenced_source_code": [
+        {
+          "qualified_name": "app",
+          "reference_file": "app/layout.tsx",
+          "reference_start_line": 25,
+          "reference_end_line": 29
+        }
+      ],
+      "assigned_files": [
+        "app/layout.tsx",
+        "app/page.tsx",
+        "app/messages/page.tsx",
+        "app/calendar/page.tsx",
+        "app/admin/layout.tsx",
+        "app/admin/eid/page.tsx",
+        "app/announcements/page.tsx",
+        "app/theme-debug/page.tsx",
+        "app/dashboard/page.tsx",
+        "app/profile/page.tsx",
+        "app/theme-demo/page.tsx",
+        "app/parent/summary/page.tsx",
+        "app/toast-demo/page.tsx",
+        "app/notifications/page.tsx",
+        "app/login/page.tsx",
+        "app/child/[id]/page.tsx",
+        "app/child/[id]/parent-conduct/page.tsx",
+        "app/child/[id]/update-info/page.tsx",
+        "app/debug/address-demo/page.tsx",
+        "app/debug/onwani/page.tsx",
+        "app/debug/pdf-inspector/page.tsx",
+        "app/debug/profile/page.tsx"
+      ],
+      "can_expand": true
+    },
+    {
+      "name": "Client-Side Application Logic",
+      "description": "Contains client-side business logic, state management (e.g., SWR hooks), and utility functions supporting the UI and pages.",
+      "referenced_source_code": [
+        {
+          "qualified_name": "hooks",
+          "reference_file": "hooks",
+          "reference_start_line": null,
+          "reference_end_line": null
+        },
+        {
+          "qualified_name": "utils",
+          "reference_file": "<file_path>",
+          "reference_start_line": null,
+          "reference_end_line": null
+        }
+      ],
+      "assigned_files": [
+        "middleware.ts",
+        "auth.ts",
+        "lib/api-toast-handler.ts",
+        "lib/admin-config.ts",
+        "lib/notifications.ts",
+        "lib/auth-database-example.ts",
+        "lib/refresh.ts",
+        "lib/fetch-student-profile.ts",
+        "lib/child-actions.ts",
+        "lib/redis.ts",
+        "lib/utils.ts",
+        "lib/internal-api-url.ts",
+        "lib/pdf-generator.ts",
+        "lib/parent-conduct.ts",
+        "lib/fetch-with-timeout.ts",
+        "lib/logger.ts",
+        "lib/cache.ts",
+        "lib/auth-server.ts",
+        "lib/oneroster.ts",
+        "lib/student-authorization.ts",
+        "lib/swr.ts",
+        "lib/onwani-client.ts",
+        "lib/auth.ts",
+        "lib/time.ts",
+        "lib/roster-repo.ts",
+        "lib/hooks/use-toast-notifications.ts",
+        "lib/hooks/useChildren.ts",
+        "lib/hooks/use-toast.ts",
+        "lib/hooks/useTheme.ts",
+        "lib/hooks/useNotifications.ts",
+        "app/components/SWRProvider.tsx",
+        "app/components/AuthProvider.tsx",
+        "app/i18n/I18nProvider.tsx",
+        "lib/pdf-generator-examples.tsx"
+      ],
+      "can_expand": true
+    },
+    {
+      "name": "API Routes",
+      "description": "Next.js API endpoints acting as the application's backend interface, handling HTTP requests and orchestrating server-side operations.",
+      "referenced_source_code": [
+        {
+          "qualified_name": "app.api",
+          "reference_file": "app/api",
+          "reference_start_line": null,
+          "reference_end_line": null
+        }
+      ],
+      "assigned_files": [
+        "app/api/PP/ChildList/[eid]/route.ts",
+        "app/api/PP/auth/token/route.ts",
+        "app/api/PP/student/[id]/route.ts",
+        "app/api/PP/information-status/[studentSourcedId]/route.ts",
+        "app/api/PP/school/[id]/route.ts",
+        "app/api/PP/conduct-status/[studentSourcedId]/route.ts",
+        "app/api/PP/child/sync/route.ts",
+        "app/api/auth/[...nextauth]/route.ts",
+        "app/api/admin/config/periods/route.ts",
+        "app/api/admin/config/status/route.ts",
+        "app/api/admin/config/users/route.ts",
+        "app/api/admin/config/actions/route.ts",
+        "app/api/admin/config/academic-year/route.ts",
+        "app/api/admin/check-access/route.ts",
+        "app/api/admin/analytics/updates/route.ts",
+        "app/api/admin/analytics/students/route.ts",
+        "app/api/admin/analytics/stats/route.ts",
+        "app/api/backoffice/idh/route.ts",
+        "app/api/students/mappers.ts",
+        "app/api/students/[id]/route.ts",
+        "app/api/parent/students-partnership-charter/route.ts",
+        "app/api/parent/conduct/route.ts",
+        "app/api/parent/child-actions/route.ts",
+        "app/api/parent/update-information-requests/route.ts",
+        "app/api/parent/generate-conduct-pdf/route.ts",
+        "app/api/oneroster/students/[sourcedId]/route.ts",
+        "app/api/oneroster/basic-info-full/session.ts",
+        "app/api/oneroster/basic-info-full/route.ts",
+        "app/api/oneroster/schoolenrollments/route.ts",
+        "app/api/db/regions/route.ts",
+        "app/api/db/zones/route.ts",
+        "app/api/db/areas/route.ts",
+        "app/api/db/health/route.ts",
+        "app/api/db/emirates/route.ts",
+        "app/api/db/health-parent/route.ts",
+        "app/api/db/plots/route.ts",
+        "app/api/notifications/route.ts",
+        "app/api/notifications/sms/route.ts",
+        "app/api/notifications/count/route.ts",
+        "app/api/notifications/mark-all-read/route.ts",
+        "app/api/notifications/[id]/read/route.ts",
+        "app/api/notifications/email/route.ts"
+      ],
+      "can_expand": true
+    },
+    {
+      "name": "Data Access Layer",
+      "description": "Manages all database interactions using Prisma, abstracting data operations for the API Routes.",
+      "referenced_source_code": [
+        {
+          "qualified_name": "lib.prisma",
+          "reference_file": "lib/prisma.ts",
+          "reference_start_line": null,
+          "reference_end_line": null
+        },
+        {
+          "qualified_name": "prisma.schema",
+          "reference_file": "prisma.schema",
+          "reference_start_line": null,
+          "reference_end_line": null
+        }
+      ],
+      "assigned_files": [
+        "lib/prisma.ts",
+        "lib/prisma-parent.ts"
+      ],
+      "can_expand": true
+    },
+    {
+      "name": "Schema & Validation",
+      "description": "Provides type-safe schema definition and validation using Zod, ensuring data integrity across frontend and backend.",
+      "referenced_source_code": [
+        {
+          "qualified_name": "schema",
+          "reference_file": "types/child-actions.ts",
+          "reference_start_line": 26,
+          "reference_end_line": 62
+        }
+      ],
+      "assigned_files": [
+        "types/child-actions.ts",
+        "lib/child-actions-schema.ts"
+      ],
+      "can_expand": true
+    },
+    {
+      "name": "Unclassified",
+      "description": "Component for all unclassified files and utility functions (Utility functions/External Libraries/Dependencies)",
+      "referenced_source_code": [],
+      "assigned_files": [
+        "global.d.ts",
+        "next.config.ts",
+        "types/next-auth.d.ts",
+        "types/notification.ts",
+        "types/index.ts",
+        "app/types/studentprofile.ts",
+        "app/types/index.ts",
+        "app/types/idh.ts",
+        "app/i18n/dictionaries/ar.ts",
+        "app/i18n/dictionaries/en.ts",
+        "app/data/mockData.ts",
+        "tailwind.config.js",
+        "ecosystem.config.js"
+      ],
+      "can_expand": false
+    }
+  ],
+  "components_relations": [
+    {
+      "relation": "calls",
+      "src_name": "Pages/Views",
+      "dst_name": "Client-Side Application Logic"
+    },
+    {
+      "relation": "calls",
+      "src_name": "Client-Side Application Logic",
+      "dst_name": "Schema & Validation"
+    },
+    {
+      "relation": "calls",
+      "src_name": "Client-Side Application Logic",
+      "dst_name": "API Routes"
+    },
+    {
+      "relation": "calls",
+      "src_name": "API Routes",
+      "dst_name": "Schema & Validation"
+    },
+    {
+      "relation": "calls",
+      "src_name": "API Routes",
+      "dst_name": "Data Access Layer"
+    }
+  ]
+}

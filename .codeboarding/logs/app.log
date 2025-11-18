@@ -1,0 +1,717 @@
+2025-11-18 07:05:18 WARNING  [utils:47] STATIC_ANALYSIS_CONFIG environment variable is not set, using default VSCode Setup.
+2025-11-18 07:05:18 WARNING  [utils:47] STATIC_ANALYSIS_CONFIG environment variable is not set, using default VSCode Setup.
+2025-11-18 07:05:18 INFO     [static_analyzer.scanner:65] Found: ProgrammingLanguage(language=CSS, size=318, percentage=0.6641604010025063, suffixes=['.css'])
+2025-11-18 07:05:18 INFO     [static_analyzer.scanner:65] Found: ProgrammingLanguage(language=JSON, size=11225, percentage=23.44402673350042, suffixes=['.json'])
+2025-11-18 07:05:18 INFO     [static_analyzer.scanner:68] Added ProgrammingLanguage(language=JSON, size=11225, percentage=23.44402673350042, suffixes=['.json'])
+2025-11-18 07:05:18 INFO     [static_analyzer.scanner:65] Found: ProgrammingLanguage(language=JavaScript, size=464, percentage=0.9690893901420217, suffixes=['.mjs', '.js'])
+2025-11-18 07:05:18 INFO     [static_analyzer.scanner:65] Found: ProgrammingLanguage(language=SQL, size=60, percentage=0.12531328320802004, suffixes=['.sql'])
+2025-11-18 07:05:18 INFO     [static_analyzer.scanner:65] Found: ProgrammingLanguage(language=SVG, size=5, percentage=0.010442773600668337, suffixes=['.svg'])
+2025-11-18 07:05:18 INFO     [static_analyzer.scanner:65] Found: ProgrammingLanguage(language=TSX, size=22529, percentage=47.0530492898914, suffixes=['.tsx'])
+2025-11-18 07:05:18 INFO     [static_analyzer.scanner:68] Added ProgrammingLanguage(language=TSX, size=22529, percentage=47.0530492898914, suffixes=['.tsx'])
+2025-11-18 07:05:18 INFO     [static_analyzer.scanner:65] Found: ProgrammingLanguage(language=TypeScript, size=13178, percentage=27.52297410192147, suffixes=['.jsx', '.tsx', '.js', '.ts'])
+2025-11-18 07:05:18 INFO     [static_analyzer.scanner:68] Added ProgrammingLanguage(language=TypeScript, size=13178, percentage=27.52297410192147, suffixes=['.jsx', '.tsx', '.js', '.ts'])
+2025-11-18 07:05:18 INFO     [static_analyzer.scanner:65] Found: ProgrammingLanguage(language=YAML, size=101, percentage=0.2109440267335004, suffixes=['.yml'])
+2025-11-18 07:05:18 WARNING  [static_analyzer:19] Unsupported programming language: JSON. Skipping.
+2025-11-18 07:05:18 WARNING  [static_analyzer:19] Unsupported programming language: TSX. Skipping.
+2025-11-18 07:05:18 INFO     [static_analyzer.typescript_config_scanner:55] Found 1 TypeScript project(s) in repository
+2025-11-18 07:05:18 INFO     [static_analyzer:30] Creating TypeScript client for project at: .
+2025-11-18 07:05:18 INFO     [static_analyzer:55] Starting static analysis for TypeScript in /Users/odaihatem/Documents/development2026/dls-react-moe
+2025-11-18 07:05:18 INFO     [static_analyzer.lsp_client.typescript_client:29] node_modules found at: /Users/odaihatem/Documents/development2026/dls-react-moe/node_modules
+2025-11-18 07:05:18 INFO     [static_analyzer.lsp_client.client:70] Starting server /Users/odaihatem/.vscode-insiders/extensions/codeboarding.codeboarding-0.2.13/webview-ui/node_modules/typescript-language-server/lib/cli.mjs --stdio --log-level=2...
+2025-11-18 07:05:18 INFO     [static_analyzer.lsp_client.typescript_client:42] Initializing connection for typescript...
+2025-11-18 07:05:18 INFO     [static_analyzer.lsp_client.typescript_client:72] Initialization successful.
+2025-11-18 07:05:19 INFO     [static_analyzer.lsp_client.typescript_client:99] Found 39117 TypeScript/JavaScript files
+2025-11-18 07:05:19 INFO     [static_analyzer.lsp_client.typescript_client:166] Found configuration file: /Users/odaihatem/Documents/development2026/dls-react-moe/tsconfig.json
+2025-11-18 07:05:19 INFO     [static_analyzer.lsp_client.typescript_client:166] Found configuration file: /Users/odaihatem/Documents/development2026/dls-react-moe/package.json
+2025-11-18 07:05:19 INFO     [static_analyzer.lsp_client.typescript_client:177] Opening sample files to bootstrap TypeScript project...
+2025-11-18 07:05:19 INFO     [static_analyzer.lsp_client.typescript_client:197] Waiting 5s for TypeScript server to initialize project...
+2025-11-18 07:05:24 INFO     [static_analyzer.lsp_client.typescript_client:202] TypeScript project successfully loaded!
+2025-11-18 07:05:24 INFO     [static_analyzer.lsp_client.client:346] Starting unified static analysis with multithreading...
+2025-11-18 07:05:25 INFO     [static_analyzer.lsp_client.client:369] Found 192 source files. Starting unified analysis...
+2025-11-18 07:05:25 INFO     [static_analyzer.lsp_client.typescript_client:218] Waiting additional time for TypeScript server to fully initialize...
+2025-11-18 07:05:27 ERROR    [static_analyzer.lsp_client.typescript_client:235] TypeScript server reports 'No Project' - project not properly loaded
+2025-11-18 07:05:27 WARNING  [static_analyzer.lsp_client.typescript_client:222] TypeScript project not properly loaded. Analysis may be limited.
+2025-11-18 07:05:27 ERROR    [static_analyzer.lsp_client.client:673] workspace/symbol failed: {'code': 1, 'message': '<semantic> TypeScript Server Error (5.9.2)\nNo Project.\nError: No Project.\n    at Object.ThrowNoProject (/Users/odaihatem/Documents/development2026/dls-react-moe/node_modules/typescript/lib/typescript.js:186147:11)\n    at IpcIOSession.getProjects (/Users/odaihatem/Documents/development2026/dls-react-moe/node_modules/typescript/lib/typescript.js:195699:23)\n    at IpcIOSession.getFullNavigateToItems (/Users/odaihatem/Documents/development2026/dls-react-moe/node_modules/typescript/lib/typescript.js:196299:29)\n    at IpcIOSession.getNavigateToItems (/Users/odaihatem/Documents/development2026/dls-react-moe/node_modules/typescript/lib/typescript.js:196257:23)\n    at navto (/Users/odaihatem/Documents/development2026/dls-react-moe/node_modules/typescript/lib/typescript.js:194405:43)\n    at /Users/odaihatem/Documents/development2026/dls-react-moe/node_modules/typescript/lib/typescript.js:196809:15\n    at IpcIOSession.executeWithRequestId (/Users/odaihatem/Documents/development2026/dls-react-moe/node_modules/typescript/lib/typescript.js:196798:14)\n    at IpcIOSession.executeCommand (/Users/odaihatem/Documents/development2026/dls-react-moe/node_modules/typescript/lib/typescript.js:196807:29)\n    at IpcIOSession.onMessage (/Users/odaihatem/Documents/development2026/dls-react-moe/node_modules/typescript/lib/typescript.js:196855:68)\n    at process.<anonymous> (/Users/odaihatem/Documents/development2026/dls-react-moe/node_modules/typescript/lib/_tsserver.js:519:14)\n    at process.emit (node:events:517:28)\n    at emit (node:internal/child_process:944:14)\n    at process.processTicksAndRejections (node:internal/process/task_queues:83:21)'}
+2025-11-18 07:05:27 INFO     [static_analyzer.lsp_client.client:376] Found 0 classes in workspace
+2025-11-18 07:05:27 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/middleware.ts with ID 5
+2025-11-18 07:05:27 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/global.d.ts with ID 6
+2025-11-18 07:05:27 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/next.config.ts with ID 7
+2025-11-18 07:05:27 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/types/notification.ts with ID 8
+2025-11-18 07:05:27 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/auth.ts with ID 9
+2025-11-18 07:05:27 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/types/next-auth.d.ts with ID 10
+2025-11-18 07:05:27 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/types/child-actions.ts with ID 11
+2025-11-18 07:05:27 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/types/index.ts with ID 12
+2025-11-18 07:05:27 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/types/index.ts with ID 13
+2025-11-18 07:05:27 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/types/studentprofile.ts with ID 14
+2025-11-18 07:05:27 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/types/idh.ts with ID 15
+2025-11-18 07:05:27 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/notifications/index.ts with ID 16
+2025-11-18 07:05:27 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/header/menuUtils.ts with ID 17
+2025-11-18 07:05:27 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/PP/ChildList/%5Beid%5D/route.ts with ID 22
+2025-11-18 07:05:27 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/PP/auth/token/route.ts with ID 36
+2025-11-18 07:05:27 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/PP/student/%5Bid%5D/route.ts with ID 39
+2025-11-18 07:05:27 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/PP/information-status/%5BstudentSourcedId%5D/route.ts with ID 47
+2025-11-18 07:05:27 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/PP/school/%5Bid%5D/route.ts with ID 48
+2025-11-18 07:05:27 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/PP/conduct-status/%5BstudentSourcedId%5D/route.ts with ID 193
+2025-11-18 07:05:27 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/PP/child/sync/route.ts with ID 255
+2025-11-18 07:05:28 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/auth/%5B...nextauth%5D/route.ts with ID 323
+2025-11-18 07:05:28 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/admin/config/periods/route.ts with ID 337
+2025-11-18 07:05:28 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/admin/config/status/route.ts with ID 452
+2025-11-18 07:05:28 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/admin/config/users/route.ts with ID 479
+2025-11-18 07:05:28 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/admin/config/actions/route.ts with ID 943
+2025-11-18 07:05:28 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/admin/config/academic-year/route.ts with ID 1000
+2025-11-18 07:05:28 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/admin/check-access/route.ts with ID 1020
+2025-11-18 07:05:29 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/admin/analytics/updates/route.ts with ID 1107
+2025-11-18 07:05:29 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/admin/analytics/students/route.ts with ID 1163
+2025-11-18 07:05:29 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/admin/analytics/stats/route.ts with ID 1296
+2025-11-18 07:05:29 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/backoffice/idh/route.ts with ID 1516
+2025-11-18 07:05:29 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/students/mappers.ts with ID 1562
+2025-11-18 07:05:30 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/students/%5Bid%5D/route.ts with ID 1735
+2025-11-18 07:05:30 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/parent/students-partnership-charter/route.ts with ID 1883
+2025-11-18 07:05:30 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/parent/conduct/route.ts with ID 2040
+2025-11-18 07:05:30 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/parent/child-actions/route.ts with ID 2053
+2025-11-18 07:05:30 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/parent/update-information-requests/route.ts with ID 2075
+2025-11-18 07:05:30 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/parent/generate-conduct-pdf/route.ts with ID 2202
+2025-11-18 07:05:30 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/oneroster/students/%5BsourcedId%5D/route.ts with ID 2264
+2025-11-18 07:05:31 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/oneroster/basic-info-full/session.ts with ID 2871
+2025-11-18 07:05:31 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/oneroster/basic-info-full/route.ts with ID 2931
+2025-11-18 07:05:31 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/oneroster/schoolenrollments/route.ts with ID 2970
+2025-11-18 07:05:32 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/db/regions/route.ts with ID 3427
+2025-11-18 07:05:33 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/db/zones/route.ts with ID 3542
+2025-11-18 07:05:33 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/db/areas/route.ts with ID 3794
+2025-11-18 07:05:33 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/db/health/route.ts with ID 3902
+2025-11-18 07:05:34 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/db/emirates/route.ts with ID 3956
+2025-11-18 07:05:34 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/db/health-parent/route.ts with ID 4127
+2025-11-18 07:05:34 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/db/plots/route.ts with ID 4155
+2025-11-18 07:05:34 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/notifications/route.ts with ID 4172
+2025-11-18 07:05:34 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/notifications/sms/route.ts with ID 4247
+2025-11-18 07:05:34 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/notifications/count/route.ts with ID 4378
+2025-11-18 07:05:34 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/notifications/mark-all-read/route.ts with ID 4459
+2025-11-18 07:05:34 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/notifications/%5Bid%5D/read/route.ts with ID 4525
+2025-11-18 07:05:34 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/notifications/email/route.ts with ID 4652
+2025-11-18 07:05:35 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/i18n/dictionaries/ar.ts with ID 4921
+2025-11-18 07:05:35 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/i18n/dictionaries/en.ts with ID 5073
+2025-11-18 07:05:35 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/data/mockData.ts with ID 5181
+2025-11-18 07:05:35 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/lib/prisma.ts with ID 5396
+2025-11-18 07:05:35 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/lib/child-actions-schema.ts with ID 5489
+2025-11-18 07:05:35 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/lib/api-toast-handler.ts with ID 5491
+2025-11-18 07:05:36 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/lib/admin-config.ts with ID 5910
+2025-11-18 07:05:36 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/lib/notifications.ts with ID 5983
+2025-11-18 07:05:36 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/lib/auth-database-example.ts with ID 5995
+2025-11-18 07:05:36 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/lib/refresh.ts with ID 6030
+2025-11-18 07:05:36 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/lib/fetch-student-profile.ts with ID 6123
+2025-11-18 07:05:36 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/lib/child-actions.ts with ID 6135
+2025-11-18 07:05:36 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/lib/redis.ts with ID 6144
+2025-11-18 07:05:36 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/lib/utils.ts with ID 6213
+2025-11-18 07:05:37 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/lib/internal-api-url.ts with ID 6306
+2025-11-18 07:05:37 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/lib/pdf-generator.ts with ID 6489
+2025-11-18 07:05:37 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/lib/parent-conduct.ts with ID 6572
+2025-11-18 07:05:37 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/lib/fetch-with-timeout.ts with ID 6584
+2025-11-18 07:05:37 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/lib/prisma-parent.ts with ID 6607
+2025-11-18 07:05:37 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/lib/logger.ts with ID 6688
+2025-11-18 07:05:38 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/lib/cache.ts with ID 6982
+2025-11-18 07:05:38 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/lib/auth-server.ts with ID 7100
+2025-11-18 07:05:38 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/lib/oneroster.ts with ID 7166
+2025-11-18 07:05:38 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/lib/student-authorization.ts with ID 7439
+2025-11-18 07:05:38 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/lib/swr.ts with ID 7628
+2025-11-18 07:05:38 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/lib/onwani-client.ts with ID 7707
+2025-11-18 07:05:39 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/lib/auth.ts with ID 7844
+2025-11-18 07:05:39 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/lib/time.ts with ID 8188
+2025-11-18 07:05:39 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/lib/roster-repo.ts with ID 8221
+2025-11-18 07:05:39 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/lib/hooks/use-toast-notifications.ts with ID 8315
+2025-11-18 07:05:39 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/lib/hooks/useChildren.ts with ID 8353
+2025-11-18 07:05:39 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/lib/hooks/use-toast.ts with ID 8451
+2025-11-18 07:05:40 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/lib/hooks/useTheme.ts with ID 8864
+2025-11-18 07:05:40 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/lib/hooks/useNotifications.ts with ID 8879
+2025-11-18 07:05:40 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/layout.tsx with ID 8925
+2025-11-18 07:05:40 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/page.tsx with ID 8969
+2025-11-18 07:05:40 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/messages/page.tsx with ID 9188
+2025-11-18 07:05:40 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/calendar/page.tsx with ID 9258
+2025-11-18 07:05:41 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/admin/layout.tsx with ID 9365
+2025-11-18 07:05:41 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/admin/eid/page.tsx with ID 9462
+2025-11-18 07:05:41 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/admin/eid/components/StudentsTable.tsx with ID 9614
+2025-11-18 07:05:41 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/admin/eid/components/StudentActionsManager.tsx with ID 9742
+2025-11-18 07:05:41 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/admin/eid/components/UpdatePeriodsManager.tsx with ID 9831
+2025-11-18 07:05:42 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/admin/eid/components/AdminUsersManager.tsx with ID 10288
+2025-11-18 07:05:42 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/admin/eid/components/AcademicYearManager.tsx with ID 10299
+2025-11-18 07:05:43 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/admin/eid/components/AdminStats.tsx with ID 10528
+2025-11-18 07:05:44 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/admin/eid/components/SystemStats.tsx with ID 11168
+2025-11-18 07:05:44 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/admin/eid/components/UpdateLogsTable.tsx with ID 11276
+2025-11-18 07:05:44 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/announcements/page.tsx with ID 11285
+2025-11-18 07:05:44 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/theme-debug/page.tsx with ID 11587
+2025-11-18 07:05:45 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/dashboard/page.tsx with ID 11839
+2025-11-18 07:05:45 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/dashboard/components/ChildCards.tsx with ID 11870
+2025-11-18 07:05:45 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/dashboard/components/UpcomingEvents.tsx with ID 11921
+2025-11-18 07:05:45 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/dashboard/components/ChildActions.tsx with ID 12008
+2025-11-18 07:05:45 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/dashboard/components/RecentAnnouncements.tsx with ID 12138
+2025-11-18 07:05:45 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/ThemeSwitcher.tsx with ID 12151
+2025-11-18 07:05:46 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/ConditionalLayout.tsx with ID 12375
+2025-11-18 07:05:46 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/HtmlLangDirProvider.tsx with ID 12378
+2025-11-18 07:05:46 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/MobileBottomNav.tsx with ID 12503
+2025-11-18 07:05:46 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/MobilePullToRefresh.tsx with ID 12515
+2025-11-18 07:05:46 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/NotificationToastListener.tsx with ID 12687
+2025-11-18 07:05:46 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/Switcher.tsx with ID 12897
+2025-11-18 07:05:46 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/Footer.tsx with ID 12992
+2025-11-18 07:05:47 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/SWRProvider.tsx with ID 13057
+2025-11-18 07:05:47 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/MobileQuickAccess.tsx with ID 13106
+2025-11-18 07:05:47 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/MainContent.tsx with ID 13115
+2025-11-18 07:05:47 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/ThemeProvider.tsx with ID 13142
+2025-11-18 07:05:47 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/AuthButtons.tsx with ID 13246
+2025-11-18 07:05:47 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/Header.tsx with ID 13290
+2025-11-18 07:05:47 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/VerticalHeader.tsx with ID 13293
+2025-11-18 07:05:47 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/AuthProvider.tsx with ID 13410
+2025-11-18 07:05:47 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/SwipeHandler.tsx with ID 13436
+2025-11-18 07:05:47 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/forms/AddressPicker.tsx with ID 13472
+2025-11-18 07:05:47 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/Onwani/MyLandPicker.tsx with ID 13528
+2025-11-18 07:05:48 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/icons/index.tsx with ID 13633
+2025-11-18 07:05:48 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/icons/IconProvider.tsx with ID 13714
+2025-11-18 07:05:48 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/custom/States.tsx with ID 13940
+2025-11-18 07:05:48 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/custom/Breadcrumb.tsx with ID 13953
+2025-11-18 07:05:48 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/custom/UpdatePeriodStatus.tsx with ID 13985
+2025-11-18 07:05:48 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/custom/Badge.tsx with ID 14164
+2025-11-18 07:05:49 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/notifications/NotificationCard.tsx with ID 14256
+2025-11-18 07:05:49 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/notifications/NotificationBell.tsx with ID 14425
+2025-11-18 07:05:49 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/notifications/NotificationDropdown.tsx with ID 14451
+2025-11-18 07:05:49 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/header/LanguageModal.tsx with ID 14619
+2025-11-18 07:05:49 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/header/DesktopHeader.tsx with ID 14637
+2025-11-18 07:05:50 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/header/MobileHeader.tsx with ID 14700
+2025-11-18 07:05:50 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/header/GoldStarModal.tsx with ID 14892
+2025-11-18 07:05:50 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/header/LogoGroup.tsx with ID 15007
+2025-11-18 07:05:50 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/profile/page.tsx with ID 15030
+2025-11-18 07:05:50 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/header/SearchForm.tsx with ID 15031
+2025-11-18 07:05:50 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/theme-demo/page.tsx with ID 15157
+2025-11-18 07:05:50 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/parent/summary/page.tsx with ID 15266
+2025-11-18 07:05:50 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/toast-demo/page.tsx with ID 15276
+2025-11-18 07:05:50 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/i18n/I18nProvider.tsx with ID 15433
+2025-11-18 07:05:51 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/notifications/page.tsx with ID 15466
+2025-11-18 07:05:51 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/login/page.tsx with ID 15644
+2025-11-18 07:05:51 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/child/%5Bid%5D/StreamGrades.tsx with ID 16021
+2025-11-18 07:05:51 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/child/%5Bid%5D/SchoolInfo.tsx with ID 16068
+2025-11-18 07:05:52 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/child/%5Bid%5D/page.tsx with ID 16127
+2025-11-18 07:05:53 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/child/%5Bid%5D/parent-conduct/page.tsx with ID 16964
+2025-11-18 07:05:53 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/child/%5Bid%5D/components/conductDetails.tsx with ID 17161
+2025-11-18 07:05:53 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/child/%5Bid%5D/components/SignConductSection.tsx with ID 17220
+2025-11-18 07:05:53 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/child/%5Bid%5D/components/InfoCard.tsx with ID 17294
+2025-11-18 07:05:54 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/child/%5Bid%5D/components/InfoTab.tsx with ID 17722
+2025-11-18 07:05:54 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/child/%5Bid%5D/components/LoadingSkeleton.tsx with ID 17881
+2025-11-18 07:05:55 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/child/%5Bid%5D/update-info/page.tsx with ID 18096
+2025-11-18 07:05:55 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/debug/address-demo/page.tsx with ID 18112
+2025-11-18 07:05:55 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/debug/onwani/page.tsx with ID 18315
+2025-11-18 07:05:55 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/debug/pdf-inspector/page.tsx with ID 18446
+2025-11-18 07:05:55 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/debug/profile/page.tsx with ID 18517
+2025-11-18 07:05:55 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/components/RefreshBar.tsx with ID 18707
+2025-11-18 07:05:56 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/components/ui/tabs.tsx with ID 18969
+2025-11-18 07:05:56 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/components/ui/card.tsx with ID 19023
+2025-11-18 07:05:56 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/components/ui/popover.tsx with ID 19350
+2025-11-18 07:05:57 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/components/ui/toaster.tsx with ID 19373
+2025-11-18 07:05:57 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/components/ui/sheet.tsx with ID 19512
+2025-11-18 07:05:57 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/components/ui/label.tsx with ID 19531
+2025-11-18 07:05:57 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/components/ui/alert.tsx with ID 19600
+2025-11-18 07:05:57 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/components/ui/combobox.tsx with ID 19636
+2025-11-18 07:05:57 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/components/ui/switch.tsx with ID 19681
+2025-11-18 07:05:57 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/components/ui/breadcrumb.tsx with ID 19736
+2025-11-18 07:05:57 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/components/ui/command.tsx with ID 19818
+2025-11-18 07:05:57 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/components/ui/avatar.tsx with ID 19894
+2025-11-18 07:05:57 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/components/ui/dialog.tsx with ID 19899
+2025-11-18 07:05:58 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/components/ui/badge.tsx with ID 20034
+2025-11-18 07:05:58 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/components/ui/table.tsx with ID 20261
+2025-11-18 07:05:58 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/components/ui/separator.tsx with ID 20293
+2025-11-18 07:05:58 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/components/ui/button.tsx with ID 20323
+2025-11-18 07:05:58 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/components/ui/toast.tsx with ID 20412
+2025-11-18 07:05:59 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/components/ui/spinner.tsx with ID 20467
+2025-11-18 07:05:59 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/components/ui/select.tsx with ID 20625
+2025-11-18 07:05:59 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/components/ui/textarea.tsx with ID 20698
+2025-11-18 07:05:59 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/components/ui/input.tsx with ID 20730
+2025-11-18 07:05:59 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/components/ui/skeleton.tsx with ID 20750
+2025-11-18 07:05:59 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/lib/pdf-generator-examples.tsx with ID 20811
+2025-11-18 07:06:00 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/tailwind.config.js with ID 20861
+2025-11-18 07:06:00 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/ecosystem.config.js with ID 20867
+2025-11-18 07:06:25 INFO     [static_analyzer.lsp_client.client:402] Successfully processed 192 files
+2025-11-18 07:06:25 INFO     [static_analyzer.lsp_client.client:447] Unified static analysis complete.
+2025-11-18 07:06:25 INFO     [static_analyzer.lsp_client.client:448] Results: 14084 references, 3 classes, 83 packages, 7193 call graph nodes, 1845 edges
+2025-11-18 07:06:27 INFO     [agents.meta_agent:33] [MetaAgent] Analyzing metadata for project: dls-react-moe
+2025-11-18 07:06:29 INFO     [agents.tools.read_docs:89] [ReadDocs Tool] Reading file /Users/odaihatem/Documents/development2026/dls-react-moe/node_modules/pako/README.md around line 0
+2025-11-18 07:06:45 INFO     [agents.meta_agent:38] [MetaAgent] Completed metadata analysis for project: # 🎯 Project Metadata Analysis
+
+**Project Type:** Web Application / Frontend Application
+**Domain:** Web Development (potentially educational or administrative systems)
+**Technology Stack:** React.js, Next.js, Tailwind CSS, Radix UI, Prisma, JavaScript/TypeScript, Lucide React, date-fns, Zod, SWR
+**Architectural Patterns:** Component-Based Architecture, Server-Side Rendering (SSR) / Static Site Generation (SSG), API Layer, Modular Architecture
+**Expected Components:** UI Components, Pages/Views, API Endpoints, Data Access Layer, State Management, Utilities/Helpers, Styling/Theming
+**Architectural Bias:** The project exhibits a strong bias towards a modern, full-stack JavaScript/TypeScript web application. It is frontend-heavy, driven by a rich user interface built with React and Next.js, and relies on an internal API layer for data operations.
+
+For architectural diagrams and component organization, focus on:
+1.  User Interface (UI) Layer: Group all React components and Next.js pages. Emphasize the composition of smaller UI components into larger page structures.
+2.  Application Logic Layer: This would encompass client-side state management, data fetching logic (e.g., SWR hooks), and any client-side business logic.
+3.  API Layer: Represent the Next.js API routes as distinct services or endpoints. Highlight their responsibilities for handling requests and orchestrating data operations.
+4.  Data Layer: Illustrate the interaction with the database via Prisma. This layer should show models, schemas, and data access methods.
+
+The flow should typically depict user interaction with the UI, triggering actions that communicate with the API layer, which then interacts with the data layer. Emphasize the modularity and reusability of components across the UI and the clear separation of concerns between the frontend, API, and data persistence.
+
+2025-11-18 07:06:53 WARNING  [agents.diff_analyzer:56] [DiffAnalyzingAgent] No version file found, cannot get diff data
+2025-11-18 07:06:53 INFO     [diagram_analysis.diagram_generator:127] Generating initial analysis
+2025-11-18 07:06:53 INFO     [agents.diff_analyzer:94] [DiffAnalyzingAgent] No existing analysis found, running full analysis
+2025-11-18 07:06:53 INFO     [agents.abstraction_agent:64] [AbstractionAgent] Analyzing CFG for project: dls-react-moe
+2025-11-18 07:07:00 INFO     [agents.tools.read_file_structure:77] [File Structure Tool] Found directory /Users/odaihatem/Documents/development2026/dls-react-moe/node_modules/zod/src
+2025-11-18 07:07:00 INFO     [agents.tools.read_file_structure:86] [File Structure Tool] Found directory /Users/odaihatem/Documents/development2026/dls-react-moe/node_modules/zod/src
+2025-11-18 07:07:00 INFO     [agents.tools.read_file_structure:95] [File Structure Tool] Reading file structure for /Users/odaihatem/Documents/development2026/dls-react-moe/node_modules/zod/src
+2025-11-18 07:11:28 WARNING  [langchain_google_genai._function_utils:102] Key '$defs' is not supported in schema, ignoring
+2025-11-18 07:11:45 INFO     [agents.abstraction_agent:90] [AbstractionAgent] Analyzing Source for project: dls-react-moe
+2025-11-18 07:12:05 WARNING  [langchain_google_genai._function_utils:102] Key '$defs' is not supported in schema, ignoring
+2025-11-18 07:12:20 INFO     [agents.abstraction_agent:111] [AbstractionAgent] Generating final analysis for project: dls-react-moe
+2025-11-18 07:12:33 WARNING  [langchain_google_genai._function_utils:102] Key '$defs' is not supported in schema, ignoring
+2025-11-18 07:12:43 INFO     [static_analyzer.reference_resolve_mixin:26] Fixing source code reference lines for the analysis: # 📦 Abstract Components Overview
+**Component:** `UI Components`
+   - *Description*: Reusable, atomic React components forming the visual building blocks of the application.
+   - *Related Classes/Methods*: `QName:`components` FileRef: `components/``
+**Component:** `Pages/Views`
+   - *Description*: Next.js pages that compose `UI Components` to create routable application screens and handle user interactions.
+   - *Related Classes/Methods*: `QName:`pages` FileRef: `pages/``
+**Component:** `Client-Side Application Logic`
+   - *Description*: Contains client-side business logic, state management (e.g., SWR hooks), and utility functions supporting the UI and pages.
+   - *Related Classes/Methods*: `QName:`hooks` FileRef: `hooks/``, `QName:`utils` FileRef: `utils/``
+**Component:** `API Routes`
+   - *Description*: Next.js API endpoints acting as the application's backend interface, handling HTTP requests and orchestrating server-side operations.
+   - *Related Classes/Methods*: `QName:`pages.api` FileRef: `pages/api/``
+**Component:** `Data Access Layer`
+   - *Description*: Manages all database interactions using Prisma, abstracting data operations for the `API Routes`.
+   - *Related Classes/Methods*: `QName:`lib.prisma` FileRef: `lib/prisma.ts``, `QName:`prisma.schema` FileRef: `prisma/schema.prisma``
+**Component:** `Schema & Validation`
+   - *Description*: Provides type-safe schema definition and validation using Zod, ensuring data integrity across frontend and backend.
+   - *Related Classes/Methods*: `QName:`src.v3` FileRef: `src/v3/``, `QName:`src.v4` FileRef: `src/v4/``(Pages/Views, calls, Client-Side Application Logic)
+(Client-Side Application Logic, calls, Schema & Validation)
+(Client-Side Application Logic, calls, API Routes)
+(API Routes, calls, Schema & Validation)
+(API Routes, calls, Data Access Layer)
+2025-11-18 07:12:43 WARNING  [static_analyzer.reference_resolve_mixin:69] [Reference Resolution] Exact match failed for components in TypeScript: Source code reference for 'components' in language 'TypeScript' is a file path, please use the full file path instead of the qualified name.
+2025-11-18 07:12:43 INFO     [static_analyzer.reference_resolve_mixin:104] [Reference Resolution] File path matched for components in TypeScript at /Users/odaihatem/Documents/development2026/dls-react-moe/components/
+2025-11-18 07:12:43 WARNING  [static_analyzer.reference_resolve_mixin:69] [Reference Resolution] Exact match failed for pages in TypeScript: Source code reference for 'pages' in language 'TypeScript' not found in results.
+2025-11-18 07:12:43 INFO     [static_analyzer.reference_resolve_mixin:81] [Reference Resolution] Loosely matched pages in TypeScript at /Users/odaihatem/Documents/development2026/dls-react-moe/app/api/admin/analytics/updates/route.ts
+2025-11-18 07:12:43 WARNING  [static_analyzer.reference_resolve_mixin:69] [Reference Resolution] Exact match failed for hooks in TypeScript: Source code reference for 'hooks' in language 'TypeScript' not found in results.
+2025-11-18 07:13:14 INFO     [static_analyzer.reference_resolve_mixin:135] [Reference Resolution] LLM matched hooks at hooks/
+2025-11-18 07:13:14 WARNING  [static_analyzer.reference_resolve_mixin:69] [Reference Resolution] Exact match failed for utils in TypeScript: Source code reference for 'utils' in language 'TypeScript' not found in results.
+2025-11-18 07:13:22 INFO     [agents.tools.read_file_structure:77] [File Structure Tool] Found directory /Users/odaihatem/Documents/development2026/dls-react-moe/node_modules/@typescript-eslint/utils
+2025-11-18 07:13:22 INFO     [agents.tools.read_file_structure:86] [File Structure Tool] Found directory /Users/odaihatem/Documents/development2026/dls-react-moe/node_modules/@typescript-eslint/utils
+2025-11-18 07:13:22 INFO     [agents.tools.read_file_structure:95] [File Structure Tool] Reading file structure for /Users/odaihatem/Documents/development2026/dls-react-moe/node_modules/@typescript-eslint/utils
+2025-11-18 07:13:26 INFO     [static_analyzer.reference_resolve_mixin:135] [Reference Resolution] LLM matched utils at utils/dist/index.js
+2025-11-18 07:13:26 WARNING  [static_analyzer.reference_resolve_mixin:69] [Reference Resolution] Exact match failed for pages.api in TypeScript: Source code reference for 'pages.api' in language 'TypeScript' not found in results.
+2025-11-18 07:13:52 INFO     [static_analyzer.reference_resolve_mixin:135] [Reference Resolution] LLM matched pages.api at pages/api/my_route.py
+2025-11-18 07:13:52 WARNING  [static_analyzer.reference_resolve_mixin:69] [Reference Resolution] Exact match failed for lib.prisma in TypeScript: Source code reference for 'lib.prisma' in language 'TypeScript' is a file path, please use the full file path instead of the qualified name.
+2025-11-18 07:13:52 INFO     [static_analyzer.reference_resolve_mixin:104] [Reference Resolution] File path matched for lib.prisma in TypeScript at /Users/odaihatem/Documents/development2026/dls-react-moe/lib/prisma.ts
+2025-11-18 07:13:52 WARNING  [static_analyzer.reference_resolve_mixin:69] [Reference Resolution] Exact match failed for prisma.schema in TypeScript: Source code reference for 'prisma.schema' in language 'TypeScript' not found in results.
+2025-11-18 07:13:54 INFO     [agents.tools.read_file:51] [ReadFile Tool] Reading file prisma/schema.prisma around line 1
+2025-11-18 07:13:54 ERROR    [agents.tools.read_file:66] [ReadFile Tool] File prisma/schema.prisma not found in cached files.
+2025-11-18 07:14:20 INFO     [agents.tools.read_file:51] [ReadFile Tool] Reading file lib/prisma.ts around line 1
+2025-11-18 07:14:20 INFO     [agents.tools.read_file:105] [ReadFile Tool] Successfully read 14 lines from lib/prisma.ts 
+2025-11-18 07:14:34 INFO     [static_analyzer.reference_resolve_mixin:135] [Reference Resolution] LLM matched prisma.schema at prisma/schema.prisma
+2025-11-18 07:14:34 WARNING  [static_analyzer.reference_resolve_mixin:69] [Reference Resolution] Exact match failed for src.v3 in TypeScript: Source code reference for 'src.v3' in language 'TypeScript' not found in results.
+2025-11-18 07:19:16 INFO     [static_analyzer.reference_resolve_mixin:135] [Reference Resolution] LLM matched src.v3 at src/v3/
+2025-11-18 07:19:16 WARNING  [static_analyzer.reference_resolve_mixin:69] [Reference Resolution] Exact match failed for src.v4 in TypeScript: Source code reference for 'src.v4' in language 'TypeScript' not found in results.
+2025-11-18 07:23:38 INFO     [static_analyzer.reference_resolve_mixin:135] [Reference Resolution] LLM matched src.v4 at src/v4/__init__.py
+2025-11-18 07:23:38 INFO     [agents.validator_agent:146] [ValidatorAgent] Running validation on the analysis.
+2025-11-18 07:23:58 INFO     [agents.validator_agent:165] [ValidatorAgent] Validation result: [Valid: False] with insights: **Feedback Information:**
+The component analysis has several strengths in its structure and clarity but suffers from critical inaccuracies in its source file references, which undermine the validity of some component definitions. Specifically, there are significant and repeated inaccuracies in the source file references for 'Pages/Views', 'API Routes', and 'Schema & Validation'. These include incorrect file extensions (e.g., .py for Next.js/Zod components) or pointing to the wrong type of component (e.g., an API route for a page/view).
+
+**Feedback Information:**
+Component UI Components has an incorrect reference: 'QName:`components` FileRef: `components`'. Expected: '/Users/odaihatem/Documents/development2026/dls-react-moe/components', but found: 'components'. Apply the correct reference please, maybe it is a full file reference, then validate with `readFile` tool.
+Component UI Components has components as an incorrect reference: 'QName:`components` FileRef: `components`'. components is INCORRECT reference, there is no such module or function/class/method in the project. Please reconsider by using `getSourceCode` tool to find the correct reference or validate with `readFile` tool if it is a file reference.
+Component Pages/Views has pages as an incorrect reference: 'QName:`pages` FileRef: `app/api/admin/analytics/updates/route.ts`'. pages is INCORRECT reference, there is no such module or function/class/method in the project. Please reconsider by using `getSourceCode` tool to find the correct reference or validate with `readFile` tool if it is a file reference.
+Component Client-Side Application Logic has hooks as an incorrect reference: 'QName:`hooks` FileRef: `hooks/`'. hooks is INCORRECT reference, there is no such module or function/class/method in the project. Please reconsider by using `getSourceCode` tool to find the correct reference or validate with `readFile` tool if it is a file reference.
+Component Client-Side Application Logic has utils as an incorrect reference: 'QName:`utils` FileRef: `utils/dist/index.js`'. utils is INCORRECT reference, there is no such module or function/class/method in the project. Please reconsider by using `getSourceCode` tool to find the correct reference or validate with `readFile` tool if it is a file reference.
+Component API Routes has pages.api as an incorrect reference: 'QName:`pages.api` FileRef: `pages/api/my_route.py`'. pages.api is INCORRECT reference, there is no such module or function/class/method in the project. Please reconsider by using `getSourceCode` tool to find the correct reference or validate with `readFile` tool if it is a file reference.
+Component Data Access Layer has lib.prisma as an incorrect reference: 'QName:`lib.prisma` FileRef: `lib/prisma.ts`'. lib.prisma is INCORRECT reference, there is no such module or function/class/method in the project. Please reconsider by using `getSourceCode` tool to find the correct reference or validate with `readFile` tool if it is a file reference.
+Component Data Access Layer has prisma.schema as an incorrect reference: 'QName:`prisma.schema` FileRef: `prisma/schema.prisma`'. prisma.schema is INCORRECT reference, there is no such module or function/class/method in the project. Please reconsider by using `getSourceCode` tool to find the correct reference or validate with `readFile` tool if it is a file reference.
+Component Schema & Validation has src.v3 as an incorrect reference: 'QName:`src.v3` FileRef: `src/v3/`'. src.v3 is INCORRECT reference, there is no such module or function/class/method in the project. Please reconsider by using `getSourceCode` tool to find the correct reference or validate with `readFile` tool if it is a file reference.
+Component Schema & Validation has src.v4 as an incorrect reference: 'QName:`src.v4` FileRef: `src/v4/__init__.py`'. src.v4 is INCORRECT reference, there is no such module or function/class/method in the project. Please reconsider by using `getSourceCode` tool to find the correct reference or validate with `readFile` tool if it is a file reference.
+
+
+2025-11-18 07:23:58 INFO     [agents.abstraction_agent:130] [AbstractionAgent] Applying feedback to analysis for project: dls-react-moe
+2025-11-18 07:24:08 INFO     [agents.tools.read_file:51] [ReadFile Tool] Reading file /Users/odaihatem/Documents/development2026/dls-react-moe/components around line 1
+2025-11-18 07:24:08 ERROR    [agents.tools.read_file:66] [ReadFile Tool] File /Users/odaihatem/Documents/development2026/dls-react-moe/components not found in cached files.
+2025-11-18 07:24:28 WARNING  [langchain_google_genai._function_utils:102] Key '$defs' is not supported in schema, ignoring
+2025-11-18 07:24:42 INFO     [static_analyzer.reference_resolve_mixin:26] Fixing source code reference lines for the analysis: # 📦 Abstract Components Overview
+**Component:** `UI Components`
+   - *Description*: Reusable, atomic React components forming the visual building blocks of the application.
+   - *Related Classes/Methods*: `QName:`components` FileRef: `components/``
+**Component:** `Pages/Views`
+   - *Description*: Next.js pages that compose UI Components to create routable application screens and handle user interactions.
+   - *Related Classes/Methods*: `QName:`app` FileRef: `app/``
+**Component:** `Client-Side Application Logic`
+   - *Description*: Contains client-side business logic, state management (e.g., SWR hooks), and utility functions supporting the UI and pages.
+   - *Related Classes/Methods*: `QName:`hooks` FileRef: `src/hooks.ts``, `QName:`utils` FileRef: `src/utils.ts``
+**Component:** `API Routes`
+   - *Description*: Next.js API endpoints acting as the application's backend interface, handling HTTP requests and orchestrating server-side operations.
+   - *Related Classes/Methods*: `QName:`app.api` FileRef: `app/api/``
+**Component:** `Data Access Layer`
+   - *Description*: Manages all database interactions using Prisma, abstracting data operations for the API Routes.
+   - *Related Classes/Methods*: `QName:`lib.prisma` FileRef: `lib/prisma.ts``, `QName:`prisma.schema` FileRef: `prisma/schema.prisma``
+**Component:** `Schema & Validation`
+   - *Description*: Provides type-safe schema definition and validation using Zod, ensuring data integrity across frontend and backend.
+   - *Related Classes/Methods*: `QName:`schema` FileRef: `src/schema.ts``(Pages/Views, calls, Client-Side Application Logic)
+(Client-Side Application Logic, calls, Schema & Validation)
+(Client-Side Application Logic, calls, API Routes)
+(API Routes, calls, Schema & Validation)
+(API Routes, calls, Data Access Layer)
+2025-11-18 07:24:42 WARNING  [static_analyzer.reference_resolve_mixin:69] [Reference Resolution] Exact match failed for components in TypeScript: Source code reference for 'components' in language 'TypeScript' is a file path, please use the full file path instead of the qualified name.
+2025-11-18 07:24:42 INFO     [static_analyzer.reference_resolve_mixin:104] [Reference Resolution] File path matched for components in TypeScript at /Users/odaihatem/Documents/development2026/dls-react-moe/components/
+2025-11-18 07:24:42 WARNING  [static_analyzer.reference_resolve_mixin:69] [Reference Resolution] Exact match failed for app in TypeScript: Source code reference for 'app' in language 'TypeScript' is a file path, please use the full file path instead of the qualified name.
+2025-11-18 07:24:42 INFO     [static_analyzer.reference_resolve_mixin:81] [Reference Resolution] Loosely matched app in TypeScript at /Users/odaihatem/Documents/development2026/dls-react-moe/app/layout.tsx
+2025-11-18 07:24:42 WARNING  [static_analyzer.reference_resolve_mixin:69] [Reference Resolution] Exact match failed for hooks in TypeScript: Source code reference for 'hooks' in language 'TypeScript' not found in results.
+2025-11-18 07:24:52 INFO     [static_analyzer.reference_resolve_mixin:135] [Reference Resolution] LLM matched hooks at hooks
+2025-11-18 07:24:52 WARNING  [static_analyzer.reference_resolve_mixin:69] [Reference Resolution] Exact match failed for utils in TypeScript: Source code reference for 'utils' in language 'TypeScript' not found in results.
+2025-11-18 07:24:58 INFO     [static_analyzer.reference_resolve_mixin:135] [Reference Resolution] LLM matched utils at <file_path>
+2025-11-18 07:24:58 WARNING  [static_analyzer.reference_resolve_mixin:69] [Reference Resolution] Exact match failed for app.api in TypeScript: Source code reference for 'app.api' in language 'TypeScript' is a file path, please use the full file path instead of the qualified name.
+2025-11-18 07:24:58 INFO     [static_analyzer.reference_resolve_mixin:104] [Reference Resolution] File path matched for app.api in TypeScript at /Users/odaihatem/Documents/development2026/dls-react-moe/app/api/
+2025-11-18 07:24:58 WARNING  [static_analyzer.reference_resolve_mixin:69] [Reference Resolution] Exact match failed for lib.prisma in TypeScript: Source code reference for 'lib.prisma' in language 'TypeScript' is a file path, please use the full file path instead of the qualified name.
+2025-11-18 07:24:58 INFO     [static_analyzer.reference_resolve_mixin:104] [Reference Resolution] File path matched for lib.prisma in TypeScript at /Users/odaihatem/Documents/development2026/dls-react-moe/lib/prisma.ts
+2025-11-18 07:24:58 WARNING  [static_analyzer.reference_resolve_mixin:69] [Reference Resolution] Exact match failed for prisma.schema in TypeScript: Source code reference for 'prisma.schema' in language 'TypeScript' not found in results.
+2025-11-18 07:25:02 INFO     [static_analyzer.reference_resolve_mixin:135] [Reference Resolution] LLM matched prisma.schema at prisma.schema
+2025-11-18 07:25:02 WARNING  [static_analyzer.reference_resolve_mixin:69] [Reference Resolution] Exact match failed for schema in TypeScript: Source code reference for 'schema' in language 'TypeScript' not found in results.
+2025-11-18 07:25:02 INFO     [static_analyzer.reference_resolve_mixin:81] [Reference Resolution] Loosely matched schema in TypeScript at /Users/odaihatem/Documents/development2026/dls-react-moe/types/child-actions.ts
+2025-11-18 07:25:04 INFO     [agents.tools.read_file_structure:77] [File Structure Tool] Found directory /Users/odaihatem/Documents/development2026/dls-react-moe/components
+2025-11-18 07:25:04 INFO     [agents.tools.read_file_structure:86] [File Structure Tool] Found directory /Users/odaihatem/Documents/development2026/dls-react-moe/components
+2025-11-18 07:25:04 INFO     [agents.tools.read_file_structure:95] [File Structure Tool] Reading file structure for /Users/odaihatem/Documents/development2026/dls-react-moe/components
+2025-11-18 07:25:11 INFO     [agents.tools.read_file:51] [ReadFile Tool] Reading file app/layout.tsx around line 27
+2025-11-18 07:25:11 INFO     [agents.tools.read_file:105] [ReadFile Tool] Successfully read 90 lines from app/layout.tsx 
+2025-11-18 07:25:27 INFO     [agents.tools.read_file_structure:77] [File Structure Tool] Found directory /Users/odaihatem/Documents/development2026/dls-react-moe/app/api
+2025-11-18 07:25:27 INFO     [agents.tools.read_file_structure:86] [File Structure Tool] Found directory /Users/odaihatem/Documents/development2026/dls-react-moe/app/api
+2025-11-18 07:25:27 INFO     [agents.tools.read_file_structure:95] [File Structure Tool] Reading file structure for /Users/odaihatem/Documents/development2026/dls-react-moe/app/api
+2025-11-18 07:25:39 INFO     [agents.tools.read_file:51] [ReadFile Tool] Reading file types/child-actions.ts around line 44
+2025-11-18 07:25:39 INFO     [agents.tools.read_file:105] [ReadFile Tool] Successfully read 172 lines from types/child-actions.ts 
+2025-11-18 07:25:43 INFO     [diagram_analysis.diagram_generator:146] Found 5 components to analyze at level 0
+2025-11-18 07:25:43 INFO     [agents.abstraction_agent:143] [AbstractionAgent] Classifying files for project: dls-react-moe
+2025-11-18 07:26:07 INFO     [agents.tools.read_file:51] [ReadFile Tool] Reading file middleware.ts around line 1
+2025-11-18 07:26:07 INFO     [agents.tools.read_file:51] [ReadFile Tool] Reading file auth.ts around line 1
+2025-11-18 07:26:07 INFO     [agents.tools.read_file:51] [ReadFile Tool] Reading file lib/api-toast-handler.ts around line 1
+2025-11-18 07:26:07 INFO     [agents.tools.read_file:51] [ReadFile Tool] Reading file lib/admin-config.ts around line 1
+2025-11-18 07:26:07 INFO     [agents.tools.read_file:51] [ReadFile Tool] Reading file lib/notifications.ts around line 1
+2025-11-18 07:26:07 INFO     [agents.tools.read_file:105] [ReadFile Tool] Successfully read 36 lines from middleware.ts 
+2025-11-18 07:26:07 INFO     [agents.tools.read_file:51] [ReadFile Tool] Reading file lib/auth-database-example.ts around line 1
+2025-11-18 07:26:07 INFO     [agents.tools.read_file:51] [ReadFile Tool] Reading file lib/refresh.ts around line 1
+2025-11-18 07:26:07 INFO     [agents.tools.read_file:51] [ReadFile Tool] Reading file lib/fetch-student-profile.ts around line 1
+2025-11-18 07:26:07 INFO     [agents.tools.read_file:51] [ReadFile Tool] Reading file lib/child-actions.ts around line 1
+2025-11-18 07:26:07 INFO     [agents.tools.read_file:51] [ReadFile Tool] Reading file lib/redis.ts around line 1
+2025-11-18 07:26:07 INFO     [agents.tools.read_file:51] [ReadFile Tool] Reading file lib/pdf-generator.ts around line 1
+2025-11-18 07:26:07 ERROR    [agents.tools.read_file:79] [ReadFile Tool] Line number 1 is out of range for file auth.ts. Total lines: 1
+2025-11-18 07:26:07 INFO     [agents.tools.read_file:51] [ReadFile Tool] Reading file lib/parent-conduct.ts around line 1
+2025-11-18 07:26:07 INFO     [agents.tools.read_file:51] [ReadFile Tool] Reading file lib/oneroster.ts around line 1
+2025-11-18 07:26:07 INFO     [agents.tools.read_file:51] [ReadFile Tool] Reading file lib/auth.ts around line 1
+2025-11-18 07:26:07 INFO     [agents.tools.read_file:51] [ReadFile Tool] Reading file lib/roster-repo.ts around line 1
+2025-11-18 07:26:07 INFO     [agents.tools.read_file:105] [ReadFile Tool] Successfully read 135 lines from lib/api-toast-handler.ts 
+2025-11-18 07:26:07 INFO     [agents.tools.read_file:105] [ReadFile Tool] Successfully read 118 lines from lib/admin-config.ts 
+2025-11-18 07:26:07 ERROR    [agents.tools.read_file:79] [ReadFile Tool] Line number 1 is out of range for file lib/notifications.ts. Total lines: 0
+2025-11-18 07:26:07 INFO     [agents.tools.read_file:105] [ReadFile Tool] Successfully read 28 lines from lib/auth-database-example.ts 
+2025-11-18 07:26:07 INFO     [agents.tools.read_file:105] [ReadFile Tool] Successfully read 6 lines from lib/refresh.ts 
+2025-11-18 07:26:07 INFO     [agents.tools.read_file:105] [ReadFile Tool] Successfully read 140 lines from lib/fetch-student-profile.ts 
+2025-11-18 07:26:07 INFO     [agents.tools.read_file:105] [ReadFile Tool] Successfully read 300 lines from lib/child-actions.ts 
+2025-11-18 07:26:07 INFO     [agents.tools.read_file:105] [ReadFile Tool] Successfully read 9 lines from lib/redis.ts 
+2025-11-18 07:26:07 INFO     [agents.tools.read_file:105] [ReadFile Tool] Successfully read 177 lines from lib/pdf-generator.ts 
+2025-11-18 07:26:07 INFO     [agents.tools.read_file:105] [ReadFile Tool] Successfully read 300 lines from lib/parent-conduct.ts 
+2025-11-18 07:26:07 INFO     [agents.tools.read_file:105] [ReadFile Tool] Successfully read 236 lines from lib/oneroster.ts 
+2025-11-18 07:26:07 INFO     [agents.tools.read_file:105] [ReadFile Tool] Successfully read 300 lines from lib/auth.ts 
+2025-11-18 07:26:07 INFO     [agents.tools.read_file:105] [ReadFile Tool] Successfully read 198 lines from lib/roster-repo.ts 
+2025-11-18 07:26:45 WARNING  [langchain_google_genai._function_utils:102] Key '$defs' is not supported in schema, ignoring
+2025-11-18 07:28:18 WARNING  [langchain_google_genai._function_utils:102] Key '$defs' is not supported in schema, ignoring
+2025-11-18 07:28:38 INFO     [diagram_analysis.diagram_generator:192] Analysis complete. Generated 1 analysis files
+2025-11-18 07:34:09 WARNING  [utils:47] STATIC_ANALYSIS_CONFIG environment variable is not set, using default VSCode Setup.
+2025-11-18 07:34:09 WARNING  [utils:47] STATIC_ANALYSIS_CONFIG environment variable is not set, using default VSCode Setup.
+2025-11-18 07:34:09 INFO     [static_analyzer.scanner:65] Found: ProgrammingLanguage(language=CSS, size=318, percentage=0.6641604010025063, suffixes=['.css'])
+2025-11-18 07:34:09 INFO     [static_analyzer.scanner:65] Found: ProgrammingLanguage(language=JSON, size=11225, percentage=23.44402673350042, suffixes=['.json'])
+2025-11-18 07:34:09 INFO     [static_analyzer.scanner:68] Added ProgrammingLanguage(language=JSON, size=11225, percentage=23.44402673350042, suffixes=['.json'])
+2025-11-18 07:34:09 INFO     [static_analyzer.scanner:65] Found: ProgrammingLanguage(language=JavaScript, size=464, percentage=0.9690893901420217, suffixes=['.mjs', '.js'])
+2025-11-18 07:34:09 INFO     [static_analyzer.scanner:65] Found: ProgrammingLanguage(language=SQL, size=60, percentage=0.12531328320802004, suffixes=['.sql'])
+2025-11-18 07:34:09 INFO     [static_analyzer.scanner:65] Found: ProgrammingLanguage(language=SVG, size=5, percentage=0.010442773600668337, suffixes=['.svg'])
+2025-11-18 07:34:09 INFO     [static_analyzer.scanner:65] Found: ProgrammingLanguage(language=TSX, size=22529, percentage=47.0530492898914, suffixes=['.tsx'])
+2025-11-18 07:34:09 INFO     [static_analyzer.scanner:68] Added ProgrammingLanguage(language=TSX, size=22529, percentage=47.0530492898914, suffixes=['.tsx'])
+2025-11-18 07:34:09 INFO     [static_analyzer.scanner:65] Found: ProgrammingLanguage(language=TypeScript, size=13178, percentage=27.52297410192147, suffixes=['.tsx', '.js', '.ts', '.jsx'])
+2025-11-18 07:34:09 INFO     [static_analyzer.scanner:68] Added ProgrammingLanguage(language=TypeScript, size=13178, percentage=27.52297410192147, suffixes=['.tsx', '.js', '.ts', '.jsx'])
+2025-11-18 07:34:09 INFO     [static_analyzer.scanner:65] Found: ProgrammingLanguage(language=YAML, size=101, percentage=0.2109440267335004, suffixes=['.yml'])
+2025-11-18 07:34:09 WARNING  [static_analyzer:19] Unsupported programming language: JSON. Skipping.
+2025-11-18 07:34:09 WARNING  [static_analyzer:19] Unsupported programming language: TSX. Skipping.
+2025-11-18 07:34:09 INFO     [static_analyzer.typescript_config_scanner:55] Found 1 TypeScript project(s) in repository
+2025-11-18 07:34:09 INFO     [static_analyzer:30] Creating TypeScript client for project at: .
+2025-11-18 07:34:09 INFO     [static_analyzer:55] Starting static analysis for TypeScript in /Users/odaihatem/Documents/development2026/dls-react-moe
+2025-11-18 07:34:09 INFO     [static_analyzer.lsp_client.typescript_client:29] node_modules found at: /Users/odaihatem/Documents/development2026/dls-react-moe/node_modules
+2025-11-18 07:34:09 INFO     [static_analyzer.lsp_client.client:70] Starting server /Users/odaihatem/.vscode-insiders/extensions/codeboarding.codeboarding-0.2.13/webview-ui/node_modules/typescript-language-server/lib/cli.mjs --stdio --log-level=2...
+2025-11-18 07:34:09 INFO     [static_analyzer.lsp_client.typescript_client:42] Initializing connection for typescript...
+2025-11-18 07:34:10 INFO     [static_analyzer.lsp_client.typescript_client:72] Initialization successful.
+2025-11-18 07:34:10 INFO     [static_analyzer.lsp_client.typescript_client:99] Found 39117 TypeScript/JavaScript files
+2025-11-18 07:34:10 INFO     [static_analyzer.lsp_client.typescript_client:166] Found configuration file: /Users/odaihatem/Documents/development2026/dls-react-moe/tsconfig.json
+2025-11-18 07:34:10 INFO     [static_analyzer.lsp_client.typescript_client:166] Found configuration file: /Users/odaihatem/Documents/development2026/dls-react-moe/package.json
+2025-11-18 07:34:10 INFO     [static_analyzer.lsp_client.typescript_client:177] Opening sample files to bootstrap TypeScript project...
+2025-11-18 07:34:10 INFO     [static_analyzer.lsp_client.typescript_client:197] Waiting 5s for TypeScript server to initialize project...
+2025-11-18 07:34:15 INFO     [static_analyzer.lsp_client.typescript_client:202] TypeScript project successfully loaded!
+2025-11-18 07:34:15 INFO     [static_analyzer.lsp_client.client:346] Starting unified static analysis with multithreading...
+2025-11-18 07:34:16 INFO     [static_analyzer.lsp_client.client:369] Found 192 source files. Starting unified analysis...
+2025-11-18 07:34:16 INFO     [static_analyzer.lsp_client.typescript_client:218] Waiting additional time for TypeScript server to fully initialize...
+2025-11-18 07:34:18 ERROR    [static_analyzer.lsp_client.typescript_client:235] TypeScript server reports 'No Project' - project not properly loaded
+2025-11-18 07:34:18 WARNING  [static_analyzer.lsp_client.typescript_client:222] TypeScript project not properly loaded. Analysis may be limited.
+2025-11-18 07:34:18 ERROR    [static_analyzer.lsp_client.client:673] workspace/symbol failed: {'code': 1, 'message': '<semantic> TypeScript Server Error (5.9.2)\nNo Project.\nError: No Project.\n    at Object.ThrowNoProject (/Users/odaihatem/Documents/development2026/dls-react-moe/node_modules/typescript/lib/typescript.js:186147:11)\n    at IpcIOSession.getProjects (/Users/odaihatem/Documents/development2026/dls-react-moe/node_modules/typescript/lib/typescript.js:195699:23)\n    at IpcIOSession.getFullNavigateToItems (/Users/odaihatem/Documents/development2026/dls-react-moe/node_modules/typescript/lib/typescript.js:196299:29)\n    at IpcIOSession.getNavigateToItems (/Users/odaihatem/Documents/development2026/dls-react-moe/node_modules/typescript/lib/typescript.js:196257:23)\n    at navto (/Users/odaihatem/Documents/development2026/dls-react-moe/node_modules/typescript/lib/typescript.js:194405:43)\n    at /Users/odaihatem/Documents/development2026/dls-react-moe/node_modules/typescript/lib/typescript.js:196809:15\n    at IpcIOSession.executeWithRequestId (/Users/odaihatem/Documents/development2026/dls-react-moe/node_modules/typescript/lib/typescript.js:196798:14)\n    at IpcIOSession.executeCommand (/Users/odaihatem/Documents/development2026/dls-react-moe/node_modules/typescript/lib/typescript.js:196807:29)\n    at IpcIOSession.onMessage (/Users/odaihatem/Documents/development2026/dls-react-moe/node_modules/typescript/lib/typescript.js:196855:68)\n    at process.<anonymous> (/Users/odaihatem/Documents/development2026/dls-react-moe/node_modules/typescript/lib/_tsserver.js:519:14)\n    at process.emit (node:events:517:28)\n    at emit (node:internal/child_process:944:14)\n    at process.processTicksAndRejections (node:internal/process/task_queues:83:21)'}
+2025-11-18 07:34:18 INFO     [static_analyzer.lsp_client.client:376] Found 0 classes in workspace
+2025-11-18 07:34:18 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/middleware.ts with ID 5
+2025-11-18 07:34:18 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/auth.ts with ID 6
+2025-11-18 07:34:18 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/global.d.ts with ID 7
+2025-11-18 07:34:18 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/types/child-actions.ts with ID 8
+2025-11-18 07:34:18 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/next.config.ts with ID 9
+2025-11-18 07:34:18 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/types/index.ts with ID 10
+2025-11-18 07:34:18 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/types/studentprofile.ts with ID 11
+2025-11-18 07:34:18 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/types/next-auth.d.ts with ID 12
+2025-11-18 07:34:18 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/types/index.ts with ID 13
+2025-11-18 07:34:18 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/types/idh.ts with ID 15
+2025-11-18 07:34:18 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/types/notification.ts with ID 14
+2025-11-18 07:34:18 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/notifications/index.ts with ID 16
+2025-11-18 07:34:18 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/header/menuUtils.ts with ID 17
+2025-11-18 07:34:18 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/PP/ChildList/%5Beid%5D/route.ts with ID 20
+2025-11-18 07:34:18 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/PP/auth/token/route.ts with ID 25
+2025-11-18 07:34:18 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/PP/student/%5Bid%5D/route.ts with ID 32
+2025-11-18 07:34:18 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/PP/information-status/%5BstudentSourcedId%5D/route.ts with ID 40
+2025-11-18 07:34:18 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/PP/school/%5Bid%5D/route.ts with ID 68
+2025-11-18 07:34:19 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/PP/conduct-status/%5BstudentSourcedId%5D/route.ts with ID 191
+2025-11-18 07:34:19 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/PP/child/sync/route.ts with ID 286
+2025-11-18 07:34:19 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/auth/%5B...nextauth%5D/route.ts with ID 293
+2025-11-18 07:34:19 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/admin/config/periods/route.ts with ID 321
+2025-11-18 07:34:19 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/admin/config/status/route.ts with ID 469
+2025-11-18 07:34:19 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/admin/config/users/route.ts with ID 496
+2025-11-18 07:34:20 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/admin/config/actions/route.ts with ID 986
+2025-11-18 07:34:20 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/admin/config/academic-year/route.ts with ID 1004
+2025-11-18 07:34:20 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/admin/check-access/route.ts with ID 1022
+2025-11-18 07:34:20 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/admin/analytics/updates/route.ts with ID 1119
+2025-11-18 07:34:20 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/admin/analytics/students/route.ts with ID 1172
+2025-11-18 07:34:20 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/admin/analytics/stats/route.ts with ID 1298
+2025-11-18 07:34:21 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/backoffice/idh/route.ts with ID 1511
+2025-11-18 07:34:21 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/students/mappers.ts with ID 1566
+2025-11-18 07:34:21 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/students/%5Bid%5D/route.ts with ID 1798
+2025-11-18 07:34:21 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/parent/students-partnership-charter/route.ts with ID 1920
+2025-11-18 07:34:21 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/parent/conduct/route.ts with ID 2038
+2025-11-18 07:34:22 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/parent/child-actions/route.ts with ID 2067
+2025-11-18 07:34:22 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/parent/update-information-requests/route.ts with ID 2072
+2025-11-18 07:34:22 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/parent/generate-conduct-pdf/route.ts with ID 2175
+2025-11-18 07:34:22 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/oneroster/students/%5BsourcedId%5D/route.ts with ID 2184
+2025-11-18 07:34:22 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/oneroster/basic-info-full/session.ts with ID 2776
+2025-11-18 07:34:23 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/oneroster/basic-info-full/route.ts with ID 2872
+2025-11-18 07:34:23 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/oneroster/schoolenrollments/route.ts with ID 2884
+2025-11-18 07:34:23 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/db/regions/route.ts with ID 3369
+2025-11-18 07:34:23 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/db/zones/route.ts with ID 3412
+2025-11-18 07:34:25 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/db/areas/route.ts with ID 3753
+2025-11-18 07:34:25 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/db/health/route.ts with ID 3878
+2025-11-18 07:34:25 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/db/emirates/route.ts with ID 3900
+2025-11-18 07:34:25 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/db/health-parent/route.ts with ID 3993
+2025-11-18 07:34:26 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/db/plots/route.ts with ID 4148
+2025-11-18 07:34:26 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/notifications/route.ts with ID 4158
+2025-11-18 07:34:26 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/notifications/sms/route.ts with ID 4258
+2025-11-18 07:34:26 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/notifications/count/route.ts with ID 4296
+2025-11-18 07:34:26 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/notifications/mark-all-read/route.ts with ID 4436
+2025-11-18 07:34:26 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/notifications/%5Bid%5D/read/route.ts with ID 4470
+2025-11-18 07:34:26 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/api/notifications/email/route.ts with ID 4496
+2025-11-18 07:34:26 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/i18n/dictionaries/ar.ts with ID 4819
+2025-11-18 07:34:27 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/i18n/dictionaries/en.ts with ID 5081
+2025-11-18 07:34:27 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/data/mockData.ts with ID 5288
+2025-11-18 07:34:27 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/lib/prisma.ts with ID 5347
+2025-11-18 07:34:27 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/lib/api-toast-handler.ts with ID 5438
+2025-11-18 07:34:27 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/lib/child-actions-schema.ts with ID 5529
+2025-11-18 07:34:28 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/lib/admin-config.ts with ID 5849
+2025-11-18 07:34:28 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/lib/notifications.ts with ID 5940
+2025-11-18 07:34:28 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/lib/auth-database-example.ts with ID 5945
+2025-11-18 07:34:28 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/lib/refresh.ts with ID 5968
+2025-11-18 07:34:28 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/lib/fetch-student-profile.ts with ID 6073
+2025-11-18 07:34:28 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/lib/child-actions.ts with ID 6094
+2025-11-18 07:34:28 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/lib/redis.ts with ID 6162
+2025-11-18 07:34:28 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/lib/utils.ts with ID 6221
+2025-11-18 07:34:28 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/lib/internal-api-url.ts with ID 6312
+2025-11-18 07:34:29 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/lib/pdf-generator.ts with ID 6521
+2025-11-18 07:34:29 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/lib/parent-conduct.ts with ID 6524
+2025-11-18 07:34:29 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/lib/fetch-with-timeout.ts with ID 6582
+2025-11-18 07:34:29 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/lib/prisma-parent.ts with ID 6583
+2025-11-18 07:34:29 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/lib/logger.ts with ID 6663
+2025-11-18 07:34:29 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/lib/cache.ts with ID 6917
+2025-11-18 07:34:30 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/lib/auth-server.ts with ID 7069
+2025-11-18 07:34:30 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/lib/oneroster.ts with ID 7182
+2025-11-18 07:34:30 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/lib/student-authorization.ts with ID 7550
+2025-11-18 07:34:30 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/lib/swr.ts with ID 7619
+2025-11-18 07:34:30 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/lib/onwani-client.ts with ID 7622
+2025-11-18 07:34:31 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/lib/auth.ts with ID 7865
+2025-11-18 07:34:31 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/lib/time.ts with ID 8251
+2025-11-18 07:34:31 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/lib/roster-repo.ts with ID 8267
+2025-11-18 07:34:31 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/lib/hooks/use-toast-notifications.ts with ID 8297
+2025-11-18 07:34:31 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/lib/hooks/useChildren.ts with ID 8332
+2025-11-18 07:34:32 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/lib/hooks/use-toast.ts with ID 8515
+2025-11-18 07:34:32 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/lib/hooks/useTheme.ts with ID 8715
+2025-11-18 07:34:32 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/lib/hooks/useNotifications.ts with ID 8887
+2025-11-18 07:34:32 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/layout.tsx with ID 8896
+2025-11-18 07:34:32 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/page.tsx with ID 8976
+2025-11-18 07:34:32 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/messages/page.tsx with ID 9169
+2025-11-18 07:34:32 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/calendar/page.tsx with ID 9240
+2025-11-18 07:34:33 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/admin/layout.tsx with ID 9450
+2025-11-18 07:34:33 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/admin/eid/page.tsx with ID 9497
+2025-11-18 07:34:33 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/admin/eid/components/StudentsTable.tsx with ID 9557
+2025-11-18 07:34:33 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/admin/eid/components/StudentActionsManager.tsx with ID 9700
+2025-11-18 07:34:33 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/admin/eid/components/UpdatePeriodsManager.tsx with ID 9826
+2025-11-18 07:34:34 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/admin/eid/components/AdminUsersManager.tsx with ID 10197
+2025-11-18 07:34:35 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/admin/eid/components/AcademicYearManager.tsx with ID 10441
+2025-11-18 07:34:35 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/admin/eid/components/AdminStats.tsx with ID 10472
+2025-11-18 07:34:36 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/admin/eid/components/SystemStats.tsx with ID 11137
+2025-11-18 07:34:36 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/admin/eid/components/UpdateLogsTable.tsx with ID 11234
+2025-11-18 07:34:36 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/announcements/page.tsx with ID 11293
+2025-11-18 07:34:36 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/theme-debug/page.tsx with ID 11529
+2025-11-18 07:34:37 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/dashboard/page.tsx with ID 11769
+2025-11-18 07:34:37 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/dashboard/components/ChildCards.tsx with ID 11853
+2025-11-18 07:34:37 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/dashboard/components/UpcomingEvents.tsx with ID 11916
+2025-11-18 07:34:37 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/dashboard/components/ChildActions.tsx with ID 12046
+2025-11-18 07:34:37 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/dashboard/components/RecentAnnouncements.tsx with ID 12146
+2025-11-18 07:34:37 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/ThemeSwitcher.tsx with ID 12159
+2025-11-18 07:34:37 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/ConditionalLayout.tsx with ID 12340
+2025-11-18 07:34:38 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/HtmlLangDirProvider.tsx with ID 12389
+2025-11-18 07:34:38 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/MobileBottomNav.tsx with ID 12484
+2025-11-18 07:34:38 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/MobilePullToRefresh.tsx with ID 12522
+2025-11-18 07:34:38 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/NotificationToastListener.tsx with ID 12683
+2025-11-18 07:34:38 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/Switcher.tsx with ID 12878
+2025-11-18 07:34:38 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/Footer.tsx with ID 12912
+2025-11-18 07:34:38 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/SWRProvider.tsx with ID 12982
+2025-11-18 07:34:39 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/MobileQuickAccess.tsx with ID 13074
+2025-11-18 07:34:39 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/MainContent.tsx with ID 13143
+2025-11-18 07:34:39 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/ThemeProvider.tsx with ID 13144
+2025-11-18 07:34:39 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/AuthButtons.tsx with ID 13220
+2025-11-18 07:34:39 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/Header.tsx with ID 13276
+2025-11-18 07:34:39 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/VerticalHeader.tsx with ID 13292
+2025-11-18 07:34:39 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/AuthProvider.tsx with ID 13350
+2025-11-18 07:34:39 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/SwipeHandler.tsx with ID 13454
+2025-11-18 07:34:39 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/forms/AddressPicker.tsx with ID 13459
+2025-11-18 07:34:39 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/Onwani/MyLandPicker.tsx with ID 13461
+2025-11-18 07:34:39 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/icons/index.tsx with ID 13551
+2025-11-18 07:34:40 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/icons/IconProvider.tsx with ID 13775
+2025-11-18 07:34:41 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/custom/States.tsx with ID 13909
+2025-11-18 07:34:41 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/custom/Breadcrumb.tsx with ID 13922
+2025-11-18 07:34:42 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/custom/UpdatePeriodStatus.tsx with ID 13938
+2025-11-18 07:34:42 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/custom/Badge.tsx with ID 14264
+2025-11-18 07:34:42 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/notifications/NotificationCard.tsx with ID 14348
+2025-11-18 07:34:42 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/notifications/NotificationBell.tsx with ID 14441
+2025-11-18 07:34:42 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/notifications/NotificationDropdown.tsx with ID 14478
+2025-11-18 07:34:43 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/header/LanguageModal.tsx with ID 14578
+2025-11-18 07:34:43 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/header/DesktopHeader.tsx with ID 14726
+2025-11-18 07:34:43 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/header/MobileHeader.tsx with ID 14758
+2025-11-18 07:34:43 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/header/GoldStarModal.tsx with ID 14860
+2025-11-18 07:34:43 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/header/LogoGroup.tsx with ID 14924
+2025-11-18 07:34:43 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/components/header/SearchForm.tsx with ID 14939
+2025-11-18 07:34:43 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/profile/page.tsx with ID 14983
+2025-11-18 07:34:43 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/theme-demo/page.tsx with ID 15069
+2025-11-18 07:34:43 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/parent/summary/page.tsx with ID 15175
+2025-11-18 07:34:43 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/toast-demo/page.tsx with ID 15215
+2025-11-18 07:34:44 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/i18n/I18nProvider.tsx with ID 15454
+2025-11-18 07:34:44 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/notifications/page.tsx with ID 15617
+2025-11-18 07:34:44 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/login/page.tsx with ID 15683
+2025-11-18 07:34:45 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/child/%5Bid%5D/StreamGrades.tsx with ID 16011
+2025-11-18 07:34:45 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/child/%5Bid%5D/SchoolInfo.tsx with ID 16045
+2025-11-18 07:34:45 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/child/%5Bid%5D/page.tsx with ID 16163
+2025-11-18 07:34:46 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/child/%5Bid%5D/parent-conduct/page.tsx with ID 16957
+2025-11-18 07:34:47 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/child/%5Bid%5D/components/conductDetails.tsx with ID 17282
+2025-11-18 07:34:47 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/child/%5Bid%5D/components/SignConductSection.tsx with ID 17293
+2025-11-18 07:34:47 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/child/%5Bid%5D/components/InfoCard.tsx with ID 17388
+2025-11-18 07:34:48 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/child/%5Bid%5D/components/InfoTab.tsx with ID 17827
+2025-11-18 07:34:48 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/child/%5Bid%5D/components/LoadingSkeleton.tsx with ID 17895
+2025-11-18 07:34:48 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/child/%5Bid%5D/update-info/page.tsx with ID 18008
+2025-11-18 07:34:48 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/debug/address-demo/page.tsx with ID 18091
+2025-11-18 07:34:48 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/debug/onwani/page.tsx with ID 18310
+2025-11-18 07:34:48 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/debug/pdf-inspector/page.tsx with ID 18442
+2025-11-18 07:34:48 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/app/debug/profile/page.tsx with ID 18460
+2025-11-18 07:34:49 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/components/RefreshBar.tsx with ID 18666
+2025-11-18 07:34:50 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/components/ui/tabs.tsx with ID 18974
+2025-11-18 07:34:50 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/components/ui/card.tsx with ID 19066
+2025-11-18 07:34:50 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/components/ui/popover.tsx with ID 19344
+2025-11-18 07:34:50 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/components/ui/toaster.tsx with ID 19396
+2025-11-18 07:34:50 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/components/ui/sheet.tsx with ID 19449
+2025-11-18 07:34:51 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/components/ui/label.tsx with ID 19515
+2025-11-18 07:34:51 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/components/ui/alert.tsx with ID 19586
+2025-11-18 07:34:51 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/components/ui/combobox.tsx with ID 19626
+2025-11-18 07:34:51 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/components/ui/switch.tsx with ID 19634
+2025-11-18 07:34:51 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/components/ui/breadcrumb.tsx with ID 19658
+2025-11-18 07:34:51 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/components/ui/command.tsx with ID 19818
+2025-11-18 07:34:51 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/components/ui/avatar.tsx with ID 19898
+2025-11-18 07:34:52 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/components/ui/dialog.tsx with ID 20055
+2025-11-18 07:34:52 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/components/ui/badge.tsx with ID 20091
+2025-11-18 07:34:52 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/components/ui/table.tsx with ID 20232
+2025-11-18 07:34:52 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/components/ui/separator.tsx with ID 20291
+2025-11-18 07:34:52 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/components/ui/button.tsx with ID 20373
+2025-11-18 07:34:52 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/components/ui/toast.tsx with ID 20414
+2025-11-18 07:34:52 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/components/ui/spinner.tsx with ID 20419
+2025-11-18 07:34:53 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/components/ui/select.tsx with ID 20501
+2025-11-18 07:34:54 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/components/ui/textarea.tsx with ID 20759
+2025-11-18 07:34:54 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/components/ui/input.tsx with ID 20846
+2025-11-18 07:34:54 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/components/ui/skeleton.tsx with ID 20863
+2025-11-18 07:34:54 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/lib/pdf-generator-examples.tsx with ID 20904
+2025-11-18 07:34:54 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/tailwind.config.js with ID 20969
+2025-11-18 07:34:54 INFO     [static_analyzer.lsp_client.client:181] Requesting document symbols for file:///Users/odaihatem/Documents/development2026/dls-react-moe/ecosystem.config.js with ID 20981
+2025-11-18 07:35:19 INFO     [static_analyzer.lsp_client.client:402] Successfully processed 192 files
+2025-11-18 07:35:20 INFO     [static_analyzer.lsp_client.client:447] Unified static analysis complete.
+2025-11-18 07:35:20 INFO     [static_analyzer.lsp_client.client:448] Results: 14084 references, 3 classes, 83 packages, 7193 call graph nodes, 1837 edges
+2025-11-18 07:35:21 INFO     [agents.meta_agent:33] [MetaAgent] Analyzing metadata for project: dls-react-moe
+2025-11-18 07:35:23 INFO     [agents.tools.read_docs:89] [ReadDocs Tool] Reading file /Users/odaihatem/Documents/development2026/dls-react-moe/node_modules/pako/README.md around line 0
+2025-11-18 07:35:35 INFO     [agents.tools.read_docs:89] [ReadDocs Tool] Reading file /Users/odaihatem/Documents/development2026/dls-react-moe/docs/NOTIFICATION_ARCHITECTURE.md around line 0
+2025-11-18 07:35:51 INFO     [agents.meta_agent:38] [MetaAgent] Completed metadata analysis for project: # 🎯 Project Metadata Analysis
+
+**Project Type:** Web Application
+**Domain:** Educational/Administrative Portal
+**Technology Stack:** React, Next.js, SWR, Radix UI, Tailwind CSS, Next.js API Routes, NextAuth, Prisma ORM, SQL Server, TypeScript
+**Architectural Patterns:** Client-Server Architecture, Layered Architecture, API-driven Development, Data Access Layer, Component-Based Architecture
+**Expected Components:** User Interface (UI) Components, React Hooks, API Routes, Server Utilities/Services, Database Models, Authentication Module, Configuration, Documentation
+**Architectural Bias:** Component Organization: Components should be grouped logically by feature or domain. For instance, all notification-related UI components, hooks, and API routes are co-located or clearly linked. Reusable, generic UI components (like those from Radix UI or a custom design system) should be separated from application-specific components.
+Diagram Representation: Architectural diagrams should clearly delineate the three main layers: Client, API, and Database.
+Client Layer: Focus on the hierarchy of React components, their state management via hooks (SWR), and how they trigger API calls.
+API Layer: Illustrate the API routes, their authentication middleware (NextAuth), and their interaction with server-side utilities and the ORM.
+Database Layer: Show the primary data models and their relationships, along with key indexes for performance.
+Data Flow: Emphasize the flow of data from user interaction on the client, through API calls, to database operations, and the subsequent data retrieval and UI updates. Highlight optimistic updates and auto-refresh mechanisms where applicable.
+Security: Explicitly show authentication (NextAuth) and authorization checks at the API layer, ensuring data access is restricted to authenticated and authorized users.
+Performance: Note the use of SWR for client-side caching and automatic revalidation, and database indexing for efficient querying.
+
+2025-11-18 07:35:58 INFO     [__main__:67] Updating analysis for component: Schema & Validation
+2025-11-18 07:35:58 INFO     [agents.diff_analyzer:128] [DiffAnalyzingAgent] Component Schema & Validation does not exist, running full analysis
+2025-11-18 07:35:58 INFO     [agents.details_agent:136] Processing component: Schema & Validation
+2025-11-18 07:35:58 INFO     [agents.details_agent:68] [DetailsAgent] Analyzing details on subcfg for Schema & Validation
+2025-11-18 07:35:58 INFO     [agents.tools.read_cfg:51] [CFG Tool] Filtering CFG for component Schema & Validation in TypeScript
+2025-11-18 07:35:58 INFO     [static_analyzer.graph:194] [CFG Tool] LLM string: 116066 characters, size limit: 2500000 characters
+2025-11-18 07:35:58 INFO     [agents.tools.read_cfg:62] [CFG Tool] Filtering CFG for component Schema & Validation, items found: 0
+2025-11-18 07:35:58 INFO     [agents.details_agent:74] [DetailsAgent] Analyzing details on cfg for Schema & Validation
+2025-11-18 07:36:02 WARNING  [langchain_google_genai._function_utils:102] Key '$defs' is not supported in schema, ignoring
+2025-11-18 07:36:04 INFO     [agents.details_agent:91] [DetailsAgent] Analyzing details on structure for Schema & Validation
+2025-11-18 07:36:12 WARNING  [langchain_google_genai._function_utils:102] Key '$defs' is not supported in schema, ignoring
+2025-11-18 07:36:19 INFO     [agents.details_agent:108] [DetailsAgent] Generating details documentation
+2025-11-18 07:36:26 WARNING  [langchain_google_genai._function_utils:102] Key '$defs' is not supported in schema, ignoring
+2025-11-18 07:36:50 INFO     [static_analyzer.reference_resolve_mixin:26] Fixing source code reference lines for the analysis: # 📦 Abstract Components Overview
+**Component:** `Schema & Validation`
+   - *Description*: This is the core component responsible for defining type-safe data schemas using Zod and performing data validation. It acts as a single source of truth for data structures, ensuring consistency and integrity for API inputs, frontend forms, and internal data handling.
+   - *Related Classes/Methods*: `QName:`schema` FileRef: `dls-react-moe/types/child-actions.ts`, Lines:(26:62)`(Schema & Validation, defines data structure for, Child Actions)
+(Schema & Validation, validates data for, API Layer)
+(Schema & Validation, validates data from, Client Layer)
+(Schema & Validation, provides type inference to, Application Type System)
+(Application Type System, derives types from, Schema & Validation)
+2025-11-18 07:36:50 WARNING  [static_analyzer.reference_resolve_mixin:69] [Reference Resolution] Exact match failed for schema in TypeScript: Source code reference for 'schema' in language 'TypeScript' not found in results.
+2025-11-18 07:36:50 INFO     [static_analyzer.reference_resolve_mixin:81] [Reference Resolution] Loosely matched schema in TypeScript at /Users/odaihatem/Documents/development2026/dls-react-moe/types/child-actions.ts
+2025-11-18 07:36:50 INFO     [agents.validator_agent:146] [ValidatorAgent] Running validation on the analysis.
+2025-11-18 07:37:04 INFO     [agents.validator_agent:165] [ValidatorAgent] Validation result: [Valid: False] with insights: **Feedback Information:**
+The relationships between `Schema & Validation` and `Application Type System` violate the rule "Verify max 1 relationship per component pair". - `(Schema & Validation, provides type inference to, Application Type System)` - `(Application Type System, derives types from, Schema & Validation)` While these two relationships are logically consistent and represent an inverse relationship, they constitute two distinct relationships between the same pair of components, which goes against the specified validation criteria.
+
+**Feedback Information:**
+Component Schema & Validation has schema as an incorrect reference: 'QName:`schema` FileRef: `types/child-actions.ts`, Lines:(26:62)'. schema is INCORRECT reference, there is no such module or function/class/method in the project. Please reconsider by using `getSourceCode` tool to find the correct reference or validate with `readFile` tool if it is a file reference.
+
+**Feedback Information:**
+Destination component 'Child Actions' in relation (Schema & Validation, defines data structure for, Child Actions) does not exist in the analysis.
+Destination component 'API Layer' in relation (Schema & Validation, validates data for, API Layer) does not exist in the analysis.
+Destination component 'Client Layer' in relation (Schema & Validation, validates data from, Client Layer) does not exist in the analysis.
+Destination component 'Application Type System' in relation (Schema & Validation, provides type inference to, Application Type System) does not exist in the analysis.
+Source component 'Application Type System' in relation (Application Type System, derives types from, Schema & Validation) does not exist in the analysis.
+
+
+2025-11-18 07:37:04 INFO     [agents.details_agent:126] [DetailsAgent] Applying feedback to analysis for project: dls-react-moe
+2025-11-18 07:37:08 INFO     [agents.tools.read_file:51] [ReadFile Tool] Reading file types/child-actions.ts around line 44
+2025-11-18 07:37:08 INFO     [agents.tools.read_file:105] [ReadFile Tool] Successfully read 172 lines from types/child-actions.ts 
+2025-11-18 07:37:17 WARNING  [langchain_google_genai._function_utils:102] Key '$defs' is not supported in schema, ignoring
+2025-11-18 07:37:34 INFO     [static_analyzer.reference_resolve_mixin:26] Fixing source code reference lines for the analysis: # 📦 Abstract Components Overview
+**Component:** `Schema & Validation`
+   - *Description*: This is the core component responsible for defining type-safe data schemas using Zod and performing data validation. It acts as a single source of truth for data structures, ensuring consistency and integrity for API inputs, frontend forms, and internal data handling.
+   - *Related Classes/Methods*: `QName:`AdminActionConfigSchema` FileRef: `types/child-actions.ts`, Lines:(26:62)`(Schema & Validation, defines data structures for, Child Actions)
+(Schema & Validation, validates data for, API Layer)
+(Client Layer, provides data to, API Layer)
+2025-11-18 07:37:34 WARNING  [static_analyzer.reference_resolve_mixin:69] [Reference Resolution] Exact match failed for AdminActionConfigSchema in TypeScript: Source code reference for 'AdminActionConfigSchema' in language 'TypeScript' not found in results.
+2025-11-18 07:37:34 INFO     [static_analyzer.reference_resolve_mixin:81] [Reference Resolution] Loosely matched AdminActionConfigSchema in TypeScript at /Users/odaihatem/Documents/development2026/dls-react-moe/types/child-actions.ts
+2025-11-18 07:37:38 INFO     [agents.tools.read_file:51] [ReadFile Tool] Reading file types/child-actions.ts around line 44
+2025-11-18 07:37:38 INFO     [agents.tools.read_file:105] [ReadFile Tool] Successfully read 172 lines from types/child-actions.ts 
+2025-11-18 07:37:41 INFO     [agents.details_agent:149] [DetailsAgent] Classifying component Schema & Validation based on assigned files
+2025-11-18 07:37:44 WARNING  [langchain_google_genai._function_utils:102] Key '$defs' is not supported in schema, ignoring

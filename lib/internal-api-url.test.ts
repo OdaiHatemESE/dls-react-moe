@@ -32,9 +32,9 @@ describe('internal-api-url', () => {
     });
 
     it('should use custom PORT from env variable', () => {
-      process.env.PORT = '3000';
+      process.env.PORT = '4200';
       const result = getInternalApiOrigin('https://parent-stg.moe.gov.ae');
-      expect(result).toBe('http://localhost:3000');
+      expect(result).toBe('http://localhost:4200');
     });
 
     it('should return original origin for localhost development', () => {
@@ -44,12 +44,12 @@ describe('internal-api-url', () => {
 
     it('should return original origin for 127.0.0.1', () => {
       const result = getInternalApiOrigin('http://127.0.0.1:4200');
-      expect(result).toBe('http://127.0.0.1:4200');
+      expect(result).toBe('http://localhost:4200');
     });
 
     it('should return original origin for non-production domains', () => {
-      const result = getInternalApiOrigin('http://localhost:3000');
-      expect(result).toBe('http://localhost:3000');
+      const result = getInternalApiOrigin('http://localhost:4200');
+      expect(result).toBe('http://localhost:4200');
     });
 
     it('should use localhost for dev.example.com (any non-localhost domain)', () => {

@@ -1,0 +1,46 @@
+{
+  "description": "The `Schema & Validation` component is fundamental to maintaining data integrity across the system. It explicitly defines the data structures for `Child Actions` and provides the validation rules that the `API Layer` enforces on all incoming data. This data, often originating from the `Client Layer`, is rigorously checked against these schemas to ensure consistency and prevent errors, forming a robust foundation for reliable application operation.",
+  "components": [
+    {
+      "name": "Schema & Validation",
+      "description": "This is the core component responsible for defining type-safe data schemas using Zod and performing data validation. It acts as a single source of truth for data structures, ensuring consistency and integrity for API inputs, frontend forms, and internal data handling.",
+      "referenced_source_code": [
+        {
+          "qualified_name": "AdminActionConfigSchema",
+          "reference_file": "types/child-actions.ts",
+          "reference_start_line": 26,
+          "reference_end_line": 62
+        }
+      ],
+      "assigned_files": [
+        "types/child-actions.ts",
+        "lib/child-actions-schema.ts"
+      ],
+      "can_expand": true
+    },
+    {
+      "name": "Unclassified",
+      "description": "Component for all unclassified files and utility functions (Utility functions/External Libraries/Dependencies)",
+      "referenced_source_code": [],
+      "assigned_files": [],
+      "can_expand": false
+    }
+  ],
+  "components_relations": [
+    {
+      "relation": "defines data structures for",
+      "src_name": "Schema & Validation",
+      "dst_name": "Child Actions"
+    },
+    {
+      "relation": "validates data for",
+      "src_name": "Schema & Validation",
+      "dst_name": "API Layer"
+    },
+    {
+      "relation": "provides data to",
+      "src_name": "Client Layer",
+      "dst_name": "API Layer"
+    }
+  ]
+}
