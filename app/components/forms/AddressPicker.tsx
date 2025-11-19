@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import { useI18n } from "@/app/i18n/I18nProvider";
 import MyLandPicker from "@/app/components/Onwani/MyLandPicker";
-import type { OnwaniSelection, PlotLookupResponse } from "@/types";
+import type { OnwaniSelection, OnwaniMapResponse } from "@/types";
 import { DubaiNorthernEmiratesFields, AbuDhabiEmirateFields } from "./AddressPickerComponents";
 
 type Emirate = {
@@ -76,6 +76,8 @@ export type AddressValue = {
   regionNameAr?: string | null;
   zoneNameEn?: string | null;
   zoneNameAr?: string | null;
+  municipalityNameEn?: string | null;
+  municipalityNameAr?: string | null;
   fullAddressEn?: string | null;
   fullAddressAr?: string | null;
 };
@@ -607,161 +609,76 @@ export function AddressPicker(props: AddressPickerProps) {
   const handleConfirmSelection = React.useCallback(() => {
     if (!pendingSelection) return;
 
-    const plotResponse: PlotLookupResponse | undefined = pendingSelection.dbPlotResponse;
-    if (!plotResponse || !Array.isArray(plotResponse.data) || plotResponse.data.length === 0) {
-      console.warn("AddressPicker: No plot data available for the selected location", plotResponse);
+    // Use raw Onwani map response instead of database plot response
+    const onwaniData = pendingSelection.onwaniMapResponse;
+    if (!onwaniData) {
+      console.warn("AddressPicker: No Onwani map data available", pendingSelection);
       return;
     }
 
-    const [record] = plotResponse.data;
-    if (!record) {
-      console.warn("AddressPicker: Plot response was empty", plotResponse);
-      return;
-    }
+    // Extract data from Onwani response structure
+    const plotAddr = onwaniData.PlotAddress;
+    const onwaniAddr = onwaniData.OnwaniAddress;
+    const inputCoords = onwaniData.InputCoordinates;
 
-    const emirateId = record.hierarchy.region?.emirateId ?? null;
+    // Extract coordinates
+    const nextLatitude = toFiniteNumber(inputCoords.Lat) || toFiniteNumber(onwaniAddr?.Lat);
+    const nextLongitude = toFiniteNumber(inputCoords.Lng) || toFiniteNumber(onwaniAddr?.Lng);
     
-    const regionId = (() => {
-      const hierarchyRegionId = record.hierarchy.region?.id;
-      if (typeof hierarchyRegionId === "number" && hierarchyRegionId > 0) {
-        return hierarchyRegionId;
-      }
-      const zoneRegionId = record.hierarchy.zone?.regionId;
-      if (typeof zoneRegionId === "number" && zoneRegionId > 0) {
-        return zoneRegionId;
-      }
-      const metadataRegionId = plotResponse.meta?.regionId;
-      if (typeof metadataRegionId === "number" && metadataRegionId > 0) {
-        return metadataRegionId;
-      }
-      return null;
-    })();
-    
-    const zoneId = (() => {
-      const hierarchyZoneId = record.hierarchy.zone?.id;
-      if (typeof hierarchyZoneId === "number" && hierarchyZoneId > 0) {
-        return hierarchyZoneId;
-      }
-      const areaZoneId = record.hierarchy.area?.zoneId;
-      if (typeof areaZoneId === "number" && areaZoneId > 0) {
-        return areaZoneId;
-      }
-      const metadataZoneId = plotResponse.meta?.zoneId;
-      if (typeof metadataZoneId === "number" && metadataZoneId > 0) {
-        return metadataZoneId;
-      }
-      return null;
-    })();
-    
-    const areaId = (() => {
-      const identifierAreaId = record.identifiers?.areaId;
-      if (typeof identifierAreaId === "number" && identifierAreaId > 0) {
-        return identifierAreaId;
-      }
-      const hierarchyAreaId = record.hierarchy.area?.id;
-      if (typeof hierarchyAreaId === "number" && hierarchyAreaId > 0) {
-        return hierarchyAreaId;
-      }
-      const metadataAreaId = plotResponse.meta?.areaId;
-      if (typeof metadataAreaId === "number" && metadataAreaId > 0) {
-        return metadataAreaId;
-      }
-      return null;
-    })();
-    
-    const plotId = record.identifiers?.plotId ?? record.plot?.id ?? null;
-    const streetName = record.location.roadNumber ?? pendingSelection.roadId;
-    const houseNumberSource = pendingSelection.plot?.trim() || record.identifiers?.mainPlotId || record.plot?.titles?.en;
-    const nextLongitude = toFiniteNumber(record.location.coordinates?.longitude);
-    const nextLatitude = toFiniteNumber(record.location.coordinates?.latitude);
-    const mainPlotId =
-      record.identifiers?.mainPlotId ??
-      record.identifiers?.mainPlotPromiseId ??
-      null;
-    const premisesPlotId = record.identifiers?.premisesPlotId ?? null;
+    // Extract plot data from Onwani response (prefer PlotAddress, fallback to OnwaniAddress)
+    const gisid = plotAddr?.GISID || onwaniAddr?.GISID;
+    const plotNumber = plotAddr?.PLOTNUMBER || pendingSelection.plot;
+    const roadId = plotAddr?.ROADID || pendingSelection.roadId;
+    const communityEn = plotAddr?.COMMUNITYENG || onwaniAddr?.COMMUNITYENG;
+    const communityAr = plotAddr?.COMMUNITYARA || onwaniAddr?.COMMUNITYARA;
+    const districtEn = plotAddr?.DISTRICTENG || onwaniAddr?.DISTRICTENG;
+    const districtAr = plotAddr?.DISTRICTARA || onwaniAddr?.DISTRICTARA;
+    const municipalityEn = plotAddr?.MUNICIPALITYENG || onwaniAddr?.MUNICIPALITYENG;
+    const municipalityAr = plotAddr?.MUNICIPALITYARA || onwaniAddr?.MUNICIPALITYARA;
 
-    const normalizedEmirateId = emirateId ?? local.emirateId;
-    const normalizedRegionId = (typeof regionId === "number" && regionId > 0) ? regionId : undefined;
-    const normalizedZoneId = (typeof zoneId === "number" && zoneId > 0) ? zoneId : undefined;
-    const normalizedAreaId = (typeof areaId === "number" && areaId > 0) ? areaId : undefined;
+    // Determine Abu Dhabi emirate from municipality name
+    const isThisSelectionAbuDhabi = (() => {
+      const muni = (municipalityEn || "").toLowerCase().trim();
+      const muniAr = (municipalityAr || "").trim();
+      // Abu Dhabi emirate includes: "Abu Dhabi", "Al Ain", "Al Dhafra" / "Western"
+      return muni.includes("abu dhabi") || muni.includes("al ain") || muni === "ain" || 
+             muni.includes("dhafra") || muni.includes("western") ||
+             muniAr.includes("أبوظبي") || muniAr.includes("العين") || muniAr.includes("الظفرة");
+    })();
 
     const updates: Partial<AddressValue> = {
-      emirateId: normalizedEmirateId,
-      regionId: normalizedRegionId,
-      zoneId: normalizedZoneId,
-      areaId: normalizedAreaId,
+      emirateId: local.emirateId, // Keep current emirate ID from dropdown
       longitude: nextLongitude,
       latitude: nextLatitude,
-      mainPlotId,
-      premisesPlotId,
+      mainPlotId: gisid || null,
+      premisesPlotId: null,
     };
 
-    const emirateLookup = normalizedEmirateId
-      ? lookupsRef.current.emirates.find(
-          (item) => item.Id === (normalizedEmirateId ?? -1)
-        )
-      : undefined;
-    if (emirateLookup) {
-      updates.emirateNameEn = emirateLookup.TitleEn ?? null;
-      updates.emirateNameAr = emirateLookup.TitleAr ?? null;
-    }
+    // Store the full address from Onwani
+    updates.fullAddressEn = pendingSelection.addressValueEn || onwaniData.AddressValue_EN || null;
+    updates.fullAddressAr = pendingSelection.addressValueAr || onwaniData.AddressValue_AR || null;
 
-    // Determine if THIS selection is Abu Dhabi EMIRATE (not region!)
-    // Abu Dhabi emirate includes: Abu Dhabi City, Al Ain, and Western Region
-    const isThisSelectionAbuDhabi = (() => {
-      // Check emirate ID first (most reliable)
-      if (normalizedEmirateId === 1) return true; // Abu Dhabi emirate ID is 1
-      
-      // Fallback: check emirate name from lookup
-      const emirateName = emirateLookup?.TitleEn || "";
-      if (emirateName.toLowerCase().includes("abu dhabi")) return true;
-      
-      // Last resort: check region (but this is less reliable for Al Ain/Western)
-      const regionTitles = record.hierarchy.region?.titles;
-      if (!regionTitles) return false;
-      const en = (regionTitles.en || "").toLowerCase().replace(/\s+/g, "");
-      const ar = (regionTitles.ar || "").replace(/\s+/g, "").replace(/[\u0640\u061F]/g, "");
-      const abuDhabiArForms = ["أبوظبي", "ابوظبي"];
-      return en.includes("abudhabi") || en.includes("alain") || en.includes("ain") || abuDhabiArForms.some((f) => ar.includes(f));
-    })();
-
-    const areaTitles = record.hierarchy.area?.titles;
-    if (areaTitles && (areaTitles.en || areaTitles.ar)) {
-      updates.areaNameEn = areaTitles.en ?? updates.areaNameEn ?? null;
-      updates.areaNameAr = areaTitles.ar ?? updates.areaNameAr ?? null;
-    } else if (!normalizedAreaId) {
-      updates.areaNameEn = null;
-      updates.areaNameAr = null;
-    }
-
-    const regionTitles = record.hierarchy.region?.titles;
-    if (regionTitles) {
-      updates.regionNameEn = regionTitles.en ?? updates.regionNameEn ?? null;
-      updates.regionNameAr = regionTitles.ar ?? updates.regionNameAr ?? null;
-    } else if (!normalizedRegionId) {
-      updates.regionNameEn = null;
-      updates.regionNameAr = null;
-    }
-
-    const zoneTitles = record.hierarchy.zone?.titles;
-    if (zoneTitles && (zoneTitles.en || zoneTitles.ar)) {
-      updates.zoneNameEn = zoneTitles.en ?? updates.zoneNameEn ?? null;
-      updates.zoneNameAr = zoneTitles.ar ?? updates.zoneNameAr ?? null;
-    } else if (!normalizedZoneId) {
-      updates.zoneNameEn = null;
-      updates.zoneNameAr = null;
-    }
+    // Store municipality names (used for City display)
+    updates.municipalityNameEn = municipalityEn || null;
+    updates.municipalityNameAr = municipalityAr || null;
 
     if (isThisSelectionAbuDhabi) {
-      // Abu Dhabi: Keep ALL data from map (region, zone, area, road, plot)
-      updates.plotId = typeof plotId === "number" && plotId > 0 ? plotId : undefined;
-      updates.streetName = streetName?.trim() || undefined;
-      updates.houseNumber = houseNumberSource?.trim() || undefined;
-      // Capture full address values from Onwani
-      updates.fullAddressEn = pendingSelection.addressValueEn || null;
-      updates.fullAddressAr = pendingSelection.addressValueAr || null;
+      // Abu Dhabi: Store District as Region Name, Community as Zone/Area Name
+      updates.regionNameEn = districtEn || null;
+      updates.regionNameAr = districtAr || null;
+      updates.zoneNameEn = communityEn || null;
+      updates.zoneNameAr = communityAr || null;
+      updates.areaNameEn = communityEn || null; // Often same as zone for Onwani
+      updates.areaNameAr = communityAr || null;
+      updates.streetName = roadId || undefined;
+      updates.houseNumber = plotNumber || undefined;
     } else {
-      // Other Emirates: Clear region/zone, keep area, street, house
+      // Other Emirates: Only basic data
+      updates.areaNameEn = communityEn || null;
+      updates.areaNameAr = communityAr || null;
+      updates.streetName = roadId || undefined;
+      updates.houseNumber = plotNumber || undefined;
+      // Clear Abu Dhabi specific fields
       updates.regionId = undefined;
       updates.zoneId = undefined;
       updates.plotId = undefined;
@@ -769,12 +686,6 @@ export function AddressPicker(props: AddressPickerProps) {
       updates.regionNameAr = null;
       updates.zoneNameEn = null;
       updates.zoneNameAr = null;
-      updates.streetName = streetName?.trim() || undefined;
-      updates.houseNumber = houseNumberSource?.trim() || undefined;
-      updates.mainPlotId = null;
-      updates.premisesPlotId = null;
-      updates.fullAddressEn = null;
-      updates.fullAddressAr = null;
     }
 
     emit(updates);
@@ -782,7 +693,7 @@ export function AddressPicker(props: AddressPickerProps) {
     setLastConfirmedSelection(pendingSelection); // Store for reopening
     setIsMapDialogOpen(false);
     setPendingSelection(null);
-  }, [pendingSelection, emit, isAbuDhabiSelected, local.areaId, local.emirateId, setHasMapSelection, setIsMapDialogOpen, setPendingSelection]);
+  }, [pendingSelection, emit, local.emirateId, setHasMapSelection, setIsMapDialogOpen, setPendingSelection]);
 
   const [touched, setTouched] = React.useState<{
     [K in keyof AddressValue]?: boolean;
@@ -1503,55 +1414,112 @@ export function AddressPicker(props: AddressPickerProps) {
                   </div>
                 ) : (() => {
                   /* Selected State - Show Full Details */
-                  const plotData = pendingSelection.dbPlotResponse?.data?.[0];
-                  const hasDetailedData = !!plotData;
+                  const onwaniData = pendingSelection.onwaniMapResponse;
+                  const plotAddr = onwaniData?.PlotAddress;
+                  const onwaniAddr = onwaniData?.OnwaniAddress;
+                  const hasOnwaniData = !!onwaniData;
                   
                   return (
                     <div className="p-4 space-y-3">
+                      {/* Full Addresses */}
+                      {(onwaniData?.AddressValue_EN || onwaniData?.AddressValue_AR) && (
+                        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-lg p-4 border border-blue-200 dark:border-blue-800 space-y-2">
+                          {onwaniData.AddressValue_EN && (
+                            <div>
+                              <p className="text-[10px] text-blue-600 dark:text-blue-400 font-semibold uppercase tracking-wide mb-1">
+                                {locale === "ar" ? "العنوان (English)" : "Address (English)"}
+                              </p>
+                              <p className="text-sm font-medium text-blue-900 dark:text-blue-100 leading-relaxed">
+                                {onwaniData.AddressValue_EN}
+                              </p>
+                            </div>
+                          )}
+                          {onwaniData.AddressValue_AR && (
+                            <div>
+                              <p className="text-[10px] text-blue-600 dark:text-blue-400 font-semibold uppercase tracking-wide mb-1">
+                                {locale === "ar" ? "العنوان (عربي)" : "Address (Arabic)"}
+                              </p>
+                              <p className="text-sm font-medium text-blue-900 dark:text-blue-100 leading-relaxed" dir="rtl">
+                                {onwaniData.AddressValue_AR}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
                       {/* Basic Selection Info */}
                       <div className="space-y-2.5">
-                        {/* District */}
-                        <div className="flex items-start gap-2">
-                          <svg className="w-4 h-4 text-aegreen-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                              {locale === "ar" ? "المنطقة" : "District"}
-                            </p>
-                            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 break-words">
-                              {pendingSelection.districtEn}
-                            </p>
+                        {/* Municipality */}
+                        {(plotAddr?.MUNICIPALITYENG || onwaniAddr?.MUNICIPALITYENG) && (
+                          <div className="flex items-start gap-2">
+                            <svg className="w-4 h-4 text-aegreen-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
+                            </svg>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                                {locale === "ar" ? "البلدية" : "Municipality"}
+                              </p>
+                              <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 break-words">
+                                {locale === "ar" 
+                                  ? plotAddr?.MUNICIPALITYARA || onwaniAddr?.MUNICIPALITYARA || plotAddr?.MUNICIPALITYENG || onwaniAddr?.MUNICIPALITYENG
+                                  : plotAddr?.MUNICIPALITYENG || onwaniAddr?.MUNICIPALITYENG}
+                              </p>
+                            </div>
                           </div>
-                        </div>
+                        )}
+
+                        {/* District */}
+                        {(plotAddr?.DISTRICTENG || onwaniAddr?.DISTRICTENG || pendingSelection.districtEn) && (
+                          <div className="flex items-start gap-2">
+                            <svg className="w-4 h-4 text-aegreen-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                                {locale === "ar" ? "المنطقة" : "District"}
+                              </p>
+                              <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 break-words">
+                                {locale === "ar"
+                                  ? plotAddr?.DISTRICTARA || onwaniAddr?.DISTRICTARA || plotAddr?.DISTRICTENG || onwaniAddr?.DISTRICTENG || pendingSelection.districtEn
+                                  : plotAddr?.DISTRICTENG || onwaniAddr?.DISTRICTENG || pendingSelection.districtEn}
+                              </p>
+                            </div>
+                          </div>
+                        )}
 
                         {/* Community */}
-                        <div className="flex items-start gap-2">
-                          <svg className="w-4 h-4 text-aegreen-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                          </svg>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                              {locale === "ar" ? "المجمع السكني" : "Community"}
-                            </p>
-                            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 break-words">
-                              {pendingSelection.communityEn}
-                            </p>
+                        {(plotAddr?.COMMUNITYENG || onwaniAddr?.COMMUNITYENG || pendingSelection.communityEn) && (
+                          <div className="flex items-start gap-2">
+                            <svg className="w-4 h-4 text-aegreen-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                            </svg>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                                {locale === "ar" ? "المجمع السكني" : "Community"}
+                              </p>
+                              <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 break-words">
+                                {locale === "ar"
+                                  ? plotAddr?.COMMUNITYARA || onwaniAddr?.COMMUNITYARA || plotAddr?.COMMUNITYENG || onwaniAddr?.COMMUNITYENG || pendingSelection.communityEn
+                                  : plotAddr?.COMMUNITYENG || onwaniAddr?.COMMUNITYENG || pendingSelection.communityEn}
+                              </p>
+                            </div>
                           </div>
-                        </div>
+                        )}
                       </div>
 
-                      {/* Detailed Database Plot Response */}
-                      {hasDetailedData && (
+                      {/* Detailed Onwani Plot Response */}
+                      {hasOnwaniData && plotAddr && (
                         <>
                           <div className="border-t border-gray-200 dark:border-gray-700 pt-3">
                             <h5 className="text-xs font-bold text-gray-700 dark:text-gray-300 mb-2.5 flex items-center gap-1.5">
                               <svg className="w-3.5 h-3.5 text-aegreen-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                               </svg>
-                              {locale === "ar" ? "تفاصيل القطعة الكاملة" : "Complete Plot Details"}
+                              {locale === "ar" ? "تفاصيل القطعة من Onwani" : "Onwani Plot Details"}
                             </h5>
-                          </div>                          {/* Plot Information - Emphasized */}
+                          </div>
+
+                          {/* Plot Information from Onwani */}
                           <div className="bg-aegreen-50 dark:bg-aegreen-950/30 rounded-lg p-3 border border-aegreen-200/50 dark:border-aegreen-800/50 space-y-2">
                             <div className="flex items-center gap-2">
                               <svg className="w-4 h-4 text-aegreen-700 dark:text-aegreen-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1562,139 +1530,36 @@ export function AddressPicker(props: AddressPickerProps) {
                               </h6>
                             </div>
                             
-                            {plotData.plot?.titles && (
-                              <div className="grid grid-cols-2 gap-2 text-xs">
-                                {plotData.plot.titles.en && (
-                                  <div>
-                                    <p className="text-[10px] text-aegreen-700 dark:text-aegreen-400 uppercase tracking-wide">
-                                      {locale === "ar" ? "الاسم (EN)" : "Name (EN)"}
-                                    </p>
-                                    <p className="font-semibold text-aegreen-900 dark:text-aegreen-200 break-words">{plotData.plot.titles.en}</p>
-                                  </div>
-                                )}
-                                {plotData.plot.titles.ar && (
-                                  <div>
-                                    <p className="text-[10px] text-aegreen-700 dark:text-aegreen-400 uppercase tracking-wide">
-                                      {locale === "ar" ? "الاسم (AR)" : "Name (AR)"}
-                                    </p>
-                                    <p className="font-semibold text-aegreen-900 dark:text-aegreen-200 break-words">{plotData.plot.titles.ar}</p>
-                                  </div>
-                                )}
-                              </div>
-                            )}
-
-                            {plotData.plot?.id && (
-                              <div>
-                                <p className="text-[10px] text-aegreen-700 dark:text-aegreen-400 uppercase tracking-wide">
-                                  {locale === "ar" ? "معرف القطعة" : "Plot ID"}
-                                </p>
-                                <p className="font-bold text-base text-aegreen-900 dark:text-aegreen-200">{plotData.plot.id}</p>
-                              </div>
-                            )}
+                            <div className="grid grid-cols-2 gap-2 text-xs">
+                              {plotAddr.GISID && (
+                                <div>
+                                  <p className="text-[10px] text-aegreen-700 dark:text-aegreen-400 uppercase tracking-wide">
+                                    GISID
+                                  </p>
+                                  <p className="font-bold text-base text-aegreen-900 dark:text-aegreen-200">{plotAddr.GISID}</p>
+                                </div>
+                              )}
+                              {plotAddr.PLOTNUMBER && (
+                                <div>
+                                  <p className="text-[10px] text-aegreen-700 dark:text-aegreen-400 uppercase tracking-wide">
+                                    {locale === "ar" ? "رقم القطعة" : "Plot Number"}
+                                  </p>
+                                  <p className="font-semibold text-aegreen-900 dark:text-aegreen-200">{plotAddr.PLOTNUMBER}</p>
+                                </div>
+                              )}
+                              {plotAddr.ROADID && (
+                                <div>
+                                  <p className="text-[10px] text-aegreen-700 dark:text-aegreen-400 uppercase tracking-wide">
+                                    {locale === "ar" ? "رقم الطريق" : "Road ID"}
+                                  </p>
+                                  <p className="font-semibold text-aegreen-900 dark:text-aegreen-200">{plotAddr.ROADID}</p>
+                                </div>
+                              )}
+                            </div>
                           </div>
 
-                          {/* Identifiers */}
-                          {plotData.identifiers && (
-                            <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-3 border border-blue-200/50 dark:border-blue-800/50 space-y-2">
-                              <div className="flex items-center gap-2">
-                                <svg className="w-4 h-4 text-blue-700 dark:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                                </svg>
-                                <h6 className="text-xs font-bold text-blue-900 dark:text-blue-300">
-                                  {locale === "ar" ? "المعرفات" : "Identifiers"}
-                                </h6>
-                              </div>
-                              <div className="grid grid-cols-2 gap-2 text-xs">
-                                {plotData.identifiers.plotId && (
-                                  <div>
-                                    <p className="text-[10px] text-blue-700 dark:text-blue-400 uppercase">Plot ID</p>
-                                    <p className="font-semibold text-blue-900 dark:text-blue-200">{plotData.identifiers.plotId}</p>
-                                  </div>
-                                )}
-                                {plotData.identifiers.areaId && (
-                                  <div>
-                                    <p className="text-[10px] text-blue-700 dark:text-blue-400 uppercase">Area ID</p>
-                                    <p className="font-semibold text-blue-900 dark:text-blue-200">{plotData.identifiers.areaId}</p>
-                                  </div>
-                                )}
-                                {plotData.identifiers.mainPlotId && (
-                                  <div>
-                                    <p className="text-[10px] text-blue-700 dark:text-blue-400 uppercase">Main Plot</p>
-                                    <p className="font-semibold text-blue-900 dark:text-blue-200">{plotData.identifiers.mainPlotId}</p>
-                                  </div>
-                                )}
-                                {plotData.identifiers.premisesPlotId && (
-                                  <div>
-                                    <p className="text-[10px] text-blue-700 dark:text-blue-400 uppercase">Premises</p>
-                                    <p className="font-semibold text-blue-900 dark:text-blue-200">{plotData.identifiers.premisesPlotId}</p>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Hierarchy */}
-                          {plotData.hierarchy && (
-                            <div className="bg-purple-50 dark:bg-purple-950/30 rounded-lg p-3 border border-purple-200/50 dark:border-purple-800/50 space-y-2">
-                              <div className="flex items-center gap-2">
-                                <svg className="w-4 h-4 text-purple-700 dark:text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-                                </svg>
-                                <h6 className="text-xs font-bold text-purple-900 dark:text-purple-300">
-                                  {locale === "ar" ? "التسلسل الهرمي" : "Hierarchy"}
-                                </h6>
-                              </div>
-                              
-                              {/* Region */}
-                              {plotData.hierarchy.region && (
-                                <div className="border-s-2 border-purple-300 dark:border-purple-700 ps-2">
-                                  <p className="text-[10px] text-purple-700 dark:text-purple-400 uppercase font-semibold">
-                                    {locale === "ar" ? "المنطقة" : "Region"}
-                                  </p>
-                                  <p className="text-xs font-semibold text-purple-900 dark:text-purple-200">
-                                    {locale === "ar" ? plotData.hierarchy.region.titles.ar || plotData.hierarchy.region.titles.en : plotData.hierarchy.region.titles.en || plotData.hierarchy.region.titles.ar}
-                                  </p>
-                                  {plotData.hierarchy.region.id && (
-                                    <p className="text-[10px] text-purple-600 dark:text-purple-400">ID: {plotData.hierarchy.region.id}</p>
-                                  )}
-                                </div>
-                              )}
-
-                              {/* Zone */}
-                              {plotData.hierarchy.zone && (
-                                <div className="border-s-2 border-purple-300 dark:border-purple-700 ps-2">
-                                  <p className="text-[10px] text-purple-700 dark:text-purple-400 uppercase font-semibold">
-                                    {locale === "ar" ? "النطاق" : "Zone"}
-                                  </p>
-                                  <p className="text-xs font-semibold text-purple-900 dark:text-purple-200">
-                                    {locale === "ar" ? plotData.hierarchy.zone.titles.ar || plotData.hierarchy.zone.titles.en : plotData.hierarchy.zone.titles.en || plotData.hierarchy.zone.titles.ar}
-                                  </p>
-                                  {plotData.hierarchy.zone.id && (
-                                    <p className="text-[10px] text-purple-600 dark:text-purple-400">ID: {plotData.hierarchy.zone.id}</p>
-                                  )}
-                                </div>
-                              )}
-
-                              {/* Area */}
-                              {plotData.hierarchy.area && (
-                                <div className="border-s-2 border-purple-300 dark:border-purple-700 ps-2">
-                                  <p className="text-[10px] text-purple-700 dark:text-purple-400 uppercase font-semibold">
-                                    {locale === "ar" ? "المنطقة السكنية" : "Area"}
-                                  </p>
-                                  <p className="text-xs font-semibold text-purple-900 dark:text-purple-200">
-                                    {locale === "ar" ? plotData.hierarchy.area.titles.ar || plotData.hierarchy.area.titles.en : plotData.hierarchy.area.titles.en || plotData.hierarchy.area.titles.ar}
-                                  </p>
-                                  <div className="flex gap-3 text-[10px] text-purple-600 dark:text-purple-400">
-                                    {plotData.hierarchy.area.id && <span>ID: {plotData.hierarchy.area.id}</span>}
-                                    {plotData.hierarchy.area.manhalCode && <span>Manhal: {plotData.hierarchy.area.manhalCode}</span>}
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          )}
-
-                          {/* Location & Coordinates */}
-                          {plotData.location && (
+                          {/* Coordinates */}
+                          {onwaniData.InputCoordinates && (onwaniData.InputCoordinates.Lat || onwaniData.InputCoordinates.Lng) && (
                             <div className="bg-orange-50 dark:bg-orange-950/30 rounded-lg p-3 border border-orange-200/50 dark:border-orange-800/50 space-y-2">
                               <div className="flex items-center gap-2">
                                 <svg className="w-4 h-4 text-orange-700 dark:text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1702,97 +1567,44 @@ export function AddressPicker(props: AddressPickerProps) {
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                                 </svg>
                                 <h6 className="text-xs font-bold text-orange-900 dark:text-orange-300">
-                                  {locale === "ar" ? "الموقع والإحداثيات" : "Location & Coordinates"}
+                                  {locale === "ar" ? "الإحداثيات" : "Coordinates"}
                                 </h6>
                               </div>
                               
-                              {plotData.location.roadNumber && (
-                                <div>
-                                  <p className="text-[10px] text-orange-700 dark:text-orange-400 uppercase">
-                                    {locale === "ar" ? "رقم الطريق" : "Road Number"}
-                                  </p>
-                                  <p className="text-xs font-semibold text-orange-900 dark:text-orange-200">{plotData.location.roadNumber}</p>
-                                </div>
-                              )}
-                              
-                              {plotData.location.coordinates && (plotData.location.coordinates.latitude || plotData.location.coordinates.longitude) && (
-                                <div className="grid grid-cols-2 gap-2 text-xs">
-                                  {plotData.location.coordinates.latitude && (
-                                    <div>
-                                      <p className="text-[10px] text-orange-700 dark:text-orange-400 uppercase">Latitude</p>
-                                      <p className="font-mono font-semibold text-orange-900 dark:text-orange-200 text-[10px]">{plotData.location.coordinates.latitude}</p>
-                                    </div>
-                                  )}
-                                  {plotData.location.coordinates.longitude && (
-                                    <div>
-                                      <p className="text-[10px] text-orange-700 dark:text-orange-400 uppercase">Longitude</p>
-                                      <p className="font-mono font-semibold text-orange-900 dark:text-orange-200 text-[10px]">{plotData.location.coordinates.longitude}</p>
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-
-                              {plotData.location.onwani && (
-                                <div className="text-[10px] text-orange-600 dark:text-orange-400 space-y-0.5">
-                                  {plotData.location.onwani.mapMapping && <p>Map: {plotData.location.onwani.mapMapping}</p>}
-                                  {plotData.location.onwani.legacyKey && <p>Legacy: {plotData.location.onwani.legacyKey}</p>}
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </>
-                      )}
-
-                      {/* Simple data when no detailed plot response */}
-                      {!hasDetailedData && (
-                        <>
-                          {pendingSelection.plot && (
-                            <div className="flex items-start gap-2 bg-aegreen-50 dark:bg-aegreen-950/30 rounded-lg p-2.5 border border-aegreen-200/50 dark:border-aegreen-800/50">
-                              <svg className="w-4 h-4 text-aegreen-700 dark:text-aegreen-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                              </svg>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-[10px] text-aegreen-700 dark:text-aegreen-400 uppercase tracking-wide font-semibold">
-                                  {locale === "ar" ? "رقم القطعة" : "Plot Number"}
-                                </p>
-                                <p className="text-base font-bold text-aegreen-900 dark:text-aegreen-300 break-words">
-                                  {pendingSelection.plot}
-                                </p>
+                              <div className="grid grid-cols-2 gap-2 text-xs">
+                                {onwaniData.InputCoordinates.Lat && (
+                                  <div>
+                                    <p className="text-[10px] text-orange-700 dark:text-orange-400 uppercase">
+                                      {locale === "ar" ? "خط العرض" : "Latitude"}
+                                    </p>
+                                    <p className="font-mono font-semibold text-orange-900 dark:text-orange-200 text-[10px]">
+                                      {onwaniData.InputCoordinates.Lat}
+                                    </p>
+                                  </div>
+                                )}
+                                {onwaniData.InputCoordinates.Lng && (
+                                  <div>
+                                    <p className="text-[10px] text-orange-700 dark:text-orange-400 uppercase">
+                                      {locale === "ar" ? "خط الطول" : "Longitude"}
+                                    </p>
+                                    <p className="font-mono font-semibold text-orange-900 dark:text-orange-200 text-[10px]">
+                                      {onwaniData.InputCoordinates.Lng}
+                                    </p>
+                                  </div>
+                                )}
                               </div>
                             </div>
                           )}
 
-                          {pendingSelection.roadId && (
-                            <div className="flex items-start gap-2">
-                              <svg className="w-4 h-4 text-aegreen-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-                              </svg>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                                  {locale === "ar" ? "الطريق" : "Road"}
-                                </p>
-                                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 break-words">
-                                  {pendingSelection.roadId}
-                                </p>
-                              </div>
+                          {/* Address Type Badge */}
+                          {onwaniData.AddressType && (
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-muted-foreground">{locale === "ar" ? "نوع العنوان:" : "Address Type:"}</span>
+                              <span className="px-2 py-1 text-xs font-semibold bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-md">
+                                {onwaniData.AddressType}
+                              </span>
                             </div>
                           )}
-
-                          <div className="flex items-start gap-2">
-                            <svg className="w-4 h-4 text-aegreen-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                            </svg>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                                {locale === "ar" ? "البلدية" : "Municipality"}
-                              </p>
-                              <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                                {pendingSelection.municipality === "ADM" 
-                                  ? (locale === "ar" ? "بلدية أبوظبي" : "Abu Dhabi Municipality")
-                                  : pendingSelection.municipality}
-                              </p>
-                            </div>
-                          </div>
                         </>
                       )}
 

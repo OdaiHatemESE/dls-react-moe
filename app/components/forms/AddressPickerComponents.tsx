@@ -34,6 +34,8 @@ export type AddressValue = {
   regionNameAr?: string | null;
   zoneNameEn?: string | null;
   zoneNameAr?: string | null;
+  municipalityNameEn?: string | null;
+  municipalityNameAr?: string | null;
   fullAddressEn?: string | null;
   fullAddressAr?: string | null;
 };
@@ -384,108 +386,206 @@ export function AbuDhabiEmirateFields({
           </div>
 
           <div className="space-y-4">
-            {/* Full Address from Onwani (if available) */}
+            {/* Address Section */}
             {(local.fullAddressEn || local.fullAddressAr) && (
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
-                <p className="text-xs text-blue-600 dark:text-blue-400 font-semibold uppercase tracking-wide mb-2 flex items-center gap-1.5">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-4 border border-blue-200 dark:border-blue-800 space-y-2">
+                <p className="text-[10px] text-blue-600 dark:text-blue-400 font-semibold uppercase tracking-wide">
+                  {locale === "ar" ? "العنوان (إنجليزي)" : "ADDRESS (ENGLISH)"}
+                </p>
+                <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                  {local.fullAddressEn || ""}
+                </p>
+                {local.fullAddressAr && (
+                  <>
+                    <p className="text-[10px] text-blue-600 dark:text-blue-400 font-semibold uppercase tracking-wide mt-3">
+                      {locale === "ar" ? "العنوان (عربي)" : "ADDRESS (ARABIC)"}
+                    </p>
+                    <p className="text-sm font-medium text-blue-900 dark:text-blue-100" dir="rtl">
+                      {local.fullAddressAr}
+                    </p>
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Municipality, District, Community */}
+            <div className="space-y-3">
+              {local.emirateNameEn && (
+                <>
+                  <div className="flex items-center gap-2">
+                    <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <div>
+                      <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase">
+                        {locale === "ar" ? "الإمارة" : "Emirate"}
+                      </p>
+                      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                        {locale === "ar" ? local.emirateNameAr || local.emirateNameEn : local.emirateNameEn}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
+                    <div>
+                      <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase">
+                        {locale === "ar" ? "المدينة" : "City"}
+                      </p>
+                      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                        {locale === "ar" ? local.municipalityNameAr || local.municipalityNameEn || local.regionNameAr || local.regionNameEn : local.municipalityNameEn || local.regionNameEn}
+                      </p>
+                    </div>
+                  </div>
+                </>
+              )}
+              {local.regionNameEn && local.zoneNameEn && (
+                <div className="flex items-center gap-2">
+                  <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                  </svg>
+                  <div>
+                    <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase">
+                      {locale === "ar" ? "المنطقة" : "Region"}
+                    </p>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                      {locale === "ar" ? local.regionNameAr || local.regionNameEn : local.regionNameEn}
+                    </p>
+                  </div>
+                </div>
+              )}
+              {local.areaNameEn && (
+                <div className="flex items-center gap-2">
+                  <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                  </svg>
+                  <div>
+                    <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase">
+                      {locale === "ar" ? "القطاع" : "Sector"}
+                    </p>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                      {locale === "ar" ? local.areaNameAr || local.areaNameEn : local.areaNameEn}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Onwani Plot Details Section */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <h6 className="text-sm font-semibold">
+                  {locale === "ar" ? "تفاصيل القطعة من Onwani" : "Onwani Plot Details"}
+                </h6>
+              </div>
+
+              {/* Plot Information Box */}
+              <div className="bg-aegreen-50 dark:bg-aegreen-950/30 rounded-lg p-4 border border-aegreen-200 dark:border-aegreen-800 space-y-3">
+                <div className="flex items-start gap-2">
+                  <svg className="w-4 h-4 text-aegreen-700 dark:text-aegreen-500 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                  </svg>
+                  <div className="flex-1">
+                    <p className="text-[10px] text-aegreen-700 dark:text-aegreen-400 font-semibold uppercase tracking-wide mb-1">
+                      {locale === "ar" ? "معلومات القطعة" : "Plot Information"}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  {local.premisesPlotId && (
+                    <div>
+                      <p className="text-[10px] text-aegreen-700 dark:text-aegreen-400 uppercase tracking-wide mb-1">
+                        GISID
+                      </p>
+                      <p className="text-base font-bold text-aegreen-900 dark:text-aegreen-200">
+                        {local.premisesPlotId}
+                      </p>
+                    </div>
+                  )}
+                  {local.mainPlotId && (
+                    <div>
+                      <p className="text-[10px] text-aegreen-700 dark:text-aegreen-400 uppercase tracking-wide mb-1">
+                        {locale === "ar" ? "رقم القطعة" : "PLOT ID"}
+                      </p>
+                      <p className="text-base font-bold text-aegreen-900 dark:text-aegreen-200">
+                        {local.mainPlotId}
+                      </p>
+                    </div>
+                  )}
+                  {local.houseNumber && (
+                    <div>
+                      <p className="text-[10px] text-aegreen-700 dark:text-aegreen-400 uppercase tracking-wide mb-1">
+                        {locale === "ar" ? "رقم القطعة" : "PLOT NUMBER"}
+                      </p>
+                      <p className="text-sm font-semibold text-aegreen-900 dark:text-aegreen-200">
+                        {local.houseNumber}
+                      </p>
+                    </div>
+                  )}
+                  {local.streetName && (
+                    <div>
+                      <p className="text-[10px] text-aegreen-700 dark:text-aegreen-400 uppercase tracking-wide mb-1">
+                        {locale === "ar" ? "رقم الطريق" : "ROAD ID"}
+                      </p>
+                      <p className="text-sm font-semibold text-aegreen-900 dark:text-aegreen-200">
+                        {local.streetName}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Coordinates Section */}
+            {(local.latitude || local.longitude) && (
+              <div className="bg-orange-50 dark:bg-orange-950/30 rounded-lg p-4 border border-orange-200 dark:border-orange-700 space-y-3">
+                <div className="flex items-center gap-2">
+                  <svg className="w-4 h-4 text-orange-700 dark:text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
-                  {locale === "ar" ? "العنوان الكامل من أونواني" : "Full Address from Onwani"}
-                </p>
-                <p className="text-sm font-medium text-blue-900 dark:text-blue-100 leading-relaxed">
-                  {locale === "ar" ? local.fullAddressAr || local.fullAddressEn : local.fullAddressEn || local.fullAddressAr}
-                </p>
+                  <p className="text-[10px] text-orange-700 dark:text-orange-400 font-semibold uppercase tracking-wide">
+                    {locale === "ar" ? "الإحداثيات" : "Coordinates"}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  {local.latitude && (
+                    <div>
+                      <p className="text-[10px] text-orange-700 dark:text-orange-400 uppercase tracking-wide mb-1">
+                        {locale === "ar" ? "خط العرض" : "LATITUDE"}
+                      </p>
+                      <p className="text-xs font-mono font-semibold text-orange-900 dark:text-orange-200">
+                        {Number(local.latitude).toFixed(14)}
+                      </p>
+                    </div>
+                  )}
+                  {local.longitude && (
+                    <div>
+                      <p className="text-[10px] text-orange-700 dark:text-orange-400 uppercase tracking-wide mb-1">
+                        {locale === "ar" ? "خط الطول" : "LONGITUDE"}
+                      </p>
+                      <p className="text-xs font-mono font-semibold text-orange-900 dark:text-orange-200">
+                        {Number(local.longitude).toFixed(14)}
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
-
-            {/* Plot ID - Full width prominent display */}
-            {local.mainPlotId && (
-              <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">
-                  {locale === "ar" ? "رقم القطعة" : "PLOT ID"}
-                </p>
-                <p className="text-base font-bold text-gray-900 dark:text-gray-100">
-                  {local.mainPlotId}
-                </p>
-              </div>
-            )}
-
-            {/* Three-column layout for City, Region, Sector */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* City - maps to regionNameEn */}
-              <div className="bg-white dark:bg-gray-900/50 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
-                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">
-                  {locale === "ar" ? "المدينة" : "City"}*
-                </p>
-                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                  {locale === "ar" ? local.regionNameAr || local.regionNameEn || "" : local.regionNameEn || ""}
-                </p>
-              </div>
-
-              {/* Region - maps to zoneNameEn */}
-              <div className="bg-white dark:bg-gray-900/50 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
-                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">
-                  {locale === "ar" ? "المنطقة" : "Region"}*
-                </p>
-                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                  {locale === "ar" ? local.zoneNameAr || local.zoneNameEn || "" : local.zoneNameEn || ""}
-                </p>
-              </div>
-
-              {/* Sector - maps to areaNameEn */}
-              <div className="bg-white dark:bg-gray-900/50 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
-                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">
-                  {locale === "ar" ? "القطاع" : "Sector"}*
-                </p>
-                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                  {locale === "ar" ? local.areaNameAr || local.areaNameEn || "" : local.areaNameEn || ""}
-                </p>
-              </div>
-            </div>
-
-            {/* Two-column layout for Road Number and Plot Number */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Road Number */}
-              <div className="bg-white dark:bg-gray-900/50 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
-                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">
-                  {locale === "ar" ? "رقم الطريق" : "Road Number"}
-                </p>
-                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                  {local.streetName || ""}
-                </p>
-              </div>
-
-              {/* Plot Number */}
-              <div className="bg-white dark:bg-gray-900/50 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
-                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">
-                  {locale === "ar" ? "رقم القطعة" : "Plot Number"}
-                </p>
-                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                  {local.houseNumber || ""}
-                </p>
-              </div>
-            </div>
-
-            {/* Coordinates - Two column layout */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-white dark:bg-gray-900/50 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
-                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">
-                  {locale === "ar" ? "خط العرض" : "Latitude"}
-                </p>
-                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                  {local.latitude || ""}
-                </p>
-              </div>
-              <div className="bg-white dark:bg-gray-900/50 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
-                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">
-                  {locale === "ar" ? "خط الطول" : "Longitude"}
-                </p>
-                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                  {local.longitude || ""}
-                </p>
-              </div>
+            {/* Address Type */}
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-600 dark:text-gray-400">
+                {locale === "ar" ? "نوع العنوان:" : "Address Type:"}
+              </span>
+              <span className="px-2 py-1 text-xs font-semibold bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-md">
+                Plot
+              </span>
             </div>
           </div>
 

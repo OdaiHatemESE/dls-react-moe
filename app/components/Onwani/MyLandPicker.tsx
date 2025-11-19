@@ -41,7 +41,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Combobox } from "@/components/ui/combobox";
 import { cn } from "@/lib/utils";
 import { getCommunities, getCommunityShape, getDistricts, getRoadIds, getPlotNumbers, getGisIds } from "@/lib/onwani-client";
-import type { Municipality, OnwaniSelection, PlotLookupResponse } from "@/types";
+import type { Municipality, OnwaniSelection, OnwaniMapResponse } from "@/types";
 
 type Props = {
   defaultMunicipality?: Municipality;
@@ -58,13 +58,6 @@ type PlotOption = { label: string; value: string; gisid?: string };
 
 const MYLAND_ALLOWED_ORIGIN = "https://myland.dmt.gov.ae";
 
-const isPlotLookupResponse = (payload: unknown): payload is PlotLookupResponse => {
-  if (!payload || typeof payload !== "object") {
-    return false;
-  }
-  const candidate = payload as PlotLookupResponse;
-  return Array.isArray(candidate.data);
-};
 export default function MyLandPicker({
   defaultMunicipality = "ADM",
   showOverlayShape = false,
@@ -116,6 +109,9 @@ export default function MyLandPicker({
   const userInteractedRef = React.useRef<boolean>(false); // Track if user manually changed dropdown
   const isApplyingMapDataRef = React.useRef<boolean>(false); // Prevent loops when applying map data
   const mapSelectionActiveRef = React.useRef<boolean>(false); // Track if current state mirrors a map pin
+  
+  // Store the complete Onwani map response for submission
+  const onwaniMapDataRef = React.useRef<unknown>(undefined);
 
   const iframeRef = React.useRef<HTMLIFrameElement>(null);
 
@@ -589,6 +585,9 @@ export default function MyLandPicker({
             const addrEn = typeof d.AddressValue_EN === "string" ? (d.AddressValue_EN as string) : "";
             const addrAr = typeof d.AddressValue_AR === "string" ? (d.AddressValue_AR as string) : "";
             
+            // Store the COMPLETE Onwani map response for submission
+            onwaniMapDataRef.current = data;
+            
             // Store the full address values
             setAddressValueEn(addrEn || undefined);
             setAddressValueAr(addrAr || undefined);
@@ -700,6 +699,7 @@ export default function MyLandPicker({
     pendingRef.current = {};
     gisInfoRef.current = undefined;
     lastCoordsRef.current = undefined;
+    onwaniMapDataRef.current = undefined; // Clear stored Onwani data
     if (wasActive) {
       sendToIframe({ type: "reset-selection" });
       sendToIframe({ type: "reset", action: "clear-selection" });
@@ -776,33 +776,34 @@ export default function MyLandPicker({
     setPlot("");
     setPlotOptions([]); // Clear plot options
     setShape(undefined); // Clear shape data
+    setAddressValueEn(undefined); // Clear address values
+    setAddressValueAr(undefined);
     pendingRef.current = {};
     mapSelectionActiveRef.current = false;
     lastCoordsRef.current = undefined;
     gisInfoRef.current = undefined;
+    onwaniMapDataRef.current = undefined; // Clear Onwani data
     // Notify map to reset/clear
     sendToIframe({ type: "reset", action: "clear" });
   };
 
   const handleOk = async () => {
     if (!canSubmit) return;
+    
+    // CRITICAL: Check if user has pinned a location on the map
+    if (!onwaniMapDataRef.current) {
+      alert(isAr 
+        ? "الرجاء تحديد موقع على الخريطة أولاً" 
+        : "Please pin a location on the map first"
+      );
+      return;
+    }
+    
     setSubmitting(true);
     try {
-      // Prefer GISID when available, fallback to selected plot value
-      const selected = plotOptions.find((o) => o.value === plot || o.label === plot);
-      const gisid = selected?.gisid ?? plot;
-      // Call backend API to fetch plot mapping/details by GISID
-      const res = await fetch(`/api/db/plots?filter=${encodeURIComponent(gisid)}`, { cache: "no-store" });
-      let dbPayload: unknown = undefined;
-      try {
-        dbPayload = await res.json();
-      } catch {
-        // ignore parse errors; keep undefined
-      }
-      // You can choose to surface errors to the UI if needed
-      if (!res.ok) {
-        console.error("GetPlot API error", dbPayload);
-      }
+      // Use the COMPLETE Onwani map response data
+      const onwaniData = onwaniMapDataRef.current as OnwaniMapResponse | undefined;
+      
       const payload: OnwaniSelection = {
         municipality,
         districtEn: district!,
@@ -812,11 +813,10 @@ export default function MyLandPicker({
         addressValueEn: addressValueEn,
         addressValueAr: addressValueAr,
         shapeGeoJSON: shape,
+        // Include the RAW Onwani map response
+        onwaniMapResponse: onwaniData,
       };
-      // Attach typed API payload when available so forms can auto-fill hierarchy data.
-      if (res.ok && isPlotLookupResponse(dbPayload)) {
-        payload.dbPlotResponse = dbPayload;
-      }
+      
       onOk?.(payload);
       // MAP TRIGGER (OUTBOUND): notify iframe of the finalized selection
       sendToIframe({ type: "onwani-selection", payload });

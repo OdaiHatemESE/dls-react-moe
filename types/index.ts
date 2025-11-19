@@ -413,6 +413,40 @@ export type PlotLookupResponse = {
   };
 };
 
+// Onwani Map Response Structure (from MyLand iframe postMessage)
+export interface OnwaniMapResponse {
+  AddressType: "Plot" | "Onwani" | "Pin" | "PinDrop" | "Coordinate";
+  AddressValue_EN: string;
+  AddressValue_AR: string;
+  InputCoordinates: {
+    Lat: number | string;
+    Lng: number | string;
+  };
+  PlotAddress?: {
+    MUNICIPALITYENG: string;
+    MUNICIPALITYARA: string;
+    DISTRICTENG: string;
+    DISTRICTARA: string;
+    COMMUNITYENG: string;
+    COMMUNITYARA: string;
+    GISID: string;
+    PLOTNUMBER: string;
+    ROADID: string;
+  };
+  OnwaniAddress?: {
+    MUNICIPALITYENG: string;
+    MUNICIPALITYARA: string;
+    DISTRICTENG: string;
+    DISTRICTARA: string;
+    COMMUNITYENG: string;
+    COMMUNITYARA: string;
+    GISID: string;
+    Lng: number | string;
+    Lat: number | string;
+    PlotAddress?: string;
+  };
+}
+
 export interface OnwaniSelection {
   municipality: Municipality;
 
@@ -427,8 +461,10 @@ export interface OnwaniSelection {
   addressValueAr?: string;
   // Optional overlay geometry returned by the getcommunityshape endpoint
   shapeGeoJSON?: unknown;
-  // Optional backend response attached when map lookup succeeds
+  // Optional backend response attached when map lookup succeeds (DEPRECATED - use onwaniMapResponse)
   dbPlotResponse?: PlotLookupResponse;
+  // RAW Onwani map response (complete data from map postMessage)
+  onwaniMapResponse?: OnwaniMapResponse;
 }
 
 // Re-export notification types
