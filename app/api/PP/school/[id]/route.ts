@@ -105,7 +105,6 @@ export async function GET(
     }
 
     // Get PP token from our token endpoint
-    const url = new URL(req.url);
     const tokenUrl = buildInternalApiUrl(url.origin, '/api/PP/auth/token');
     
     let tokenRes: Response;
