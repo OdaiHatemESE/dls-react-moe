@@ -876,7 +876,7 @@ export default function MyLandPicker({
     });
   }, [municipality, district, community, roadId, sendToIframe]);
 
-  // MAP TRIGGER (OUTBOUND): Focus/zoom map after a plot is selected and set address coordinates
+  // MAP TRIGGER (OUTBOUND): Focus/zoom map after a plot is selected - BUT DON'T AUTO-PIN
   React.useEffect(() => {
     if (!plot) return;
     if (!district || !community) return;
@@ -885,7 +885,7 @@ export default function MyLandPicker({
     
     const selected = plotOptions.find((o) => o.value === plot || o.label === plot);
     const gisid = selected?.gisid;
-    // Inform viewers: focus and set plot
+    // Inform viewers: focus and set plot for zoom/highlight only
     const payload: Record<string, unknown> = { municipality, districtEn: district, communityEn: community, roadId, plotNumber: plot, plot };
     if (gisid) payload.GISID = gisid;
     sendToIframe({ type: "focus-plot", payload });
@@ -895,10 +895,13 @@ export default function MyLandPicker({
     }
     // Angular-like: set plot with lowercase gisid exactly (use GISID if present, else plot)
     sendToIframe({ set: "plot", gisid: idForPlot });
-    // Fetch GISID details then set explicit address coordinates
+    
+    // Store GISID details for reference but DON'T automatically pin on map
+    // User must manually click on the map to place a pin
     getGisIds(idForPlot)
         .then((data) => {
           gisInfoRef.current = data;
+          // Store coordinates for later use but don't auto-pin
           const root = data as unknown;
           const arrUnknown: unknown[] = Array.isArray(root)
             ? (root as unknown[])
@@ -909,16 +912,13 @@ export default function MyLandPicker({
           const lng = getScalar(first, ["Lng", "lng", "Longitude", "longitude"]);
           const lat = getScalar(first, ["Lat", "lat", "Latitude", "latitude"]);
           if (lng && lat) {
-            sendToIframe({ set: "address", address: `${lng},${lat}` });
-          } else if (lastCoordsRef.current) {
-            sendToIframe({ set: "address", address: `${lastCoordsRef.current.lng},${lastCoordsRef.current.lat}` });
+            lastCoordsRef.current = { lng, lat };
+            // DO NOT auto-pin: User must manually click the map
+            // sendToIframe({ set: "address", address: `${lng},${lat}` }); // REMOVED
           }
         })
         .catch(() => {
-          // If details fail, fallback to last known coords if available
-          if (lastCoordsRef.current) {
-            sendToIframe({ set: "address", address: `${lastCoordsRef.current.lng},${lastCoordsRef.current.lat}` });
-          }
+          // Silently fail - user must manually pin
     });
   }, [plot, municipality, district, community, roadId, sendToIframe, plotOptions, getScalar]);
 
