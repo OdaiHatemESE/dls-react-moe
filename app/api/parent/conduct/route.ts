@@ -95,7 +95,6 @@ export async function GET(req: NextRequest) {
   }
 
   // Get PP token for authorization
-  const origin = req.nextUrl.origin;
   const internalApiBaseUrl = process.env.PUBLIC_URL || process.env.NEXTAUTH_URL || 'http://localhost:4200';
   const tokenUrl = `${internalApiBaseUrl}/api/PP/auth/token`;
   const tokenRes = await fetch(tokenUrl);
@@ -142,7 +141,7 @@ export async function GET(req: NextRequest) {
       parentEid 
     });
     
-    const studentInfo = await fetchJson<StudentProfileV1>(`${origin}`, studentInfoUrl, cookie).catch((error) => {
+    const studentInfo = await fetchJson<StudentProfileV1>(internalApiBaseUrl, studentInfoUrl, cookie).catch((error) => {
       if (error instanceof UpstreamFetchError && error.status === 404) {
         console.warn('[Parent Conduct] Student not found:', { studentPersonId, status: 404 });
         return null;
@@ -178,7 +177,7 @@ export async function GET(req: NextRequest) {
         const schoolUrl = `/api/PP/school/${encodeURIComponent(schoolId)}`;
         console.log('[Parent Conduct] Fetching school info:', { schoolId, url: schoolUrl });
         
-        schoolInfo = await fetchJson<unknown>(`${origin}`, schoolUrl, cookie).catch((error) => {
+        schoolInfo = await fetchJson<unknown>(internalApiBaseUrl, schoolUrl, cookie).catch((error) => {
           console.warn('[Parent Conduct] Failed to fetch school info:', { 
             schoolId, 
             error: error.message,
