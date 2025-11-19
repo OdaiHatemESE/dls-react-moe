@@ -135,10 +135,23 @@ export async function GET(req: NextRequest) {
 
   try {
     // Fetch student info from PP API instead of OneRoster
-    const studentInfo = await fetchJson<StudentProfileV1>(`${origin}`, `/api/PP/student/${encodeURIComponent(studentPersonId)}${querySuffix}`, cookie).catch((error) => {
+    const studentInfoUrl = `/api/PP/student/${encodeURIComponent(studentPersonId)}${querySuffix}`;
+    console.log('[Parent Conduct] Fetching student info:', { 
+      studentPersonId, 
+      url: studentInfoUrl,
+      parentEid 
+    });
+    
+    const studentInfo = await fetchJson<StudentProfileV1>(`${origin}`, studentInfoUrl, cookie).catch((error) => {
       if (error instanceof UpstreamFetchError && error.status === 404) {
+        console.warn('[Parent Conduct] Student not found:', { studentPersonId, status: 404 });
         return null;
       }
+      console.error('[Parent Conduct] Student fetch failed:', { 
+        studentPersonId, 
+        error: error.message,
+        status: error.status 
+      });
       throw error;
     });
 
@@ -153,13 +166,35 @@ export async function GET(req: NextRequest) {
       const latestEnrollment = studentInfo.enrollment[0];
       const schoolId = latestEnrollment.schoolId;
       
+      console.log('[Parent Conduct] Processing enrollments:', {
+        studentPersonId,
+        enrollmentCount: studentInfo.enrollment.length,
+        latestSchoolId: schoolId,
+        schoolYear: latestEnrollment.schoolYear
+      });
+      
       if (schoolId) {
         // Fetch school information
-        schoolInfo = await fetchJson<unknown>(`${origin}`, `/api/PP/school/${encodeURIComponent(schoolId)}`, cookie).catch((error) => {
-          console.warn(`Failed to fetch school info for schoolId ${schoolId}:`, error);
+        const schoolUrl = `/api/PP/school/${encodeURIComponent(schoolId)}`;
+        console.log('[Parent Conduct] Fetching school info:', { schoolId, url: schoolUrl });
+        
+        schoolInfo = await fetchJson<unknown>(`${origin}`, schoolUrl, cookie).catch((error) => {
+          console.warn('[Parent Conduct] Failed to fetch school info:', { 
+            schoolId, 
+            error: error.message,
+            status: error.status 
+          });
           return null;
         });
+        
+        if (schoolInfo) {
+          console.log('[Parent Conduct] School info fetched successfully:', { schoolId });
+        }
+      } else {
+        console.warn('[Parent Conduct] No schoolId in latest enrollment:', { studentPersonId });
       }
+    } else {
+      console.warn('[Parent Conduct] No enrollments found for student:', { studentPersonId });
     }
 
     const payload: ParentConductAggregatedResponse = {
@@ -167,6 +202,13 @@ export async function GET(req: NextRequest) {
       parentInfo,
       schoolInfo,
     };
+
+    console.log('[Parent Conduct] Aggregation successful:', {
+      studentPersonId,
+      hasStudentInfo: !!studentInfo,
+      hasParentInfo: !!parentInfo,
+      hasSchoolInfo: !!schoolInfo,
+    });
 
     return NextResponse.json({
       ok: true,

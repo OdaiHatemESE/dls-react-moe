@@ -104,8 +104,6 @@ export default function MyLandPicker({
   // Internal refs for async coordination and map sync
   // ---------------------------------------------------------------------------
   const pendingRef = React.useRef<{ district?: string; community?: string; roadId?: string; plot?: string }>({});
-  const gisInfoRef = React.useRef<unknown>(undefined);
-  const lastCoordsRef = React.useRef<{ lng: string; lat: string } | undefined>(undefined);
   const userInteractedRef = React.useRef<boolean>(false); // Track if user manually changed dropdown
   const isApplyingMapDataRef = React.useRef<boolean>(false); // Prevent loops when applying map data
   const mapSelectionActiveRef = React.useRef<boolean>(false); // Track if current state mirrors a map pin
@@ -622,13 +620,7 @@ export default function MyLandPicker({
               toStringIfScalar(plotAddr?.GISID) ||
               getScalar(plotAddr, ["PLOTNUMBER", "plotNumber", "PLOT_NUMBER", "PLOTNUM", "Plot", "plot"]);
 
-            // Capture coordinates for fallback use
-            const inputCoords = isRecord(d["InputCoordinates"]) ? (d["InputCoordinates"] as Record<string, unknown>) : undefined;
-            const lng = getScalar(onwaniAddr, ["Lng", "lng", "Longitude", "longitude"]) || getScalar(inputCoords, ["Lng", "lng"]);
-            const lat = getScalar(onwaniAddr, ["Lat", "lat", "Latitude", "latitude"]) || getScalar(inputCoords, ["Lat", "lat"]);
-            if (lng && lat) {
-              lastCoordsRef.current = { lng, lat };
-            }
+            // Coordinates are captured in onwaniMapDataRef for later submission
 
             // Map municipality text to code
             const m: Municipality = municipalityCandidate ? toMunicipalityCode(municipalityCandidate) : municipality;
@@ -697,8 +689,6 @@ export default function MyLandPicker({
     mapSelectionActiveRef.current = false;
     isApplyingMapDataRef.current = false;
     pendingRef.current = {};
-    gisInfoRef.current = undefined;
-    lastCoordsRef.current = undefined;
     onwaniMapDataRef.current = undefined; // Clear stored Onwani data
     if (wasActive) {
       sendToIframe({ type: "reset-selection" });
@@ -780,8 +770,6 @@ export default function MyLandPicker({
     setAddressValueAr(undefined);
     pendingRef.current = {};
     mapSelectionActiveRef.current = false;
-    lastCoordsRef.current = undefined;
-    gisInfoRef.current = undefined;
     onwaniMapDataRef.current = undefined; // Clear Onwani data
     // Notify map to reset/clear
     sendToIframe({ type: "reset", action: "clear" });
@@ -896,30 +884,8 @@ export default function MyLandPicker({
     // Angular-like: set plot with lowercase gisid exactly (use GISID if present, else plot)
     sendToIframe({ set: "plot", gisid: idForPlot });
     
-    // Store GISID details for reference but DON'T automatically pin on map
-    // User must manually click on the map to place a pin
-    getGisIds(idForPlot)
-        .then((data) => {
-          gisInfoRef.current = data;
-          // Store coordinates for later use but don't auto-pin
-          const root = data as unknown;
-          const arrUnknown: unknown[] = Array.isArray(root)
-            ? (root as unknown[])
-            : isRecord(root) && Array.isArray((root as { data?: unknown[] }).data)
-            ? (((root as { data?: unknown[] }).data as unknown[]) || [])
-            : [];
-          const first = arrUnknown.length > 0 && isRecord(arrUnknown[0]) ? (arrUnknown[0] as Record<string, unknown>) : undefined;
-          const lng = getScalar(first, ["Lng", "lng", "Longitude", "longitude"]);
-          const lat = getScalar(first, ["Lat", "lat", "Latitude", "latitude"]);
-          if (lng && lat) {
-            lastCoordsRef.current = { lng, lat };
-            // DO NOT auto-pin: User must manually click the map
-            // sendToIframe({ set: "address", address: `${lng},${lat}` }); // REMOVED
-          }
-        })
-        .catch(() => {
-          // Silently fail - user must manually pin
-    });
+    // Note: We don't auto-pin the map when a plot is selected from dropdown.
+    // User must manually click on the map to place a pin and get Onwani response.
   }, [plot, municipality, district, community, roadId, sendToIframe, plotOptions, getScalar]);
 
   // Apply pending selections when options arrive

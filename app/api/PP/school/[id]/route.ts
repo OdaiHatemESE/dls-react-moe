@@ -1,10 +1,15 @@
 import { NextResponse } from 'next/server';
 import { cacheGetJSON, cacheSetJSON } from '@/lib/cache';
+import { buildInternalApiUrl } from '@/lib/internal-api-url';
+import { fetchWithTimeout, FetchTimeoutError } from '@/lib/fetch-with-timeout';
 
 type PPTokenResponse = {
   accessToken?: string;
   error?: string;
 };
+
+const TOKEN_TIMEOUT_MS = 8000;
+const SCHOOL_TIMEOUT_MS = 10000;
 
 type SchoolAddress = {
   country: string;
@@ -100,13 +105,35 @@ export async function GET(
     }
 
     // Get PP token from our token endpoint
-    const tokenUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:4200'}/api/PP/auth/token`;
-    const tokenRes = await fetch(tokenUrl);
-    const tokenData: PPTokenResponse = await tokenRes.json();
+    const url = new URL(req.url);
+    const tokenUrl = buildInternalApiUrl(url.origin, '/api/PP/auth/token');
+    
+    let tokenRes: Response;
+    let tokenData: PPTokenResponse | null = null;
 
-    if (!tokenRes.ok || !tokenData.accessToken) {
+    try {
+      tokenRes = await fetchWithTimeout(tokenUrl, {
+        cache: 'no-store',
+        timeoutMs: TOKEN_TIMEOUT_MS,
+      });
+      tokenData = (await tokenRes.json().catch(() => null)) as PPTokenResponse | null;
+    } catch (error) {
+      const status = error instanceof FetchTimeoutError ? 504 : 502;
+      const message =
+        error instanceof FetchTimeoutError
+          ? 'Timed out while requesting PP token'
+          : 'Failed to reach PP token endpoint';
+      console.error('[PP School] Token fetch error:', { schoolId, error: message });
+      return NextResponse.json({ error: message }, { status });
+    }
+    if (!tokenRes.ok || !tokenData?.accessToken) {
+      console.error('[PP School] Token request failed:', { 
+        schoolId, 
+        status: tokenRes.status,
+        error: tokenData?.error 
+      });
       return NextResponse.json(
-        { error: tokenData.error || 'Failed to get PP access token' },
+        { error: tokenData?.error || 'Failed to get PP access token' },
         { status: 500 }
       );
     }
@@ -120,26 +147,46 @@ export async function GET(
 
     // Validate token is a string
     if (typeof accessToken !== 'string' || !accessToken) {
-      console.error('[PP School] Invalid token type:', typeof accessToken);
+      console.error('[PP School] Invalid token type:', { 
+        schoolId,
+        tokenType: typeof accessToken 
+      });
       return NextResponse.json({ 
         error: 'Invalid token format received from auth endpoint',
         tokenType: typeof accessToken 
       }, { status: 500 });
     }
 
-
-
     // Fetch school data using the PP token
     const schoolUrl = `${baseUrl.replace(/\/$/, '')}/oneroster/schools/${encodeURIComponent(schoolId)}`;
-    const schoolRes = await fetch(schoolUrl, {
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-    });
+    
+    let schoolRes: Response;
+    try {
+      schoolRes = await fetchWithTimeout(schoolUrl, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        cache: 'no-store',
+        timeoutMs: SCHOOL_TIMEOUT_MS,
+      });
+    } catch (error) {
+      const status = error instanceof FetchTimeoutError ? 504 : 502;
+      const message =
+        error instanceof FetchTimeoutError
+          ? 'Timed out while fetching school data'
+          : 'Failed to reach PP school endpoint';
+      console.error('[PP School] School fetch error:', { schoolId, error: message });
+      return NextResponse.json({ error: message }, { status });
+    }
 
     if (!schoolRes.ok) {
       const errorData = await schoolRes.json().catch(() => null);
+      console.error('[PP School] School data fetch failed:', {
+        schoolId,
+        status: schoolRes.status,
+        error: errorData,
+      });
       return NextResponse.json(
         { error: errorData ?? `Upstream returned ${schoolRes.status}` },
         { status: schoolRes.status }
@@ -166,6 +213,7 @@ export async function GET(
       },
     });
   } catch (err: any) {
+    console.error('[PP School] Unexpected error:', { schoolId: (await params).id, error: String(err) });
     return NextResponse.json({ error: String(err) }, { status: 500 });
   }
 }

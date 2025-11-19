@@ -674,10 +674,10 @@ export default function UpdateStudentInfoPage() {
         data: {
           emirate: textOrNull(next.emirateNameEn) ?? textOrNull(next.emirateName) ?? '',
           area: textOrNull(next.areaNameEn) ?? textOrNull(next.areaName) ?? '',
-          street: textOrNull(next.streetName) ?? '',
+          street: textOrNull(next.fullAddressEn) ?? textOrNull(next.fullAddressAr) ?? textOrNull(next.streetName) ?? '',
           houseBuilding: textOrNull(next.houseNumber) ?? '',
-          region: textOrNull(next.regionNameEn) ?? '',
-          zone: textOrNull(next.zoneNameEn) ?? '',
+          region: textOrNull(next.municipalityNameEn) ?? '',
+          zone: textOrNull(next.regionNameEn) ?? '',
           plot: numberToString(next.plotId) ?? '',
           mainPlot: textOrNull(next.mainPlotId) ?? '',
           premises: textOrNull(next.premisesPlotId) ?? textOrNull(next.communityName) ?? '',
@@ -839,18 +839,37 @@ export default function UpdateStudentInfoPage() {
       return;
     }
 
-    if (
-      addressChanged &&
-      (
-        !newAddress ||
-        newAddress.emirateId === undefined ||
-        newAddress.emirateId === null ||
-        newAddress.areaId === undefined ||
-        newAddress.areaId === null
-      )
-    ) {
-      setErrorMessage(updateInfo.validation.addressDetails);
-      return;
+    // Address validation: different rules for Abu Dhabi (map-based) vs other emirates (form-based)
+    if (addressChanged) {
+      if (!newAddress) {
+        setErrorMessage(updateInfo.validation.addressDetails);
+        return;
+      }
+      
+      // Check if it's Abu Dhabi address (from map - has emirateName but might not have emirateId)
+      const isAbuDhabi = newAddress.emirateNameEn && 
+        (newAddress.emirateNameEn.toLowerCase().includes('abu dhabi') ||
+         newAddress.emirateNameEn.toLowerCase().includes('al ain') ||
+         newAddress.emirateNameEn.toLowerCase().includes('dhafra'));
+      
+      if (isAbuDhabi) {
+        // Abu Dhabi: must have emirate name and coordinates (from map pin)
+        if (!newAddress.emirateNameEn || 
+            (newAddress.latitude === undefined || newAddress.latitude === null) ||
+            (newAddress.longitude === undefined || newAddress.longitude === null)) {
+          setErrorMessage(updateInfo.validation.addressDetails);
+          return;
+        }
+      } else {
+        // Dubai/Northern Emirates: must have emirateId and areaId
+        if (newAddress.emirateId === undefined ||
+            newAddress.emirateId === null ||
+            newAddress.areaId === undefined ||
+            newAddress.areaId === null) {
+          setErrorMessage(updateInfo.validation.addressDetails);
+          return;
+        }
+      }
     }
 
     if (addressChanged && !supportingDocument) {
@@ -922,10 +941,10 @@ export default function UpdateStudentInfoPage() {
         return {
           emirate: textOrNull(next.emirateNameEn) ?? textOrNull(next.emirateName) ?? '',
           area: textOrNull(next.areaNameEn) ?? textOrNull(next.areaName) ?? '',
-          street: textOrNull(next.streetName) ?? '',
+          street: textOrNull(next.fullAddressEn) ?? textOrNull(next.fullAddressAr) ?? textOrNull(next.streetName) ?? '',
           houseBuilding: textOrNull(next.houseNumber) ?? '',
-          region: textOrNull(next.regionNameEn) ?? '',
-          zone: textOrNull(next.zoneNameEn) ?? '',
+          region: textOrNull(next.municipalityNameEn) ?? '',
+          zone: textOrNull(next.regionNameEn) ?? '',
           plot: numberToString(next.plotId) ?? '',
           mainPlot: textOrNull(next.mainPlotId) ?? '',
           premises: textOrNull(next.premisesPlotId) ?? textOrNull(next.communityName) ?? '',

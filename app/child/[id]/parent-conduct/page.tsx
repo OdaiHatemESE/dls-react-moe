@@ -172,14 +172,44 @@ export default function ParentConductPage() {
   } = useSWR<AggregatedApiResponse>(dataKey, jsonFetcher);
 
   const aggregated = aggregatedResponse?.data ?? null;
-  const apiErrorMessage =
-    aggregatedResponse && aggregatedResponse.ok === false
-      ? aggregatedResponse.error
-      : aggregatedError instanceof Error
-        ? aggregatedError.message
-        : aggregatedError
-          ? String(aggregatedError)
-          : undefined;
+  
+  // Better error message extraction
+  const apiErrorMessage = React.useMemo(() => {
+    // First check API response error
+    if (aggregatedResponse && aggregatedResponse.ok === false) {
+      return aggregatedResponse.error || t.parentConduct.errorLoading;
+    }
+    
+    // Then check SWR error
+    if (aggregatedError) {
+      // If it's an Error instance, use message
+      if (aggregatedError instanceof Error) {
+        return aggregatedError.message;
+      }
+      
+      // If it's an object with error property
+      if (typeof aggregatedError === 'object' && aggregatedError !== null) {
+        const errorObj = aggregatedError as any;
+        if (errorObj.error && typeof errorObj.error === 'string') {
+          return errorObj.error;
+        }
+        if (errorObj.message && typeof errorObj.message === 'string') {
+          return errorObj.message;
+        }
+      }
+      
+      // If it's a string
+      if (typeof aggregatedError === 'string') {
+        return aggregatedError;
+      }
+      
+      // Fallback for unknown error types
+      console.error('Unknown error type:', aggregatedError);
+      return t.parentConduct.errorLoading;
+    }
+    
+    return undefined;
+  }, [aggregatedResponse, aggregatedError, t.parentConduct.errorLoading]);
 
   const studentInfo = aggregated?.studentInfo ?? null;
   const schoolInfoRaw = aggregated?.schoolInfo ?? null;
@@ -264,14 +294,36 @@ export default function ParentConductPage() {
     setLatestPdfBase64(null);
   }, [studentNumber]);
 
-  const charterErrorMessage =
-    charterStatusResponse && charterStatusResponse.ok === false
-      ? charterStatusResponse.error
-      : charterStatusError instanceof Error
-        ? charterStatusError.message
-        : charterStatusError
-          ? String(charterStatusError)
-          : undefined;
+  // Better error message extraction for charter status
+  const charterErrorMessage = React.useMemo(() => {
+    if (charterStatusResponse && charterStatusResponse.ok === false) {
+      return charterStatusResponse.error || (locale === 'ar' ? 'خطأ في تحميل حالة الميثاق' : 'Error loading charter status');
+    }
+    
+    if (charterStatusError) {
+      if (charterStatusError instanceof Error) {
+        return charterStatusError.message;
+      }
+      
+      if (typeof charterStatusError === 'object' && charterStatusError !== null) {
+        const errorObj = charterStatusError as any;
+        if (errorObj.error && typeof errorObj.error === 'string') {
+          return errorObj.error;
+        }
+        if (errorObj.message && typeof errorObj.message === 'string') {
+          return errorObj.message;
+        }
+      }
+      
+      if (typeof charterStatusError === 'string') {
+        return charterStatusError;
+      }
+      
+      return locale === 'ar' ? 'خطأ في تحميل حالة الميثاق' : 'Error loading charter status';
+    }
+    
+    return undefined;
+  }, [charterStatusResponse, charterStatusError, locale]);
 
   const hasFetchError = Boolean(apiErrorMessage);
   const combinedErrorMessage = apiErrorMessage ?? charterErrorMessage;
@@ -646,8 +698,40 @@ export default function ParentConductPage() {
   if (hasFetchError) {
     const message = combinedErrorMessage ?? t.parentConduct.errorLoading;
     return (
-      <div className="max-w-xl mx-auto py-10 text-center text-destructive">
-        {message}
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <Card className="border-2 border-destructive shadow-lg">
+          <CardHeader className="bg-destructive/10">
+            <CardTitle className="text-center text-lg flex items-center justify-center gap-2 text-destructive">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              {locale === 'ar' ? 'خطأ في تحميل البيانات' : 'Error Loading Data'}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <p className="text-center text-muted-foreground mb-6">
+              {message}
+            </p>
+            <div className="flex justify-center gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  if (typeof mutateAggregated === 'function') {
+                    mutateAggregated();
+                  }
+                }}
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+              >
+                {locale === 'ar' ? 'إعادة المحاولة' : 'Retry'}
+              </button>
+              <Link href={routeChildId ? `/child/${encodeURIComponent(routeChildId)}` : '/dashboard'}>
+                <button className="px-4 py-2 border rounded-lg hover:bg-muted transition-colors" type="button">
+                  {locale === 'ar' ? 'العودة' : 'Go Back'}
+                </button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
