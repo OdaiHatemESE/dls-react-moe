@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import type { StudentProfileV1 } from '@/app/types/studentprofile';
-import { buildInternalApiUrl } from '@/lib/internal-api-url';
 import { fetchWithTimeout, FetchTimeoutError } from '@/lib/fetch-with-timeout';
 
 type PPTokenResponse = {
@@ -37,7 +36,8 @@ export async function GET(
     }
 
     // Get PP token
-    const tokenUrl = buildInternalApiUrl(url.origin, '/api/PP/auth/token');
+    const internalApiBaseUrl = process.env.PUBLIC_URL || process.env.NEXTAUTH_URL || 'http://localhost:4200';
+    const tokenUrl = `${internalApiBaseUrl}/api/PP/auth/token`;
     let tokenRes: Response;
     let tokenData: PPTokenResponse | null = null;
 

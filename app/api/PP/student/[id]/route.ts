@@ -4,7 +4,6 @@ import { authOptions } from '@/lib/auth';
 import type { StudentProfileV1 } from '@/app/types/studentprofile';
 import { cacheGetJSON, cacheSetJSON } from '@/lib/cache';
 import { getActiveAcademicYearValue } from '@/lib/admin-config';
-import { buildInternalApiUrl } from '@/lib/internal-api-url';
 import { fetchWithTimeout, FetchTimeoutError } from '@/lib/fetch-with-timeout';
 
 type PPTokenResponse = {
@@ -110,7 +109,8 @@ export async function GET(
     }
 
     // Get PP token from our token endpoint
-    const tokenUrl = buildInternalApiUrl(new URL(req.url).origin, '/api/PP/auth/token');
+    const internalApiBaseUrl = process.env.PUBLIC_URL || process.env.NEXTAUTH_URL || 'http://localhost:4200';
+    const tokenUrl = `${internalApiBaseUrl}/api/PP/auth/token`;
     let tokenRes: Response;
     let tokenData: PPTokenResponse | null = null;
 

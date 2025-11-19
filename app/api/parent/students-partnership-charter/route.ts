@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { authorizeStudentAccess } from "@/lib/student-authorization";
-import { buildInternalApiUrl } from "@/lib/internal-api-url";
 import { fetchWithTimeout, FetchTimeoutError } from "@/lib/fetch-with-timeout";
 import type { StudentProfileV1 } from "@/app/types/studentprofile";
 
@@ -33,7 +32,8 @@ const PROFILES_TIMEOUT_MS = 15000;
 
 function buildTokenUrl(req: Request): string {
   const origin = new URL(req.url).origin;
-  return buildInternalApiUrl(origin, "/api/PP/auth/token");
+  const internalApiBaseUrl = process.env.PUBLIC_URL || process.env.NEXTAUTH_URL || 'http://localhost:4200';
+  return `${internalApiBaseUrl}/api/PP/auth/token`;
 }
 
 function normalizeCharter(input: unknown): CharterRecord | null {

@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { buildInternalApiUrl } from "@/lib/internal-api-url";
 
 export const dynamic = "force-dynamic";
 
@@ -57,7 +56,8 @@ export async function GET(req: NextRequest) {
   try {
     // Step 1: Get PP token
     debugInfo.steps.tokenFetch = { status: 'started', timestamp: new Date().toISOString() };
-    const tokenUrl = buildInternalApiUrl(origin, '/api/PP/auth/token');
+    const internalApiBaseUrl = process.env.PUBLIC_URL || process.env.NEXTAUTH_URL || 'http://localhost:4200';
+    const tokenUrl = `${internalApiBaseUrl}/api/PP/auth/token`;
     debugInfo.steps.tokenFetch.url = tokenUrl;
     
     const tokenRes = await fetch(tokenUrl, { cache: 'no-store' });
@@ -83,10 +83,7 @@ export async function GET(req: NextRequest) {
     if (schoolYear) queryParams.set("schoolYear", schoolYear);
     const querySuffix = queryParams.toString() ? `?${queryParams.toString()}` : "";
     
-    const studentUrl = buildInternalApiUrl(
-      origin, 
-      `/api/PP/student/${encodeURIComponent(studentPersonId)}${querySuffix}`
-    );
+    const studentUrl = `${internalApiBaseUrl}/api/PP/student/${encodeURIComponent(studentPersonId)}${querySuffix}`;
     debugInfo.steps.studentFetch.url = studentUrl;
     
     const studentRes = await fetch(studentUrl, {
@@ -135,7 +132,7 @@ export async function GET(req: NextRequest) {
       };
       
       if (schoolId) {
-        const schoolUrl = buildInternalApiUrl(origin, `/api/PP/school/${encodeURIComponent(schoolId)}`);
+        const schoolUrl = `${internalApiBaseUrl}/api/PP/school/${encodeURIComponent(schoolId)}`;
         debugInfo.steps.schoolFetch.url = schoolUrl;
         
         try {

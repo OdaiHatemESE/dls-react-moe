@@ -29,7 +29,8 @@ export async function PATCH(
     const isConductAgreementSigned = typeof body.isConductAgreementSigned === 'boolean' ? body.isConductAgreementSigned : true;
 
     // Get PP token from our token endpoint
-    const tokenUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:4200'}/api/PP/auth/token`;
+    const internalApiBaseUrl = process.env.PUBLIC_URL || process.env.NEXTAUTH_URL || 'http://localhost:4200';
+    const tokenUrl = `${internalApiBaseUrl}/api/PP/auth/token`;
     const tokenRes = await fetch(tokenUrl);
     const tokenData: PPTokenResponse = await tokenRes.json();
 

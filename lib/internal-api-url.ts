@@ -1,49 +1,49 @@
 /**
- * Utility to build internal API URLs that work on both dev and staging/production
+ * Utility to build internal API URLs for server-to-server calls within Next.js
  * 
- * On staging/production servers, using the external domain for internal API calls
- * can fail due to:
- * - DNS loopback issues (server can't resolve its own external domain)
- * - SSL certificate validation failures
- * - Network configuration restrictions
+ * Uses PUBLIC_URL or NEXTAUTH_URL environment variable to determine the base URL.
+ * This is especially important when running behind a reverse proxy (IIS) where
+ * the request URL might show localhost but the app is accessed via a public domain.
  * 
- * This helper intelligently chooses the best approach for internal API calls.
+ * Priority order:
+ * 1. PUBLIC_URL (explicit override for internal API calls)
+ * 2. NEXTAUTH_URL (already configured for NextAuth)
+ * 3. Request origin as fallback
  */
 
 /**
- * Get the appropriate origin URL for internal API calls
- * @param requestOrigin - The origin from the incoming request
- * @returns The origin to use for internal API calls
+ * Get the base URL for internal API calls
+ * @param requestOrigin - The origin from the incoming request (fallback only)
+ * @returns The base URL to use for internal API calls
  */
-export function getInternalApiOrigin(requestOrigin: string): string {
-  // List of external domains that should use localhost for internal calls
-  const externalDomains = [
-    'parent-stg.moe.gov.ae',
-    'parent.moe.gov.ae',
-    'moe.gov.ae', // Catch any subdomain
-  ];
+export function getInternalApiOrigin(requestOrigin?: string): string {
+  // First priority: Explicit PUBLIC_URL for internal API calls
+  if (process.env.PUBLIC_URL) {
+    return process.env.PUBLIC_URL.replace(/\/$/, '');
+  }
   
-  const isExternalDomain = externalDomains.some(domain => requestOrigin.includes(domain));
-  const port = process.env.PORT || '4200';
+  // Second priority: NEXTAUTH_URL (already configured for auth)
+  if (process.env.NEXTAUTH_URL) {
+    return process.env.NEXTAUTH_URL.replace(/\/$/, '');
+  }
   
-  // For external domains (staging/production)
-  if (isExternalDomain) {
-    // Use the original request origin to avoid loopback issues
-    // The server can reach itself via its own public URL
+  // Fallback: Use the request origin if provided
+  if (requestOrigin) {
     return requestOrigin;
   }
   
-  // For localhost development
-  return requestOrigin;
+  // Last resort: localhost with PORT
+  const port = process.env.PORT || '4200';
+  return `http://localhost:${port}`;
 }
 
 /**
- * Build an internal API URL
- * @param requestOrigin - The origin from the incoming request
- * @param path - The API path (should start with /)
+ * Build an internal API URL for server-to-server calls
+ * @param path - The API path (e.g., '/api/PP/student/123')
+ * @param requestOrigin - Optional request origin as fallback
  * @returns The full URL for the internal API call
  */
-export function buildInternalApiUrl(requestOrigin: string, path: string): string {
+export function buildInternalApiUrl(path: string, requestOrigin?: string): string {
   const origin = getInternalApiOrigin(requestOrigin);
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
   return `${origin}${normalizedPath}`;

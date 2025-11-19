@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import type { Session } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { buildInternalApiUrl } from '@/lib/internal-api-url';
 import type { IDHStudent } from '@/app/types/idh';
 import { authorizeStudentAccess } from '@/lib/student-authorization';
 
@@ -20,7 +19,8 @@ async function requireSession(): Promise<Session | null> {
 
 function buildTokenUrl(req: Request): string {
   const origin = new URL(req.url).origin;
-  return buildInternalApiUrl(origin, '/api/PP/auth/token');
+  const internalApiBaseUrl = process.env.PUBLIC_URL || process.env.NEXTAUTH_URL || 'http://localhost:4200';
+  return `${internalApiBaseUrl}/api/PP/auth/token`;
 }
 
 /**

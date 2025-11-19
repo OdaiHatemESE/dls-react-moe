@@ -5,7 +5,6 @@
 
 import type { StudentProfileV1 } from '@/app/types/studentprofile';
 import { fetchWithTimeout, FetchTimeoutError } from './fetch-with-timeout';
-import { buildInternalApiUrl } from './internal-api-url';
 
 export type StudentProfileFetchResult =
   | { ok: true; profile: StudentProfileV1 }
@@ -42,13 +41,15 @@ export async function fetchStudentProfile(
     retries = DEFAULT_RETRIES,
   } = options;
 
-  // Use helper to get the correct origin for internal API calls
-  const url = buildInternalApiUrl(origin, `/api/PP/student/${encodeURIComponent(studentPersonId)}`);
+  // Use PUBLIC_URL or NEXTAUTH_URL for internal API calls
+  const internalApiBaseUrl = process.env.PUBLIC_URL || process.env.NEXTAUTH_URL || origin || 'http://localhost:4200';
+  const url = `${internalApiBaseUrl}/api/PP/student/${encodeURIComponent(studentPersonId)}`;
   let lastError: Error | null = null;
 
   // Debug logging to help diagnose staging issues
   console.log('[fetchStudentProfile] Request origin:', origin);
   console.log('[fetchStudentProfile] Resolved URL:', url);
+  console.log('[fetchStudentProfile] NODE_ENV:', process.env.NODE_ENV);
   console.log('[fetchStudentProfile] PORT env:', process.env.PORT);
 
   for (let attempt = 0; attempt <= retries; attempt++) {

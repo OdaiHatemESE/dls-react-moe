@@ -5,7 +5,6 @@ import { getChildActionsSummary } from "@/lib/child-actions";
 import { getActiveAcademicYearValue } from "@/lib/admin-config";
 import { fetchStudentProfile } from "@/lib/fetch-student-profile";
 import { fetchWithTimeout, FetchTimeoutError } from "@/lib/fetch-with-timeout";
-import { buildInternalApiUrl } from "@/lib/internal-api-url";
 import Logger, { createScopedLogger } from "@/lib/logger";
 import { safeValidateChildActionResponse } from "@/lib/child-actions-schema";
 import type { StudentProfileV1 } from "@/app/types/studentprofile";
@@ -268,7 +267,8 @@ async function fetchIdhStatus(studentPersonId: string, req: Request, options?: F
     // Use localhost for internal API calls to avoid DNS/SSL issues on staging
     const origin = new URL(req.url).origin;
       
-    const tokenRes = await fetchWithTimeout(buildInternalApiUrl(origin, '/api/PP/auth/token'), { 
+    const internalApiBaseUrl = process.env.PUBLIC_URL || process.env.NEXTAUTH_URL || 'http://localhost:4200';
+    const tokenRes = await fetchWithTimeout(`${internalApiBaseUrl}/api/PP/auth/token`, { 
       cache: "no-store",
       timeoutMs: TOKEN_TIMEOUT_MS
     });
