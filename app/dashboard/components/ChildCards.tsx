@@ -86,7 +86,7 @@ export default function ChildCards() {
 
   // normalization is handled by useChildren
   const eid = status === "authenticated" ? (session?.user?.emiratesId || '') : undefined;
-  const { children, error, isLoading, needsSync, emirateId } = useChildren(eid);
+  const { children, error, isLoading, needsSync, emirateId, mutate } = useChildren(eid);
   const isBusy = status === "loading" || (status === "authenticated" && isLoading);
   const [isSyncing, setIsSyncing] = React.useState(false);
 
@@ -122,8 +122,19 @@ export default function ChildCards() {
     try {
       const response = await fetch(`/api/PP/child/sync?emirateId=${encodeURIComponent(emirateId)}`);
       if (response.ok) {
-        // Refresh the page or trigger SWR revalidation
-        window.location.reload();
+        const syncData = await response.json();
+        
+        // Update SWR cache with the fresh data from sync
+        // The sync endpoint returns { success, students, count, meta }
+        if (syncData.students) {
+          await mutate({
+            students: syncData.students,
+            meta: syncData.meta
+          }, { revalidate: false }); // Don't revalidate immediately, we just got fresh data
+        } else {
+          // Fallback: just revalidate to fetch fresh data
+          await mutate();
+        }
       } else {
         const errorData = await response.json().catch(() => ({}));
         const errorMessage = typeof errorData.error === 'string' 
@@ -137,7 +148,7 @@ export default function ChildCards() {
     } finally {
       setIsSyncing(false);
     }
-  }, [emirateId]);
+  }, [emirateId, mutate]);
 
   // Skeleton loaders with shimmer effect
   const SkeletonTableRow = () => (

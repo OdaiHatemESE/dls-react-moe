@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import type { StudentProfileV1 } from '@/app/types/studentprofile';
 import { cacheSetJSON } from '@/lib/cache';
+import { getActiveAcademicYearValue } from '@/lib/admin-config';
 
 type PPTokenResponse = {
   accessToken?: string;
@@ -10,6 +11,11 @@ type PPTokenResponse = {
 };
 
 type Wrapped<T> = { data: T; fetchedAt: string };
+
+type StudentWithActiveStatus = StudentProfileV1 & {
+  isActive: boolean;
+  hasActiveEnrollment: boolean;
+};
 
 /**
  * GET/POST /api/PP/child/sync
@@ -128,8 +134,33 @@ async function handleSync(req: Request) {
     
     const fetchedAt = new Date().toISOString();
 
+    // Get active academic year to determine student active status
+    const activeAcademicYear = await getActiveAcademicYearValue();
+    const activeYearStr = activeAcademicYear ? String(activeAcademicYear) : null;
+
+    // Enhance student list with active status
+    const studentsWithStatus: StudentWithActiveStatus[] = studentList.map((student) => {
+      let hasActiveEnrollment = false;
+      
+      if (student.enrollment && student.enrollment.length > 0 && activeYearStr) {
+        // Check if student has enrollment matching active academic year
+        // and no exit date (or empty exit date means still enrolled)
+        hasActiveEnrollment = student.enrollment.some((enr) => {
+          const matchesYear = enr.schoolYear === activeYearStr;
+          const hasNotExited = !enr.exitDate || enr.exitDate.trim() === '';
+          return matchesYear && hasNotExited;
+        });
+      }
+
+      return {
+        ...student,
+        isActive: hasActiveEnrollment,
+        hasActiveEnrollment,
+      };
+    });
+
     // Cache each student profile individually
-    for (const student of studentList) {
+    for (const student of studentsWithStatus) {
       let filteredStudent = student;
 
       // Filter enrollments by schoolYear if provided
@@ -149,7 +180,7 @@ async function handleSync(req: Request) {
         : null;
 
       // Update base cache
-      await cacheSetJSON<Wrapped<StudentProfileV1>>(
+      await cacheSetJSON<Wrapped<StudentWithActiveStatus>>(
         baseCacheKey,
         { data: filteredStudent, fetchedAt },
         { ttlSeconds: 300 }
@@ -157,7 +188,7 @@ async function handleSync(req: Request) {
 
       // Update year-specific cache if schoolYear is provided
       if (yearCacheKey) {
-        await cacheSetJSON<Wrapped<StudentProfileV1>>(
+        await cacheSetJSON<Wrapped<StudentWithActiveStatus>>(
           yearCacheKey,
           { data: filteredStudent, fetchedAt },
           { ttlSeconds: 300 }
@@ -167,17 +198,17 @@ async function handleSync(req: Request) {
 
     // Also update the childlist cache
     const childListCacheKey = `pp:childlist:${emirateId}`;
-    await cacheSetJSON<Wrapped<StudentProfileV1[]>>(
+    await cacheSetJSON<Wrapped<StudentWithActiveStatus[]>>(
       childListCacheKey,
-      { data: studentList, fetchedAt },
+      { data: studentsWithStatus, fetchedAt },
       { ttlSeconds: 300 }
     );
 
     // Return the synced data
     return NextResponse.json({
       success: true,
-      students: studentList,
-      count: studentList.length,
+      students: studentsWithStatus,
+      count: studentsWithStatus.length,
       meta: {
         cache: {
           source: 'upstream',

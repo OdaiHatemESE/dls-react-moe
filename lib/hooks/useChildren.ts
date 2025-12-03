@@ -24,7 +24,7 @@ export function useChildren(eid?: string) {
   // If eid is provided, fetch for that eid, else return null (no session-based fallback)
   const key = eid ? `/api/PP/ChildList/${encodeURIComponent(eid)}` : null;
   
-  const { data, error, isLoading } = useSWR<ChildListResponse | StudentProfileV1[]>(key);
+  const { data, error, isLoading, mutate } = useSWR<ChildListResponse | StudentProfileV1[]>(key);
   
   const children: StudentProfileV1[] = React.useMemo(() => {
     // Handle new response format with students and meta
@@ -61,6 +61,7 @@ export function useChildren(eid?: string) {
     error, 
     isLoading,
     needsSync: errorDetails.needsSync,
-    emirateId: errorDetails.emirateId
+    emirateId: errorDetails.emirateId,
+    mutate
   } as const;
 }
