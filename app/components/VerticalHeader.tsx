@@ -135,7 +135,7 @@ export default function VerticalHeader() {
     ...(adminAccess?.hasAccess ? [{ key: 'admin' as const, href: '/admin/eid', icon: Settings as any, isAdminOnly: true }] : []),
     // { key: 'announcements', href: '/announcements', icon: AnnouncementsIcon },
     // { key: 'calendar', href: '/calendar', icon: CalendarIcon },
-    // { key: 'profile', href: '/profile', icon: ProfileIcon }
+    // Profile is now a standalone menu item below, not in navigation array
   ];
 
   // Create notifications navigation item
@@ -239,6 +239,19 @@ export default function VerticalHeader() {
                     </Link>
                   );
                 })}
+                
+                {/* Logout Button - Mobile */}
+                <button
+                  className={`group flex items-center gap-4 px-4 py-4 rounded-xl ${locale === 'ar' ? 'text-sm font-semibold tracking-wide' : 'text-sm font-semibold'} transition-all duration-300 border text-foreground hover:text-white bg-card/80 hover:bg-gradient-to-r hover:from-destructive hover:to-destructive/90 border-border hover:border-destructive/20 hover:shadow-md backdrop-blur-sm w-full`}
+                  onClick={() => { setIsMenuOpen(false); signOut({ callbackUrl: '/login' }); }}
+                >
+                  <div className="p-2.5 rounded-lg transition-all duration-300 bg-muted group-hover:bg-white/20">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                  </div>
+                  <span className="flex-1 font-medium">{locale === 'ar' ? 'تسجيل خروج' : 'Logout'}</span>
+                </button>
               </nav>
 
               {/* User Info - Mobile */}
@@ -259,17 +272,6 @@ export default function VerticalHeader() {
                   </div>
                   
                   <div className="mt-4 flex flex-col gap-2">
-                    <Link
-                      href="/profile"
-                      className={`flex items-center gap-3 px-4 py-3 text-foreground hover:text-primary hover:bg-primary/5 ${locale === 'ar' ? 'text-xs font-semibold tracking-wide' : 'text-xs font-medium'} rounded-xl transition-all duration-200 group/item`}
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      <div className="p-1 rounded-lg bg-muted group-hover/item:bg-primary/10 transition-colors">
-                        <ProfileIcon className="w-4 h-4" />
-                      </div>
-                      {t.nav.profile}
-                    </Link>
-                    
                     {/* Mobile Theme Settings */}
                     <div className="border-t border-border pt-2 mt-2">
                       <div className={`text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2 px-4 ${locale === 'ar' ? 'text-right text-xs' : 'text-left'}`}>
@@ -331,18 +333,6 @@ export default function VerticalHeader() {
                         </div>
                       )}
                     </div>
-                    
-                    <button
-                      className={`flex items-center gap-3 px-4 py-3 text-foreground hover:text-destructive hover:bg-destructive/5 ${locale === 'ar' ? 'text-xs font-semibold tracking-wide' : 'text-xs font-medium'} rounded-xl transition-all duration-200 group/item`}
-                      onClick={() => { setIsMenuOpen(false); signOut({ callbackUrl: '/login' }); }}
-                    >
-                      <div className="p-1 rounded-lg bg-muted group-hover/item:bg-destructive/10 transition-colors">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                        </svg>
-                      </div>
-                      Logout
-                    </button>
                   </div>
                 </div>
               </div>
@@ -498,10 +488,82 @@ export default function VerticalHeader() {
                         )}
                       </Link>
                     </li>
+                    
+                    {/* Profile Menu Item */}
+                    <li key="/profile">
+                      <Link
+                        href="/profile"
+                        className={clsx(
+                          'group relative flex items-center gap-x-4 rounded-2xl px-5 py-4 transition-all duration-300 overflow-hidden',
+                          locale === 'ar' ? 'text-base font-semibold tracking-wide' : 'text-base font-semibold',
+                          pathname === '/profile' || pathname.startsWith('/profile')
+                            ? 'bg-gradient-to-r from-primary to-primary/90 text-primary-foreground shadow-lg shadow-primary/25 scale-105'
+                            : 'text-foreground hover:bg-gradient-to-r hover:from-primary/10 hover:to-transparent hover:text-primary hover:scale-102 hover:shadow-md'
+                        )}
+                        aria-current={pathname === '/profile' ? 'page' : undefined}
+                      >
+                        {/* Active indicator */}
+                        {(pathname === '/profile' || pathname.startsWith('/profile')) && (
+                          <div className="absolute left-0 top-0 bottom-0 w-1.5 rounded-r-full bg-primary-foreground" />
+                        )}
+                        
+                        {/* Icon with background */}
+                        <div className={clsx(
+                          'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-all duration-300',
+                          pathname === '/profile' || pathname.startsWith('/profile')
+                            ? 'bg-primary-foreground/20 text-primary-foreground shadow-inner'
+                            : 'bg-muted/50 text-muted-foreground group-hover:bg-primary/20 group-hover:text-primary group-hover:scale-110 group-hover:rotate-3'
+                        )}>
+                          <ProfileIcon className="h-5 w-5" aria-hidden="true" />
+                        </div>
+                        
+                        <span className="truncate font-semibold flex-1">
+                          {t.nav.profile}
+                        </span>
+                        
+                        {/* Hover arrow */}
+                        {!(pathname === '/profile' || pathname.startsWith('/profile')) && (
+                          <svg className="w-4 h-4 opacity-0 group-hover:opacity-100 transform translate-x-0 group-hover:translate-x-1 transition-all duration-300 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d={locale === 'ar' ? "M15 19l-7-7 7-7" : "M9 5l7 7-7 7"} />
+                          </svg>
+                        )}
+                      </Link>
+                    </li>
+                    
+                    {/* Logout Menu Item */}
+                    <li key="logout">
+                      <button
+                        onClick={() => signOut({ callbackUrl: '/login' })}
+                        className={clsx(
+                          'group relative flex items-center gap-x-4 rounded-2xl px-5 py-4 transition-all duration-300 overflow-hidden w-full',
+                          locale === 'ar' ? 'text-base font-semibold tracking-wide' : 'text-base font-semibold',
+                          'text-foreground hover:bg-gradient-to-r hover:from-destructive/10 hover:to-transparent hover:text-destructive hover:scale-102 hover:shadow-md'
+                        )}
+                      >
+                        {/* Icon with background */}
+                        <div className={clsx(
+                          'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-all duration-300',
+                          'bg-muted/50 text-muted-foreground group-hover:bg-destructive/20 group-hover:text-destructive group-hover:scale-110 group-hover:rotate-3'
+                        )}>
+                          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                          </svg>
+                        </div>
+                        
+                        <span className="truncate font-semibold flex-1">
+                          {locale === 'ar' ? 'تسجيل خروج' : 'Logout'}
+                        </span>
+                        
+                        {/* Hover arrow */}
+                        <svg className="w-4 h-4 opacity-0 group-hover:opacity-100 transform translate-x-0 group-hover:translate-x-1 transition-all duration-300 text-destructive" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d={locale === 'ar' ? "M15 19l-7-7 7-7" : "M9 5l7 7-7 7"} />
+                        </svg>
+                      </button>
+                    </li>
                   </ul>
                 </li>
 
-                {/* Settings and User Section */}
+                {/* Settings Section */}
                 <li className="mt-auto">
                   <div className="border-t border-border pt-6 mb-4">
                   </div>
@@ -613,9 +675,9 @@ export default function VerticalHeader() {
                     )}
                   </div>
 
-                  {/* User Profile */}
-                  <div className="group relative mt-6">
-                    <div className="flex items-center gap-x-4 rounded-2xl p-4 bg-gradient-to-r from-primary/5 to-secondary/5 hover:from-primary/10 hover:to-secondary/10 border-2 border-border/50 hover:border-primary/30 transition-all duration-300 cursor-pointer shadow-sm hover:shadow-md">
+                  {/* User Info Display */}
+                  <div className="mt-6">
+                    <div className="flex items-center gap-x-4 rounded-2xl p-4 bg-gradient-to-r from-primary/5 to-secondary/5 border-2 border-border/50 shadow-sm">
                       <div className="relative">
                         <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary via-primary to-primary/80 flex items-center justify-center shadow-lg">
                           <ProfileIcon className="h-6 w-6 text-primary-foreground" />
@@ -627,42 +689,8 @@ export default function VerticalHeader() {
                           {((session?.user?.name as string) || '').split(' ').slice(0, 2).join(' ') || 'Parent Profile'}
                         </p>
                         <p className={`text-muted-foreground truncate ${locale === 'ar' ? 'text-xs font-medium' : 'text-xs'}`}>
-                          {locale === 'ar' ? 'عرض الملف الشخصي' : 'View Profile'}
+                          {(session?.user?.email as string) || ''}
                         </p>
-                      </div>
-                      <ChevronDownIcon className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:rotate-180 transition-all duration-300" />
-                    </div>
-
-                    {/* User Dropdown */}
-                    <div className="absolute bottom-full left-0 right-0 mb-3 bg-gradient-to-b from-card via-card to-card/95 backdrop-blur-xl border-2 border-border/50 rounded-2xl shadow-2xl opacity-0 group-hover:opacity-100 transition-all duration-300 z-20 pointer-events-none group-hover:pointer-events-auto transform translate-y-2 group-hover:translate-y-0 overflow-hidden">
-                      <div className="p-3">
-                        <Link
-                          href="/profile"
-                          className={`flex items-center gap-3 px-4 py-3.5 text-foreground hover:text-primary hover:bg-gradient-to-r hover:from-primary/10 hover:to-transparent rounded-xl transition-all duration-200 group/item ${locale === 'ar' ? 'text-sm font-semibold tracking-wide' : 'text-sm font-semibold'}`}
-                        >
-                          <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center group-hover/item:bg-primary/20 group-hover/item:scale-110 transition-all">
-                            <ProfileIcon className="h-5 w-5 text-primary" />
-                          </div>
-                          <span className="flex-1">{t.nav.profile}</span>
-                          <svg className="w-4 h-4 text-primary opacity-0 group-hover/item:opacity-100 transform -translate-x-1 group-hover/item:translate-x-0 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d={locale === 'ar' ? "M15 19l-7-7 7-7" : "M9 5l7 7-7 7"} />
-                          </svg>
-                        </Link>
-                        <div className="my-2 border-t border-border/50" />
-                        <button
-                          className={`w-full flex items-center gap-3 px-4 py-3.5 text-destructive hover:text-white hover:bg-gradient-to-r hover:from-destructive hover:to-destructive/90 rounded-xl transition-all duration-200 group/item font-semibold ${locale === 'ar' ? 'text-sm tracking-wide' : 'text-sm'}`}
-                          onClick={() => signOut({ callbackUrl: '/login' })}
-                        >
-                          <div className="h-9 w-9 rounded-xl bg-destructive/10 group-hover/item:bg-white/20 flex items-center justify-center group-hover/item:scale-110 transition-all">
-                            <svg className="h-5 w-5 group-hover/item:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                            </svg>
-                          </div>
-                          <span className="flex-1">{locale === 'ar' ? 'تسجيل خروج' : 'Logout'}</span>
-                          <svg className="w-4 h-4 opacity-0 group-hover/item:opacity-100 group-hover/item:text-white transform -translate-x-1 group-hover/item:translate-x-0 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                          </svg>
-                        </button>
                       </div>
                     </div>
                   </div>
