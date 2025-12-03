@@ -1,278 +1,67 @@
 "use client";
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { useToastNotifications } from '@/lib/hooks/use-toast-notifications';
-import { 
-  EditIcon,
-  SettingsIcon,
-  ChevronRightIcon,
-  DownloadIcon
-} from '../components/icons';
-import { 
-  Shield,
-  Key,
-  EyeSlash,
-  UserMinus
-} from '@phosphor-icons/react';
 import { ProfileIcon } from '../components/icons';
 import useSWR from 'swr';
 import { useSession } from 'next-auth/react';
-import type { Person } from '@/types';
+import type { Person } from '@/app/types';
 import { useI18n } from '@/app/i18n/I18nProvider';
-import clsx from 'clsx';
+import { 
+  EnvelopeSimple, 
+  Phone, 
+  IdentificationCard, 
+  MapPin, 
+  CalendarBlank,
+  GenderIntersex,
+  Globe
+} from '@phosphor-icons/react';
 
 export default function ProfilePage() {
   const { t, locale } = useI18n();
-  const toast = useToastNotifications();
-
-  // Get session to extract EID (external identifier)
   const { data: session, status } = useSession();
-  // You may need to adjust this depending on your session shape
-  // Use emiratesId or id from session.user for EID
+  
+  const eid = (session?.user as any)?.emiratesId || (session?.user as any)?.id || session?.user?.email;
 
-  const eid = session?.user?.emiratesId || session?.user?.id || session?.user?.email;
-
-  // During HMR, avoid rendering aggressive redirects; show a lightweight loader if auth is loading
   if (status === 'loading') {
     return <div className="max-w-5xl mx-auto px-4 sm:px-8 py-10 text-center text-muted-foreground">Loading session…</div>;
   }
 
-  // SWR fetcher for API
   const fetcher = (url: string) => fetch(url).then(res => res.json());
-  // Fetch parent and children info from API
   const { data, error, isLoading } = useSWR(
-    eid ? `/api/oneroster/basic-info-full?eid=${encodeURIComponent(eid)}` : null,
+    eid ? `/api/PP/persons?eid=${encodeURIComponent(eid)}` : null,
     fetcher
   );
 
-  // Extract parent and children from API response
-  const person: Person | undefined = Array.isArray(data?.parent) ? data?.parent[0] : undefined;
-  const children: any[] = data?.children || [];
+  // Extract person from the response - it's nested in persons array
+  const person: Person | undefined = data?.persons?.[0] || data?.person || data;
+
+  // Debug: log the data
+  React.useEffect(() => {
+    if (data) {
+      console.log('API Response:', data);
+      console.log('Extracted person:', person);
+    }
+  }, [data, person]);
 
   const getPrimaryEmail = (p: Person): string => {
-    if (p.email && p.email.length) return p.email;
-    const fromContacts = p.metadata?.contacts?.find(
-      (c) => typeof c.contactType === 'string' && c.contactType.toLowerCase().includes('email') && !!c.value
-    )?.value;
-    return fromContacts ?? '';
+    return p.email || p.metadata?.contacts?.[0]?.value || '';
   };
 
   const getPrimaryPhone = (p: Person): string => {
-    if (p.phone && p.phone.length) return p.phone;
-    if (p.sms && p.sms.length) return p.sms;
-    const fromContacts = p.metadata?.contacts?.find(
-      (c) => typeof c.contactType === 'string' && c.contactType.toLowerCase().includes('mobile') && !!c.value
-    )?.value;
-    return fromContacts ?? '';
+    const phoneContact = p.metadata?.contacts?.find(
+      (c: any) => c.contactType?.toLowerCase().includes('mobile')
+    );
+    return p.phone || phoneContact?.value || '';
   };
 
   const getDisplayName = (p: Person, lng: string): string => {
     if (lng === 'ar') {
-      // Prefer Arabic given/family if present
-      const parts = [p.givenName, p.familyName].filter(Boolean) as string[];
-      if (parts.length) return parts.join(' ');
+      return [p.givenName, p.familyName].filter(Boolean).join(' ') || p.username || 'User';
     }
-    // Fallback to English metadata names
-    const enParts = [
-      p.metadata?.englishFirstName,
-      p.metadata?.englishSecondName,
-      p.metadata?.englishThirdName,
-      p.metadata?.englishFamilyName,
-    ].filter(Boolean) as string[];
-    if (enParts.length) return enParts.join(' ');
-    // Last resort
-    return p.username || p.identifier || p.sourcedId;
-  };
-  type ProfileForm = {
-    // Display basics
-    name: string;
-    email: string;
-    phone: string;
-    // Arabic names
-    arabicGivenName: string;
-    arabicMiddleName: string;
-    arabicFamilyName: string;
-    // English names
-    englishFirstName: string;
-    englishSecondName: string;
-    englishThirdName: string;
-    englishFourthName: string;
-    englishFamilyName: string;
-    // Identity
-    identifier: string;
-    username: string;
-    role: string;
-    status: string;
-    type: string;
-    enabledUser: string;
-    // Demographics
-    gender: string;
-    birthDate: string;
-    maritalStatus: string;
-    religion: string;
-    nationality: string;
-    nationalityArabic: string;
-    birthCountry: string;
-    birthCountryArabic: string;
-    birthCity: string;
-    englishBirthCity: string;
-    // Address (primary)
-    address_country: string;
-    address_state: string;
-    address_city: string;
-    address_zipCode: string;
-    address_poBox: string;
-    address_region: string;
-    address_sector: string;
-    address_addressLine1: string;
-    address_addressLine2: string;
-    address_addressLine3: string;
-    address_roadNumber: string;
-    address_plotId: string;
-    address_plotNumber: string;
-  };
-
-  interface ProfileData {
-    preferences: {
-      emailNotifications: boolean;
-      smsNotifications: boolean;
-      pushNotifications: boolean;
-    };
-    children: Array<{
-      id: string;
-      name: string;
-      avatar: string;
-      grade: string;
-      teacher: string;
-    }>;
-    avatar: string;
-  }
-
-  const [isEditing, setIsEditing] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  // Preferences and children state (initialize from API if available)
-  const [profileData, setProfileData] = useState<ProfileData>({
-    preferences: {
-      emailNotifications: true,
-      smsNotifications: false,
-      pushNotifications: false,
-    },
-    children: [],
-    avatar: '/avatar.svg',
-  });
-
-  React.useEffect(() => {
-    if (person) {
-      setProfileData((prev) => ({
-        ...prev,
-        avatar: (person?.metadata?.avatar as string) || '/avatar.svg',
-        children: children.map((child: any) => ({
-          id: child.sourcedId || '',
-          name: [child.metadata?.englishFirstName, child.metadata?.englishFamilyName].filter(Boolean).join(' ') || 'Unknown',
-          avatar: (child.metadata?.avatar as string) || '/avatar.svg',
-          grade: child.grades || '-',
-          teacher: child.metadata?.homeroomTeacher || '-',
-        })),
-      }));
-    }
-  }, [person, children]);
-
-
-  // Compute initial form from API data
-  const primaryAddress = person?.metadata?.addresses?.[0];
-  const initialForm: ProfileForm = React.useMemo(() => ({
-    name: person ? getDisplayName(person, locale) : '',
-    email: person ? getPrimaryEmail(person) : '',
-    phone: person ? getPrimaryPhone(person) : '',
-    arabicGivenName: person?.givenName ?? '',
-    arabicMiddleName: person?.middleName ?? '',
-    arabicFamilyName: person?.familyName ?? '',
-    englishFirstName: person?.metadata?.englishFirstName ?? '',
-    englishSecondName: person?.metadata?.englishSecondName ?? '',
-    englishThirdName: person?.metadata?.englishThirdName ?? '',
-    englishFourthName: person?.metadata?.englishFourthName ?? '',
-    englishFamilyName: person?.metadata?.englishFamilyName ?? '',
-    identifier: person?.identifier ?? '',
-    username: person?.username ?? '',
-    role: person?.role ?? '',
-    status: person?.status ?? '',
-    type: person?.type ?? '',
-    enabledUser: typeof person?.enabledUser === 'boolean' ? String(person?.enabledUser) : (person?.enabledUser ?? ''),
-    gender: person?.metadata?.gender ?? '',
-    birthDate: person?.metadata?.birthDate ?? '',
-    maritalStatus: person?.metadata?.maritalStatus ?? '',
-    religion: person?.metadata?.religion ?? '',
-    nationality: person?.metadata?.nationality ?? '',
-    nationalityArabic: person?.metadata?.nationalityArabic ?? '',
-    birthCountry: person?.metadata?.birthCountry ?? '',
-    birthCountryArabic: person?.metadata?.birthCountryArabic ?? '',
-    birthCity: person?.metadata?.birthCity ?? '',
-    englishBirthCity: person?.metadata?.englishBirthCity ?? '',
-    address_country: primaryAddress?.country ?? '',
-    address_state: primaryAddress?.state ?? '',
-    address_city: primaryAddress?.city ?? '',
-    address_zipCode: primaryAddress?.zipCode ?? '',
-    address_poBox: primaryAddress?.poBox ?? '',
-    address_region: primaryAddress?.region ?? '',
-    address_sector: primaryAddress?.sector ?? '',
-    address_addressLine1: primaryAddress?.addressLine1 ?? '',
-    address_addressLine2: primaryAddress?.addressLine2 ?? '',
-    address_addressLine3: primaryAddress?.addressLine3 ?? '',
-    address_roadNumber: primaryAddress?.roadNumber ?? '',
-    address_plotId: primaryAddress?.plotId ?? '',
-    address_plotNumber: primaryAddress?.plotNumber ?? '',
-  }), [person, locale, primaryAddress]);
-
-  const [formData, setFormData] = useState<ProfileForm>(initialForm);
-  React.useEffect(() => {
-    setFormData(initialForm);
-  }, [initialForm]);
-
-  const handleEdit = () => {
-    setIsEditing(true);
-  };
-
-  const handleCancel = () => {
-    setIsEditing(false);
-    setFormData({ ...initialForm });
-  };
-
-  
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSaving(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      // In a real app, you would save this to an API
-      setIsEditing(false);
-      setIsSaving(false);
-      toast.success(
-        locale === 'ar' ? 'تم التحديث' : 'Updated',
-        t.profile.updatedSuccess
-      );
-    }, 1500);
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData(prev => ({
-      ...prev,
-      [e.target.name]: e.target.value
-    }));
-  };
-
-  const handlePreferenceChange = (key: keyof typeof profileData.preferences) => {
-    setProfileData((prev) => ({
-      ...prev,
-      preferences: {
-        ...prev.preferences,
-        [key]: !prev.preferences[key],
-      },
-    }));
+    return [p.metadata?.englishFirstName, p.metadata?.englishFamilyName].filter(Boolean).join(' ') || p.username || 'User';
   };
 
   if (isLoading) {
@@ -285,8 +74,22 @@ export default function ProfilePage() {
     return <div className="text-center py-10">No profile data found.</div>;
   }
 
+  const displayName = getDisplayName(person, locale);
+  const email = getPrimaryEmail(person);
+  const phone = getPrimaryPhone(person);
+  const arabicName = [person.givenName, person.middleName, person.familyName].filter(Boolean).join(' ');
+  const englishName = [
+    person.metadata?.englishFirstName,
+    person.metadata?.englishSecondName, 
+    person.metadata?.englishThirdName,
+    person.metadata?.englishFourthName,
+    person.metadata?.englishFamilyName
+  ].filter(Boolean).join(' ');
+  const addresses = person.metadata?.addresses || [];
+  const contacts = person.metadata?.contacts || [];
+
   return (
-    <div className={clsx("min-h-screen bg-background", locale === 'ar' && 'direction-rtl')}>
+    <div className="min-h-screen bg-background">
       {/* Hero Section */}
       <div className="bg-gradient-to-br from-primary/5 via-background to-secondary/5 border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
@@ -299,391 +102,347 @@ export default function ProfilePage() {
             </div>
             <div className="flex-1 text-center sm:text-start">
               <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground mb-2">
-                {formData.name}
+                {displayName}
               </h1>
               <div className="flex flex-col sm:flex-row items-center gap-2 text-muted-foreground mb-4">
                 <Badge variant="secondary" className="text-xs">
                   {t.profile.parentAccount}
                 </Badge>
                 <span className="hidden sm:inline">•</span>
-                <span className="text-sm">{formData.identifier}</span>
+                <span className="text-sm">{person.identifier}</span>
               </div>
-              {!isEditing && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleEdit}
-                  className="group transition-all duration-200 hover:shadow-md"
-                >
-                  <EditIcon className="w-4 h-4 me-2 group-hover:scale-110 transition-transform" />
-                  <span>{t.profile.edit}</span>
-                </Button>
-              )}
             </div>
           </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Info */}
-          <div className="lg:col-span-2 space-y-8">
-            {/* Contact & Identity */}
-            <Card className="group hover:shadow-lg transition-all duration-300 border-0 shadow-md">
-              <CardHeader className="pb-4">
-                <CardTitle className="flex items-center gap-3 text-lg font-semibold">
-                  <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <ProfileIcon className="w-4 h-4 text-primary" />
-                  </div>
-                  {t.profile.personalInfo}
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          
+          {/* Left Column - Main Info */}
+          <div className="lg:col-span-2 space-y-6">
+            
+            {/* Contact Information */}
+            <Card className="shadow-sm hover:shadow-md transition-shadow">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Phone className="w-5 h-5 text-primary" weight="duotone" />
+                  {locale === 'ar' ? 'معلومات الاتصال' : 'Contact Information'}
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-1">
-                    <dt className="text-sm font-medium text-muted-foreground">{t.profile.emailAddress}</dt>
-                    <dd className="text-base text-foreground font-medium">{formData.email || '-'}</dd>
-                  </div>
-                  <div className="space-y-1">
-                    <dt className="text-sm font-medium text-muted-foreground">{t.profile.phoneNumber}</dt>
-                    <dd className="text-base text-foreground font-medium">{formData.phone || '-'}</dd>
-                  </div>
-                </div>
-                <Separator className="my-4" />
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-1">
-                    <dt className="text-sm font-medium text-muted-foreground">Identifier</dt>
-                    <dd className="text-sm text-foreground font-mono bg-muted px-2 py-1 rounded">
-                      {person.identifier || '-'}
-                    </dd>
-                  </div>
-                  <div className="space-y-1">
-                    <dt className="text-sm font-medium text-muted-foreground">Username</dt>
-                    <dd className="text-sm text-foreground">{person.username || '-'}</dd>
-                  </div>
-                  <div className="space-y-1">
-                    <dt className="text-sm font-medium text-muted-foreground">Role</dt>
-                    <dd>
-                      <Badge variant="outline" className="text-xs">
-                        {person.role || 'Parent'}
-                      </Badge>
-                    </dd>
-                  </div>
-                  <div className="space-y-1">
-                    <dt className="text-sm font-medium text-muted-foreground">Status</dt>
-                    <dd>
-                      <Badge 
-                        variant={person.status === 'active' ? 'default' : 'secondary'} 
-                        className="text-xs"
-                      >
-                        {person.status || 'Active'}
-                      </Badge>
-                    </dd>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Demographics & Names */}
-            <Card className="group hover:shadow-lg transition-all duration-300 border-0 shadow-md">
-              <CardHeader className="pb-4">
-                <CardTitle className="flex items-center gap-3 text-lg font-semibold">
-                  <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center">
-                    <ProfileIcon className="w-4 h-4 text-accent-foreground" />
-                  </div>
-                  Demographics & Names
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                  <div className="space-y-1">
-                    <dt className="text-sm font-medium text-muted-foreground">Gender</dt>
-                    <dd className="text-sm text-foreground capitalize">{person.metadata?.gender || '-'}</dd>
-                  </div>
-                  <div className="space-y-1">
-                    <dt className="text-sm font-medium text-muted-foreground">Birth Date</dt>
-                    <dd className="text-sm text-foreground">{person.metadata?.birthDate || '-'}</dd>
-                  </div>
-                  <div className="space-y-1">
-                    <dt className="text-sm font-medium text-muted-foreground">Nationality (EN)</dt>
-                    <dd className="text-sm text-foreground">{person.metadata?.nationality || '-'}</dd>
-                  </div>
-                  <div className="space-y-1">
-                    <dt className="text-sm font-medium text-muted-foreground">Nationality (AR)</dt>
-                    <dd className="text-sm text-foreground">{person.metadata?.nationalityArabic || '-'}</dd>
-                  </div>
-                </div>
-                <Separator className="my-4" />
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-3 p-4 bg-muted/30 rounded-lg">
-                    <dt className="text-sm font-semibold text-foreground">Arabic Name</dt>
-                    <dd className="text-base text-foreground font-medium" dir="rtl">
-                      {[person.givenName, person.middleName, person.familyName].filter(Boolean).join(' ') || '-'}
-                    </dd>
-                  </div>
-                  <div className="space-y-3 p-4 bg-muted/30 rounded-lg">
-                    <dt className="text-sm font-semibold text-foreground">English Name</dt>
-                    <dd className="text-base text-foreground font-medium">
-                      {[person.metadata?.englishFirstName, person.metadata?.englishSecondName, person.metadata?.englishThirdName, person.metadata?.englishFourthName, person.metadata?.englishFamilyName].filter(Boolean).join(' ') || '-'}
-                    </dd>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Address */}
-            <Card className="group hover:shadow-lg transition-all duration-300 border-0 shadow-md">
-              <CardHeader className="pb-4">
-                <CardTitle className="flex items-center gap-3 text-lg font-semibold">
-                  <div className="w-8 h-8 rounded-lg bg-secondary/20 flex items-center justify-center">
-                    <svg className="w-4 h-4 text-secondary-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                  </div>
-                  Primary Address
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {primaryAddress ? (
-                  <div className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      <div className="space-y-1">
-                        <dt className="text-sm font-medium text-muted-foreground">Country</dt>
-                        <dd className="text-sm text-foreground">{primaryAddress.country || '-'}</dd>
-                      </div>
-                      <div className="space-y-1">
-                        <dt className="text-sm font-medium text-muted-foreground">State</dt>
-                        <dd className="text-sm text-foreground">{primaryAddress.state || '-'}</dd>
-                      </div>
-                      <div className="space-y-1">
-                        <dt className="text-sm font-medium text-muted-foreground">City</dt>
-                        <dd className="text-sm text-foreground">{primaryAddress.city || '-'}</dd>
-                      </div>
-                      <div className="space-y-1">
-                        <dt className="text-sm font-medium text-muted-foreground">ZIP Code</dt>
-                        <dd className="text-sm text-foreground">{primaryAddress.zipCode || '-'}</dd>
-                      </div>
-                      <div className="space-y-1">
-                        <dt className="text-sm font-medium text-muted-foreground">PO Box</dt>
-                        <dd className="text-sm text-foreground">{primaryAddress.poBox || '-'}</dd>
-                      </div>
-                      <div className="space-y-1">
-                        <dt className="text-sm font-medium text-muted-foreground">Region</dt>
-                        <dd className="text-sm text-foreground">{primaryAddress.region || '-'}</dd>
-                      </div>
-                    </div>
-                    <Separator />
-                    <div className="space-y-3 p-4 bg-muted/30 rounded-lg">
-                      <dt className="text-sm font-semibold text-foreground">Full Address</dt>
-                      <dd className="text-sm text-foreground leading-relaxed">
-                        {[primaryAddress.addressLine1, primaryAddress.addressLine2, primaryAddress.addressLine3].filter(Boolean).join(', ') || 'No address lines provided'}
-                      </dd>
-                      <div className="grid grid-cols-2 gap-4 mt-3">
-                        <div>
-                          <span className="text-xs text-muted-foreground">Road: </span>
-                          <span className="text-xs text-foreground">{primaryAddress.roadNumber || '-'}</span>
-                        </div>
-                        <div>
-                          <span className="text-xs text-muted-foreground">Plot: </span>
-                          <span className="text-xs text-foreground">{primaryAddress.plotNumber || '-'}</span>
-                        </div>
-                      </div>
+              <CardContent className="space-y-4">
+                {/* Primary Email */}
+                {email && (
+                  <div className="flex items-start gap-3 p-3 rounded-lg bg-primary/5 border border-primary/20 hover:bg-primary/10 transition-colors">
+                    <EnvelopeSimple className="w-5 h-5 text-primary mt-0.5" weight="duotone" />
+                    <div className="flex-1">
+                      <dt className="text-xs font-medium text-muted-foreground mb-1 flex items-center gap-2">
+                        {locale === 'ar' ? 'البريد الإلكتروني الأساسي' : 'Primary Email'}
+                        <Badge variant="outline" className="text-[10px] px-1 py-0">
+                          {locale === 'ar' ? 'أساسي' : 'Primary'}
+                        </Badge>
+                      </dt>
+                      <dd className="text-sm text-foreground font-medium">{email}</dd>
                     </div>
                   </div>
-                ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <svg className="w-12 h-12 mx-auto mb-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                    </svg>
-                    <p>No address information available</p>
+                )}
+                
+                {/* Primary Phone */}
+                {phone && (
+                  <div className="flex items-start gap-3 p-3 rounded-lg bg-primary/5 border border-primary/20 hover:bg-primary/10 transition-colors">
+                    <Phone className="w-5 h-5 text-primary mt-0.5" weight="duotone" />
+                    <div className="flex-1">
+                      <dt className="text-xs font-medium text-muted-foreground mb-1 flex items-center gap-2">
+                        {locale === 'ar' ? 'رقم الهاتف الأساسي' : 'Primary Phone'}
+                        <Badge variant="outline" className="text-[10px] px-1 py-0">
+                          {locale === 'ar' ? 'أساسي' : 'Primary'}
+                        </Badge>
+                      </dt>
+                      <dd className="text-sm text-foreground font-medium">{phone}</dd>
+                    </div>
                   </div>
+                )}
+
+                {/* All Other Contacts */}
+                {contacts.length > 0 && (
+                  <>
+                    <Separator className="my-4" />
+                    <div className="space-y-3">
+                      <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                        {locale === 'ar' ? 'جميع جهات الاتصال' : 'All Contacts'}
+                      </h4>
+                      {contacts.map((contact: any, index: number) => (
+                        <div 
+                          key={index} 
+                          className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
+                        >
+                          {contact.contactType?.toLowerCase().includes('email') ? (
+                            <EnvelopeSimple className="w-4 h-4 text-muted-foreground mt-0.5" weight="duotone" />
+                          ) : (
+                            <Phone className="w-4 h-4 text-muted-foreground mt-0.5" weight="duotone" />
+                          )}
+                          <div className="flex-1">
+                            <dt className="text-xs font-medium text-muted-foreground mb-1 flex items-center gap-2">
+                              {contact.contactType || (locale === 'ar' ? 'اتصال' : 'Contact')}
+                              {contact.isPrimary && (
+                                <Badge variant="secondary" className="text-[10px] px-1 py-0">
+                                  {locale === 'ar' ? 'أساسي' : 'Primary'}
+                                </Badge>
+                              )}
+                            </dt>
+                            <dd className="text-sm text-foreground">{contact.value || '-'}</dd>
+                            {contact.note && (
+                              <dd className="text-xs text-muted-foreground mt-1">{contact.note}</dd>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </>
                 )}
               </CardContent>
             </Card>
 
-            {/* Children */}
-            <Card className="group hover:shadow-lg transition-all duration-300 border-0 shadow-md">
-              <CardHeader className="pb-4">
-                <CardTitle className="flex items-center gap-3 text-lg font-semibold">
-                  <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-                    </svg>
-                  </div>
-                  {t.profile.linkedChildren}
+            {/* Personal Details */}
+            <Card className="shadow-sm hover:shadow-md transition-shadow">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <IdentificationCard className="w-5 h-5 text-primary" weight="duotone" />
+                  {locale === 'ar' ? 'التفاصيل الشخصية' : 'Personal Details'}
                 </CardTitle>
-                <p className="text-sm text-muted-foreground ms-11">{t.profile.linkedChildrenSubtitle}</p>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {profileData.children.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <svg className="w-12 h-12 mx-auto mb-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197" />
-                      </svg>
-                      <p>No linked children found</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {arabicName && (
+                    <div className="p-3 rounded-lg bg-muted/30">
+                      <dt className="text-xs font-medium text-muted-foreground mb-1">
+                        {locale === 'ar' ? 'الاسم بالعربي' : 'Arabic Name'}
+                      </dt>
+                      <dd className="text-sm text-foreground font-medium" dir="rtl">{arabicName}</dd>
                     </div>
-                  ) : (
-                    profileData.children.map((child: any) => (
-                      <div key={child.id} className="group/child flex items-center justify-between p-4 border border-border rounded-xl bg-card hover:bg-accent/50 transition-all duration-200">
-                        <div className={clsx("flex items-center gap-4", locale === 'ar' && 'flex-row-reverse')}>
-                          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 flex items-center justify-center group-hover/child:scale-105 transition-transform">
-                            <ProfileIcon className="w-6 h-6 text-primary" weight="duotone" />
-                          </div>
-                          <div className="space-y-1">
-                            <p className="font-semibold text-foreground text-sm">{child.name}</p>
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                              <span>{child.grade}</span>
-                              <span>•</span>
-                              <span>{child.teacher}</span>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Badge variant="secondary" className="text-xs bg-green-50 text-green-700 border-green-200">
-                            {t.profile.active}
-                          </Badge>
-                          <ChevronRightIcon className="w-4 h-4 text-muted-foreground group-hover/child:translate-x-1 transition-transform" />
-                        </div>
+                  )}
+                  {englishName && (
+                    <div className="p-3 rounded-lg bg-muted/30">
+                      <dt className="text-xs font-medium text-muted-foreground mb-1">
+                        {locale === 'ar' ? 'الاسم بالإنجليزي' : 'English Name'}
+                      </dt>
+                      <dd className="text-sm text-foreground font-medium">{englishName}</dd>
+                    </div>
+                  )}
+                  {person.metadata?.birthDate && (
+                    <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/30">
+                      <CalendarBlank className="w-5 h-5 text-muted-foreground mt-0.5" weight="duotone" />
+                      <div className="flex-1">
+                        <dt className="text-xs font-medium text-muted-foreground mb-1">
+                          {locale === 'ar' ? 'تاريخ الميلاد' : 'Birth Date'}
+                        </dt>
+                        <dd className="text-sm text-foreground font-medium">{person.metadata.birthDate}</dd>
                       </div>
-                    ))
+                    </div>
+                  )}
+                  {person.metadata?.gender && (
+                    <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/30">
+                      <GenderIntersex className="w-5 h-5 text-muted-foreground mt-0.5" weight="duotone" />
+                      <div className="flex-1">
+                        <dt className="text-xs font-medium text-muted-foreground mb-1">
+                          {locale === 'ar' ? 'الجنس' : 'Gender'}
+                        </dt>
+                        <dd className="text-sm text-foreground font-medium capitalize">{person.metadata.gender}</dd>
+                      </div>
+                    </div>
+                  )}
+                  {person.metadata?.nationality && (
+                    <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/30">
+                      <Globe className="w-5 h-5 text-muted-foreground mt-0.5" weight="duotone" />
+                      <div className="flex-1">
+                        <dt className="text-xs font-medium text-muted-foreground mb-1">
+                          {locale === 'ar' ? 'الجنسية' : 'Nationality'}
+                        </dt>
+                        <dd className="text-sm text-foreground font-medium">
+                          {locale === 'ar' ? (person.metadata.nationalityArabic || person.metadata.nationality) : person.metadata.nationality}
+                        </dd>
+                      </div>
+                    </div>
+                  )}
+                  {person.metadata?.maritalStatus && (
+                    <div className="p-3 rounded-lg bg-muted/30">
+                      <dt className="text-xs font-medium text-muted-foreground mb-1">
+                        {locale === 'ar' ? 'الحالة الاجتماعية' : 'Marital Status'}
+                      </dt>
+                      <dd className="text-sm text-foreground font-medium capitalize">{person.metadata.maritalStatus}</dd>
+                    </div>
                   )}
                 </div>
               </CardContent>
             </Card>
+
+            {/* Addresses */}
+            {addresses.length > 0 && (
+              <Card className="shadow-sm hover:shadow-md transition-shadow">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <MapPin className="w-5 h-5 text-primary" weight="duotone" />
+                    {locale === 'ar' ? 'العناوين' : 'Addresses'}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {addresses.map((address: any, index: number) => {
+                    const isPrimary = index === 0;
+                    const addressLines = [address.addressLine1, address.addressLine2, address.addressLine3].filter(Boolean);
+                    const cityCountry = [address.city, address.state, address.country].filter(Boolean).join(', ');
+                    
+                    return (
+                      <div 
+                        key={index}
+                        className={`p-4 rounded-lg border transition-all ${
+                          isPrimary 
+                            ? 'bg-primary/5 border-primary/20 hover:bg-primary/10' 
+                            : 'bg-muted/30 border-border hover:bg-muted/50'
+                        }`}
+                      >
+                        {/* Header with Badge */}
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            <MapPin className={`w-4 h-4 ${isPrimary ? 'text-primary' : 'text-muted-foreground'}`} weight="duotone" />
+                            <span className="text-xs font-semibold text-foreground">
+                              {locale === 'ar' ? `العنوان ${index + 1}` : `Address ${index + 1}`}
+                            </span>
+                          </div>
+                          {isPrimary && (
+                            <Badge variant="default" className="text-[10px] px-2 py-0.5">
+                              {locale === 'ar' ? 'أساسي' : 'Primary'}
+                            </Badge>
+                          )}
+                        </div>
+
+                        {/* Address Details */}
+                        <div className="space-y-2">
+                          {addressLines.length > 0 && (
+                            <p className="text-sm text-foreground leading-relaxed">
+                              {addressLines.join(', ')}
+                            </p>
+                          )}
+                          
+                          {cityCountry && (
+                            <p className="text-sm text-muted-foreground">
+                              {cityCountry}
+                            </p>
+                          )}
+
+                          {/* Additional Details */}
+                          {(address.zipCode || address.poBox || address.region) && (
+                            <div className="flex flex-wrap gap-3 mt-3 pt-3 border-t border-border/50">
+                              {address.zipCode && (
+                                <div className="text-xs">
+                                  <span className="text-muted-foreground">{locale === 'ar' ? 'الرمز البريدي:' : 'ZIP:'} </span>
+                                  <span className="text-foreground font-medium">{address.zipCode}</span>
+                                </div>
+                              )}
+                              {address.poBox && (
+                                <div className="text-xs">
+                                  <span className="text-muted-foreground">{locale === 'ar' ? 'ص.ب:' : 'P.O. Box:'} </span>
+                                  <span className="text-foreground font-medium">{address.poBox}</span>
+                                </div>
+                              )}
+                              {address.region && (
+                                <div className="text-xs">
+                                  <span className="text-muted-foreground">{locale === 'ar' ? 'المنطقة:' : 'Region:'} </span>
+                                  <span className="text-foreground font-medium">{address.region}</span>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </CardContent>
+              </Card>
+            )}
           </div>
 
-          {/* Preferences & Actions */}
+          {/* Right Column - Quick Info */}
           <div className="space-y-6">
-            <Card className="group hover:shadow-lg transition-all duration-300 border-0 shadow-md">
-              <CardHeader className="pb-4">
-                <CardTitle className="flex items-center gap-3 text-lg font-semibold">
-                  <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center">
-                    <SettingsIcon className="w-4 h-4 text-accent-foreground" />
-                  </div>
-                  {t.profile.notificationPreferences}
+            
+            {/* Status Card */}
+            <Card className="shadow-sm hover:shadow-md transition-shadow">
+              <CardHeader>
+                <CardTitle className="text-base">
+                  {locale === 'ar' ? 'الحالة' : 'Status'}
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-6">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1 space-y-1">
-                      <p className="text-sm font-medium text-foreground">{t.profile.emailNotifications}</p>
-                      <p className="text-xs text-muted-foreground leading-relaxed">{t.profile.emailNotificationsDesc}</p>
-                    </div>
-                    <button
-                      onClick={() => handlePreferenceChange('emailNotifications')}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
-                        profileData.preferences.emailNotifications ? 'bg-primary shadow-md' : 'bg-input'
-                      }`}
-                      role="switch"
-                      aria-checked={profileData.preferences.emailNotifications}
+              <CardContent className="space-y-3">
+                <div>
+                  <dt className="text-xs font-medium text-muted-foreground mb-2">
+                    {locale === 'ar' ? 'حالة الحساب' : 'Account Status'}
+                  </dt>
+                  <dd>
+                    <Badge 
+                      variant={person.status === 'active' ? 'default' : 'secondary'}
+                      className="text-xs"
                     >
-                      <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-background shadow-sm transition-transform duration-200 ${
-                          profileData.preferences.emailNotifications ? 'translate-x-6' : 'translate-x-1'
-                        }`}
-                      />
-                    </button>
-                  </div>
-                  <Separator />
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1 space-y-1">
-                      <p className="text-sm font-medium text-foreground">{t.profile.smsNotifications}</p>
-                      <p className="text-xs text-muted-foreground leading-relaxed">{t.profile.smsNotificationsDesc}</p>
-                    </div>
-                    <button
-                      onClick={() => handlePreferenceChange('smsNotifications')}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
-                        profileData.preferences.smsNotifications ? 'bg-primary shadow-md' : 'bg-input'
-                      }`}
-                      role="switch"
-                      aria-checked={profileData.preferences.smsNotifications}
-                    >
-                      <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-background shadow-sm transition-transform duration-200 ${
-                          profileData.preferences.smsNotifications ? 'translate-x-6' : 'translate-x-1'
-                        }`}
-                      />
-                    </button>
-                  </div>
-                  <Separator />
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1 space-y-1">
-                      <p className="text-sm font-medium text-foreground">{t.profile.pushNotifications}</p>
-                      <p className="text-xs text-muted-foreground leading-relaxed">{t.profile.pushNotificationsDesc}</p>
-                    </div>
-                    <button
-                      onClick={() => handlePreferenceChange('pushNotifications')}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
-                        profileData.preferences.pushNotifications ? 'bg-primary shadow-md' : 'bg-input'
-                      }`}
-                      role="switch"
-                      aria-checked={profileData.preferences.pushNotifications}
-                    >
-                      <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-background shadow-sm transition-transform duration-200 ${
-                          profileData.preferences.pushNotifications ? 'translate-x-6' : 'translate-x-1'
-                        }`}
-                      />
-                    </button>
-                  </div>
+                      {person.status === 'active' ? (locale === 'ar' ? 'نشط' : 'Active') : (locale === 'ar' ? 'غير نشط' : 'Inactive')}
+                    </Badge>
+                  </dd>
                 </div>
+                <Separator />
+                <div>
+                  <dt className="text-xs font-medium text-muted-foreground mb-2">
+                    {locale === 'ar' ? 'المعرف' : 'Identifier'}
+                  </dt>
+                  <dd className="text-xs text-foreground font-mono bg-muted px-2 py-1 rounded">
+                    {person.identifier || '-'}
+                  </dd>
+                </div>
+                {person.sourcedId && (
+                  <>
+                    <Separator />
+                    <div>
+                      <dt className="text-xs font-medium text-muted-foreground mb-2">
+                        {locale === 'ar' ? 'المعرف المصدر' : 'Source ID'}
+                      </dt>
+                      <dd className="text-xs text-foreground font-mono bg-muted px-2 py-1 rounded break-all">
+                        {person.sourcedId}
+                      </dd>
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
-            <Card className="group hover:shadow-lg transition-all duration-300 border-0 shadow-md">
-              <CardHeader className="pb-4">
-                <CardTitle className="flex items-center gap-3 text-lg font-semibold">
-                  <div className="w-8 h-8 rounded-lg bg-secondary/20 flex items-center justify-center">
-                    <Shield className="w-4 h-4 text-secondary-foreground" />
-                  </div>
-                  {t.profile.accountActions}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <Button 
-                    variant="outline" 
-                    className="w-full justify-start gap-3 h-11 group/btn hover:shadow-sm transition-all duration-200" 
-                    size="sm"
-                  >
-                    <Key className="w-4 h-4 text-muted-foreground group-hover/btn:text-primary transition-colors" />
-                    <span>{t.profile.changePassword}</span>
-                    <ChevronRightIcon className="w-4 h-4 ms-auto text-muted-foreground group-hover/btn:translate-x-1 transition-transform" />
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="w-full justify-start gap-3 h-11 group/btn hover:shadow-sm transition-all duration-200" 
-                    size="sm"
-                  >
-                    <EyeSlash className="w-4 h-4 text-muted-foreground group-hover/btn:text-primary transition-colors" />
-                    <span>{t.profile.privacySettings}</span>
-                    <ChevronRightIcon className="w-4 h-4 ms-auto text-muted-foreground group-hover/btn:translate-x-1 transition-transform" />
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="w-full justify-start gap-3 h-11 group/btn hover:shadow-sm transition-all duration-200" 
-                    size="sm"
-                  >
-                    <DownloadIcon className="w-4 h-4 text-muted-foreground group-hover/btn:text-primary transition-colors" />
-                    <span>{t.profile.downloadData}</span>
-                    <ChevronRightIcon className="w-4 h-4 ms-auto text-muted-foreground group-hover/btn:translate-x-1 transition-transform" />
-                  </Button>
-                  <Separator className="my-4" />
-                  <Button 
-                    variant="outline" 
-                    className="w-full justify-start gap-3 h-11 text-destructive hover:text-destructive hover:bg-destructive/5 hover:border-destructive/20 group/btn transition-all duration-200" 
-                    size="sm"
-                  >
-                    <UserMinus className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
-                    <span>{t.profile.deactivateAccount}</span>
-                    <ChevronRightIcon className="w-4 h-4 ms-auto group-hover/btn:translate-x-1 transition-transform" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+
+            {/* Birth Info Card */}
+            {(person.metadata?.birthCity || person.metadata?.birthCountry) && (
+              <Card className="shadow-sm hover:shadow-md transition-shadow">
+                <CardHeader>
+                  <CardTitle className="text-base">
+                    {locale === 'ar' ? 'معلومات الميلاد' : 'Birth Information'}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {person.metadata?.birthCity && (
+                    <div>
+                      <dt className="text-xs font-medium text-muted-foreground mb-1">
+                        {locale === 'ar' ? 'مدينة الميلاد' : 'Birth City'}
+                      </dt>
+                      <dd className="text-sm text-foreground">
+                        {locale === 'ar' ? person.metadata.birthCity : (person.metadata.englishBirthCity || person.metadata.birthCity)}
+                      </dd>
+                    </div>
+                  )}
+                  {person.metadata?.birthCountry && (
+                    <div>
+                      <dt className="text-xs font-medium text-muted-foreground mb-1">
+                        {locale === 'ar' ? 'بلد الميلاد' : 'Birth Country'}
+                      </dt>
+                      <dd className="text-sm text-foreground">
+                        {locale === 'ar' ? (person.metadata.birthCountryArabic || person.metadata.birthCountry) : person.metadata.birthCountry}
+                      </dd>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
       </div>
