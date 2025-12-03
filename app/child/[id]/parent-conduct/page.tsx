@@ -402,7 +402,22 @@ export default function ParentConductPage() {
     return resolved.length > 0 ? resolved : latestEnrollment?.schoolId || PLACEHOLDER;
   }, [locale, schoolOrg, latestEnrollment]);
 
-  const schoolYearLabel = latestEnrollment?.schoolYear || PLACEHOLDER;
+  const schoolYearLabel = React.useMemo(() => {
+    const rawYear = latestEnrollment?.schoolYear?.trim();
+    if (!rawYear) {
+      return PLACEHOLDER;
+    }
+    // If it already contains a dash, return as is
+    if (rawYear.includes('-')) {
+      return rawYear;
+    }
+    // If it's a single year number, convert to range format
+    const parsed = Number.parseInt(rawYear, 10);
+    if (!Number.isNaN(parsed) && parsed > 0) {
+      return `${parsed - 1}-${parsed}`;
+    }
+    return rawYear;
+  }, [latestEnrollment?.schoolYear]);
   
   const schoolAddress = React.useMemo(() => {
     if (!schoolOrg) return PLACEHOLDER;
@@ -992,8 +1007,6 @@ export default function ParentConductPage() {
                     <InfoField label={t.parentConduct.parentSection.studentFullName} value={studentFullName} />
                     <InfoField label={t.parentConduct.schoolSection.nationalId} value={studentNationalId} mono />
                     <InfoField label={t.parentConduct.parentSection.parentAddress} value={studentAddress} span={2} />
-                    <InfoField label={t.parentConduct.parentSection.contactNumber} value={studentContacts.phone || PLACEHOLDER} />
-                    <InfoField label={t.parentConduct.parentSection.parentEmail} value={studentContacts.email || PLACEHOLDER} />
                   </div>
                 </section>
               </div>
@@ -1110,7 +1123,6 @@ export default function ParentConductPage() {
                   <div><span className="font-medium">{t.parentConduct.signatureSection.school}</span> {schoolName}</div>
                   <div><span className="font-medium">{t.parentConduct.signatureSection.student}</span> {studentFullName}</div>
                   <div><span className="font-medium">{t.parentConduct.signatureSection.parent}</span> {parentFullName}</div>
-                  <div><span className="font-medium">{t.parentConduct.signatureSection.grade}</span> {latestStreamGradeName || PLACEHOLDER}</div>
                 </div>
               </div>
 
