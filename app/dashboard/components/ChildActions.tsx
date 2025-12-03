@@ -346,6 +346,7 @@ export function ChildActions({
     const reason = getActionReason(action, locale);
     const visuals = getActionCardVisuals(action);
     const icon = renderActionIcon(action, { className: "w-4 h-4", "aria-hidden": true });
+    const isRTL = locale === "ar";
 
     return (
       <li key={`${action.configId ?? action.key}`}>
@@ -354,7 +355,8 @@ export function ChildActions({
           onClick={() => handleActionSelect(action)}
           disabled={disabled}
           className={clsx(
-            "flex w-full items-start gap-3 rounded-lg px-3 py-2 text-left transition-colors",
+            "flex w-full items-start gap-3 rounded-lg px-3 py-2 transition-colors",
+            isRTL ? "text-right" : "text-left",
             disabled ? "cursor-not-allowed opacity-60" : "hover:bg-muted"
           )}
         >
@@ -375,6 +377,8 @@ export function ChildActions({
     );
   };
 
+  const isRTL = locale === "ar";
+
   return (
     <div className={clsx("flex flex-wrap items-center gap-3", className)}>
       {renderStatusBanner()}
@@ -394,7 +398,7 @@ export function ChildActions({
             <ChevronDown className="h-4 w-4 opacity-70" aria-hidden="true" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[20rem] p-0" align="start">
+        <PopoverContent className="w-[20rem] p-0" align={isRTL ? "end" : "start"} side="bottom">
           <div className="flex flex-col gap-2 p-2">
             {statusBanner && (
               <div className="flex items-center gap-2 rounded-lg bg-chart-1/10 px-3 py-2 text-xs font-medium text-chart-1">
