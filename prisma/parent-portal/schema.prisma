@@ -158,12 +158,12 @@ model UpdatePeriodConfig {
 model StudentActionConfig {
   id            Int      @id @default(autoincrement())
   educationType String   @db.VarChar(100)
-  actionName    String   @db.VarChar(255)
+  actionName    String   @db.NVarChar(255)
   actionKey     String   @db.VarChar(100)
   isEnabled     Boolean  @default(true)
   displayOrder  Int      @default(0)
-  description   String?  @db.VarChar(Max)
-  configJson    String?  @db.VarChar(Max)
+  description   String?  @db.NVarChar(Max)
+  configJson    String?  @db.NVarChar(Max)
   createdBy     String?  @db.VarChar(64)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt

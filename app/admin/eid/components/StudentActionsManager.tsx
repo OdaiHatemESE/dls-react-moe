@@ -1100,26 +1100,7 @@ export function StudentActionsManager() {
                     Control when this action appears or is disabled.
                   </p>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="statusInclude">Include statuses</Label>
-                    <Input
-                      id="statusInclude"
-                      placeholder="e.g., 1, 3, null"
-                      value={formData.config.statusInclude}
-                      onChange={(e) => updateConfigField("statusInclude", e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="statusExclude">Exclude statuses</Label>
-                    <Input
-                      id="statusExclude"
-                      placeholder="e.g., 2, 5"
-                      value={formData.config.statusExclude}
-                      onChange={(e) => updateConfigField("statusExclude", e.target.value)}
-                    />
-                  </div>
-                </div>
+                {/* Status filtering removed for simplification - actions now show based on update period and other simple rules */}
                 <div className="flex items-center gap-3">
                   <Switch
                     id="requiresUpdatePeriod"

@@ -30,7 +30,11 @@ export async function GET(request: Request) {
       orderBy: [{ educationType: "asc" }, { displayOrder: "asc" }],
     });
 
-    return NextResponse.json(actions);
+    return NextResponse.json(actions, {
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8',
+      },
+    });
   } catch (error) {
     console.error("Error fetching student actions:", error);
     return NextResponse.json(
@@ -88,7 +92,12 @@ export async function POST(request: Request) {
       },
     });
 
-    return NextResponse.json(action, { status: 201 });
+    return NextResponse.json(action, { 
+      status: 201,
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8',
+      },
+    });
   } catch (error) {
     console.error("Error creating student action:", error);
 
@@ -220,7 +229,11 @@ export async function PATCH(request: Request) {
       data,
     });
 
-    return NextResponse.json(action);
+    return NextResponse.json(action, {
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8',
+      },
+    });
   } catch (error) {
     console.error("Error updating student action:", error);
 

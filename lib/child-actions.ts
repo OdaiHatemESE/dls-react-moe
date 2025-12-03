@@ -134,7 +134,7 @@ const FALLBACK_CONFIGS: Record<string, AdminActionConfigSchema> = {
       hrefTemplate: "/child/:studentPersonId/update-info?mode=:updateMode",
     },
     availability: {
-      status: { include: [null, 2, 5] },
+      // Simplified: No status filtering - show for all students during update period
       requiresUpdatePeriod: true,
       requiresActiveEnrollment: true,
     },
@@ -531,15 +531,8 @@ function buildDescriptorFromConfig(
   let disabledReason: LocalizedText | null = null;
   let reasonKey: string | null = null;
 
-  // Check status inclusion
-  if (availability.includeStatuses && !availability.includeStatuses.some((value) => value === status)) {
-    hidden = true;
-  }
-
-  // Check status exclusion
-  if (availability.excludeStatuses && availability.excludeStatuses.some((value) => value === status)) {
-    hidden = true;
-  }
+  // SIMPLIFIED: Status filtering removed - actions now show based on simpler rules
+  // (update period, conduct signature, active enrollment, PDF availability)
 
   // Check conduct signature requirements
   if (availability.requiresConductSignature === "signed" && !context.updateRequest.isConductAgreementSigned) {

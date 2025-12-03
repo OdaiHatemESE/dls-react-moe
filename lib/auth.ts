@@ -142,6 +142,17 @@ export async function fetchIdentityProfile(
   }
 }
 
+// Helper to retrieve id_token from Redis using the stored key
+export async function getIdTokenFromKey(idTokenKey?: string): Promise<string | null> {
+  if (!idTokenKey) return null;
+  try {
+    const token = await redis.get(idTokenKey);
+    return token;
+  } catch {
+    return null;
+  }
+}
+
 export const authOptions: NextAuthOptions = {
   session: { 
     strategy: "jwt",
@@ -222,11 +233,13 @@ export const authOptions: NextAuthOptions = {
       }
       // From OIDC flow
       if (account?.access_token) {
-        const t = token as JWT & { emiratesId?: string; atKey?: string };
+        const t = token as JWT & { emiratesId?: string; atKey?: string; idTokenKey?: string };
         // Store access token in Redis and keep only a small key reference in JWT
         t.atKey = await persistAccessToken(account.access_token, token.sub as string | undefined);
         // Persist id_token if available and extract claims we care about
         if (account.id_token) {
+          // Store id_token in Redis for logout
+          t.idTokenKey = await persistAccessToken(account.id_token, token.sub as string | undefined);
           const idClaims = decodeJwtPayload(account.id_token) || {};
           const maybeEmiratesId = extractEmiratesId(idClaims as Record<string, unknown>);
           if (maybeEmiratesId) t.emiratesId = normalizeEmiratesId(maybeEmiratesId);
@@ -275,13 +288,20 @@ export const authOptions: NextAuthOptions = {
     async redirect({ url, baseUrl }) {
       // Support custom logout flow via /api/auth/logout or /api/auth/signout
       if (url === "/api/auth/logout" || url === "/api/auth/signout") {
-        const logoutBase = process.env.OIDC_LOGOUT_URL || (OIDC_ISSUER ? `${OIDC_ISSUER.replace(/\/$/, "")}/v2/logout` : "");
-        const returnTo = process.env.OIDC_LOGOUT_RETURN_TO || baseUrl;
-        if (logoutBase && OIDC_CLIENT_ID) {
-          return `${logoutBase}?client_id=${encodeURIComponent(OIDC_CLIENT_ID)}&returnTo=${encodeURIComponent(returnTo)}`;
+        // Use OIDC end session endpoint: /connect/endsession
+        const logoutBase = process.env.OIDC_LOGOUT_URL || (OIDC_ISSUER ? `${OIDC_ISSUER.replace(/\/$/, "")}/connect/endsession` : "");
+        const returnTo = process.env.OIDC_LOGOUT_RETURN_TO || `${baseUrl}/login`;
+        
+        if (logoutBase) {
+          // Build OIDC logout URL with id_token_hint and post_logout_redirect_uri
+          const params = new URLSearchParams();
+          params.set('post_logout_redirect_uri', returnTo);
+          
+          // Note: id_token_hint will be appended by the logout button since we need access to the session
+          return `${logoutBase}?${params.toString()}`;
         }
-        // Fallback to base sign-out
-        return baseUrl;
+        // Fallback to login page
+        return `${baseUrl}/login`;
       }
 
       // Allow absolute URLs
@@ -293,10 +313,14 @@ export const authOptions: NextAuthOptions = {
   // Clean up server-stored secrets on sign-out when possible
   events: {
     async signOut({ token }) {
-      const t = token as JWT & { atKey?: string };
-      if (t?.atKey) {
+      const t = token as JWT & { atKey?: string; idTokenKey?: string };
+      const keysToDelete = [];
+      if (t?.atKey) keysToDelete.push(t.atKey);
+      if (t?.idTokenKey) keysToDelete.push(t.idTokenKey);
+      
+      if (keysToDelete.length > 0) {
         try {
-          await redis.del(t.atKey);
+          await redis.del(...keysToDelete);
         } catch {
           // non-fatal
         }

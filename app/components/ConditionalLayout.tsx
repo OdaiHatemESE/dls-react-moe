@@ -11,11 +11,12 @@ import Switcher from "./Switcher";
 export default function ConditionalLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   
-  // Check if current route is an admin route
+  // Check if current route is an admin route or public route (login, signout, etc.)
   const isAdminRoute = pathname?.startsWith("/admin");
+  const isPublicRoute = pathname?.startsWith("/signout") || pathname?.startsWith("/login");
 
-  // For admin routes, render only children without navigation
-  if (isAdminRoute) {
+  // For admin and public routes, render only children without navigation
+  if (isAdminRoute || isPublicRoute) {
     return <>{children}</>;
   }
 
