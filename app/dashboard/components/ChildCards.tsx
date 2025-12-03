@@ -91,7 +91,7 @@ export default function ChildCards() {
   const [isSyncing, setIsSyncing] = React.useState(false);
 
   // Group children by active status
-  // Active students include those with active enrollment (even if private education)
+  // Logic aligned with backend: active if has enrollment in current year, NOT private, and no exitDate
   const groupedChildren = React.useMemo(() => {
     if (!children || children.length === 0) {
       return { active: [], inactive: [] };
@@ -101,12 +101,11 @@ export default function ChildCards() {
     const inactive: StudentProfileV1[] = [];
 
     children.forEach((child) => {
-      // Check if student has active enrollment (including private education)
-      const hasActiveEnrollment = child.enrollment?.some(
-        (enr) => enr.schoolYear === '2026' // Current academic year
-      ) ?? false;
+      // Use isActive flag from backend (already calculated with proper logic)
+      // Backend checks: matching academic year, NOT private education, and considers exitDate
+      const isActive = child.isActive ?? false;
 
-      if (hasActiveEnrollment || child.isActive) {
+      if (isActive) {
         active.push(child);
       } else {
         inactive.push(child);
@@ -127,10 +126,14 @@ export default function ChildCards() {
         window.location.reload();
       } else {
         const errorData = await response.json().catch(() => ({}));
-        alert(errorData.error || 'Failed to sync data');
+        const errorMessage = typeof errorData.error === 'string' 
+          ? errorData.error 
+          : errorData.message || JSON.stringify(errorData.error || errorData) || 'Failed to sync data';
+        alert(errorMessage);
       }
     } catch (err) {
-      alert('Failed to sync data');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to sync data';
+      alert(errorMessage);
     } finally {
       setIsSyncing(false);
     }

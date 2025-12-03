@@ -69,7 +69,7 @@ export async function GET(
           const hasActiveEnrollment = cachedStudent.enrollment?.some(
             (enr) => 
               enr.schoolYear === activeYearStr && 
-              enr.educationType?.toLowerCase() !== 'private'
+              (!enr.exitDate || enr.exitDate.trim() === '')
           ) ?? false;
           
           return NextResponse.json({
@@ -91,7 +91,7 @@ export async function GET(
         const hasActiveEnrollment = cachedStudent.enrollment?.some(
           (enr) => 
             enr.schoolYear === activeYearStr && 
-            enr.educationType?.toLowerCase() !== 'private'
+            (!enr.exitDate || enr.exitDate.trim() === '')
         ) ?? false;
         
         return NextResponse.json({
@@ -215,7 +215,7 @@ export async function GET(
     const hasActiveEnrollment = student.enrollment?.some(
       (enr) => 
         enr.schoolYear === activeYearStr && 
-        enr.educationType?.toLowerCase() !== 'private'
+        (!enr.exitDate || enr.exitDate.trim() === '')
     ) ?? false;
 
     // Add isActive and hasActiveEnrollment to student object

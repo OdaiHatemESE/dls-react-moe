@@ -68,8 +68,8 @@ export async function GET(
           if (student.enrollment && student.enrollment.length > 0 && activeYearStr) {
             hasActiveEnrollment = student.enrollment.some((enr) => {
               const matchesYear = enr.schoolYear === activeYearStr;
-              const isNotPrivate = enr.educationType?.toLowerCase() !== 'private';
-              return matchesYear && isNotPrivate;
+              const hasNotExited = !enr.exitDate || enr.exitDate.trim() === '';
+              return matchesYear && hasNotExited;
             });
           }
 
@@ -167,11 +167,12 @@ export async function GET(
       let hasActiveEnrollment = false;
       
       if (student.enrollment && student.enrollment.length > 0 && activeYearStr) {
-        // Check if student has enrollment matching active academic year with non-private education type
+        // Check if student has enrollment matching active academic year (including private education)
+        // and no exit date (or empty exit date means still enrolled)
         hasActiveEnrollment = student.enrollment.some((enr) => {
           const matchesYear = enr.schoolYear === activeYearStr;
-          const isNotPrivate = enr.educationType?.toLowerCase() !== 'private';
-          return matchesYear && isNotPrivate;
+          const hasNotExited = !enr.exitDate || enr.exitDate.trim() === '';
+          return matchesYear && hasNotExited;
         });
       }
 
