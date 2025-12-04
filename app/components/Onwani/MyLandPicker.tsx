@@ -49,6 +49,7 @@ type Props = {
   className?: string;
   onOk?: (sel: OnwaniSelection) => void;
   onCancel?: () => void;
+  onReset?: () => void; // Called when reset button is clicked
   // Initial selection to preload when reopening
   initialSelection?: Partial<OnwaniSelection>;
 };
@@ -64,6 +65,7 @@ export default function MyLandPicker({
   className,
   onOk,
   onCancel,
+  onReset,
   initialSelection,
 }: Props) {
   // ---------------------------------------------------------------------------
@@ -755,24 +757,25 @@ export default function MyLandPicker({
   const handleReset = () => {
     userInteractedRef.current = true;
     clearMapSelection();
-    // Reset to initial state - clear all data and selections
-    setMunicipality(defaultMunicipality);
-    setDistricts([]); // Clear districts data
+    // Reset selections to unselected state - keep dropdown options but clear selected values
+    setMunicipality(defaultMunicipality); // Reset to default municipality
+    // Keep districts/communities/roads/plotOptions arrays - don't clear them
+    // Just clear the selected values
     setDistrict(undefined);
-    setCommunities([]); // Clear communities data
     setCommunity(undefined);
-    setRoads([]); // Clear roads data
     setRoadId(undefined);
     setPlot("");
-    setPlotOptions([]); // Clear plot options
     setShape(undefined); // Clear shape data
     setAddressValueEn(undefined); // Clear address values
     setAddressValueAr(undefined);
     pendingRef.current = {};
     mapSelectionActiveRef.current = false;
-    onwaniMapDataRef.current = undefined; // Clear Onwani data
-    // Notify map to reset/clear
+    onwaniMapDataRef.current = undefined; // Clear Onwani data including all location details
+    // Notify map to reset/clear and remove any pins
     sendToIframe({ type: "reset", action: "clear" });
+    sendToIframe({ type: "clear-all" });
+    // Notify parent to clear location details panel
+    onReset?.();
   };
 
   const handleOk = async () => {
@@ -1007,7 +1010,11 @@ export default function MyLandPicker({
         </div>
 
         <div className="flex justify-end gap-3 pt-2">
-          <Button variant="outline" onClick={onCancel} className="min-w-[100px]">
+          <Button 
+            variant="outline" 
+            onClick={handleReset} 
+            className="min-w-[100px]"
+          >
             {isAr ? "إلغاء" : "Cancel"}
           </Button>
           <Button 

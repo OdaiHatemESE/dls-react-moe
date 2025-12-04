@@ -931,6 +931,7 @@ export function AddressPicker(props: AddressPickerProps) {
                   showOverlayShape={true}
                   onOk={handleMapSelection}
                   onCancel={handleCancelMapSelection}
+                  onReset={() => setPendingSelection(null)}
                   className="w-full h-full"
                   initialSelection={lastConfirmedSelection ?? undefined}
                 />
