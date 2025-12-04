@@ -51,6 +51,66 @@ const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024;
 const ATTACHMENT_LIMIT_LABEL = '5 MB';
 const ALLOWED_ATTACHMENT_TYPES = ['application/pdf'];
 
+// Helper: validates UAE mobile number format
+function validateUAEMobile(phone: string): { isValid: boolean; error?: string } {
+  const cleaned = phone.trim();
+  
+  // Empty is allowed for non-primary numbers
+  if (!cleaned) {
+    return { isValid: true };
+  }
+  
+  // Remove spaces, dashes, and parentheses for validation
+  const digitsOnly = cleaned.replace(/[\s\-()]/g, '');
+  
+  // Check if contains only digits and optional leading +
+  if (!/^\+?\d+$/.test(digitsOnly)) {
+    return { 
+      isValid: false, 
+      error: 'Phone number must contain only digits (and optional + prefix)'
+    };
+  }
+  
+  // Remove + for further validation
+  const numbers = digitsOnly.replace(/^\+/, '');
+  
+  // UAE mobile formats:
+  // 1. Local format: 05XXXXXXXX (10 digits starting with 05)
+  // 2. International: 9715XXXXXXXX (12 digits starting with 971)
+  
+  if (numbers.startsWith('05')) {
+    // Local UAE format: must be exactly 10 digits
+    if (numbers.length !== 10) {
+      return { 
+        isValid: false, 
+        error: 'UAE mobile number starting with 05 must be exactly 10 digits (05XXXXXXXX)'
+      };
+    }
+    return { isValid: true };
+  } else if (numbers.startsWith('971')) {
+    // International format: must be exactly 12 digits
+    if (numbers.length !== 12) {
+      return { 
+        isValid: false, 
+        error: 'UAE mobile number with country code must be exactly 12 digits (9715XXXXXXXX)'
+      };
+    }
+    // Check that after 971 comes 5 (mobile prefix)
+    if (!numbers.startsWith('9715')) {
+      return { 
+        isValid: false, 
+        error: 'UAE mobile number must start with 9715 when using country code'
+      };
+    }
+    return { isValid: true };
+  } else {
+    return { 
+      isValid: false, 
+      error: 'UAE mobile number must start with 05 (local) or 9715 (international)'
+    };
+  }
+}
+
 // Helper: validates and returns Base64 for attachment based on repo rules
 async function validateAndEncodeAttachment(file: File | null, locale: string): Promise<string> {
   if (!file) return '';
@@ -615,6 +675,17 @@ export default function UpdateStudentInfoPage() {
     });
   };
 
+  const getContactNumberError = (number: string, index: number): string | null => {
+    if (!number.trim()) return null;
+    const validation = validateUAEMobile(number);
+    if (!validation.isValid) {
+      return locale === 'ar'
+        ? 'يجب أن يبدأ الرقم بـ 05 (10 أرقام) أو 9715 (12 رقم)'
+        : validation.error || 'Invalid format';
+    }
+    return null;
+  };
+
   const handleAddContact = () => {
     setContactNumbers((prev) => (prev.length < 2 ? [...prev, ''] : prev));
   };
@@ -837,6 +908,30 @@ export default function UpdateStudentInfoPage() {
     if (!sanitizedContacts[0]) {
       setErrorMessage(updateInfo.validation.primaryContact);
       return;
+    }
+
+    // Validate primary contact number format
+    const primaryValidation = validateUAEMobile(sanitizedContacts[0]);
+    if (!primaryValidation.isValid) {
+      setErrorMessage(
+        locale === 'ar'
+          ? `رقم الهاتف الأساسي غير صحيح: يجب أن يبدأ الرقم بـ 05 (10 أرقام) أو 9715 (12 رقم)`
+          : `Invalid primary contact number: ${primaryValidation.error}`
+      );
+      return;
+    }
+
+    // Validate additional contact number if provided
+    if (sanitizedContacts[1]) {
+      const secondaryValidation = validateUAEMobile(sanitizedContacts[1]);
+      if (!secondaryValidation.isValid) {
+        setErrorMessage(
+          locale === 'ar'
+            ? `رقم الهاتف الإضافي غير صحيح: يجب أن يبدأ الرقم بـ 05 (10 أرقام) أو 9715 (12 رقم)`
+            : `Invalid additional contact number: ${secondaryValidation.error}`
+        );
+        return;
+      }
     }
 
     // Address validation: different rules for Abu Dhabi (map-based) vs other emirates (form-based)
@@ -1545,53 +1640,70 @@ export default function UpdateStudentInfoPage() {
                       )}
                     </Label>
                     <div className="flex gap-3">
-                      <Input
-                        id={`contact-${index}`}
-                        type="tel"
-                        inputMode="tel"
-                        value={number}
-                        onChange={(event) => handleContactChange(index, event.target.value)}
-                        placeholder="05XXXXXXXX"
-                        dir="ltr"
-                        className={clsx(
-                          "flex-1 h-11 bg-background border-2 border-input",
-                          "hover:border-primary/50 focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20",
-                          "transition-all duration-200",
-                          "text-foreground placeholder:text-muted-foreground/60",
-                          locale === 'ar' && 'text-right',
-                          isSubmitting && "opacity-50 cursor-not-allowed"
-                        )}
-                        required={index === 0}
-                        aria-required={index === 0}
-                        aria-invalid={index === 0 && errorMessage?.includes('contact')}
-                        aria-describedby={index === 0 ? 'contact-0-help' : undefined}
-                        disabled={isSubmitting}
-                      />
+                      <div className="flex-1">
+                        <Input
+                          id={`contact-${index}`}
+                          type="tel"
+                          inputMode="tel"
+                          value={number}
+                          onChange={(event) => handleContactChange(index, event.target.value)}
+                          placeholder="05XXXXXXXX"
+                          dir="ltr"
+                          className={clsx(
+                            "w-full h-11 bg-background border-2",
+                            getContactNumberError(number, index) 
+                              ? "border-destructive focus:border-destructive focus-visible:ring-destructive/20"
+                              : "border-input hover:border-primary/50 focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20",
+                            "transition-all duration-200",
+                            "text-foreground placeholder:text-muted-foreground/60",
+                            locale === 'ar' && 'text-right',
+                            isSubmitting && "opacity-50 cursor-not-allowed"
+                          )}
+                          required={index === 0}
+                          aria-required={index === 0}
+                          aria-invalid={!!getContactNumberError(number, index)}
+                          aria-describedby={`contact-${index}-help ${getContactNumberError(number, index) ? `contact-${index}-error` : ''}`}
+                          disabled={isSubmitting}
+                        />
+                      </div>
                       {index > 0 && (
                         <Button
                           type="button"
                           variant="outline"
-                          onClick={() => handleRemoveContact(index)}
+                          onClick={() => handleContactChange(index, '')}
                           disabled={isSubmitting}
-                          aria-label={`${updateInfo.contactSection.removeButton} ${index + 1}`}
+                          aria-label={`${locale === 'ar' ? 'مسح' : 'Clear'} ${index + 1}`}
                           className={clsx(
                             "shrink-0 h-11 border-2",
-                            "hover:bg-destructive/10 hover:text-destructive hover:border-destructive/50",
+                            "hover:bg-muted hover:text-foreground hover:border-border",
                             "transition-all duration-200"
                           )}
                         >
-                          <span className="hidden sm:inline">{updateInfo.contactSection.removeButton}</span>
+                          <span className="hidden sm:inline">{locale === 'ar' ? 'مسح' : 'Clear'}</span>
                           <svg className="w-4 h-4 sm:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                           </svg>
                         </Button>
                       )}
                     </div>
-                    {index === 0 && (
-                      <p id="contact-0-help" className="text-xs text-muted-foreground">
-                        {locale === 'ar' 
-                          ? 'رقم الهاتف المحمول الرئيسي للتواصل العاجل'
-                          : 'Primary mobile number for urgent contact'}
+                    {getContactNumberError(number, index) && (
+                      <p id={`contact-${index}-error`} className="text-xs text-destructive flex items-center gap-1.5 animate-in slide-in-from-top-1">
+                        <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>{getContactNumberError(number, index)}</span>
+                      </p>
+                    )}
+                    {index === 0 && !getContactNumberError(number, index) && (
+                      <p id="contact-0-help" className="text-xs text-muted-foreground flex items-center gap-1.5">
+                        <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>
+                          {locale === 'ar' 
+                            ? 'رقم الهاتف المحمول الرئيسي للتواصل العاجل (05XXXXXXXX أو 9715XXXXXXXX)'
+                            : 'Primary mobile number for urgent contact (05XXXXXXXX or 9715XXXXXXXX)'}
+                        </span>
                       </p>
                     )}
                   </div>
@@ -2163,9 +2275,9 @@ export default function UpdateStudentInfoPage() {
                   <div className="space-y-3">
                     <Badge variant={confirmAddress.source === 'idh' ? 'secondary' : 'outline'} className="mb-2">
                       {confirmAddress.source === 'idh'
-                        ? (locale === 'ar' ? 'العنوان السابق (IDH)' : 'Previously submitted (IDH)')
+                        ? (locale === 'ar' ? 'العنوان السابق' : 'Previously submitted')
                         : confirmAddress.source === 'oneroster'
-                          ? (locale === 'ar' ? 'العنوان الحالي (OneRoster)' : 'Current address (OneRoster)')
+                          ? (locale === 'ar' ? 'العنوان الحالي' : 'Current address')
                           : (locale === 'ar' ? 'لا يوجد عنوان' : 'No address')}
                     </Badge>
                     {confirmAddress.source === 'empty' ? (
@@ -2174,39 +2286,39 @@ export default function UpdateStudentInfoPage() {
                       </div>
                     ) : (
                       <div className="space-y-2.5 bg-background/50 p-4 rounded-lg border border-border/40">
-                        <div className={clsx("flex gap-3", locale === 'ar' && 'flex-row-reverse text-right')}>
+                        <div className={clsx("flex gap-3", locale === 'ar' && 'flex-row text-right')}>
                           <span className="font-medium text-muted-foreground min-w-[90px] shrink-0">{locale === 'ar' ? 'الإمارة:' : 'Emirate:'}</span>
                           <span className="text-foreground font-medium">{confirmAddress.data.emirate || '—'}</span>
                         </div>
-                        <div className={clsx("flex gap-3", locale === 'ar' && 'flex-row-reverse text-right')}>
+                        <div className={clsx("flex gap-3", locale === 'ar' && 'flex-row text-right')}>
                           <span className="font-medium text-muted-foreground min-w-[90px] shrink-0">{locale === 'ar' ? 'المنطقة:' : 'Area:'}</span>
                           <span className="text-foreground font-medium">{confirmAddress.data.area || '—'}</span>
                         </div>
-                        <div className={clsx("flex gap-3", locale === 'ar' && 'flex-row-reverse text-right')}>
+                        <div className={clsx("flex gap-3", locale === 'ar' && 'flex-row text-right')}>
                           <span className="font-medium text-muted-foreground min-w-[90px] shrink-0">{locale === 'ar' ? 'الشارع:' : 'Street:'}</span>
                           <span className="text-foreground font-medium">{confirmAddress.data.street || '—'}</span>
                         </div>
-                        <div className={clsx("flex gap-3", locale === 'ar' && 'flex-row-reverse text-right')}>
+                        <div className={clsx("flex gap-3", locale === 'ar' && 'flex-row text-right')}>
                           <span className="font-medium text-muted-foreground min-w-[90px] shrink-0">{locale === 'ar' ? 'المبنى/المنزل:' : 'House/Building:'}</span>
                           <span className="text-foreground font-medium">{confirmAddress.data.houseBuilding || '—'}</span>
                         </div>
-                        <div className={clsx("flex gap-3", locale === 'ar' && 'flex-row-reverse text-right')}>
+                        <div className={clsx("flex gap-3", locale === 'ar' && 'flex-row text-right')}>
                           <span className="font-medium text-muted-foreground min-w-[90px] shrink-0">{locale === 'ar' ? 'المنطقة الإدارية:' : 'Region:'}</span>
                           <span className="text-foreground font-medium">{confirmAddress.data.region || '—'}</span>
                         </div>
-                        <div className={clsx("flex gap-3", locale === 'ar' && 'flex-row-reverse text-right')}>
+                        <div className={clsx("flex gap-3", locale === 'ar' && 'flex-row text-right')}>
                           <span className="font-medium text-muted-foreground min-w-[90px] shrink-0">{locale === 'ar' ? 'الحي/القطاع:' : 'Zone:'}</span>
                           <span className="text-foreground font-medium">{confirmAddress.data.zone || '—'}</span>
                         </div>
-                        <div className={clsx("flex gap-3", locale === 'ar' && 'flex-row-reverse text-right')}>
+                        <div className={clsx("flex gap-3", locale === 'ar' && 'flex-row text-right')}>
                           <span className="font-medium text-muted-foreground min-w-[90px] shrink-0">{locale === 'ar' ? 'القطعة:' : 'Plot:'}</span>
                           <span className="text-foreground font-medium">{confirmAddress.data.plot || '—'}</span>
                         </div>
-                        <div className={clsx("flex gap-3", locale === 'ar' && 'flex-row-reverse text-right')}>
+                        <div className={clsx("flex gap-3", locale === 'ar' && 'flex-row text-right')}>
                           <span className="font-medium text-muted-foreground min-w-[90px] shrink-0">{locale === 'ar' ? 'القطعة الرئيسية:' : 'Main Plot:'}</span>
                           <span className="text-foreground font-medium">{confirmAddress.data.mainPlot || '—'}</span>
                         </div>
-                        <div className={clsx("flex gap-3", locale === 'ar' && 'flex-row-reverse text-right')}>
+                        <div className={clsx("flex gap-3", locale === 'ar' && 'flex-row text-right')}>
                           <span className="font-medium text-muted-foreground min-w-[90px] shrink-0">{locale === 'ar' ? 'الموقع/المبنى:' : 'Premises:'}</span>
                           <span className="text-foreground font-medium">{confirmAddress.data.premises || '—'}</span>
                         </div>
@@ -2256,7 +2368,7 @@ export default function UpdateStudentInfoPage() {
                 <label
                   className={clsx(
                     'flex items-start gap-3 text-sm font-medium text-foreground cursor-pointer',
-                    locale === 'ar' && 'flex-row-reverse text-right'
+                    locale === 'ar' && 'flex-row text-right'
                   )}
                 >
                   <input
@@ -2278,14 +2390,14 @@ export default function UpdateStudentInfoPage() {
                   <div className="space-y-1">
                     <span>
                       {locale === 'ar'
-                        ? 'تطبيق نفس التحديث على الأطفال المؤهلين'
-                        : 'Apply the same update to eligible children'}
+                        ? 'تطبيق نفس التعديلات على جميع الأبناء المرتبطين بحسابك'
+                        : 'Apply the same update to all children linked to your account'}
                     </span>
                     {!applyToAllChildren && (
                       <p className="text-xs text-muted-foreground">
                         {locale === 'ar'
-                          ? 'سيتم التحقق من الأطفال المؤهلين بعد تحديد هذا الخيار.'
-                          : 'Eligibility is checked once you enable this option.'}
+                          ? 'سيتم تطبيق نفس التعديلات على جميع الأبناء المرتبطين بحسابك عند اختيار هذا الخيار.'
+                          : 'The same changes will be applied to all children linked to your account when this option is selected.'}
                       </p>
                     )}
                   </div>
@@ -2347,7 +2459,7 @@ export default function UpdateStudentInfoPage() {
                               key={childId}
                               className={clsx(
                                 'flex items-start gap-3 rounded-md border border-border/30 bg-card/40 px-3 py-2 transition-colors hover:border-primary/40',
-                                locale === 'ar' && 'flex-row-reverse text-right'
+                                locale === 'ar' && 'flex-row text-right'
                               )}
                             >
                               <input
@@ -2383,7 +2495,7 @@ export default function UpdateStudentInfoPage() {
 
             {/* Warning Message */}
             <div className="rounded-lg border-2 border-amber-500/40 bg-gradient-to-r from-amber-50 to-amber-100/50 dark:from-amber-950/30 dark:to-amber-900/20 p-5">
-              <div className={clsx("flex gap-4", locale === 'ar' && 'flex-row-reverse')}>
+              <div className={clsx("flex gap-4", locale === 'ar' && 'flex-row')}>
                 <svg className="w-6 h-6 text-amber-600 dark:text-amber-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
