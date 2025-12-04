@@ -63,10 +63,15 @@ export function Combobox({
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-full p-0" align="start">
-        <Command>
+      <PopoverContent 
+        className="p-0 w-[var(--radix-popover-trigger-width)]" 
+        align="start"
+        onOpenAutoFocus={(e) => e.preventDefault()}
+        onWheel={(e) => e.stopPropagation()}
+      >
+        <Command shouldFilter={false} className="h-auto">
           <CommandInput placeholder={searchPlaceholder} />
-          <CommandList>
+          <CommandList className="scroll-smooth">
             <CommandEmpty>{emptyText}</CommandEmpty>
             <CommandGroup>
               {options.map((option) => (
