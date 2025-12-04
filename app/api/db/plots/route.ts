@@ -57,6 +57,7 @@ export async function GET(req: Request) {
     }
 
     // Fetch ManhalCodes from the entire hierarchy: Plot → Area → Zone → Region → Emirate
+    // Search in PremisesPlotId (the only GISID-related column in Plots table)
     const likeParam = `%${filter}`;
     const rows = (await prisma.$queryRaw(
       Prisma.sql`
@@ -75,6 +76,8 @@ export async function GET(req: Request) {
         INNER JOIN Regions r ON r.Id = z.RegionId
         INNER JOIN Emirates e ON e.Id = r.EmirateId
         WHERE p.PremisesPlotId LIKE ${likeParam}
+           OR p.PlotNumber LIKE ${likeParam}
+           OR p.ExternalId LIKE ${likeParam}
       `
     )) as HierarchyRow[];
 

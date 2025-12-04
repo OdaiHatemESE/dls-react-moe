@@ -145,6 +145,10 @@ export async function GET(req: Request) {
         statusId: getNum(['statusId', 'Status_ID', 'StatusId']),
         datetime: getStr(['datetime', 'Datetime']),
         ReturnComment: getStr(['ReturnComment', 'returnComment']) || undefined,
+        stateID: getStr(['stateID', 'StateID', 'stateId']) || undefined,
+        cityID: getStr(['cityID', 'CityID', 'cityId']) || undefined,
+        regionID: getStr(['regionID', 'RegionID', 'regionId']) || undefined,
+        sectorID: getStr(['sectorID', 'SectorID', 'sectorId']) || undefined,
       };
     };
 

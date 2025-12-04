@@ -25,6 +25,10 @@ export interface IDHStudent {
   sourceId: string;
   datetime: string;
   ReturnComment?: string;
+  stateID?: string;
+  cityID?: string;
+  regionID?: string;
+  sectorID?: string;
 }
 
 export interface IDHApiResponse {

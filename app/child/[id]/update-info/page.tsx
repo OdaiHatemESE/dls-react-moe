@@ -1024,6 +1024,38 @@ export default function UpdateStudentInfoPage() {
       }
       // INIT mode with no document will remain empty string
 
+      // ========== Fetch ManhalCodes from plots API if address changed ==========
+      let stateID: string | undefined;
+      let cityID: string | undefined;
+      let regionID: string | undefined;
+      let sectorID: string | undefined;
+
+      // Determine GISID: prefer mainPlotId, fallback to premisesPlotId, then plotId
+      const gisid = preparedPayload.addressChanged 
+        ? (preparedPayload.newAddress?.mainPlotId || 
+           preparedPayload.newAddress?.premisesPlotId || 
+           (preparedPayload.newAddress?.plotId ? String(preparedPayload.newAddress.plotId) : null))
+        : null;
+
+      if (preparedPayload.addressChanged && gisid) {
+        try {
+          const plotsResponse = await fetch(`/api/db/plots?filter=${encodeURIComponent(gisid)}`);
+          
+          if (plotsResponse.ok) {
+            const plotsData = await plotsResponse.json();
+            
+            if (plotsData.data) {
+              stateID = plotsData.data.emirateManhalCode || undefined;
+              cityID = plotsData.data.regionManhalCode || undefined;
+              regionID = plotsData.data.zoneManhalCode || undefined;
+              sectorID = plotsData.data.areaManhalCode || undefined;
+            }
+          }
+        } catch {
+          // Silently handle ManhalCode fetch errors
+        }
+      }
+
       // ========== Build payload based on mode ==========
       const idhPayload: IDHStudent = {
         studentNumber: studentNumber ?? '',
@@ -1046,6 +1078,10 @@ export default function UpdateStudentInfoPage() {
         attachment01: attachmentBase64,
         statusId: mode === 'init' ? 1 : 3, // STATUS: INIT=1, EDIT=3
         datetime: new Date().toISOString(),
+        stateID: stateID,
+        cityID: cityID,
+        regionID: regionID,
+        sectorID: sectorID,
       };
 
       await submitToIDH(idhPayload);
