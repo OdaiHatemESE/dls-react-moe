@@ -50,9 +50,9 @@ export default function SchoolInfo({ studentId, year }: { studentId: string; yea
   const { t, locale } = useI18n();
   const swrKey = (() => {
     if (!studentId) return null;
-    const base = `/api/oneroster/schoolenrollments?studentId=${encodeURIComponent(studentId)}`;
+    const base = `/api/PP/student/${encodeURIComponent(studentId)}/enrollments`;
     if (!year || year === 'all') return base;
-    return `${base}&schoolYear=${encodeURIComponent(year)}`;
+    return `${base}?schoolYear=${encodeURIComponent(year)}`;
   })();
   const { data, error, isLoading } = useSWR<ApiResponse>(swrKey);
 

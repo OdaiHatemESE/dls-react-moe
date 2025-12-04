@@ -15,7 +15,6 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { getActiveAcademicYearValue } from '@/lib/admin-config';
 
 import SchoolInfo from './SchoolInfo';
 import StreamGrades from './StreamGrades';
@@ -26,47 +25,18 @@ import { ChildStatusBadge } from '@/app/dashboard/components/ChildActions';
 
 type StudentProfileWithMeta = StudentProfileV1 & { meta?: { cache?: CacheMeta } };
 
-const DEFAULT_ACADEMIC_YEAR = "2025-2026";
-
-function parseEntryDate(value?: string | null): number {
-  if (!value) return Number.NEGATIVE_INFINITY;
-  const timestamp = new Date(value).getTime();
-  return Number.isNaN(timestamp) ? Number.NEGATIVE_INFINITY : timestamp;
-}
-
-function resolveLatestEnrollment(enrollments?: StudentProfileV1["enrollment"]): StudentProfileV1["enrollment"][number] | null {
-  if (!enrollments || enrollments.length === 0) return null;
-  const [first, ...rest] = enrollments;
-  let latest = first;
-  let latestTime = parseEntryDate(first.entryDate);
-
-  for (const entry of rest) {
-    const entryTime = parseEntryDate(entry.entryDate);
-    if (entryTime > latestTime) {
-      latest = entry;
-      latestTime = entryTime;
-    }
-  }
-
-  return latest;
-}
-
-function normalizeAcademicYear(value?: string | null): string | null {
-  const trimmed = typeof value === "string" ? value.trim() : "";
-  if (!trimmed) return null;
-  if (trimmed.includes("-")) return trimmed;
-  const parsed = Number.parseInt(trimmed, 10);
-  if (!Number.isNaN(parsed) && parsed > 0) {
-    return `${parsed - 1}-${parsed}`;
-  }
-  return trimmed;
-}
-
-function deriveAcademicYear(enrollments?: StudentProfileV1["enrollment"]): string {
-  const latest = resolveLatestEnrollment(enrollments);
-  const normalized = normalizeAcademicYear(latest?.schoolYear);
-  return normalized ?? DEFAULT_ACADEMIC_YEAR;
-}
+type ActiveAcademicYearResponse = {
+  id?: number;
+  academicYear?: string;
+  yearValue: number;
+  isActive?: boolean;
+  description?: string | null;
+  createdAt?: Date;
+  updatedAt?: Date;
+  isDefault: boolean;
+  message?: string;
+  error?: string;
+};
 
 export default function ChildDetailPage() {
   const { t, locale } = useI18n();
@@ -76,7 +46,19 @@ export default function ChildDetailPage() {
   // Fetch student data from PP API
   const swrKey = sourcedId ? `/api/PP/student/${encodeURIComponent(sourcedId)}` : null;
   const { data: student, error, isLoading } = useSWR<StudentProfileV1>(swrKey, jsonFetcher);
-  const [year, setYear] = React.useState<string>(() => String(new Date().getFullYear()));
+  
+  // Fetch active academic year from admin config
+  const { data: activeYearData } = useSWR<ActiveAcademicYearResponse>('/api/admin/academic-year/active', jsonFetcher);
+  const activeAcademicYear = activeYearData?.yearValue ? String(activeYearData.yearValue) : String(new Date().getFullYear());
+  
+  const [year, setYear] = React.useState<string>(activeAcademicYear);
+  
+  // Update year when active academic year loads
+  React.useEffect(() => {
+    if (activeYearData?.yearValue) {
+      setYear(String(activeYearData.yearValue));
+    }
+  }, [activeYearData]);
   
   // Extract meta information for RefreshBar without introducing any casts
   const meta = (student as StudentProfileWithMeta | null)?.meta;
@@ -273,7 +255,7 @@ export default function ChildDetailPage() {
                           locale={locale} 
                           studentId={student.id}
                           studentNumber={student.studentNumber}
-                          academicYear={deriveAcademicYear(student.enrollment)}
+                          academicYear={activeAcademicYear}
                         />
                       ) : (
                         <div className="text-center py-4 px-3 bg-muted/50 rounded-lg border border-border/50">
