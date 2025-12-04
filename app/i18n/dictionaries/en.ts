@@ -310,7 +310,7 @@ export const en = {
     given_name: "Given Name",
     family_name: "Family Name",
     username: "Username",
-    identifier: "Identifier",
+    identifier: "Emirate Id",
     email: "Email",
     phone: "Phone",
     role: "Role",
@@ -337,6 +337,9 @@ export const en = {
     plot_id: "Plot Id",
     plot_number: "Plot Number",
     no_address_available: "No address available",
+    basic_info_subtitle: "Personal identification and contact details",
+    address_info_subtitle: "Current residential address information",
+    no_address_title: "No Address Information",
   },
   pickLocation: {
     title: "Pick Location",
