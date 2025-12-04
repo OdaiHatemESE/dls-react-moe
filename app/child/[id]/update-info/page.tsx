@@ -2097,7 +2097,7 @@ export default function UpdateStudentInfoPage() {
       <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto animate-in zoom-in-95 fade-in duration-300">
           <DialogHeader className="space-y-3 pb-2">
-            <DialogTitle className={clsx("flex items-center gap-3 text-xl font-bold", locale === 'ar' && 'flex-row-reverse text-right')}>
+            <DialogTitle className={clsx("flex items-center gap-3 text-xl font-bold", locale === 'ar' && 'flex-row text-right')}>
               <div className="w-12 h-12 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0">
                 <svg className="w-7 h-7 text-amber-600 dark:text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -2130,7 +2130,7 @@ export default function UpdateStudentInfoPage() {
                 </h4>
               </div>
               <div className="p-4 space-y-3">
-                <div className={clsx("flex items-center gap-3", locale === 'ar' && 'flex-row-reverse justify-end')}>
+                <div className={clsx("flex items-center gap-3", locale === 'ar' && 'flex-row justify-start')}>
                   <Badge variant="secondary" className="shrink-0">
                     {locale === 'ar' ? 'الأساسي' : 'Primary'}
                   </Badge>
@@ -2139,7 +2139,7 @@ export default function UpdateStudentInfoPage() {
                   </span>
                 </div>
                 {preparedPayload?.contactNumbers[1] && (
-                  <div className={clsx("flex items-center gap-3", locale === 'ar' && 'flex-row-reverse justify-end')}>
+                  <div className={clsx("flex items-center gap-3", locale === 'ar' && 'flex-row justify-start')}>
                     <Badge variant="outline" className="shrink-0">
                       {locale === 'ar' ? 'الثانوي' : 'Secondary'}
                     </Badge>
