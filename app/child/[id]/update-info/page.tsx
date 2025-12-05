@@ -187,17 +187,17 @@ function localizedName(
 }
 
 // Normalize a free-text transportation value from IDH into our select model
-function normalizeTransportation(raw?: string | null): { value: 'car' | 'bus' | 'public' | 'other'; otherText: string } {
+function normalizeTransportation(raw?: string | null): { value: 'Bus' | 'Car' | 'On Foot' } {
   const t = (raw ?? '').trim();
-  if (!t) return { value: 'other', otherText: '' };
+  if (!t) return { value: 'On Foot' };
   const l = t.toLowerCase();
-  const isCar = l === 'car' || l === 'private car' || l === 'private';
-  const isBus = l === 'bus' || l === 'school bus' || l === 'schoolbus';
-  const isPublic = l === 'public' || l === 'public transport' || l === 'public transportation' || l === 'metro' || l === 'tram';
-  if (isCar) return { value: 'car', otherText: '' };
-  if (isBus) return { value: 'bus', otherText: '' };
-  if (isPublic) return { value: 'public', otherText: '' };
-  return { value: 'other', otherText: t };
+  const isCar = l === 'car' || l === 'private car' || l === 'private' || l === 'بالسيارة';
+  const isBus = l === 'bus' || l === 'school bus' || l === 'schoolbus' || l === 'بواسطة الحافلة';
+  const isOnFoot = l === 'on foot' || l === 'walking' || l === 'walk' || l === 'سيراً على الأقدام' || l === 'سيرا على الاقدام';
+  if (isCar) return { value: 'Car' };
+  if (isBus) return { value: 'Bus' };
+  if (isOnFoot) return { value: 'On Foot' };
+  return { value: 'On Foot' };
 }
 
 function getDisplayName(profile: StudentProfileV1, locale: string): string {
@@ -361,7 +361,6 @@ export default function UpdateStudentInfoPage() {
   const [newAddress, setNewAddress] = React.useState<AddressValue | null>(null);
   const [supportingDocument, setSupportingDocument] = React.useState<File | null>(null);
   const [transportation, setTransportation] = React.useState<string>('');
-  const [otherTransportation, setOtherTransportation] = React.useState<string>('');
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
   const [addressSaveState, setAddressSaveState] = React.useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const addressSignatureRef = React.useRef<string | null>(null);
@@ -427,9 +426,8 @@ export default function UpdateStudentInfoPage() {
     setContactNumbers(numbers.length > 0 ? numbers.slice(0, 2) : ['']);
 
     // Prefill transportation
-    const { value, otherText } = normalizeTransportation(idh.transportationType);
+    const { value } = normalizeTransportation(idh.transportationType);
     setTransportation(value);
-    setOtherTransportation(value === 'other' ? otherText : '');
   }, [mode, idhResp]);
 
   // ========== Track unsaved changes (mode-specific baseline) ==========
@@ -462,11 +460,10 @@ export default function UpdateStudentInfoPage() {
 
     const baseline = initialContacts.length > 0 ? initialContacts : [''];
     const contactsChanged = JSON.stringify(contactNumbers) !== JSON.stringify(baseline);
-    const currentTransportation = transportation === 'other' ? otherTransportation.trim() : transportation;
-    const transportationChanged = currentTransportation !== initialTransportation;
+    const transportationChanged = transportation !== initialTransportation;
     const hasChanges = contactsChanged || addressChanged || transportationChanged;
     setHasUnsavedChanges(hasChanges);
-  }, [contactNumbers, addressChanged, transportation, otherTransportation, student, mode, idhResp]);
+  }, [contactNumbers, addressChanged, transportation, student, mode, idhResp]);
 
   // Warn before leaving with unsaved changes
   React.useEffect(() => {
@@ -977,11 +974,6 @@ export default function UpdateStudentInfoPage() {
       return;
     }
 
-    if (transportation === 'other' && !otherTransportation.trim()) {
-      setErrorMessage(updateInfo.validation.otherTransportation);
-      return;
-    }
-
     // Prepare payload and show confirmation dialog
     const payload: PreparedPayload = {
       studentId: sourcedId || '',
@@ -990,7 +982,7 @@ export default function UpdateStudentInfoPage() {
       addressChanged,
       newAddress: addressChanged ? newAddress : null,
       documentName: supportingDocument ? supportingDocument.name : null,
-      transportation: transportation === 'other' ? otherTransportation.trim() : transportation,
+      transportation: transportation,
     };
 
     setPreparedPayload(payload);
@@ -1960,50 +1952,12 @@ export default function UpdateStudentInfoPage() {
                     <SelectValue placeholder={locale === 'ar' ? 'اختر طريقة المواصلات' : 'Select a method'} />
                   </SelectTrigger>
                   <SelectContent dir={locale === 'ar' ? 'rtl' : 'ltr'} className={clsx(locale === 'ar' && 'text-right')}>
-                    <SelectItem value="car">{updateInfo.transportationSection.options.car}</SelectItem>
-                    <SelectItem value="bus">{updateInfo.transportationSection.options.bus}</SelectItem>
-                    <SelectItem value="public">{updateInfo.transportationSection.options.public}</SelectItem>
-                    <SelectItem value="other">{updateInfo.transportationSection.options.other}</SelectItem>
+                    <SelectItem value="Bus">{locale === 'ar' ? 'بواسطة الحافلة' : 'By Bus'}</SelectItem>
+                    <SelectItem value="Car">{locale === 'ar' ? 'بالسيارة' : 'By Car'}</SelectItem>
+                    <SelectItem value="On Foot">{locale === 'ar' ? 'سيراً على الأقدام' : 'On Foot'}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-
-              {transportation === 'other' && (
-                <div className="space-y-2 animate-in fade-in-50 slide-in-from-top-2 duration-300">
-                  <Label htmlFor="other-transportation" className={clsx("text-sm font-medium flex items-center gap-2", locale === 'ar' && 'flex-row-reverse justify-end')}>
-                    <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
-                    <span>{updateInfo.transportationSection.otherLabel}</span>
-                    <span className="text-destructive" aria-label={locale === 'ar' ? 'مطلوب' : 'required'}>*</span>
-                  </Label>
-                  <Input
-                    id="other-transportation"
-                    value={otherTransportation}
-                    onChange={(event) => setOtherTransportation(event.target.value)}
-                    placeholder={locale === 'ar' ? 'اكتب تفاصيل طريقة المواصلات' : 'Describe the arrangement'}
-                    className="h-11 border-2 bg-background hover:border-primary/50 focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 transition-all duration-200"
-                    required
-                    aria-required="true"
-                    aria-invalid={errorMessage?.includes('otherTransportation')}
-                    disabled={isSubmitting}
-                    maxLength={200}
-                  />
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs text-muted-foreground">
-                      {locale === 'ar' ? 'اكتب وصفاً واضحاً للطريقة' : 'Provide a clear description'}
-                    </p>
-                    <p className={clsx(
-                      "text-xs font-medium tabular-nums",
-                      otherTransportation.length > 180 ? "text-destructive" : "text-muted-foreground"
-                    )}>
-                      {locale === 'ar'
-                        ? `${otherTransportation.length}/200 حرف`
-                        : `${otherTransportation.length}/200 characters`}
-                    </p>
-                  </div>
-                </div>
-              )}
             </CardContent>
           </Card>
 
@@ -2370,7 +2324,16 @@ export default function UpdateStudentInfoPage() {
               <div className="p-4">
                 <div className="bg-background/50 px-4 py-3 rounded-lg border border-border/40">
                   <span className="font-medium text-foreground text-base">
-                    {preparedPayload?.transportation || '—'}
+                    {(() => {
+                      const value = preparedPayload?.transportation;
+                      if (!value) return '—';
+                      if (locale === 'ar') {
+                        if (value === 'Bus') return 'بواسطة الحافلة';
+                        if (value === 'Car') return 'بالسيارة';
+                        if (value === 'On Foot') return 'سيراً على الأقدام';
+                      }
+                      return value === 'Bus' ? 'By Bus' : value === 'Car' ? 'By Car' : value === 'On Foot' ? 'On Foot' : value;
+                    })()}
                   </span>
                 </div>
               </div>
