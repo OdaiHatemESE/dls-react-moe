@@ -1082,56 +1082,60 @@ export function AddressPicker(props: AddressPickerProps) {
                         )}
                       </div>
 
-                      {/* Detailed Onwani Plot Response */}
-                      {hasOnwaniData && plotAddr && (
+                      {/* Detailed Onwani Response - Show if we have any Onwani data */}
+                      {hasOnwaniData && (plotAddr || onwaniAddr) && (
                         <>
                           <div className="border-t border-gray-200 dark:border-gray-700 pt-3">
                             <h5 className="text-xs font-bold text-gray-700 dark:text-gray-300 mb-2.5 flex items-center gap-1.5">
                               <svg className="w-3.5 h-3.5 text-aegreen-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                               </svg>
-                              {locale === "ar" ? "تفاصيل القطعة من Onwani" : "Onwani Plot Details"}
+                              {locale === "ar" ? "تفاصيل العنوان من Onwani" : "Onwani Address Details"}
                             </h5>
                           </div>
 
-                          {/* Plot Information from Onwani */}
-                          <div className="bg-aegreen-50 dark:bg-aegreen-950/30 rounded-lg p-3 border border-aegreen-200/50 dark:border-aegreen-800/50 space-y-2">
-                            <div className="flex items-center gap-2">
-                              <svg className="w-4 h-4 text-aegreen-700 dark:text-aegreen-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                              </svg>
-                              <h6 className="text-xs font-bold text-aegreen-900 dark:text-aegreen-300">
-                                {locale === "ar" ? "معلومات القطعة" : "Plot Information"}
-                              </h6>
+                          {/* Plot/Address Information from Onwani */}
+                          {(plotAddr || onwaniAddr) && (
+                            <div className="bg-aegreen-50 dark:bg-aegreen-950/30 rounded-lg p-3 border border-aegreen-200/50 dark:border-aegreen-800/50 space-y-2">
+                              <div className="flex items-center gap-2">
+                                <svg className="w-4 h-4 text-aegreen-700 dark:text-aegreen-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                </svg>
+                                <h6 className="text-xs font-bold text-aegreen-900 dark:text-aegreen-300">
+                                  {locale === "ar" ? "معلومات التفصيلية" : "Detailed Information"}
+                                </h6>
+                              </div>
+                              
+                              <div className="grid grid-cols-2 gap-2 text-xs">
+                                {(plotAddr?.GISID || onwaniAddr?.GISID) && (
+                                  <div>
+                                    <p className="text-[10px] text-aegreen-700 dark:text-aegreen-400 uppercase tracking-wide">
+                                      GISID
+                                    </p>
+                                    <p className="font-bold text-base text-aegreen-900 dark:text-aegreen-200">
+                                      {plotAddr?.GISID || onwaniAddr?.GISID}
+                                    </p>
+                                  </div>
+                                )}
+                                {plotAddr?.PLOTNUMBER && (
+                                  <div>
+                                    <p className="text-[10px] text-aegreen-700 dark:text-aegreen-400 uppercase tracking-wide">
+                                      {locale === "ar" ? "رقم القطعة" : "Plot Number"}
+                                    </p>
+                                    <p className="font-semibold text-aegreen-900 dark:text-aegreen-200">{plotAddr.PLOTNUMBER}</p>
+                                  </div>
+                                )}
+                                {plotAddr?.ROADID && (
+                                  <div>
+                                    <p className="text-[10px] text-aegreen-700 dark:text-aegreen-400 uppercase tracking-wide">
+                                      {locale === "ar" ? "رقم الطريق" : "Road ID"}
+                                    </p>
+                                    <p className="font-semibold text-aegreen-900 dark:text-aegreen-200">{plotAddr.ROADID}</p>
+                                  </div>
+                                )}
+                              </div>
                             </div>
-                            
-                            <div className="grid grid-cols-2 gap-2 text-xs">
-                              {plotAddr.GISID && (
-                                <div>
-                                  <p className="text-[10px] text-aegreen-700 dark:text-aegreen-400 uppercase tracking-wide">
-                                    GISID
-                                  </p>
-                                  <p className="font-bold text-base text-aegreen-900 dark:text-aegreen-200">{plotAddr.GISID}</p>
-                                </div>
-                              )}
-                              {plotAddr.PLOTNUMBER && (
-                                <div>
-                                  <p className="text-[10px] text-aegreen-700 dark:text-aegreen-400 uppercase tracking-wide">
-                                    {locale === "ar" ? "رقم القطعة" : "Plot Number"}
-                                  </p>
-                                  <p className="font-semibold text-aegreen-900 dark:text-aegreen-200">{plotAddr.PLOTNUMBER}</p>
-                                </div>
-                              )}
-                              {plotAddr.ROADID && (
-                                <div>
-                                  <p className="text-[10px] text-aegreen-700 dark:text-aegreen-400 uppercase tracking-wide">
-                                    {locale === "ar" ? "رقم الطريق" : "Road ID"}
-                                  </p>
-                                  <p className="font-semibold text-aegreen-900 dark:text-aegreen-200">{plotAddr.ROADID}</p>
-                                </div>
-                              )}
-                            </div>
-                          </div>
+                          )}
 
                           {/* Coordinates */}
                           {onwaniData.InputCoordinates && (onwaniData.InputCoordinates.Lat || onwaniData.InputCoordinates.Lng) && (
