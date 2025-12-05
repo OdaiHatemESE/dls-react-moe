@@ -841,29 +841,7 @@ export default function ChildCards() {
                     : 'No linked students found for your account. Please check your account settings or contact administration.')}
                 </p>
 
-                {/* Action Buttons */}
-                <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <button className={clsx(
-                    "group inline-flex items-center justify-center gap-3 px-6 py-3.5 text-sm font-semibold rounded-xl",
-                    "text-muted-foreground bg-muted/60 hover:bg-muted border border-border/60 hover:border-border",
-                    "shadow-md hover:shadow-lg transition-all duration-200 touch-manipulation active:scale-95"
-                  )}>
-                    <svg className="w-5 h-5 group-hover:rotate-12 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span>{locale === 'ar' ? 'تحقق من إعدادات الحساب' : 'Check Account Settings'}</span>
-                  </button>
-                  <button className={clsx(
-                    "group inline-flex items-center justify-center gap-3 px-6 py-3.5 text-sm font-semibold rounded-xl",
-                    "text-primary bg-primary/10 hover:bg-primary/20 border border-primary/30 hover:border-primary/40",
-                    "shadow-md hover:shadow-lg transition-all duration-200 touch-manipulation active:scale-95"
-                  )}>
-                    <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span>{locale === 'ar' ? 'تواصل مع الدعم' : 'Contact Support'}</span>
-                  </button>
-                </div>
+               
               </div>
             </div>
           </div>

@@ -47,7 +47,7 @@ export const ar = {
     upcomingEvents: "الأحداث القادمة",
     viewCalendar: "عرض التقويم",
     noUpcomingEvents: "لا توجد أحداث قادمة",
-    noLinkedStudents: "لم يتم العثور على طلاب مرتبطين بحسابك.",
+    noLinkedStudents: "لم يتم العثور على طلاب مرتبطين بحسابك. يرجى التواصل مع المدرسة.",
   },
   student: {
     viewDetails: "عرض التفاصيل",

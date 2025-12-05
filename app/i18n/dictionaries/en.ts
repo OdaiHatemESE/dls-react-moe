@@ -47,7 +47,7 @@ export const en = {
     upcomingEvents: "Upcoming Events",
     viewCalendar: "View calendar",
     noUpcomingEvents: "No upcoming events",
-    noLinkedStudents: "No linked students found for your account.",
+    noLinkedStudents: "No linked students found for your account. Please contact the school.",
   },
   student: {
     viewDetails: "View Details",
