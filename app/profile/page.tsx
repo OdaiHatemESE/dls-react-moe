@@ -4,6 +4,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { ProfileIcon } from '../components/icons';
 import useSWR from 'swr';
 import { useSession } from 'next-auth/react';
@@ -16,14 +17,17 @@ import {
   MapPin, 
   CalendarBlank,
   GenderIntersex,
-  Globe
+  Globe,
+  Warning
 } from '@phosphor-icons/react';
 
 export default function ProfilePage() {
   const { t, locale } = useI18n();
   const { data: session, status } = useSession();
   
-  const eid = (session?.user as any)?.emiratesId || (session?.user as any)?.id || session?.user?.email;
+  const emiratesId = (session?.user as any)?.emiratesId;
+  const eid = emiratesId || (session?.user as any)?.id || session?.user?.email;
+  const hasEmiratesId = Boolean(emiratesId);
 
   if (status === 'loading') {
     return <div className="max-w-5xl mx-auto px-4 sm:px-8 py-10 text-center text-muted-foreground">Loading session…</div>;
@@ -88,6 +92,69 @@ export default function ProfilePage() {
   const addresses = person.metadata?.addresses || [];
   const contacts = person.metadata?.contacts || [];
 
+  // If no Emirates ID, show only the warning
+  if (!hasEmiratesId) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-amber-50/50 via-background to-orange-50/30 dark:from-amber-950/20 dark:via-background dark:to-orange-950/10 flex items-center justify-center p-4">
+        <div className="max-w-3xl w-full">
+          <Card className="border-amber-200 dark:border-amber-800 shadow-2xl bg-white/80 dark:bg-gray-950/80 backdrop-blur-sm">
+            <CardContent className="p-8 sm:p-12">
+              {/* Icon Container */}
+              <div className="flex justify-center mb-6">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-amber-400 dark:bg-amber-600 rounded-full blur-xl opacity-30 animate-pulse"></div>
+                  <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 dark:from-amber-500 dark:to-orange-600 flex items-center justify-center shadow-lg">
+                    <Warning className="w-10 h-10 sm:w-12 sm:h-12 text-white" weight="fill" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Title */}
+              <h2 className="text-2xl sm:text-3xl font-bold text-center text-amber-900 dark:text-amber-100 mb-4">
+                {t.profile.missingEmiratesIdTitle}
+              </h2>
+
+              {/* Message */}
+              <p className="text-base sm:text-lg text-center text-amber-800/90 dark:text-amber-200/90 mb-8 leading-relaxed max-w-2xl mx-auto">
+                {t.profile.missingEmiratesIdMessage}
+              </p>
+
+              {/* Divider */}
+              <div className="relative mb-8">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-amber-200 dark:border-amber-800"></div>
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-white dark:bg-gray-950 px-4 text-amber-600 dark:text-amber-400 font-medium">
+                    {locale === 'ar' ? 'الإجراء المطلوب' : 'Action Required'}
+                  </span>
+                </div>
+              </div>
+
+              {/* CTA Button */}
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <a
+                  href="https://uaepass.ae"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group relative inline-flex items-center justify-center gap-3 px-8 py-4 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 dark:from-amber-500 dark:to-orange-500 dark:hover:from-amber-600 dark:hover:to-orange-600 text-white rounded-xl text-base font-semibold transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]"
+                >
+                  <IdentificationCard className="w-5 h-5 group-hover:scale-110 transition-transform" weight="duotone" />
+                  <span>{t.profile.updateUAEPass}</span>
+                  <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={locale === 'ar' ? "M15 19l-7-7 7-7" : "M9 5l7 7-7 7"} />
+                  </svg>
+                </a>
+              </div>
+
+               
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
@@ -108,8 +175,12 @@ export default function ProfilePage() {
                 <Badge variant="secondary" className="text-xs">
                   {t.profile.parentAccount}
                 </Badge>
-                <span className="hidden sm:inline">•</span>
-                <span className="text-sm">{person.identifier}</span>
+                {person.identifier && (
+                  <>
+                    <span className="hidden sm:inline">•</span>
+                    <span className="text-sm">{person.identifier}</span>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -124,6 +195,7 @@ export default function ProfilePage() {
           <div className="lg:col-span-2 space-y-6">
             
             {/* Contact Information */}
+            {(email || phone || contacts.length > 0) && (
             <Card className="shadow-sm hover:shadow-md transition-shadow">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg">
@@ -203,8 +275,10 @@ export default function ProfilePage() {
                 )}
               </CardContent>
             </Card>
+            )}
 
             {/* Personal Details */}
+            {(arabicName || englishName || person.metadata?.birthDate || person.metadata?.gender || person.metadata?.nationality || person.metadata?.maritalStatus) && (
             <Card className="shadow-sm hover:shadow-md transition-shadow">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg">
@@ -276,6 +350,7 @@ export default function ProfilePage() {
                 </div>
               </CardContent>
             </Card>
+            )}
 
             {/* Addresses */}
             {addresses.length > 0 && (
@@ -366,6 +441,7 @@ export default function ProfilePage() {
           <div className="space-y-6">
             
             {/* Status Card */}
+            {(person.status || person.identifier || person.sourcedId) && (
             <Card className="shadow-sm hover:shadow-md transition-shadow">
               <CardHeader>
                 <CardTitle className="text-base">
@@ -410,6 +486,7 @@ export default function ProfilePage() {
                 )}
               </CardContent>
             </Card>
+            )}
 
             {/* Birth Info Card */}
             {(person.metadata?.birthCity || person.metadata?.birthCountry) && (
