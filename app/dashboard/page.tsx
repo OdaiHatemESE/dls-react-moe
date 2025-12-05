@@ -28,7 +28,7 @@ export default function DashboardPage() {
   return (
     <div className={clsx("min-h-screen bg-gradient-to-br from-background via-background to-primary/5", locale === 'ar' && 'direction-rtl')}>
       {/* Mobile App-like Header Section */}
-      <div className="bg-card/95 backdrop-blur-md border-b border-border shadow-sm sticky top-0 z-10">
+      <div className="bg-card/95 backdrop-blur-md  shadow-sm sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between py-2 md:py-3 gap-2 min-w-0 overflow-hidden">
             {/* Dashboard Header - Mobile Optimized */}

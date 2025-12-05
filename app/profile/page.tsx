@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Skeleton } from '@/components/ui/skeleton';
 import { ProfileIcon } from '../components/icons';
 import useSWR from 'swr';
 import { useSession } from 'next-auth/react';
@@ -69,7 +70,124 @@ export default function ProfilePage() {
   };
 
   if (isLoading) {
-    return <div className="text-center py-10">Loading...</div>;
+    return (
+      <div className="min-h-screen bg-background">
+        {/* Hero Skeleton */}
+        <div className="bg-gradient-to-br from-primary/5 via-background to-secondary/5 border-b">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+            <div className="flex flex-col sm:flex-row items-center gap-6">
+              <Skeleton className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl" />
+              <div className="flex-1 text-center sm:text-start space-y-3 w-full">
+                <Skeleton className="h-8 sm:h-10 w-64 mx-auto sm:mx-0" />
+                <div className="flex flex-col sm:flex-row items-center gap-2">
+                  <Skeleton className="h-5 w-24" />
+                  <Skeleton className="h-4 w-32" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Content Skeleton */}
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            {/* Left Column */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Contact Information Skeleton */}
+              <Card className="shadow-sm">
+                <CardHeader>
+                  <Skeleton className="h-6 w-48" />
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="p-3 rounded-lg bg-primary/5 border border-primary/20">
+                    <Skeleton className="h-4 w-24 mb-2" />
+                    <Skeleton className="h-5 w-48" />
+                  </div>
+                  <div className="p-3 rounded-lg bg-primary/5 border border-primary/20">
+                    <Skeleton className="h-4 w-24 mb-2" />
+                    <Skeleton className="h-5 w-36" />
+                  </div>
+                  <Separator className="my-4" />
+                  <div className="space-y-3">
+                    <Skeleton className="h-4 w-32" />
+                    {[1, 2].map((i) => (
+                      <div key={i} className="p-3 rounded-lg bg-muted/30">
+                        <Skeleton className="h-4 w-20 mb-2" />
+                        <Skeleton className="h-4 w-40" />
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Personal Details Skeleton */}
+              <Card className="shadow-sm">
+                <CardHeader>
+                  <Skeleton className="h-6 w-40" />
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {[1, 2, 3, 4, 5, 6].map((i) => (
+                      <div key={i} className="p-3 rounded-lg bg-muted/30">
+                        <Skeleton className="h-3 w-20 mb-2" />
+                        <Skeleton className="h-4 w-32" />
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Addresses Skeleton */}
+              <Card className="shadow-sm">
+                <CardHeader>
+                  <Skeleton className="h-6 w-32" />
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {[1, 2].map((i) => (
+                    <div key={i} className="p-4 rounded-lg border bg-primary/5 border-primary/20">
+                      <div className="flex items-center justify-between mb-3">
+                        <Skeleton className="h-4 w-24" />
+                        <Skeleton className="h-5 w-16" />
+                      </div>
+                      <div className="space-y-2">
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-4 w-3/4" />
+                        <div className="flex flex-wrap gap-3 mt-3 pt-3 border-t border-border/50">
+                          <Skeleton className="h-3 w-20" />
+                          <Skeleton className="h-3 w-24" />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Right Column */}
+            <div className="space-y-6">
+              {/* Status Card Skeleton */}
+              <Card className="shadow-sm">
+                <CardHeader>
+                  <Skeleton className="h-5 w-20" />
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div>
+                    <Skeleton className="h-3 w-24 mb-2" />
+                    <Skeleton className="h-6 w-16" />
+                  </div>
+                  <Separator />
+                  <div>
+                    <Skeleton className="h-3 w-28 mb-2" />
+                    <Skeleton className="h-6 w-32" />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
   if (error) {
     return <div className="text-center py-10 text-red-600">Error loading profile data.</div>;
@@ -465,61 +583,18 @@ export default function ProfilePage() {
                 <Separator />
                 <div>
                   <dt className="text-xs font-medium text-muted-foreground mb-2">
-                    {locale === 'ar' ? 'المعرف' : 'Identifier'}
+                    {locale === 'ar' ? 'الهوية الإماراتية' : 'Emirates ID'}
                   </dt>
                   <dd className="text-xs text-foreground font-mono bg-muted px-2 py-1 rounded">
                     {person.identifier || '-'}
                   </dd>
                 </div>
-                {person.sourcedId && (
-                  <>
-                    <Separator />
-                    <div>
-                      <dt className="text-xs font-medium text-muted-foreground mb-2">
-                        {locale === 'ar' ? 'المعرف المصدر' : 'Source ID'}
-                      </dt>
-                      <dd className="text-xs text-foreground font-mono bg-muted px-2 py-1 rounded break-all">
-                        {person.sourcedId}
-                      </dd>
-                    </div>
-                  </>
-                )}
+                
               </CardContent>
             </Card>
             )}
 
-            {/* Birth Info Card */}
-            {(person.metadata?.birthCity || person.metadata?.birthCountry) && (
-              <Card className="shadow-sm hover:shadow-md transition-shadow">
-                <CardHeader>
-                  <CardTitle className="text-base">
-                    {locale === 'ar' ? 'معلومات الميلاد' : 'Birth Information'}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {person.metadata?.birthCity && (
-                    <div>
-                      <dt className="text-xs font-medium text-muted-foreground mb-1">
-                        {locale === 'ar' ? 'مدينة الميلاد' : 'Birth City'}
-                      </dt>
-                      <dd className="text-sm text-foreground">
-                        {locale === 'ar' ? person.metadata.birthCity : (person.metadata.englishBirthCity || person.metadata.birthCity)}
-                      </dd>
-                    </div>
-                  )}
-                  {person.metadata?.birthCountry && (
-                    <div>
-                      <dt className="text-xs font-medium text-muted-foreground mb-1">
-                        {locale === 'ar' ? 'بلد الميلاد' : 'Birth Country'}
-                      </dt>
-                      <dd className="text-sm text-foreground">
-                        {locale === 'ar' ? (person.metadata.birthCountryArabic || person.metadata.birthCountry) : person.metadata.birthCountry}
-                      </dd>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
+       
           </div>
         </div>
       </div>

@@ -153,7 +153,7 @@ export default function VerticalHeader() {
   return (
     <>
       {/* Professional Mobile Header */}
-      <header className="lg:hidden bg-card/98 backdrop-blur-md border-b border-border sticky top-0 z-50 shadow-sm">
+      <header className="lg:hidden bg-card/98 backdrop-blur-md border-b border-border sticky top-0 z-50">
         <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-background to-secondary/5" />
         <div className="relative px-4 sm:px-6">
           <div className="flex justify-between items-center h-16">
@@ -349,7 +349,7 @@ export default function VerticalHeader() {
       <aside className={`hidden lg:fixed lg:flex lg:flex-col lg:inset-y-0 z-50 ${
         locale === 'ar' ? 'lg:right-0' : 'lg:left-0'
       } lg:w-80`}>
-        <div className={`relative flex grow flex-col gap-y-6 overflow-y-auto bg-gradient-to-br from-card via-card to-card/95 backdrop-blur-xl shadow-2xl px-7 pb-7 border-r-2 border-border/50 hover:border-primary/20 transition-all duration-500`}>
+        <div className={`relative flex grow flex-col gap-y-6 overflow-y-auto bg-gradient-to-br from-card via-card to-card/95 backdrop-blur-xl px-7 pb-7 border-r-2 border-border/50 hover:border-primary/20 transition-all duration-500`}>
           {/* Decorative Elements */}
           <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-primary/10 to-transparent rounded-full -translate-y-20 translate-x-20 blur-3xl" />
           <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-secondary/10 to-transparent rounded-full translate-y-16 -translate-x-16 blur-2xl" />
@@ -680,26 +680,6 @@ export default function VerticalHeader() {
                         </div>
                       </div>
                     )}
-                  </div>
-
-                  {/* User Info Display */}
-                  <div className="mt-6">
-                    <div className="flex items-center gap-x-4 rounded-2xl p-4 bg-gradient-to-r from-primary/5 to-secondary/5 border-2 border-border/50 shadow-sm">
-                      <div className="relative">
-                        <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary via-primary to-primary/80 flex items-center justify-center shadow-lg">
-                          <ProfileIcon className="h-6 w-6 text-primary-foreground" />
-                        </div>
-                        <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-card rounded-full" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className={`text-foreground truncate font-bold ${locale === 'ar' ? 'text-sm tracking-wide' : 'text-sm'}`}>
-                          {((session?.user?.name as string) || '').split(' ').slice(0, 2).join(' ') || 'Parent Profile'}
-                        </p>
-                        <p className={`text-muted-foreground truncate ${locale === 'ar' ? 'text-xs font-medium' : 'text-xs'}`}>
-                          {(session?.user?.email as string) || ''}
-                        </p>
-                      </div>
-                    </div>
                   </div>
                 </li>
               </ul>
