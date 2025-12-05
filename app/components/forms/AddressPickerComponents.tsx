@@ -38,6 +38,8 @@ export type AddressValue = {
   municipalityNameAr?: string | null;
   fullAddressEn?: string | null;
   fullAddressAr?: string | null;
+  emirateManhalCode?: string | null;
+  areaManhalCode?: string | null;
 };
 
 type Area = {
@@ -140,11 +142,21 @@ export function DubaiNorthernEmiratesFields({
             areasLoading
           }
           value={
-            local.areaId !== undefined && local.areaId !== null
+            local.areaManhalCode !== undefined && local.areaManhalCode !== null
+              ? local.areaManhalCode
+              : local.areaId !== undefined && local.areaId !== null
               ? String(local.areaId)
               : undefined
           }
-          onValueChange={(v) => emit({ areaId: Number(v) })}
+          onValueChange={(v) => {
+            const selectedArea = areas.find((a) => a.ManhalCode === v || String(a.Id) === v);
+            if (selectedArea) {
+              emit({ 
+                areaId: selectedArea.Id,
+                areaManhalCode: selectedArea.ManhalCode 
+              });
+            }
+          }}
           onOpenChange={(o) => {
             if (!o) setTouched((t) => ({ ...t, areaId: true }));
           }}
@@ -176,7 +188,7 @@ export function DubaiNorthernEmiratesFields({
             {areas.map((a) => (
               <SelectItem
                 key={a.Id}
-                value={String(a.Id)}
+                value={a.ManhalCode || String(a.Id)}
                 className={cn(
                   "cursor-pointer hover:bg-primary/10 focus:bg-primary/10 rounded-lg my-0.5 transition-colors",
                   isRTL ? "text-right" : "text-left"

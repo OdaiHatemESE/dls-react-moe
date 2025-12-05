@@ -29,6 +29,7 @@ type Emirate = {
   TitleAr: string;
   TitleEn: string;
   IsActive: boolean;
+  ManhalCode: string | null;
 };
 
 type Area = {
@@ -80,6 +81,8 @@ export type AddressValue = {
   municipalityNameAr?: string | null;
   fullAddressEn?: string | null;
   fullAddressAr?: string | null;
+  emirateManhalCode?: string | null;
+  areaManhalCode?: string | null;
 };
 
 type AddressLookups = {
@@ -303,6 +306,8 @@ export function AddressPicker(props: AddressPickerProps) {
     latitude: value?.latitude ?? undefined,
     mainPlotId: value?.mainPlotId ?? undefined,
     premisesPlotId: value?.premisesPlotId ?? undefined,
+    emirateManhalCode: value?.emirateManhalCode ?? undefined,
+    areaManhalCode: value?.areaManhalCode ?? undefined,
   }));
 
   // Dialog state for MyLandPicker
@@ -772,31 +777,37 @@ export function AddressPicker(props: AddressPickerProps) {
           dir={isRTL ? "rtl" : "ltr"}
           disabled={disabled || emiratesLoading}
           value={
-            local.emirateId !== undefined && local.emirateId !== null
+            local.emirateManhalCode !== undefined && local.emirateManhalCode !== null
+              ? local.emirateManhalCode
+              : local.emirateId !== undefined && local.emirateId !== null
               ? String(local.emirateId)
               : undefined
           }
           onValueChange={(v) => {
-            const id = Number(v);
-            emit({
-              emirateId: id,
-              areaId: undefined,
-              regionId: undefined,
-              zoneId: undefined,
-              plotId: undefined,
-              streetName: undefined,
-              houseNumber: undefined,
-              longitude: undefined,
-              latitude: undefined,
-              emirateNameEn: null,
-              emirateNameAr: null,
-              areaNameEn: null,
-              areaNameAr: null,
-              regionNameEn: null,
-              regionNameAr: null,
-              zoneNameEn: null,
-              zoneNameAr: null,
-            });
+            const selectedEmirate = emirates.find((e) => e.ManhalCode === v || String(e.Id) === v);
+            if (selectedEmirate) {
+              emit({
+                emirateId: selectedEmirate.Id,
+                emirateManhalCode: selectedEmirate.ManhalCode,
+                areaId: undefined,
+                areaManhalCode: undefined,
+                regionId: undefined,
+                zoneId: undefined,
+                plotId: undefined,
+                streetName: undefined,
+                houseNumber: undefined,
+                longitude: undefined,
+                latitude: undefined,
+                emirateNameEn: null,
+                emirateNameAr: null,
+                areaNameEn: null,
+                areaNameAr: null,
+                regionNameEn: null,
+                regionNameAr: null,
+                zoneNameEn: null,
+                zoneNameAr: null,
+              });
+            }
           }}
           onOpenChange={(o) => {
             if (!o) setTouched((t) => ({ ...t, emirateId: true }));
@@ -821,7 +832,7 @@ export function AddressPicker(props: AddressPickerProps) {
             {emirates.map((e) => (
               <SelectItem
                 key={e.Id}
-                value={String(e.Id)}
+                value={e.ManhalCode || String(e.Id)}
                 className={cn(
                   "cursor-pointer hover:bg-primary/10 focus:bg-primary/10 rounded-lg my-0.5 transition-colors",
                   isRTL ? "text-right" : "text-left"

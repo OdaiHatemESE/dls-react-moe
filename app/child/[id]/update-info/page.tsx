@@ -1119,35 +1119,61 @@ export default function UpdateStudentInfoPage() {
       }
       // INIT mode with no document will remain empty string
 
-      // ========== Fetch ManhalCodes from plots API if address changed ==========
+      // ========== Fetch ManhalCodes based on emirate type ==========
       let stateID: string | undefined;
       let cityID: string | undefined;
       let regionID: string | undefined;
       let sectorID: string | undefined;
 
-      // Determine GISID: prefer mainPlotId, fallback to premisesPlotId, then plotId
-      const gisid = preparedPayload.addressChanged 
-        ? (preparedPayload.newAddress?.mainPlotId || 
-           preparedPayload.newAddress?.premisesPlotId || 
-           (preparedPayload.newAddress?.plotId ? String(preparedPayload.newAddress.plotId) : null))
-        : null;
-
-      if (preparedPayload.addressChanged && gisid) {
-        try {
-          const plotsResponse = await fetch(`/api/db/plots?filter=${encodeURIComponent(gisid)}`);
+      if (preparedPayload.addressChanged && preparedPayload.newAddress) {
+        const newAddr = preparedPayload.newAddress;
+        
+        // Check if it's Abu Dhabi address (from map - has emirateName but might not have emirateId)
+        const isAbuDhabi = newAddr.emirateNameEn && 
+          (newAddr.emirateNameEn.toLowerCase().includes('abu dhabi') ||
+           newAddr.emirateNameEn.toLowerCase().includes('al ain') ||
+           newAddr.emirateNameEn.toLowerCase().includes('dhafra'));
+        
+        if (isAbuDhabi) {
+          // ABU DHABI: Fetch ManhalCodes from plots API using GISID
+          // Determine GISID: prefer mainPlotId, fallback to premisesPlotId, then plotId
+          const gisid = newAddr.mainPlotId || 
+                        newAddr.premisesPlotId || 
+                        (newAddr.plotId ? String(newAddr.plotId) : null);
           
-          if (plotsResponse.ok) {
-            const plotsData = await plotsResponse.json();
-            
-            if (plotsData.data) {
-              stateID = plotsData.data.emirateManhalCode || undefined;
-              cityID = plotsData.data.regionManhalCode || undefined;
-              regionID = plotsData.data.zoneManhalCode || undefined;
-              sectorID = plotsData.data.areaManhalCode || undefined;
+          if (gisid) {
+            try {
+              const plotsResponse = await fetch(`/api/db/plots?filter=${encodeURIComponent(gisid)}`);
+              
+              if (plotsResponse.ok) {
+                const plotsData = await plotsResponse.json();
+                
+                if (plotsData.data) {
+                  stateID = plotsData.data.emirateManhalCode || undefined;
+                  cityID = plotsData.data.regionManhalCode || undefined;
+                  regionID = plotsData.data.zoneManhalCode || undefined;
+                  sectorID = plotsData.data.areaManhalCode || undefined;
+                }
+              }
+            } catch {
+              // Silently handle ManhalCode fetch errors
             }
           }
-        } catch {
-          // Silently handle ManhalCode fetch errors
+        } else {
+          // OTHER EMIRATES (Dubai/Northern): Use ManhalCode values from dropdowns
+          // stateID = emirate ManhalCode
+          stateID = newAddr.emirateManhalCode && textOrNull(newAddr.emirateManhalCode)
+            ? newAddr.emirateManhalCode
+            : undefined;
+          
+          // sectorID = area ManhalCode
+          sectorID = newAddr.areaManhalCode && textOrNull(newAddr.areaManhalCode)
+            ? newAddr.areaManhalCode
+            : undefined;
+          
+          // cityID and regionID remain empty for non-Abu Dhabi emirates
+          cityID = undefined;
+          regionID = undefined;
         }
       }
 
@@ -1814,7 +1840,7 @@ export default function UpdateStudentInfoPage() {
               )}
 
               <div className="bg-primary/5 border-2 border-primary/20 rounded-xl p-4">
-                <label className={clsx("flex items-start gap-3 text-sm font-medium text-foreground cursor-pointer group", locale === 'ar' && 'flex-row-reverse text-right')}>
+                <label className={clsx("flex items-start gap-3 text-sm font-medium text-foreground cursor-pointer group", locale === 'ar' && 'flex-row text-right')}>
                   <input
                     type="checkbox"
                     checked={addressChanged}
