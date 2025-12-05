@@ -15,13 +15,6 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Parent Portal - Stay Connected with Your Child's Education",
   description: "A comprehensive parent portal for tracking your child's academic progress, attendance, and school communications.",
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 5,
-    userScalable: true,
-    viewportFit: 'cover'
-  },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
@@ -30,6 +23,14 @@ export const metadata: Metadata = {
   formatDetection: {
     telephone: false,
   }
+};
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
+  viewportFit: 'cover'
 };
 
 import HtmlLangDirProvider from "@/app/components/HtmlLangDirProvider";
