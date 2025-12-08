@@ -901,13 +901,15 @@ export function AddressPicker(props: AddressPickerProps) {
       )}
 
       {/* MyLand Map Picker Dialog - Two Column Layout */}
-      <Dialog open={isMapDialogOpen} onOpenChange={handleDialogOpenChange}>
+      <Dialog open={isMapDialogOpen} onOpenChange={handleDialogOpenChange} modal>
         <DialogContent 
           className={cn(
             "max-w-[98vw] w-full h-[96vh] p-0 gap-0 flex flex-col overflow-hidden",
             "bg-background border-2 shadow-2xl",
             isRTL ? "rtl" : "ltr"
           )}
+          onPointerDownOutside={(e) => e.preventDefault()}
+          onEscapeKeyDown={(e) => e.preventDefault()}
         >
           {/* Compact Header */}
           <DialogHeader className="px-4 py-3 border-b bg-gradient-to-r from-aegreen-50 to-aegreen-100/50 dark:from-aegreen-950/30 dark:to-aegreen-900/20 shrink-0">
