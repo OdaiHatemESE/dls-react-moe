@@ -913,7 +913,7 @@ export function AddressPicker(props: AddressPickerProps) {
         >
           {/* Compact Header */}
           <DialogHeader className="px-4 py-3 border-b bg-gradient-to-r from-aegreen-50 to-aegreen-100/50 dark:from-aegreen-950/30 dark:to-aegreen-900/20 shrink-0">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between pe-10">
               <DialogTitle className="flex items-center gap-2 text-base font-semibold">
                 <div className="p-1.5 rounded-lg bg-aegreen-600 text-white">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

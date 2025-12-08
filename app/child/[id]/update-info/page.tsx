@@ -1617,8 +1617,8 @@ export default function UpdateStudentInfoPage() {
           aria-label={updateInfo.title}
           noValidate
         >
-          {/* Progress Indicator */}
-          <div className="flex items-center justify-between px-1" role="status" aria-live="polite">
+          {/* Progress Indicator - Hidden */}
+          <div className="hidden" role="status" aria-live="polite">
             <span className="text-xs sm:text-sm text-muted-foreground">
               {locale === 'ar' ? 'التقدم:' : 'Progress:'}
             </span>
@@ -1888,43 +1888,156 @@ export default function UpdateStudentInfoPage() {
                 </div>
               )}
 
-              <div className="space-y-2">
+              <div className="space-y-4">
                 <Label htmlFor="address-document" className={clsx("text-sm font-medium flex items-center gap-2", locale === 'ar' && 'flex-row-reverse justify-end')}>
+                  <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                  </svg>
                   <span>{updateInfo.addressSection.documentLabel}</span>
                   {addressChanged && <span className="text-destructive" aria-label={locale === 'ar' ? 'مطلوب' : 'required'}>*</span>}
                 </Label>
-                <Input
-                  id="address-document"
-                  type="file"
-                  accept=".pdf"
-                  disabled={!addressChanged || isSubmitting}
-                  onChange={handleFileChange}
-                  className={clsx(
-                    'cursor-pointer transition-colors',
-                    (!addressChanged || isSubmitting) && 'opacity-60 cursor-not-allowed'
-                  )}
-                  required={addressChanged}
-                  aria-required={addressChanged}
-                  aria-describedby="address-document-help address-document-status"
-                  aria-invalid={addressChanged && errorMessage?.includes('document')}
-                />
-                <div className="space-y-1">
-                  {supportingDocument && (
-                    <p id="address-document-status" className="text-xs font-medium text-green-600 dark:text-green-400 flex items-center gap-1.5">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+
+                {/* File Requirements Info Card */}
+                <div className="rounded-xl bg-gradient-to-br from-primary/5 via-primary/3 to-transparent border-2 border-primary/20 p-4 space-y-3 shadow-sm">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 rounded-lg bg-primary/10 shrink-0">
+                      <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                      {updateInfo.fileNameLabel}: <span className="font-semibold">{supportingDocument.name}</span>
-                      <span className="text-muted-foreground">({(supportingDocument.size / 1024).toFixed(1)} KB)</span>
-                    </p>
-                  )}
+                    </div>
+                    <div className="flex-1 space-y-2">
+                      <p className="text-sm font-semibold text-foreground">
+                        {locale === 'ar' ? 'متطلبات الملف' : 'File Requirements'}
+                      </p>
+                      <ul className="space-y-1.5 text-xs text-muted-foreground">
+                        <li className="flex items-center gap-2">
+                          <svg className="w-4 h-4 text-primary shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <span className="font-medium">
+                            {locale === 'ar' ? 'الصيغة: PDF فقط' : 'Format: PDF only'}
+                          </span>
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <svg className="w-4 h-4 text-primary shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <span className="font-medium">
+                            {locale === 'ar' ? 'الحد الأقصى للحجم: 5 ميجابايت' : 'Maximum size: 5 MB'}
+                          </span>
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <svg className="w-4 h-4 text-primary shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <span>
+                            {locale === 'ar' 
+                              ? 'المستندات المقبولة: فاتورة المرافق، عقد الإيجار، أو مستند رسمي'
+                              : 'Accepted: Utility bill, tenancy contract, or official document'}
+                          </span>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                {/* File Upload Area */}
+                <div className={clsx(
+                  "relative rounded-xl border-2 border-dashed transition-all duration-300",
+                  addressChanged && !supportingDocument
+                    ? "border-primary/40 bg-primary/5 hover:border-primary hover:bg-primary/10"
+                    : supportingDocument
+                    ? "border-green-500/40 bg-green-500/5"
+                    : "border-border/30 bg-muted/20",
+                  (!addressChanged || isSubmitting) && "opacity-60 cursor-not-allowed"
+                )}>
+                  <Input
+                    id="address-document"
+                    type="file"
+                    accept=".pdf,application/pdf"
+                    disabled={!addressChanged || isSubmitting}
+                    onChange={handleFileChange}
+                    className={clsx(
+                      'absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10',
+                      (!addressChanged || isSubmitting) && 'cursor-not-allowed'
+                    )}
+                    required={addressChanged}
+                    aria-required={addressChanged}
+                    aria-describedby="address-document-help address-document-status"
+                    aria-invalid={addressChanged && errorMessage?.includes('document')}
+                  />
+                  
+                  <div className="p-6 text-center pointer-events-none">
+                    {!supportingDocument ? (
+                      <div className="space-y-3">
+                        <div className="flex justify-center">
+                          <div className="p-4 rounded-full bg-primary/10">
+                            <svg className="w-10 h-10 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                            </svg>
+                          </div>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-sm font-semibold text-foreground">
+                            {locale === 'ar' ? 'انقر لاختيار ملف PDF' : 'Click to select a PDF file'}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {locale === 'ar' ? 'أو اسحب الملف وأفلته هنا' : 'or drag and drop it here'}
+                          </p>
+                        </div>
+                        <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                          <span className="font-medium">{locale === 'ar' ? 'PDF • حتى 5 ميجابايت' : 'PDF • Up to 5 MB'}</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        <div className="flex justify-center">
+                          <div className="p-4 rounded-full bg-green-500/10">
+                            <svg className="w-10 h-10 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <p className="text-sm font-semibold text-green-700 dark:text-green-400">
+                            {locale === 'ar' ? 'تم اختيار الملف بنجاح' : 'File selected successfully'}
+                          </p>
+                          <div className="flex items-center justify-center gap-2 text-xs">
+                            <svg className="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <span className="font-semibold text-foreground truncate max-w-xs">{supportingDocument.name}</span>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            {(supportingDocument.size / (1024 * 1024)).toFixed(2)} MB {locale === 'ar' ? 'من 5 ميجابايت' : 'of 5 MB'}
+                          </p>
+                          <p className="text-xs text-primary font-medium mt-2">
+                            {locale === 'ar' ? 'انقر لتغيير الملف' : 'Click to change file'}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Status and Helper Text */}
+                <div className="space-y-2">
                   {!supportingDocument && addressChanged && (
-                    <p id="address-document-status" className="text-xs text-muted-foreground">
+                    <p id="address-document-status" className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
+                      <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                      </svg>
                       {updateInfo.noFileSelected}
                     </p>
                   )}
-                  <p id="address-document-help" className="text-xs text-muted-foreground">
-                    {updateInfo.addressSection.documentHelper}
+                  <p id="address-document-help" className="text-xs text-muted-foreground flex items-start gap-1.5">
+                    <svg className="w-4 h-4 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>{updateInfo.addressSection.documentHelper}</span>
                   </p>
                 </div>
               </div>
