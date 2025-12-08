@@ -557,7 +557,7 @@ export default function VerticalHeader() {
                           </svg>
                         </div>
                         
-                        <span className="truncate font-semibold flex-1">
+                        <span className="truncate font-semibold ">
                           {locale === 'ar' ? 'تسجيل خروج' : 'Logout'}
                         </span>
                         
