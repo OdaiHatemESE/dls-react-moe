@@ -72,8 +72,22 @@ export async function GET(
               (!enr.exitDate || enr.exitDate.trim() === '')
           ) ?? false;
           
+          // Ensure isPrimary is always present in contacts and convert from bit (1/0) to boolean
+          const contacts = (cachedStudent.contacts || []).map(contact => ({
+            ...contact,
+            isPrimary: Boolean(contact.isPrimary)
+          }));
+
+          // Ensure isPrimary is always present in addresses and convert from bit (1/0) to boolean
+          const addresses = (cachedStudent.addresses || []).map(address => ({
+            ...address,
+            isPrimary: Boolean(address.isPrimary)
+          }));
+          
           return NextResponse.json({
             ...cachedStudent,
+            contacts,
+            addresses,
             isActive: hasActiveEnrollment,
             hasActiveEnrollment: hasActiveEnrollment,
             meta: {
@@ -94,8 +108,22 @@ export async function GET(
             (!enr.exitDate || enr.exitDate.trim() === '')
         ) ?? false;
         
+        // Ensure isPrimary is always present in contacts and convert from bit (1/0) to boolean
+        const contacts = (cachedStudent.contacts || []).map(contact => ({
+          ...contact,
+          isPrimary: Boolean(contact.isPrimary)
+        }));
+
+        // Ensure isPrimary is always present in addresses and convert from bit (1/0) to boolean
+        const addresses = (cachedStudent.addresses || []).map(address => ({
+          ...address,
+          isPrimary: Boolean(address.isPrimary)
+        }));
+        
         return NextResponse.json({
           ...cachedStudent,
+          contacts,
+          addresses,
           isActive: hasActiveEnrollment,
           hasActiveEnrollment: hasActiveEnrollment,
           meta: {
@@ -145,7 +173,6 @@ export async function GET(
 
     // Validate token is a string
     if (typeof accessToken !== 'string' || !accessToken) {
-      console.error('[PP Student] Invalid token type:', typeof accessToken, accessToken);
       return NextResponse.json({ 
         error: 'Invalid token format received from auth endpoint',
         tokenType: typeof accessToken 
@@ -153,7 +180,8 @@ export async function GET(
     }
 
     // Fetch all student profiles for the parent
-    const profilesUrl = `${baseUrl.replace(/\/$/, '')}/oneroster/students/profiles?EmirateId=${eid}`;
+    // Use /sync endpoint to get fresh data from database with correct isPrimary values
+    const profilesUrl = `${baseUrl.replace(/\/$/, '')}/oneroster/students/profiles/sync?emirateId=${eid}`;
     
     let profilesRes: Response;
     try {
@@ -176,10 +204,6 @@ export async function GET(
 
     if (!profilesRes.ok) {
       const errorData = await profilesRes.json().catch(() => null);
-      console.error('[PP Student] Profiles fetch failed:', {
-        status: profilesRes.status,
-        error: errorData,
-      });
       return NextResponse.json(
         { error: errorData ?? `Upstream returned ${profilesRes.status}` },
         { status: profilesRes.status }
@@ -187,7 +211,7 @@ export async function GET(
     }
 
     const studentList: StudentProfileV1[] = await profilesRes.json();
-
+    
     // Find the specific student by ID
     let student = studentList.find(s => s.id === studentId);
 
@@ -218,9 +242,23 @@ export async function GET(
         (!enr.exitDate || enr.exitDate.trim() === '')
     ) ?? false;
 
+    // Ensure isPrimary is always present in contacts and convert from bit (1/0) to boolean
+    const contacts = (student.contacts || []).map(contact => ({
+      ...contact,
+      isPrimary: Boolean(contact.isPrimary)
+    }));
+
+    // Ensure isPrimary is always present in addresses and convert from bit (1/0) to boolean
+    const addresses = (student.addresses || []).map(address => ({
+      ...address,
+      isPrimary: Boolean(address.isPrimary)
+    }));
+
     // Add isActive and hasActiveEnrollment to student object
     const studentWithActiveStatus = {
       ...student,
+      contacts,
+      addresses,
       isActive: hasActiveEnrollment,
       hasActiveEnrollment: hasActiveEnrollment,
     };

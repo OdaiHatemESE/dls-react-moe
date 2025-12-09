@@ -122,7 +122,8 @@ export async function GET(
     }
 
     // Fetch student profiles using the PP token
-    const profilesUrl = `${baseUrl.replace(/\/$/, '')}/oneroster/students/profiles?EmirateId=${eid}`;
+    // Use /sync endpoint to get fresh data from database with correct isPrimary values
+    const profilesUrl = `${baseUrl.replace(/\/$/, '')}/oneroster/students/profiles/sync?emirateId=${eid}`;
     
     const profilesRes = await fetch(profilesUrl, {
       headers: {
@@ -176,16 +177,16 @@ export async function GET(
         });
       }
 
-      // Ensure isPrimary is always present in contacts (preserve backend value or set to false)
+      // Ensure isPrimary is always present in contacts and convert from bit (1/0) to boolean
       const contacts = (student.contacts || []).map(contact => ({
         ...contact,
-        isPrimary: contact.isPrimary ?? false
+        isPrimary: Boolean(contact.isPrimary)
       }));
 
-      // Ensure isPrimary is always present in addresses (preserve backend value or set to false)
+      // Ensure isPrimary is always present in addresses and convert from bit (1/0) to boolean
       const addresses = (student.addresses || []).map(address => ({
         ...address,
-        isPrimary: address.isPrimary ?? false
+        isPrimary: Boolean(address.isPrimary)
       }));
 
       return {
