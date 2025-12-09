@@ -162,7 +162,7 @@ export async function GET(
     const activeAcademicYear = await getActiveAcademicYearValue();
     const activeYearStr = activeAcademicYear ? String(activeAcademicYear) : null;
 
-    // Enhance student list with active status
+    // Enhance student list with active status and ensure isPrimary is always present
     const studentsWithStatus: StudentWithActiveStatus[] = studentList.map((student) => {
       let hasActiveEnrollment = false;
       
@@ -176,8 +176,22 @@ export async function GET(
         });
       }
 
+      // Ensure isPrimary is always present in contacts (preserve backend value or set to false)
+      const contacts = (student.contacts || []).map(contact => ({
+        ...contact,
+        isPrimary: contact.isPrimary ?? false
+      }));
+
+      // Ensure isPrimary is always present in addresses (preserve backend value or set to false)
+      const addresses = (student.addresses || []).map(address => ({
+        ...address,
+        isPrimary: address.isPrimary ?? false
+      }));
+
       return {
         ...student,
+        contacts,
+        addresses,
         isActive: hasActiveEnrollment,
         hasActiveEnrollment,
       };
