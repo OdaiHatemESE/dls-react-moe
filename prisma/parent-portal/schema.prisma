@@ -88,7 +88,6 @@ model StudentAddress {
   studentId    Int
   createdAt    DateTime @default(now())
   updatedAt    DateTime
-  IsPrimary    Boolean? @default(false)
   Student      Student  @relation(fields: [studentId], references: [id])
 }
 
@@ -99,7 +98,6 @@ model StudentContact {
   studentId Int
   createdAt DateTime @default(now())
   updatedAt DateTime
-  IsPrimary Boolean? @default(false)
   Student   Student  @relation(fields: [studentId], references: [id])
 }
 
@@ -210,7 +208,6 @@ model ParentContact {
   parentId  Int
   createdAt DateTime @default(now())
   updatedAt DateTime
-  IsPrimary Boolean  @default(false, map: "DF__ParentCon__IsPri__28B808A7")
   Parent    Parent   @relation(fields: [parentId], references: [id])
 }
 
@@ -228,18 +225,16 @@ model BackofficeSyncState {
 }
 
 model Notification {
-  id          Int       @id @default(autoincrement())
-  userId      String    @db.VarChar(64)
-  type        String    @db.VarChar(100)
-  title       String    @db.VarChar(500)
-  body        String    @db.VarChar(Max)
-  data        String    @db.VarChar(Max)
-  isRead      Boolean   @default(false)
-  createdAt   DateTime  @default(now())
-  readAt      DateTime?
-  referenceId String?   @db.VarChar(255)
+  id        Int       @id @default(autoincrement())
+  userId    String    @db.VarChar(64)
+  type      String    @db.VarChar(100)
+  title     String    @db.VarChar(500)
+  body      String    @db.VarChar(Max)
+  data      String    @db.VarChar(Max)
+  isRead    Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  readAt    DateTime?
 
-  @@unique([userId, type, referenceId])
   @@index([createdAt])
   @@index([userId, isRead])
 }
