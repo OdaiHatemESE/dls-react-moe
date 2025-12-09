@@ -123,7 +123,7 @@ export async function GET(
 
     // Fetch student profiles using the PP token
     // Use /sync endpoint to get fresh data from database with correct isPrimary values
-    const profilesUrl = `${baseUrl.replace(/\/$/, '')}/oneroster/students/profiles/sync?emirateId=${eid}`;
+    const profilesUrl = `${baseUrl.replace(/\/$/, '')}/oneroster/students/profiles?emirateId=${eid}`;
     
     const profilesRes = await fetch(profilesUrl, {
       headers: {
