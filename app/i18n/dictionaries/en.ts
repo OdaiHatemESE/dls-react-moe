@@ -3,6 +3,7 @@ export const en = {
     home: "Home",
     dashboard: "Dashboard",
     summary: "Summary",
+    myApplications: "My Applications",
     messages: "Messages",
     announcements: "Announcements",
     calendar: "Calendar",

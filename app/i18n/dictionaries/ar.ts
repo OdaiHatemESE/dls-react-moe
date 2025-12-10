@@ -3,6 +3,7 @@ export const ar = {
     home: "الرئيسية",
     dashboard: "لوحة التحكم",
     summary: "الملخص",
+    myApplications: "طلباتي",
     messages: "الرسائل",
     announcements: "الإعلانات",
     calendar: "التقويم",
