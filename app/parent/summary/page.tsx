@@ -8,14 +8,9 @@ import clsx from "clsx";
 import { useI18n } from "@/app/i18n/I18nProvider";
 import { jsonFetcher } from "@/lib/swr";
 import type { StudentProfileV1 } from "@/app/types/studentprofile";
-import type { ChildActionResponse } from "@/types/child-actions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import ChildActions, { ChildStatusBadge } from "@/app/dashboard/components/ChildActions";
-
-type ChildWithActions = StudentProfileV1 & {
-  actions?: ChildActionResponse;
-};
+import { ChildStatusBadge } from "@/app/dashboard/components/ChildActions";
 
 const DEFAULT_ACADEMIC_YEAR = "2025-2026";
 
@@ -606,21 +601,8 @@ export default function ParentSummaryPage() {
                           )}
                         </div>
 
-                        {/* Action Buttons Section */}
-                        <div className="mt-auto space-y-3">
-                          {/* Child Actions */}
-                          <div className="transform transition-all group-hover/card:scale-102">
-                            <ChildActions 
-                              studentPersonId={child.id}
-                              parentPersonId={session?.user?.emiratesId}
-                              studentEmirateId={child.emirateId}
-                              studentNumber={resolvedStudentNumber}
-                              academicYear={resolvedAcademicYear}
-                              className="w-full"
-                            />
-                          </div>
-                          
-                          {/* View Details Button */}
+                        {/* View Profile Button */}
+                        <div className="mt-auto">
                           <Link
                             href={`/child/${child.id}`}
                             className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-primary-foreground rounded-xl transition-all shadow-md hover:shadow-xl font-semibold group/btn transform hover:scale-105"
@@ -629,7 +611,7 @@ export default function ParentSummaryPage() {
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                             </svg>
-                            <span>{locale === 'ar' ? 'عرض التفاصيل الكاملة' : 'View Full Profile'}</span>
+                            <span>{locale === 'ar' ? 'عرض الملف الشخصي' : 'View Profile'}</span>
                             <svg className="w-5 h-5 group-hover/btn:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={locale === 'ar' ? "M15 19l-7-7 7-7" : "M9 5l7 7-7 7"} />
                             </svg>

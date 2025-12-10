@@ -64,6 +64,7 @@ export function ChildActions({
   className,
 }: Props) {
   const { locale } = useI18n();
+  const [shouldFetch, setShouldFetch] = React.useState(false);
 
   const queryString = React.useMemo(() => {
     const search = new URLSearchParams({ studentPersonId });
@@ -74,7 +75,11 @@ export function ChildActions({
 
   const endpoint = React.useMemo(() => `/api/parent/child-actions?${queryString}`, [queryString]);
 
-  const { data, error, isLoading } = useSWR<ChildActionResponse>(endpoint, jsonFetcher);
+  // Only fetch when user clicks the button (shouldFetch = true)
+  const { data, error, isLoading } = useSWR<ChildActionResponse>(
+    shouldFetch ? endpoint : null,
+    jsonFetcher
+  );
 
   const resolvedStudentNumber = React.useMemo(() => {
     const value = typeof studentNumber === "string" ? studentNumber.trim() : "";
@@ -95,11 +100,15 @@ export function ChildActions({
     return `/api/parent/students-partnership-charter?${params.toString()}`;
   }, [resolvedStudentNumber, resolvedAcademicYear]);
 
+  // Only fetch charter data when actions are fetched
   const {
     data: charterData,
     error: charterError,
     isLoading: isCharterLoading,
-  } = useSWR<PartnershipCharterResponse>(charterEndpoint, jsonFetcher);
+  } = useSWR<PartnershipCharterResponse>(
+    shouldFetch && charterEndpoint ? charterEndpoint : null,
+    jsonFetcher
+  );
 
   const charterAttachment = React.useMemo(() => {
     if (!charterData?.data) return "";
@@ -189,6 +198,14 @@ export function ChildActions({
 
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
 
+  // Trigger fetch when button is clicked
+  const handleOpenChange = React.useCallback((open: boolean) => {
+    setIsMenuOpen(open);
+    if (open && !shouldFetch) {
+      setShouldFetch(true);
+    }
+  }, [shouldFetch]);
+
   const rawActions = React.useMemo(() => data?.actions ?? [], [data]);
 
   const processedActions = React.useMemo(() => {
@@ -244,9 +261,8 @@ export function ChildActions({
   const hasVisibleActions = visibleActions.length > 0;
   const allHiddenButConfigured = !hasVisibleActions && processedActions.length > 0;
   const showFallback = !hasVisibleActions;
-  const totalActionsCount = actionsToDisplay.length;
   const statusBanner = data?.statusBanner ?? null;
-  const actionsLabel = locale === "ar" ? "إجراءات الطالب" : "Student Actions";
+  const actionsLabel = locale === "ar" ? "إجراءاتي" : "My Actions";
 
   const statusTooltipText = React.useMemo(() => {
     const statusId = data?.idhStatusId;
@@ -255,33 +271,6 @@ export function ChildActions({
     }
     return `Information Update - Status: ${statusId ?? "None"}`;
   }, [locale, data?.idhStatusId]);
-
-  if (isLoading) {
-    return (
-      <div className={clsx("inline-flex items-center gap-2", className)}>
-        <div className="relative h-10 w-32 rounded-xl bg-muted overflow-hidden">
-          <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/30 to-transparent" />
-        </div>
-      </div>
-    );
-  }
-
-  if (error || !data) {
-    return (
-      <div className={clsx("inline-flex items-center gap-2", className)}>
-        <Link
-          href={`/child/${studentPersonId}`}
-          className={clsx(
-            compact
-              ? "inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-md bg-primary text-primary-foreground hover:opacity-90"
-              : "inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-xl bg-primary text-primary-foreground hover:opacity-90 shadow"
-          )}
-        >
-          {locale === "ar" ? "عرض الملف" : "View Profile"}
-        </Link>
-      </div>
-    );
-  }
 
   const renderStatusBanner = () => {
     if (!statusBanner) return null;
@@ -382,45 +371,72 @@ export function ChildActions({
   return (
     <div className={clsx("flex flex-wrap items-center gap-3", className)}>
       {renderStatusBanner()}
-      <Popover open={isMenuOpen} onOpenChange={setIsMenuOpen}>
+      <Popover open={isMenuOpen} onOpenChange={handleOpenChange}>
         <PopoverTrigger asChild>
           <Button
             type="button"
             variant="outline"
             size={compact ? "sm" : "default"}
             className="inline-flex items-center gap-2"
-            disabled={!actionsToDisplay.length}
           >
             <span>{actionsLabel}</span>
-            <span className="inline-flex h-5 min-w-[1.5rem] items-center justify-center rounded-full bg-primary/10 px-1 text-xs font-semibold text-primary">
-              {totalActionsCount || actionsToDisplay.length}
-            </span>
             <ChevronDown className="h-4 w-4 opacity-70" aria-hidden="true" />
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-[20rem] p-0" align={isRTL ? "end" : "start"} side="bottom">
           <div className="flex flex-col gap-2 p-2">
-            {statusBanner && (
-              <div className="flex items-center gap-2 rounded-lg bg-chart-1/10 px-3 py-2 text-xs font-medium text-chart-1">
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span>{getStatusMessage(statusBanner, locale)}</span>
+            {isLoading && (
+              <div className="flex items-center justify-center py-8">
+                <div className="flex flex-col items-center gap-3">
+                  <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary/20 border-t-primary" />
+                  <p className="text-sm text-muted-foreground">
+                    {locale === "ar" ? "جاري التحميل..." : "Loading..."}
+                  </p>
+                </div>
               </div>
             )}
-            <ul className="flex flex-col gap-1">
-              {actionsToDisplay.map(renderActionItem)}
-            </ul>
-            {showFallback && (
-              <p className="px-1 text-[11px] text-muted-foreground">
-                {locale === "ar"
-                  ? allHiddenButConfigured
-                    ? "الإجراءات غير متاحة لهذا الطالب في الوقت الحالي. يظهر خيار عرض الملف فقط."
-                    : "لم يتم إعداد إجراءات مخصصة بعد. يتم عرض خيار عرض الملف كإجراء افتراضي."
-                  : allHiddenButConfigured
-                    ? "Actions are currently unavailable for this student. Showing View Profile as the only option."
-                    : "No custom actions are configured yet. Showing View Profile as the default option."}
-              </p>
+            {error && !isLoading && (
+              <div className="flex flex-col items-center gap-3 py-8 px-4">
+                <svg className="h-10 w-10 text-destructive/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p className="text-sm text-center text-muted-foreground">
+                  {locale === "ar" ? "فشل تحميل الإجراءات" : "Failed to load actions"}
+                </p>
+                <Link
+                  href={`/child/${studentPersonId}`}
+                  className="text-xs text-primary hover:underline"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  {locale === "ar" ? "عرض الملف" : "View Profile"}
+                </Link>
+              </div>
+            )}
+            {!isLoading && !error && data && (
+              <>
+                {statusBanner && (
+                  <div className="flex items-center gap-2 rounded-lg bg-chart-1/10 px-3 py-2 text-xs font-medium text-chart-1">
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>{getStatusMessage(statusBanner, locale)}</span>
+                  </div>
+                )}
+                <ul className="flex flex-col gap-1">
+                  {actionsToDisplay.map(renderActionItem)}
+                </ul>
+                {showFallback && (
+                  <p className="px-1 text-[11px] text-muted-foreground">
+                    {locale === "ar"
+                      ? allHiddenButConfigured
+                        ? "الإجراءات غير متاحة لهذا الطالب في الوقت الحالي. يظهر خيار عرض الملف فقط."
+                        : "لم يتم إعداد إجراءات مخصصة بعد. يتم عرض خيار عرض الملف كإجراء افتراضي."
+                      : allHiddenButConfigured
+                        ? "Actions are currently unavailable for this student. Showing View Profile as the only option."
+                        : "No custom actions are configured yet. Showing View Profile as the default option."}
+                  </p>
+                )}
+              </>
             )}
           </div>
         </PopoverContent>

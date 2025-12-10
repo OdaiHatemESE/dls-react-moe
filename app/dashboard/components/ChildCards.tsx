@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { useI18n } from "@/app/i18n/I18nProvider";
 import { useSession } from "next-auth/react";
 import clsx from "clsx";
-import ChildActions, { ChildStatusBadge } from "./ChildActions";
+import { ChildStatusBadge } from "./ChildActions";
 
 const DEFAULT_ACADEMIC_YEAR = "2025-2026";
 
@@ -361,16 +361,18 @@ export default function ChildCards() {
                         </div>
                       </div>
 
-                      {/* Actions Section */}
+                      {/* View Profile Button */}
                       <div className="p-4">
-                        <ChildActions
-                          studentPersonId={child.id}
-                          studentNumber={resolvedStudentNumber}
-                          academicYear={resolvedAcademicYear}
-                          educationType={educationType}
-                          schoolYear={schoolYear}
-                          className="w-full"
-                        />
+                        <Link
+                          href={`/child/${child.id}`}
+                          className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-primary-foreground rounded-xl transition-all shadow-md hover:shadow-xl font-semibold group/btn transform hover:scale-105"
+                        >
+                          <svg className="w-4 h-4 group-hover/btn:rotate-12 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
+                          <span>{locale === 'ar' ? 'عرض الملف' : 'View Profile'}</span>
+                        </Link>
                       </div>
                     </div>
                   </Card>
@@ -679,17 +681,19 @@ export default function ChildCards() {
                       </div>
                     </td>
 
-                    {/* Enhanced Actions */}
+                    {/* View Profile Link */}
                     <td className="px-8 py-6">
                       <div className="flex items-center justify-center">
-                        <ChildActions
-                          studentPersonId={child.id}
-                          studentNumber={resolvedStudentNumber}
-                          academicYear={resolvedAcademicYear}
-                          educationType={educationType}
-                          schoolYear={schoolYear}
-                          compact
-                        />
+                        <Link
+                          href={`/child/${child.id}`}
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg font-semibold hover:bg-primary/90 transition-all shadow hover:shadow-lg group/link"
+                        >
+                          <svg className="w-4 h-4 group-hover/link:rotate-12 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
+                          <span>{locale === 'ar' ? 'عرض الملف' : 'View Profile'}</span>
+                        </Link>
                       </div>
                     </td>
                   </tr>
