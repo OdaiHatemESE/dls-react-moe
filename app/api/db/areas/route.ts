@@ -11,6 +11,7 @@ type AreaRow = {
   IsActive: boolean;
   ZoneId: number;
   ManhalCode: string | null;
+  ZoneManhalCode?: string | null; // For Dubai/Northern enrichment
 };
 
 export async function GET(req: Request) {
@@ -46,8 +47,9 @@ export async function GET(req: Request) {
     } else {
       // match EF: Areas where Area.IsActive and Area.Zone.Region.Emirate.Id == zoneId
       // Joins: Areas -> Zones (on Areas.ZoneId = Zones.Id), Zones -> Regions (Regions.Id = Zones.RegionId), Regions -> Emirates (Emirates.Id = Regions.EmirateId)
+      // ALSO include Zone.ManhalCode for enrichment
       rows = (await prisma.$queryRaw(
-        Prisma.sql`SELECT A.Id, A.TitleAr, A.TitleEn, A.IsActive, A.ZoneId, A.ManhalCode
+        Prisma.sql`SELECT A.Id, A.TitleAr, A.TitleEn, A.IsActive, A.ZoneId, A.ManhalCode, Z.ManhalCode AS ZoneManhalCode
                    FROM Areas A
                    INNER JOIN Zones Z ON Z.Id = A.ZoneId
                    INNER JOIN Regions R ON R.Id = Z.RegionId

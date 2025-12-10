@@ -39,6 +39,7 @@ type Area = {
   IsActive: boolean;
   ZoneId: number;
   ManhalCode: string | null;
+  ZoneManhalCode?: string | null; // For Dubai/Northern enrichment
 };
 
 type Region = {
@@ -55,6 +56,7 @@ type Zone = {
   TitleEn: string;
   IsActive: boolean;
   RegionId: number;
+  ManhalCode: string | null;
 };
 
 export type AddressValue = {
@@ -83,6 +85,7 @@ export type AddressValue = {
   fullAddressAr?: string | null;
   emirateManhalCode?: string | null;
   areaManhalCode?: string | null;
+  zoneManhalCode?: string | null;
 };
 
 type AddressLookups = {
@@ -149,11 +152,13 @@ function enrichAddressWithLookups(
     if (zone) {
       next.zoneNameEn = zone.TitleEn ?? value.zoneNameEn ?? null;
       next.zoneNameAr = zone.TitleAr ?? value.zoneNameAr ?? null;
+      next.zoneManhalCode = zone.ManhalCode ?? value.zoneManhalCode ?? null;
     }
     // Keep existing names if lookup not found
   } else {
     next.zoneNameEn = null;
     next.zoneNameAr = null;
+    next.zoneManhalCode = null;
   }
 
   return next;

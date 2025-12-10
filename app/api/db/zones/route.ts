@@ -11,6 +11,7 @@ type ZoneRow = {
   TitleEn: string;
   IsActive: boolean | number;
   RegionId: number;
+  ManhalCode: string | null;
 };
 
 export async function GET(req: Request) {
@@ -27,7 +28,7 @@ export async function GET(req: Request) {
     }
 
     const rows = (await prisma.$queryRaw(
-      Prisma.sql`SELECT Id, TitleAr, TitleEn, IsActive, RegionId
+      Prisma.sql`SELECT Id, TitleAr, TitleEn, IsActive, RegionId, ManhalCode
                  FROM Zones
                  WHERE (IsActive = 1 OR IsActive = CAST(1 AS bit)) AND RegionId = ${regionId}
                  ORDER BY TitleEn ASC`

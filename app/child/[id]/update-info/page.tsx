@@ -1169,14 +1169,19 @@ export default function UpdateStudentInfoPage() {
             ? newAddr.emirateManhalCode
             : undefined;
           
-          // sectorID = area ManhalCode
-          sectorID = newAddr.areaManhalCode && textOrNull(newAddr.areaManhalCode)
-            ? newAddr.areaManhalCode
+          // cityID = emirate ManhalCode (same as stateID for non-Abu Dhabi)
+          cityID = newAddr.emirateManhalCode && textOrNull(newAddr.emirateManhalCode)
+            ? newAddr.emirateManhalCode
             : undefined;
           
-          // cityID and regionID remain empty for non-Abu Dhabi emirates
-          cityID = undefined;
-          regionID = undefined;
+          // regionID = zone ManhalCode
+          regionID = newAddr.areaManhalCode && textOrNull(newAddr.areaManhalCode)
+            ? newAddr.areaManhalCode
+            : undefined;
+        
+          
+ 
+
         }
       } else if (mode === 'edit' && idhResp?.data) {
         // EDIT MODE: Address not changed, preserve existing ManhalCodes from IDH

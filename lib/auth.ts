@@ -22,6 +22,10 @@ const oidcProvider = Auth0Provider({
       scope: "openid profile  IdentityServerApi",
     },
   },
+  // Increase timeout for discovery and other HTTP requests (default is 3500ms)
+  httpOptions: {
+    timeout: 10000, // 10 seconds
+  },
   // If no client secret is provided, configure as a public client using PKCE
   ...(OIDC_CLIENT_SECRET
     ? {}

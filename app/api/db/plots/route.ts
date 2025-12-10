@@ -17,7 +17,7 @@
  *     areaId: number,
  *     areaManhalCode: string | null,
  *     zoneId: number,
- *     zoneManhalCode: string | null,
+ *     curl "http://localhost:4200/api/db/zones?regionId=1": string | null,
  *     regionId: number,
  *     regionManhalCode: string | null,
  *     emirateId: number,

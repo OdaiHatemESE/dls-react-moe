@@ -40,6 +40,7 @@ export type AddressValue = {
   fullAddressAr?: string | null;
   emirateManhalCode?: string | null;
   areaManhalCode?: string | null;
+  zoneManhalCode?: string | null;
 };
 
 type Area = {
@@ -49,6 +50,7 @@ type Area = {
   IsActive: boolean;
   ZoneId: number;
   ManhalCode: string | null;
+  ZoneManhalCode?: string | null; // For Dubai/Northern enrichment
 };
 
 type Region = {
@@ -65,6 +67,7 @@ type Zone = {
   TitleEn: string;
   IsActive: boolean;
   RegionId: number;
+  ManhalCode: string | null;
 };
 
 // ============================================
@@ -153,7 +156,8 @@ export function DubaiNorthernEmiratesFields({
             if (selectedArea) {
               emit({ 
                 areaId: selectedArea.Id,
-                areaManhalCode: selectedArea.ManhalCode 
+                areaManhalCode: selectedArea.ManhalCode,
+                zoneManhalCode: selectedArea.ZoneManhalCode || null // Store zone ManhalCode from area
               });
             }
           }}

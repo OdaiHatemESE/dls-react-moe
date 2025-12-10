@@ -114,10 +114,13 @@ export default function ChildCards() {
     return { active, inactive };
   }, [children]);
 
+  const [syncError, setSyncError] = React.useState<string | null>(null);
+
   const handleSync = React.useCallback(async () => {
     if (!emirateId) return;
     
     setIsSyncing(true);
+    setSyncError(null); // Clear previous errors
     try {
       const response = await fetch(`/api/PP/child/sync?emirateId=${encodeURIComponent(emirateId)}`);
       if (response.ok) {
@@ -136,18 +139,32 @@ export default function ChildCards() {
         }
       } else {
         const errorData = await response.json().catch(() => ({}));
-        const errorMessage = typeof errorData.error === 'string' 
-          ? errorData.error 
-          : errorData.message || JSON.stringify(errorData.error || errorData) || 'Failed to sync data';
-        alert(errorMessage);
+        
+        // Check if this is a "student not found" error from backend
+        const errorCode = errorData.error;
+        const isNotFoundError = errorCode === 'STUDENT_NOT_FOUND' || 
+                               response.status === 404 || 
+                               errorData.message?.toLowerCase().includes('no student found');
+        
+        if (isNotFoundError) {
+          setSyncError(locale === 'ar' 
+            ? 'لم يتم العثور على بيانات الطلاب المرتبطة بحسابك. يرجى التواصل مع المدرسة للتحقق من ربط حسابك بسجلات الطلاب.'
+            : 'No student records found linked to your account. Please contact your school to verify your account is properly linked to student records.');
+        } else {
+          const errorMessage = errorData.message || 
+                             (typeof errorData.error === 'string' ? errorData.error : null) ||
+                             errorData.error?.message || 
+                             'Failed to sync data';
+          setSyncError(errorMessage);
+        }
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to sync data';
-      alert(errorMessage);
+      setSyncError(errorMessage);
     } finally {
       setIsSyncing(false);
     }
-  }, [emirateId, mutate]);
+  }, [emirateId, mutate, locale]);
 
   // Skeleton loaders with shimmer effect
   const SkeletonTableRow = () => (
@@ -240,14 +257,16 @@ export default function ChildCards() {
                 }
               </h3>
               <p className="text-sm text-muted-foreground font-medium leading-relaxed mb-2">
-                {needsSync 
-                  ? (locale === 'ar' 
-                    ? 'نحتاج إلى جلب بيانات أطفالك للمرة الأولى. قد يستغرق هذا بضع ثوانٍ.'
-                    : 'We need to fetch your children\'s data for the first time. This will only take a few seconds.')
-                  : (error instanceof Error ? error.message : String(error))
+                {syncError 
+                  ? syncError
+                  : needsSync 
+                    ? (locale === 'ar' 
+                      ? 'نحتاج إلى جلب بيانات أطفالك للمرة الأولى. قد يستغرق هذا بضع ثوانٍ.'
+                      : 'We need to fetch your children\'s data for the first time. This will only take a few seconds.')
+                    : (error instanceof Error ? error.message : String(error))
                 }
               </p>
-              {needsSync && (
+              {(needsSync || syncError) && (
                 <button
                   onClick={handleSync}
                   disabled={isSyncing}
@@ -266,7 +285,10 @@ export default function ChildCards() {
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                       </svg>
-                      {locale === 'ar' ? 'مزامنة البيانات' : 'Sync Data'}
+                      {syncError 
+                        ? (locale === 'ar' ? 'إعادة المحاولة' : 'Try Again')
+                        : (locale === 'ar' ? 'مزامنة البيانات' : 'Sync Data')
+                      }
                     </>
                   )}
                 </button>
@@ -555,15 +577,17 @@ export default function ChildCards() {
                             : (locale === 'ar' ? 'حدث خطأ' : 'Something went wrong')
                           }
                         </h3>
-                        <p className={needsSync ? "text-muted-foreground font-medium leading-relaxed mb-4" : "text-destructive font-semibold leading-relaxed"}>
-                          {needsSync 
-                            ? (locale === 'ar' 
-                              ? 'نحتاج إلى جلب بيانات أطفالك للمرة الأولى. الرجاء النقر على الزر أدناه للبدء. قد يستغرق هذا بضع ثوانٍ فقط.'
-                              : 'We need to fetch your children\'s data for the first time. Please click the button below to get started. This will only take a few seconds.')
-                            : (error instanceof Error ? error.message : String(error))
+                        <p className={needsSync || syncError ? "text-muted-foreground font-medium leading-relaxed mb-4" : "text-destructive font-semibold leading-relaxed"}>
+                          {syncError 
+                            ? syncError
+                            : needsSync 
+                              ? (locale === 'ar' 
+                                ? 'نحتاج إلى جلب بيانات أطفالك للمرة الأولى. الرجاء النقر على الزر أدناه للبدء. قد يستغرق هذا بضع ثوانٍ فقط.'
+                                : 'We need to fetch your children\'s data for the first time. Please click the button below to get started. This will only take a few seconds.')
+                              : (error instanceof Error ? error.message : String(error))
                           }
                         </p>
-                        {needsSync && (
+                        {(needsSync || syncError) && (
                           <button
                             onClick={handleSync}
                             disabled={isSyncing}
@@ -582,7 +606,10 @@ export default function ChildCards() {
                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                                 </svg>
-                                {locale === 'ar' ? 'مزامنة البيانات' : 'Sync Data'}
+                                {syncError 
+                                  ? (locale === 'ar' ? 'إعادة المحاولة' : 'Try Again')
+                                  : (locale === 'ar' ? 'مزامنة البيانات' : 'Sync Data')
+                                }
                               </>
                             )}
                           </button>
