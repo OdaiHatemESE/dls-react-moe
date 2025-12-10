@@ -132,18 +132,29 @@ export default function MyApplicationsPage() {
   const getStatusVariant = (statusId: number): "default" | "secondary" | "destructive" | "outline" => {
     switch (statusId) {
       case 1:
-        return "default"; // In progress
+        return "outline"; // In progress - will add orange custom class
       case 2:
         return "destructive"; // Returned
       case 3:
         return "secondary"; // Completed
       case 4:
-        return "outline"; // Accepted
+        return "outline"; // Accepted - will add green custom class
       case 5:
         return "outline"; // Rejected
       default:
         return "outline";
     }
+  };
+
+  // Get custom badge class for accepted status
+  const getStatusClass = (statusId: number): string => {
+    if (statusId === 4) {
+      return "bg-green-100 text-green-800 border-green-200 hover:bg-green-200 dark:bg-green-900 dark:text-green-100 dark:border-green-800";
+    }
+    if (statusId === 1) {
+      return "bg-orange-100 text-orange-800 border-orange-200 hover:bg-orange-200 dark:bg-orange-900 dark:text-orange-100 dark:border-orange-800";
+    }
+    return "";
   };
 
   // Get localized status text
@@ -152,7 +163,7 @@ export default function MyApplicationsPage() {
       1: { ar: 'قيد الإجراء', en: 'In Progress' },
       2: { ar: 'مرتجع', en: 'Returned' },
       3: { ar: 'تم التعديل', en: 'Modified' },
-      4: { ar: 'مقبول', en: 'Accepted' },
+      4: { ar: 'تمت  الموافقة', en: 'Accepted' },
       5: { ar: 'مرفوض', en: 'Rejected' },
     };
     
@@ -201,12 +212,32 @@ export default function MyApplicationsPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
       {/* Hero Header */}
-
+      <div className="border-b bg-background">
+        <div className="container mx-auto px-4 sm:px-6 py-6">
+          <div className={`flex items-center gap-3 ${locale === 'ar' ? 'flex-row' : ''}`}>
+            <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
+              <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </div>
+            <div className={locale === 'ar' ? 'text-right' : 'text-left'}>
+              <h1 className="text-xl sm:text-2xl font-bold text-foreground">
+                {locale === 'ar' ? 'طلباتي' : 'My Applications'}
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                {locale === 'ar' 
+                  ? 'جميع طلبات اطفالك' 
+                  : 'All your children\'s applications'}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Main Content */}
       <div className="container mx-auto px-4 sm:px-6 py-8 sm:py-12">
         {/* Statistics Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <Card className="border-0 bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg">
             <CardContent className="p-6">
               <div className={`flex items-center justify-between ${locale === 'ar' ? 'flex-row-reverse' : ''}`}>
@@ -239,6 +270,26 @@ export default function MyApplicationsPage() {
                 <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-lg">
+            <CardContent className="p-6">
+              <div className={`flex items-center justify-between ${locale === 'ar' ? 'flex-row-reverse' : ''}`}>
+                <div className={locale === 'ar' ? 'text-right' : 'text-left'}>
+                  <p className="text-sm opacity-90 mb-1">
+                    {locale === 'ar' ? 'تمت  الموافقة' : 'Accepted'}
+                  </p>
+                  <p className="text-3xl font-bold">
+                    {applications.filter(app => app.status_ID === 4).length}
+                  </p>
+                </div>
+                <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
               </div>
@@ -363,7 +414,10 @@ export default function MyApplicationsPage() {
                             </Badge>
                           </TableCell>
                           <TableCell className={locale === 'ar' ? 'text-right' : 'text-left'}>
-                            <Badge variant={getStatusVariant(application!.status_ID)}>
+                            <Badge 
+                              variant={getStatusVariant(application!.status_ID)}
+                              className={getStatusClass(application!.status_ID)}
+                            >
                               {getStatusText(application!.status_ID)}
                             </Badge>
                           </TableCell>
