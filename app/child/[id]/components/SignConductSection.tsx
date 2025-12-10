@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
 import clsx from 'clsx';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import {
     Sheet,
     SheetContent,
@@ -313,17 +314,43 @@ function SignConductSection({ locale, studentId, studentNumber, academicYear }: 
 
     const statusMessage = statusBanner ? getStatusMessage(statusBanner, locale) : null;
 
+    const actionCount = visibleActions.length;
+
     return (
-        <div className="flex items-center justify-center">
-            <Sheet open={isOpen} onOpenChange={setIsOpen}>
-                <SheetTrigger asChild>
-                    <Button className="px-6 py-3 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 font-medium hover:scale-105">
-                        {locale === 'ar' ? 'ابدأ الآن' : 'Get Started'}
-                        <svg className={clsx('w-5 h-5', locale === 'ar' && 'rotate-180')} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+        <Sheet open={isOpen} onOpenChange={setIsOpen}>
+            <SheetTrigger asChild>
+                <Button className={clsx(
+                    "relative w-full px-5 py-3 md:py-4 rounded-xl shadow-lg transition-all duration-300",
+                    "bg-white hover:bg-white/95",
+                    "text-primary font-bold text-sm md:text-base",
+                    "hover:shadow-2xl hover:scale-[1.02] active:scale-[0.98]",
+                    "group overflow-hidden"
+                )}>
+                    {/* Shimmer effect */}
+                    <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-primary/10 to-transparent" />
+                    
+                    {/* Content */}
+                    <div className="relative flex items-center justify-center gap-3">
+                        <span className="font-bold">
+                            {locale === 'ar' ? 'عرض الإجراءات المتاحة' : 'View Available Actions'}
+                        </span>
+                        
+                        {/* Action count badge */}
+                        {!isLoading && actionCount > 0 && (
+                            <Badge className="bg-primary text-white border-0 text-xs px-2 py-0.5 font-bold">
+                                {actionCount}
+                            </Badge>
+                        )}
+                        
+                        <svg className={clsx(
+                            'w-5 h-5 transition-transform duration-300 group-hover:translate-x-1',
+                            locale === 'ar' && 'rotate-180 group-hover:-translate-x-1'
+                        )} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                         </svg>
-                    </Button>
-                </SheetTrigger>
+                    </div>
+                </Button>
+            </SheetTrigger>
 
                 <SheetContent className={clsx('sm:max-w-lg bg-white', locale === 'ar' && 'direction-rtl')}>
                     <SheetHeader className="mb-8 pb-6 border-b border-gray-100">
@@ -429,7 +456,6 @@ function SignConductSection({ locale, studentId, studentNumber, academicYear }: 
                     </div>
                 </SheetContent>
             </Sheet>
-        </div>
     );
 }
 

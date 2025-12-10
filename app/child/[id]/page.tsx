@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { useParams } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import useSWR from 'swr';
 import clsx from 'clsx';
 import Link from 'next/link';
@@ -41,10 +42,13 @@ export default function ChildDetailPage() {
   const { t, locale } = useI18n();
   const params = useParams();
   const sourcedId = params.id as string;
+  const { data: session } = useSession();
+  const eid = session?.user?.emiratesId as string | undefined;
 
   // Fetch student data from PP API
   const swrKey = sourcedId ? `/api/PP/student/${encodeURIComponent(sourcedId)}` : null;
-  const { data: student, error, isLoading } = useSWR<StudentProfileV1>(swrKey, jsonFetcher);
+  const swrKeySync = eid ? `/api/PP/child/sync?emirateId=${encodeURIComponent(eid)}` : null;
+  const { data: student, error, isLoading, mutate } = useSWR<StudentProfileV1>(swrKey, jsonFetcher);
   
   // Fetch active academic year from admin config
   const { data: activeYearData } = useSWR<ActiveAcademicYearResponse>('/api/admin/academic-year/active', jsonFetcher);
@@ -61,6 +65,19 @@ export default function ChildDetailPage() {
   
   // Extract meta information for RefreshBar without introducing any casts
   const meta = (student as StudentProfileWithMeta | null)?.meta;
+  
+  // Transform function to update the student cache with synced data
+  const handleSyncData = (syncResponse: any) => {
+    if (syncResponse?.students && Array.isArray(syncResponse.students)) {
+      // Find the current student in the synced data
+      const syncedStudent = syncResponse.students.find((s: StudentProfileV1) => s.id === sourcedId);
+      if (syncedStudent) {
+        // Update the student cache with the synced data
+        mutate(syncedStudent, false);
+      }
+    }
+    return syncResponse;
+  };
 
   if (isLoading) {
     return <LoadingSkeleton locale={locale} />;
@@ -127,10 +144,11 @@ export default function ChildDetailPage() {
             {/* Mobile-Optimized Action Buttons */}
             <div className="flex items-center gap-1 md:gap-2 min-w-0 overflow-hidden">
               <RefreshBar
-                swrKey={swrKey}
+                swrKey={swrKeySync}
                 meta={meta}
                 variant="compact"
                 className="flex-shrink-0 min-w-0"
+                onAfterFetch={handleSyncData}
                 labels={{
                   lastUpdated: locale === 'ar' ? 'آخر تحديث:' : 'Last updated:',
                   confirm: locale === 'ar' ? 'جلب بيانات حديثة؟' : 'Fetch fresh data?',
@@ -147,14 +165,9 @@ export default function ChildDetailPage() {
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 md:py-8">
 
         {/* Mobile App-like Student Profile Header */}
-        <div className="relative mb-6 md:mb-8">
+        <div className="relative mb-6 md:mb-8 space-y-4">
           {/* Main Profile Card - Enhanced for Mobile */}
           <Card className="border-0 shadow-lg bg-card overflow-hidden touch-manipulation">
-            {/* Background Pattern - Optimized for mobile */}
-            {/* <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-primary/10"></div>
-            <div className="absolute top-0 right-0 w-32 h-32 md:w-64 md:h-64 bg-gradient-to-br from-primary/10 to-transparent rounded-full -translate-y-16 translate-x-16 md:-translate-y-32 md:translate-x-32"></div>
-            <div className="absolute bottom-0 left-0 w-24 h-24 md:w-48 md:h-48 bg-gradient-to-tr from-primary/5 to-transparent rounded-full translate-y-12 -translate-x-12 md:translate-y-24 md:-translate-x-24"></div>
-             */}
             <div className="relative px-4 py-6 md:px-8 md:py-8">
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 md:gap-6">
                 {/* Enhanced Avatar - Mobile Optimized */}
@@ -224,52 +237,56 @@ export default function ChildDetailPage() {
                     )}
                   </div>
                 </div>
+              </div>
+            </div>
+          </Card>
 
-                {/* Parent Actions Section - Mobile Optimized */}
-                <div className="flex-shrink-0 w-full sm:w-auto">
-                  <div className="bg-card/80 backdrop-blur-sm rounded-xl border border-border/80 p-3 md:p-4 shadow-sm touch-manipulation space-y-3">
-                    {/* Documents Section */}
+          {/* Parent Actions Banner - Full Width, Simple & Direct */}
+          <Card className={clsx(
+            "border-0 shadow-lg overflow-hidden touch-manipulation",
+            "bg-gradient-to-r from-primary via-primary/95 to-primary/90",
+            student.isActive && "hover:shadow-xl transition-all duration-300"
+          )}>
+            <div className="relative px-4 py-4 md:px-8 md:py-5">
+              {student.isActive ? (
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div className="flex items-center gap-3 md:gap-4">
+                    <div className="p-2.5 md:p-3 bg-white/20 backdrop-blur-sm rounded-xl shadow-lg">
+                      <svg className="w-5 h-5 md:w-6 md:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                    </div>
                     <div>
-                      <div className="flex items-center gap-2 md:gap-3 mb-2">
-                        <div className="p-1.5 md:p-2 bg-primary/10 rounded-lg">
-                          <svg className="w-3 h-3 md:w-4 md:h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                          </svg>
-                        </div>
-                        <div className="flex-1">
-                          <h3 className="text-xs font-semibold text-foreground">
-                            {locale === 'ar' ? 'إجراءات ولي الأمر' : 'Parent Actions'}
-                          </h3>
-                          <p className="text-xs text-muted-foreground hidden md:block">
-                            {locale === 'ar' ? 'طباعة وتوقيع الوثائق' : 'Print & sign documents'}
-                          </p>
-                        </div>
-                      </div>
-                      
-                      {/* Show actions only for active students */}
-                      {student.isActive ? (
-                        <SignConductSection 
-                          locale={locale} 
-                          studentId={student.id}
-                          studentNumber={student.studentNumber}
-                          academicYear={activeAcademicYear}
-                        />
-                      ) : (
-                        <div className="text-center py-4 px-3 bg-muted/50 rounded-lg border border-border/50">
-                          <svg className="w-8 h-8 mx-auto mb-2 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          <p className="text-xs text-muted-foreground">
-                            {locale === 'ar' 
-                              ? 'الإجراءات متاحة فقط للطلاب ذوي التسجيل النشط' 
-                              : 'Actions available only for students with active enrollment'}
-                          </p>
-                        </div>
-                      )}
+                      <h3 className="text-sm md:text-base font-bold text-white flex items-center gap-2">
+                        {locale === 'ar' ? 'إجراءات ولي الأمر' : 'Parent Actions'}
+                      </h3>
+                      <p className="text-xs md:text-sm text-white/90 mt-0.5">
+                        {locale === 'ar' ? 'طباعة وتوقيع الوثائق المطلوبة' : 'Print & sign required documents'}
+                      </p>
                     </div>
                   </div>
+                  
+                  <div className="w-full sm:w-auto">
+                    <SignConductSection 
+                      locale={locale} 
+                      studentId={student.id}
+                      studentNumber={student.studentNumber}
+                      academicYear={activeAcademicYear}
+                    />
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="flex items-center justify-center gap-3 text-white/90">
+                  <svg className="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <p className="text-xs md:text-sm font-medium">
+                    {locale === 'ar' 
+                      ? 'الإجراءات متاحة فقط للطلاب ذوي التسجيل النشط' 
+                      : 'Actions available only for students with active enrollment'}
+                  </p>
+                </div>
+              )}
             </div>
           </Card>
         </div>

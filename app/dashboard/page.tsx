@@ -20,10 +20,22 @@ export default function DashboardPage() {
   const eid = session?.user?.emiratesId as string | undefined;
   const swrKey = eid ? `/api/PP/ChildList/${encodeURIComponent(eid)}` : null;
   const swrKeySync = eid ? `/api/PP/child/sync?emirateId=${encodeURIComponent(eid)}` : null;
-  const { data: childrenData } = useSWR<any>(swrKey, jsonFetcher);
+  const { data: childrenData, mutate } = useSWR<any>(swrKey, jsonFetcher);
   
   // Extract meta from response
   const meta = childrenData?.meta;
+  
+  // Transform function to update the ChildList cache with synced data
+  const handleSyncData = (syncResponse: any) => {
+    if (syncResponse?.students) {
+      // Update the ChildList cache with the synced students
+      mutate({
+        students: syncResponse.students,
+        meta: syncResponse.meta
+      }, false);
+    }
+    return syncResponse;
+  };
 
   return (
     <div className={clsx("min-h-screen bg-gradient-to-br from-background via-background to-primary/5", locale === 'ar' && 'direction-rtl')}>
@@ -56,6 +68,7 @@ export default function DashboardPage() {
                 meta={meta}
                 variant="compact"
                 className="flex-shrink-0 min-w-0"
+                onAfterFetch={handleSyncData}
                 labels={{
                   lastUpdated: locale === 'ar' ? 'آخر تحديث:' : 'Last updated:',
                   confirm: locale === 'ar' ? 'جلب بيانات حديثة؟' : 'Fetch fresh data?',
