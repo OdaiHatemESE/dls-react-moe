@@ -92,13 +92,34 @@ export async function GET(
       }
     }
 
-    // Get PP token from our token endpoint
+    // Get PP token from our token endpoint with timeout and retry
     const internalApiBaseUrl = process.env.PUBLIC_URL || process.env.NEXTAUTH_URL || 'http://localhost:4200';
     const tokenUrl = `${internalApiBaseUrl}/api/PP/auth/token`;
-    const tokenRes = await fetch(tokenUrl);
-    const tokenData: PPTokenResponse = await tokenRes.json();
+    
+    let tokenRes;
+    let tokenData: PPTokenResponse;
+    
+    try {
+      // Add timeout to token request (10 seconds)
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      
+      tokenRes = await fetch(tokenUrl, { signal: controller.signal });
+      clearTimeout(timeoutId);
+      tokenData = await tokenRes.json();
+    } catch (err: any) {
+      console.error('[PP ChildList] Token fetch failed:', err.message);
+      return NextResponse.json(
+        { 
+          error: 'Failed to get authentication token. Please try again.',
+          details: err.name === 'AbortError' ? 'Request timeout' : err.message
+        },
+        { status: 503 }
+      );
+    }
 
     if (!tokenRes.ok || !tokenData.accessToken) {
+      console.error('[PP ChildList] Token validation failed:', { status: tokenRes.status, error: tokenData.error });
       return NextResponse.json(
         { error: tokenData.error || 'Failed to get PP access token' },
         { status: 500 }
@@ -125,18 +146,37 @@ export async function GET(
     // Use /sync endpoint to get fresh data from database with correct isPrimary values
     const profilesUrl = `${baseUrl.replace(/\/$/, '')}/oneroster/students/profiles?emirateId=${eid}`;
     
-    const profilesRes = await fetch(profilesUrl, {
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-    });
+    let profilesRes: Response;
+    try {
+      // Add timeout to profiles request (15 seconds)
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+      
+      profilesRes = await fetch(profilesUrl, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+    } catch (err: any) {
+      console.error('[PP ChildList] Profiles fetch timeout/error:', err.message);
+      return NextResponse.json(
+        { 
+          error: 'Failed to fetch student profiles. Please try again.',
+          details: err.name === 'AbortError' ? 'Request timeout' : err.message
+        },
+        { status: 503 }
+      );
+    }
 
     if (!profilesRes.ok) {
       const errorData = await profilesRes.json().catch(() => null);
       console.error('[PP ChildList] Profiles fetch failed:', {
         status: profilesRes.status,
         error: errorData,
+        eid: eid.slice(0, 6) + '***', // Log partial EID for debugging
       });
       
       // For 404 errors, indicate that sync is needed
@@ -200,11 +240,11 @@ export async function GET(
 
     // Cache the student list for 5 minutes with metadata
     const fetchedAt = new Date().toISOString();
-    await cacheSetJSON<Wrapped<StudentWithActiveStatus[]>>(
-      cacheKey,
-      { data: studentsWithStatus, fetchedAt },
-      { ttlSeconds: 300 }
-    );
+    const wrappedData: Wrapped<StudentWithActiveStatus[]> = {
+      data: studentsWithStatus,
+      fetchedAt: fetchedAt
+    };
+    await cacheSetJSON(cacheKey, wrappedData, { ttlSeconds: 300 });
 
     return NextResponse.json({
       students: studentsWithStatus,
@@ -216,6 +256,13 @@ export async function GET(
       },
     });
   } catch (err: any) {
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+    console.error('[PP ChildList] Unexpected error:', {
+      message: err.message,
+      stack: err.stack?.split('\n').slice(0, 3), // Log first 3 lines of stack
+    });
+    return NextResponse.json({ 
+      error: 'An unexpected error occurred. Please try again.',
+      details: err.message 
+    }, { status: 500 });
   }
 }

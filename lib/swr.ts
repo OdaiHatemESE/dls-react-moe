@@ -20,5 +20,8 @@ export async function jsonFetcher<T = unknown>(input: string, init?: RequestInit
 export const defaultSWRConfig = {
   fetcher: jsonFetcher,
   revalidateOnFocus: false,
-  shouldRetryOnError: false,
+  shouldRetryOnError: true, // Enable retry for transient failures
+  errorRetryCount: 3, // Retry up to 3 times
+  errorRetryInterval: 2000, // Wait 2 seconds between retries
+  dedupingInterval: 5000, // Prevent duplicate requests within 5 seconds
 } as const;

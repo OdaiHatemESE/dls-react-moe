@@ -263,7 +263,13 @@ export default function ChildCards() {
                     ? (locale === 'ar' 
                       ? 'نحتاج إلى جلب بيانات أطفالك للمرة الأولى. قد يستغرق هذا بضع ثوانٍ.'
                       : 'We need to fetch your children\'s data for the first time. This will only take a few seconds.')
-                    : (error instanceof Error ? error.message : String(error))
+                    : (error instanceof Error 
+                      ? error.message 
+                      : typeof error === 'object' && error !== null && 'error' in error 
+                        ? String((error as any).error)
+                        : typeof error === 'object' && error !== null && 'details' in error
+                          ? String((error as any).details)
+                          : String(error))
                 }
               </p>
               {(needsSync || syncError) && (
@@ -584,7 +590,13 @@ export default function ChildCards() {
                               ? (locale === 'ar' 
                                 ? 'نحتاج إلى جلب بيانات أطفالك للمرة الأولى. الرجاء النقر على الزر أدناه للبدء. قد يستغرق هذا بضع ثوانٍ فقط.'
                                 : 'We need to fetch your children\'s data for the first time. Please click the button below to get started. This will only take a few seconds.')
-                              : (error instanceof Error ? error.message : String(error))
+                              : (error instanceof Error 
+                                ? error.message 
+                                : typeof error === 'object' && error !== null && 'error' in error 
+                                  ? String((error as any).error)
+                                  : typeof error === 'object' && error !== null && 'details' in error
+                                    ? String((error as any).details)
+                                    : String(error))
                           }
                         </p>
                         {(needsSync || syncError) && (

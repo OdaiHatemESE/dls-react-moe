@@ -28,13 +28,33 @@ export async function PATCH(
     const status = typeof body.status === 'number' ? body.status : null;
     const isInformationUpdated = typeof body.isInformationUpdated === 'boolean' ? body.isInformationUpdated : true;
 
-    // Get PP token from our token endpoint
+    // Get PP token from our token endpoint with timeout
     const internalApiBaseUrl = process.env.PUBLIC_URL || process.env.NEXTAUTH_URL || 'http://localhost:4200';
     const tokenUrl = `${internalApiBaseUrl}/api/PP/auth/token`;
-    const tokenRes = await fetch(tokenUrl);
-    const tokenData: PPTokenResponse = await tokenRes.json();
+    
+    let tokenRes;
+    let tokenData: PPTokenResponse;
+    
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      
+      tokenRes = await fetch(tokenUrl, { signal: controller.signal });
+      clearTimeout(timeoutId);
+      tokenData = await tokenRes.json();
+    } catch (err: any) {
+      console.error('[PP Information Status] Token fetch failed:', err.message);
+      return NextResponse.json(
+        { 
+          error: 'Failed to get authentication token. Please try again.',
+          details: err.name === 'AbortError' ? 'Request timeout' : err.message
+        },
+        { status: 503 }
+      );
+    }
 
     if (!tokenRes.ok || !tokenData.accessToken) {
+      console.error('[PP Information Status] Token validation failed:', { status: tokenRes.status });
       return NextResponse.json(
         { error: tokenData.error || 'Failed to get PP access token' },
         { status: 500 }
@@ -62,20 +82,42 @@ export async function PATCH(
       informationUpdateStatus: status,
     };
 
-    // Call PP API endpoint
+    // Call PP API endpoint with timeout
     const ppUrl = `${baseUrl.replace(/\/$/, '')}/oneroster/students/${studentSourcedId}/status`;
     
-    const ppRes = await fetch(ppUrl, {
-      method: 'PATCH',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    });
+    let ppRes;
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+      
+      ppRes = await fetch(ppUrl, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+    } catch (err: any) {
+      console.error('[PP Information Status] API call failed:', err.message);
+      return NextResponse.json(
+        { 
+          error: 'Failed to update status. Please try again.',
+          details: err.name === 'AbortError' ? 'Request timeout' : err.message
+        },
+        { status: 503 }
+      );
+    }
 
     if (!ppRes.ok) {
       const errorData = await ppRes.json().catch(() => null);
+      console.error('[PP Information Status] API error:', {
+        status: ppRes.status,
+        error: errorData,
+        studentSourcedId: studentSourcedId.slice(0, 10) + '***',
+      });
       return NextResponse.json(
         { error: errorData ?? `Upstream returned ${ppRes.status}` },
         { status: ppRes.status }
@@ -94,9 +136,15 @@ export async function PATCH(
       },
     });
   } catch (err: any) {
-    console.error('[PP Information Status]', err);
+    console.error('[PP Information Status] Unexpected error:', {
+      message: err.message,
+      stack: err.stack?.split('\n').slice(0, 3),
+    });
     return NextResponse.json(
-      { error: String(err) },
+      { 
+        error: 'An unexpected error occurred. Please try again.',
+        details: err.message 
+      },
       { status: 500 }
     );
   }
