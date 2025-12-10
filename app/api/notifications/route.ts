@@ -123,8 +123,34 @@ export async function GET(request: NextRequest) {
       };
     });
 
+    // Deduplicate: If StatusChange and DataUpdate exist for same sourceHistoryId within 1 minute,
+    // keep only StatusChange (more specific)
+    const deduplicatedNotifications = formattedNotifications.filter((notif, index, arr) => {
+      // Only check for DataUpdate notifications
+      if (notif.type !== 'DataUpdate') return true;
+      
+      const sourceHistoryId = notif.data?.sourceHistoryId;
+      if (!sourceHistoryId) return true; // Keep if no sourceHistoryId
+      
+      // Check if there's a StatusChange notification for the same sourceHistoryId within 1 minute
+      const hasStatusChange = arr.some((other, otherIndex) => {
+        if (otherIndex === index) return false; // Skip self
+        if (other.type !== 'StatusChange') return false;
+        if (other.data?.sourceHistoryId !== sourceHistoryId) return false;
+        
+        // Check if created within 1 minute of each other
+        const timeDiff = Math.abs(
+          new Date(notif.createdAt).getTime() - new Date(other.createdAt).getTime()
+        );
+        return timeDiff < 60000; // 60 seconds
+      });
+      
+      // If StatusChange exists for same event, filter out this DataUpdate
+      return !hasStatusChange;
+    });
+
     return NextResponse.json({
-      notifications: formattedNotifications,
+      notifications: deduplicatedNotifications,
       total: await prisma.notification.count({ where }),
     });
   } catch (error) {
