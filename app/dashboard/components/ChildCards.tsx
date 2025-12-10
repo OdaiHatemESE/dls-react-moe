@@ -9,7 +9,6 @@ import { Badge } from "@/components/ui/badge";
 import { useI18n } from "@/app/i18n/I18nProvider";
 import { useSession } from "next-auth/react";
 import clsx from "clsx";
-import { ChildStatusBadge } from "./ChildActions";
 
 const DEFAULT_ACADEMIC_YEAR = "2025-2026";
 
@@ -356,8 +355,6 @@ export default function ChildCards() {
                                 : (locale === 'ar' ? 'غير نشط' : 'Inactive')}
                             </Badge>
                           )}
-                          
-                          <ChildStatusBadge studentPersonId={child.id} variant="mobile" />
                         </div>
                       </div>
 
@@ -427,7 +424,7 @@ export default function ChildCards() {
                   <div className="flex flex-wrap items-center gap-1.5">
                     <Badge variant="outline" className="text-xs px-2 py-0.5 font-medium bg-muted/60 border-border/60">
                       <svg className={clsx("w-3 h-3", locale === 'ar' ? 'ml-1' : 'mr-1')} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 4 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
                       </svg>
                       {child.studentNumber || child.id?.slice(-6) || '—'}
                     </Badge>
@@ -450,8 +447,6 @@ export default function ChildCards() {
                           : (locale === 'ar' ? 'غير نشط' : 'Inactive')}
                       </Badge>
                     )}
-                    
-                    <ChildStatusBadge studentPersonId={child.id} variant="mobile" />
                   </div>
                 </div>
 
@@ -675,7 +670,6 @@ export default function ChildCards() {
                                   : (locale === 'ar' ? 'غير نشط' : 'Inactive')}
                               </Badge>
                             )}
-                            <ChildStatusBadge studentPersonId={child.id} />
                           </div>
                         </div>
                       </div>
@@ -773,7 +767,6 @@ export default function ChildCards() {
                                       : (locale === 'ar' ? 'غير نشط' : 'Inactive')}
                                   </Badge>
                                 )}
-                                <ChildStatusBadge studentPersonId={child.id} />
                               </div>
                             </div>
                           </div>
