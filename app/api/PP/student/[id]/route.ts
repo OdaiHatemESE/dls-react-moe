@@ -181,7 +181,7 @@ export async function GET(
 
     // Fetch all student profiles for the parent
     // Use /sync endpoint to get fresh data from database with correct isPrimary values
-    const profilesUrl = `${baseUrl.replace(/\/$/, '')}/oneroster/students/profiles/sync?emirateId=${eid}`;
+    const profilesUrl = `${baseUrl.replace(/\/$/, '')}/oneroster/students/profiles?emirateId=${eid}`;
     
     let profilesRes: Response;
     try {

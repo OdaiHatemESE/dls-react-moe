@@ -16,7 +16,6 @@ import {
 import { jsonFetcher } from '@/lib/swr';
 import type { ChildActionDescriptor, ChildActionResponse } from '@/types/child-actions';
 import {
-    ChildStatusBadge,
     getActionLabel,
     getActionReason,
     getStatusMessage,
@@ -57,9 +56,14 @@ function SignConductSection({ locale, studentId, studentNumber, academicYear }: 
         return `/api/parent/child-actions?${search.toString()}`;
     }, [studentId]);
 
-    const { data, error, isLoading } = useSWR<ChildActionResponse>(query, jsonFetcher, {
-        keepPreviousData: true,
-    });
+    // Only fetch when sheet is open
+    const { data, error, isLoading } = useSWR<ChildActionResponse>(
+        isOpen ? query : null,
+        jsonFetcher,
+        {
+            keepPreviousData: true,
+        }
+    );
 
     // Resolve student number and academic year
     const resolvedStudentNumber = React.useMemo(() => {
@@ -82,11 +86,15 @@ function SignConductSection({ locale, studentId, studentNumber, academicYear }: 
         return `/api/parent/students-partnership-charter?${params.toString()}`;
     }, [resolvedStudentNumber, resolvedAcademicYear]);
 
+    // Only fetch charter when sheet is open
     const {
         data: charterData,
         error: charterError,
         isLoading: isCharterLoading,
-    } = useSWR<PartnershipCharterResponse>(charterEndpoint, jsonFetcher);
+    } = useSWR<PartnershipCharterResponse>(
+        isOpen && charterEndpoint ? charterEndpoint : null,
+        jsonFetcher
+    );
 
     const charterAttachment = React.useMemo(() => {
         if (!charterData?.data) return "";
@@ -329,9 +337,6 @@ function SignConductSection({ locale, studentId, studentNumber, academicYear }: 
                                 <SheetTitle className={clsx(locale === 'ar' ? 'text-right font-semibold text-xl' : 'text-left text-2xl font-bold', 'text-gray-900')}>
                                     {locale === 'ar' ? 'إجراءات ولي الأمر' : 'Parent Actions'}
                                 </SheetTitle>
-                                {badge && studentId && (
-                                    <ChildStatusBadge studentPersonId={studentId} variant="mobile" />
-                                )}
                             </div>
                         </div>
                         <SheetDescription className={clsx(locale === 'ar' ? 'text-right text-base' : 'text-left text-lg', 'text-gray-600 leading-relaxed')}>
@@ -360,11 +365,45 @@ function SignConductSection({ locale, studentId, studentNumber, academicYear }: 
                     </SheetHeader>
 
                     <div className="space-y-3">
-                        {actions.length > 0 ? actions.map(renderAction) : (
+                        {isLoading && !data ? (
+                            // Loading skeleton
+                            <>
+                                {Array.from({ length: 3 }).map((_, index) => (
+                                    <div
+                                        key={`skeleton-${index}`}
+                                        className="group relative overflow-hidden rounded-xl border border-border/60 bg-white"
+                                    >
+                                        <div className="relative w-full h-auto p-6 flex gap-4 items-start">
+                                            {/* Icon skeleton */}
+                                            <div className="relative w-14 h-14 rounded-xl bg-gradient-to-br from-muted via-muted/80 to-muted/60 overflow-hidden flex-shrink-0">
+                                                <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+                                            </div>
+                                            
+                                            {/* Content skeleton */}
+                                            <div className="flex-1 space-y-3">
+                                                <div className="relative h-5 w-3/4 rounded-lg bg-muted overflow-hidden">
+                                                    <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+                                                </div>
+                                                <div className="relative h-4 w-full rounded-lg bg-muted/70 overflow-hidden">
+                                                    <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+                                                </div>
+                                            </div>
+                                            
+                                            {/* Arrow skeleton */}
+                                            <div className="relative w-8 h-8 rounded-full bg-muted overflow-hidden flex-shrink-0">
+                                                <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </>
+                        ) : actions.length > 0 ? (
+                            actions.map(renderAction)
+                        ) : !isLoading ? (
                             <div className="rounded-xl border border-border/60 bg-muted/40 px-4 py-6 text-center text-sm text-muted-foreground">
                                 {locale === 'ar' ? 'لا توجد إجراءات متاحة حالياً.' : 'No actions are currently available.'}
                             </div>
-                        )}
+                        ) : null}
                     </div>
 
                     {reasons.length > 0 && (

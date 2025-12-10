@@ -21,7 +21,6 @@ import StreamGrades from './StreamGrades';
 import SignConductSection from './components/SignConductSection';
 import { LoadingSkeleton } from './components/LoadingSkeleton';
 import InfoTab from './components/InfoTab';
-import { ChildStatusBadge } from '@/app/dashboard/components/ChildActions';
 
 type StudentProfileWithMeta = StudentProfileV1 & { meta?: { cache?: CacheMeta } };
 
@@ -223,8 +222,6 @@ export default function ChildDetailPage() {
                           : (locale === 'ar' ? 'غير نشط' : 'Inactive')}
                       </Badge>
                     )}
-
-                    <ChildStatusBadge studentPersonId={student.id} variant="mobile" />
                   </div>
                 </div>
 
