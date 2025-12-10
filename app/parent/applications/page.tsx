@@ -457,6 +457,18 @@ export default function MyApplicationsPage() {
                                 </a>
                               </Button>
                             )}
+                            {(application!.status_ID === 1 || application!.status_ID === 4) && (
+                              <Button
+                                asChild
+                                size="sm"
+                                variant="outline"
+                                className="bg-blue-50 hover:bg-blue-100 text-blue-600 border-blue-200 dark:bg-blue-950 dark:hover:bg-blue-900 dark:text-blue-300 dark:border-blue-800"
+                              >
+                                <a href={`/child/${child.id}`}>
+                                  {locale === 'ar' ? 'عرض الملف' : 'View Profile'}
+                                </a>
+                              </Button>
+                            )}
                           </TableCell>
                         </TableRow>
                       );
