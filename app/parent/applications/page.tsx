@@ -209,8 +209,8 @@ export default function MyApplicationsPage() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
           <Card className="border-0 bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg">
             <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
+              <div className={`flex items-center justify-between ${locale === 'ar' ? 'flex-row-reverse' : ''}`}>
+                <div className={locale === 'ar' ? 'text-right' : 'text-left'}>
                   <p className="text-sm opacity-90 mb-1">
                     {locale === 'ar' ? 'إجمالي الطلبات' : 'Total Applications'}
                   </p>
@@ -227,8 +227,8 @@ export default function MyApplicationsPage() {
 
           <Card className="border-0 bg-gradient-to-br from-green-500 to-green-600 text-white shadow-lg">
             <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
+              <div className={`flex items-center justify-between ${locale === 'ar' ? 'flex-row-reverse' : ''}`}>
+                <div className={locale === 'ar' ? 'text-right' : 'text-left'}>
                   <p className="text-sm opacity-90 mb-1">
                     {locale === 'ar' ? 'قيد الإجراء' : 'In Progress'}
                   </p>
@@ -247,8 +247,8 @@ export default function MyApplicationsPage() {
 
           <Card className="border-0 bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-lg">
             <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
+              <div className={`flex items-center justify-between ${locale === 'ar' ? 'flex-row-reverse' : ''}`}>
+                <div className={locale === 'ar' ? 'text-right' : 'text-left'}>
                   <p className="text-sm opacity-90 mb-1">
                     {locale === 'ar' ? 'الطلاب بطلبات' : 'Students with Applications'}
                   </p>
@@ -281,22 +281,22 @@ export default function MyApplicationsPage() {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/50">
-                    <TableHead className="font-bold">
+                    <TableHead className={`font-bold ${locale === 'ar' ? 'text-right' : 'text-left'}`}>
                       {locale === 'ar' ? '#' : 'ID'}
                     </TableHead>
-                    <TableHead className="font-bold">
+                    <TableHead className={`font-bold ${locale === 'ar' ? 'text-right' : 'text-left'}`}>
                       {locale === 'ar' ? 'اسم الطالب' : 'Student Name'}
                     </TableHead>
-                    <TableHead className="font-bold">
+                    <TableHead className={`font-bold ${locale === 'ar' ? 'text-right' : 'text-left'}`}>
                       {locale === 'ar' ? 'رقم الطالب' : 'Student Number'}
                     </TableHead>
-                    <TableHead className="font-bold">
+                    <TableHead className={`font-bold ${locale === 'ar' ? 'text-right' : 'text-left'}`}>
                       {locale === 'ar' ? 'الحالة' : 'Status'}
                     </TableHead>
-                    <TableHead className="font-bold">
+                    <TableHead className={`font-bold ${locale === 'ar' ? 'text-right' : 'text-left'}`}>
                       {locale === 'ar' ? 'التعليق' : 'Comment'}
                     </TableHead>
-                    <TableHead className="font-bold">
+                    <TableHead className={`font-bold ${locale === 'ar' ? 'text-right' : 'text-left'}`}>
                       {locale === 'ar' ? 'التاريخ' : 'Date'}
                     </TableHead>
                     <TableHead className="font-bold text-center">
@@ -343,11 +343,11 @@ export default function MyApplicationsPage() {
 
                       return (
                         <TableRow key={child.id} className="hover:bg-muted/30 transition-colors">
-                          <TableCell className="font-medium">
+                          <TableCell className={`font-medium ${locale === 'ar' ? 'text-right' : 'text-left'}`}>
                             {application?.id || index + 1}
                           </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-3">
+                          <TableCell className={locale === 'ar' ? 'text-right' : 'text-left'}>
+                            <div className={`flex items-center gap-3 ${locale === 'ar' ? 'flex-row' : ''}`}>
                               <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold">
                                 {displayName.charAt(0).toUpperCase()}
                               </div>
@@ -357,20 +357,20 @@ export default function MyApplicationsPage() {
                               </div>
                             </div>
                           </TableCell>
-                          <TableCell>
+                          <TableCell className={locale === 'ar' ? 'text-right' : 'text-left'}>
                             <Badge variant="outline" className="font-mono">
                               {application!.studentNumber || child.studentNumber || '-'}
                             </Badge>
                           </TableCell>
-                          <TableCell>
+                          <TableCell className={locale === 'ar' ? 'text-right' : 'text-left'}>
                             <Badge variant={getStatusVariant(application!.status_ID)}>
                               {getStatusText(application!.status_ID)}
                             </Badge>
                           </TableCell>
-                          <TableCell>
+                          <TableCell className={locale === 'ar' ? 'text-right' : 'text-left'}>
                             {application!.returnComment ? (
                               <div className="max-w-xs">
-                                <p className="text-sm text-muted-foreground line-clamp-2" title={application!.returnComment}>
+                                <p className={`text-sm text-muted-foreground line-clamp-2 ${locale === 'ar' ? 'text-right' : 'text-left'}`} title={application!.returnComment}>
                                   {application!.returnComment}
                                 </p>
                               </div>
@@ -378,7 +378,7 @@ export default function MyApplicationsPage() {
                               <span className="text-sm text-muted-foreground italic">-</span>
                             )}
                           </TableCell>
-                          <TableCell>
+                          <TableCell className={locale === 'ar' ? 'text-right' : 'text-left'}>
                             <span className="text-sm text-muted-foreground">
                               {new Date(application!.datetime).toLocaleDateString(
                                 locale === 'ar' ? 'ar-AE' : 'en-US',
