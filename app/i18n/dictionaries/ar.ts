@@ -378,6 +378,8 @@ export const ar = {
       academicYearDesc: "تعيين السنة الأكاديمية النشطة",
       actions: "إجراءات الطلاب",
       actionsDesc: "إدارة إجراءات الطلاب",
+      resilience: "مرونة واجهات البرمجة",
+      resilienceDesc: "مراقبة صحة النظام والأداء",
     },
     analytics: {
       title: "نظرة عامة على تحليلات النظام",

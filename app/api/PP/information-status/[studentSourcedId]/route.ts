@@ -1,9 +1,15 @@
 import { NextResponse } from 'next/server';
+import { fetchWithTimeout, FetchTimeoutError } from '@/lib/fetch-with-timeout';
 
 type PPTokenResponse = {
   accessToken?: string;
   error?: string;
 };
+
+// Timeout configuration
+const TOKEN_TIMEOUT_MS = 8000;  // 8 seconds for token fetch
+const STATUS_UPDATE_TIMEOUT_MS = 15000; // 15 seconds for status update
+const MAX_RETRIES = 1; // Retry once on timeout
 
 /**
  * PATCH /api/PP/information-status/[studentSourcedId]
@@ -36,18 +42,24 @@ export async function PATCH(
     let tokenData: PPTokenResponse;
     
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000);
-      
-      tokenRes = await fetch(tokenUrl, { signal: controller.signal });
-      clearTimeout(timeoutId);
+      tokenRes = await fetchWithTimeout(tokenUrl, {
+        timeoutMs: TOKEN_TIMEOUT_MS,
+      });
       tokenData = await tokenRes.json();
     } catch (err: any) {
       console.error('[PP Information Status] Token fetch failed:', err.message);
+      
+      if (err instanceof FetchTimeoutError) {
+        return NextResponse.json(
+          { error: 'Authentication request timed out. Please try again.' },
+          { status: 504 }
+        );
+      }
+      
       return NextResponse.json(
         { 
           error: 'Failed to get authentication token. Please try again.',
-          details: err.name === 'AbortError' ? 'Request timeout' : err.message
+          details: err.message
         },
         { status: 503 }
       );
@@ -82,31 +94,52 @@ export async function PATCH(
       informationUpdateStatus: status,
     };
 
-    // Call PP API endpoint with timeout
+    // Call PP API endpoint with timeout and retry
     const ppUrl = `${baseUrl.replace(/\/$/, '')}/oneroster/students/${studentSourcedId}/status`;
     
-    let ppRes;
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000);
-      
-      ppRes = await fetch(ppUrl, {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-        signal: controller.signal,
-      });
-      clearTimeout(timeoutId);
-    } catch (err: any) {
-      console.error('[PP Information Status] API call failed:', err.message);
+    let ppRes: Response | null = null;
+    for (let attempt = 1; attempt <= MAX_RETRIES + 1; attempt++) {
+      try {
+        ppRes = await fetchWithTimeout(ppUrl, {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+          timeoutMs: STATUS_UPDATE_TIMEOUT_MS,
+        });
+        break; // Success, exit retry loop
+      } catch (err: any) {
+        console.error(`[PP Information Status] API call attempt ${attempt} failed:`, err.message);
+        
+        if (attempt < MAX_RETRIES + 1 && err instanceof FetchTimeoutError) {
+          // Retry on timeout with exponential backoff
+          await new Promise(resolve => setTimeout(resolve, 500 * attempt));
+          continue;
+        }
+        
+        // Last attempt failed or non-timeout error
+        if (err instanceof FetchTimeoutError) {
+          return NextResponse.json(
+            { error: 'Request timed out. Please try again.' },
+            { status: 504 }
+          );
+        }
+        
+        return NextResponse.json(
+          { 
+            error: 'Failed to update status. Please try again.',
+            details: err.message
+          },
+          { status: 503 }
+        );
+      }
+    }
+    
+    if (!ppRes) {
       return NextResponse.json(
-        { 
-          error: 'Failed to update status. Please try again.',
-          details: err.name === 'AbortError' ? 'Request timeout' : err.message
-        },
+        { error: 'Failed to update status after retries' },
         { status: 503 }
       );
     }

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { cacheGetJSON, cacheSetJSON } from '@/lib/cache';
 import { fetchWithTimeout, FetchTimeoutError } from '@/lib/fetch-with-timeout';
+import { ppApiCircuitBreaker, CircuitBreakerError } from '@/lib/circuit-breaker';
 
 type PPTokenResponse = {
   accessToken?: string;
@@ -9,6 +10,7 @@ type PPTokenResponse = {
 
 const TOKEN_TIMEOUT_MS = 8000;
 const SCHOOL_TIMEOUT_MS = 10000;
+const MAX_RETRIES = 1; // Retry once on timeout
 
 type SchoolAddress = {
   country: string;
@@ -156,20 +158,45 @@ export async function GET(
       }, { status: 500 });
     }
 
-    // Fetch school data using the PP token
+    // Fetch school data using the PP token with circuit breaker and retry
     const schoolUrl = `${baseUrl.replace(/\/$/, '')}/oneroster/schools/${encodeURIComponent(schoolId)}`;
     
-    let schoolRes: Response;
+    let schoolRes: Response | null = null;
     try {
-      schoolRes = await fetchWithTimeout(schoolUrl, {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-        cache: 'no-store',
-        timeoutMs: SCHOOL_TIMEOUT_MS,
+      schoolRes = await ppApiCircuitBreaker.execute(async () => {
+        for (let attempt = 1; attempt <= MAX_RETRIES + 1; attempt++) {
+          try {
+            const res = await fetchWithTimeout(schoolUrl, {
+              headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json',
+              },
+              cache: 'no-store',
+              timeoutMs: SCHOOL_TIMEOUT_MS,
+            });
+            return res;
+          } catch (error) {
+            if (attempt < MAX_RETRIES + 1 && error instanceof FetchTimeoutError) {
+              console.log(`[PP School] Retry ${attempt}/${MAX_RETRIES} after timeout for ${schoolId}`);
+              await new Promise(resolve => setTimeout(resolve, 500 * attempt));
+              continue;
+            }
+            throw error;
+          }
+        }
+        throw new Error('Failed after retries');
       });
     } catch (error) {
+      if (error instanceof CircuitBreakerError) {
+        console.error('[PP School] Circuit breaker open:', {
+          schoolId,
+          state: error.stats.state,
+        });
+        return NextResponse.json(
+          { error: 'School service temporarily unavailable. Please try again shortly.' },
+          { status: 503 }
+        );
+      }
       const status = error instanceof FetchTimeoutError ? 504 : 502;
       const message =
         error instanceof FetchTimeoutError
@@ -177,6 +204,13 @@ export async function GET(
           : 'Failed to reach PP school endpoint';
       console.error('[PP School] School fetch error:', { schoolId, error: message });
       return NextResponse.json({ error: message }, { status });
+    }
+    
+    if (!schoolRes) {
+      return NextResponse.json(
+        { error: 'Failed to fetch school data' },
+        { status: 502 }
+      );
     }
 
     if (!schoolRes.ok) {

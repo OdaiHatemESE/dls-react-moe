@@ -1,10 +1,11 @@
 /**
  * Shared utility for fetching student profile data from PP API
- * with timeout, retry, and consistent error handling
+ * with timeout, retry, circuit breaker, and consistent error handling
  */
 
 import type { StudentProfileV1 } from '@/app/types/studentprofile';
 import { fetchWithTimeout, FetchTimeoutError } from './fetch-with-timeout';
+import { ppApiCircuitBreaker, CircuitBreakerError } from './circuit-breaker';
 
 export type StudentProfileFetchResult =
   | { ok: true; profile: StudentProfileV1 }
@@ -52,18 +53,21 @@ export async function fetchStudentProfile(
   console.log('[fetchStudentProfile] NODE_ENV:', process.env.NODE_ENV);
   console.log('[fetchStudentProfile] PORT env:', process.env.PORT);
 
-  for (let attempt = 0; attempt <= retries; attempt++) {
-    try {
-      const headers: Record<string, string> = {};
-      if (cookieHeader) {
-        headers.cookie = cookieHeader;
-      }
+  // Wrap entire fetch logic in circuit breaker
+  try {
+    return await ppApiCircuitBreaker.execute(async () => {
+      for (let attempt = 0; attempt <= retries; attempt++) {
+        try {
+          const headers: Record<string, string> = {};
+          if (cookieHeader) {
+            headers.cookie = cookieHeader;
+          }
 
-      const studentRes = await fetchWithTimeout(url, {
-        headers,
-        cache: 'no-store',
-        timeoutMs,
-      });
+          const studentRes = await fetchWithTimeout(url, {
+            headers,
+            cache: 'no-store',
+            timeoutMs,
+          });
 
       if (studentRes.ok) {
         const data = (await studentRes.json()) as StudentProfileV1;
@@ -146,10 +150,26 @@ export async function fetchStudentProfile(
     }
   }
 
-  // Should not reach here, but handle edge case
-  return {
-    ok: false,
-    status: 502,
-    message: lastError?.message ?? 'Unknown error fetching student profile',
-  };
+      // Should not reach here, but handle edge case
+      return {
+        ok: false,
+        status: 502,
+        message: lastError?.message ?? 'Unknown error fetching student profile',
+      };
+    });
+  } catch (error) {
+    // Handle circuit breaker open state
+    if (error instanceof CircuitBreakerError) {
+      console.error('[fetchStudentProfile] Circuit breaker open:', {
+        state: error.stats.state,
+        nextAttempt: error.stats.nextAttemptTime,
+      });
+      return {
+        ok: false,
+        status: 503,
+        message: 'Student service temporarily unavailable. Please try again shortly.',
+      };
+    }
+    throw error;
+  }
 }

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import type { StudentProfileV1 } from '@/app/types/studentprofile';
 import { cacheGetJSON, cacheSetJSON } from '@/lib/cache';
 import { getActiveAcademicYearValue } from '@/lib/admin-config';
+import { fetchWithTimeout, FetchTimeoutError } from '@/lib/fetch-with-timeout';
 
 type PPTokenResponse = {
   accessToken?: string;
@@ -12,6 +13,11 @@ type StudentWithActiveStatus = StudentProfileV1 & {
   isActive: boolean;
   hasActiveEnrollment: boolean;
 };
+
+// Timeout configuration
+const TOKEN_TIMEOUT_MS = 8000;  // 8 seconds for token fetch
+const CHILDLIST_TIMEOUT_MS = 20000; // 20 seconds for child list (may fetch multiple students)
+const MAX_RETRIES = 1; // Retry once on timeout
 
 export async function GET(
   req: Request,
@@ -92,7 +98,7 @@ export async function GET(
       }
     }
 
-    // Get PP token from our token endpoint with timeout and retry
+    // Get PP token from our token endpoint with timeout
     const internalApiBaseUrl = process.env.PUBLIC_URL || process.env.NEXTAUTH_URL || 'http://localhost:4200';
     const tokenUrl = `${internalApiBaseUrl}/api/PP/auth/token`;
     
@@ -100,19 +106,24 @@ export async function GET(
     let tokenData: PPTokenResponse;
     
     try {
-      // Add timeout to token request (10 seconds)
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000);
-      
-      tokenRes = await fetch(tokenUrl, { signal: controller.signal });
-      clearTimeout(timeoutId);
+      tokenRes = await fetchWithTimeout(tokenUrl, {
+        timeoutMs: TOKEN_TIMEOUT_MS,
+      });
       tokenData = await tokenRes.json();
     } catch (err: any) {
       console.error('[PP ChildList] Token fetch failed:', err.message);
+      
+      if (err instanceof FetchTimeoutError) {
+        return NextResponse.json(
+          { error: 'Authentication request timed out. Please try again.' },
+          { status: 504 }
+        );
+      }
+      
       return NextResponse.json(
         { 
           error: 'Failed to get authentication token. Please try again.',
-          details: err.name === 'AbortError' ? 'Request timeout' : err.message
+          details: err.message
         },
         { status: 503 }
       );
@@ -142,31 +153,51 @@ export async function GET(
       }, { status: 500 });
     }
 
-    // Fetch student profiles using the PP token
+    // Fetch student profiles using the PP token with timeout and retry
     // Use /sync endpoint to get fresh data from database with correct isPrimary values
     const profilesUrl = `${baseUrl.replace(/\/$/, '')}/oneroster/students/profiles?emirateId=${eid}`;
     
-    let profilesRes: Response;
-    try {
-      // Add timeout to profiles request (15 seconds)
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000);
-      
-      profilesRes = await fetch(profilesUrl, {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-        signal: controller.signal,
-      });
-      clearTimeout(timeoutId);
-    } catch (err: any) {
-      console.error('[PP ChildList] Profiles fetch timeout/error:', err.message);
+    let profilesRes: Response | null = null;
+    for (let attempt = 1; attempt <= MAX_RETRIES + 1; attempt++) {
+      try {
+        profilesRes = await fetchWithTimeout(profilesUrl, {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+          timeoutMs: CHILDLIST_TIMEOUT_MS,
+        });
+        break; // Success, exit retry loop
+      } catch (err: any) {
+        console.error(`[PP ChildList] Profiles fetch attempt ${attempt} failed:`, err.message);
+        
+        if (attempt < MAX_RETRIES + 1 && err instanceof FetchTimeoutError) {
+          // Retry on timeout with exponential backoff
+          await new Promise(resolve => setTimeout(resolve, 500 * attempt));
+          continue;
+        }
+        
+        // Last attempt failed or non-timeout error
+        if (err instanceof FetchTimeoutError) {
+          return NextResponse.json(
+            { error: 'Request timed out while fetching student profiles. Please try again.' },
+            { status: 504 }
+          );
+        }
+        
+        return NextResponse.json(
+          { 
+            error: 'Failed to fetch student profiles. Please try again.',
+            details: err.message
+          },
+          { status: 503 }
+        );
+      }
+    }
+    
+    if (!profilesRes) {
       return NextResponse.json(
-        { 
-          error: 'Failed to fetch student profiles. Please try again.',
-          details: err.name === 'AbortError' ? 'Request timeout' : err.message
-        },
+        { error: 'Failed to fetch student profiles after retries' },
         { status: 503 }
       );
     }

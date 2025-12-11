@@ -8,6 +8,7 @@
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import "server-only";
+import { fetchWithTimeout } from "./fetch-with-timeout";
 
 type TokenKind = "read" | "write";
 
@@ -190,11 +191,19 @@ function headersToObject(h?: HeadersInit): Record<string, string> {
  * Authenticated fetch to OneRoster.
  * @param path e.g. "/students/123" or "/persons?eid=ABC"
  * @param kind "read" (default) or "write"
+ * @param init Optional RequestInit with optional timeoutMs property
  */
-export async function orFetch<T>(path: string, kind: TokenKind = "read", init?: RequestInit): Promise<T> {
+export async function orFetch<T>(
+  path: string, 
+  kind: TokenKind = "read", 
+  init?: RequestInit & { timeoutMs?: number }
+): Promise<T> {
   if (!AUTH_URL || !BASE_URL) {
     throw new Error("OneRoster endpoints are not configured. Please set ONEROSTER_AUTH_URL and ONEROSTER_BASE.");
   }
+  
+  const timeoutMs = init?.timeoutMs ?? 15000; // Default 15 seconds for OneRoster
+  
   const makeReq = async (retry: boolean): Promise<T> => {
     const token = await getToken(kind);
     const url = joinBaseAndPath(BASE_URL, path);
@@ -206,10 +215,11 @@ export async function orFetch<T>(path: string, kind: TokenKind = "read", init?: 
       Authorization: `Bearer ${token}`,
     };
 
-    const res = await fetch(url, {
+    const res = await fetchWithTimeout(url, {
       ...init,
       headers,
       cache: "no-store",
+      timeoutMs,
     });
 
     const text = await res.text();

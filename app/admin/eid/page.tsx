@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Users, Calendar, Settings, Loader2, AlertCircle, Database, FileText, BarChart3, Home } from "lucide-react";
+import { Users, Calendar, Settings, Loader2, AlertCircle, Database, FileText, BarChart3, Home, Activity } from "lucide-react";
 import { useI18n } from "@/app/i18n/I18nProvider";
 import { AdminUsersManager } from "./components/AdminUsersManager";
 import { UpdatePeriodsManager } from "./components/UpdatePeriodsManager";
@@ -12,6 +12,7 @@ import { AdminStats } from "./components/AdminStats";
 import { SystemStats } from "./components/SystemStats";
 import { StudentsTable } from "./components/StudentsTable";
 import { UpdateLogsTable } from "./components/UpdateLogsTable";
+import { ResilienceDashboard } from "./components/ResilienceDashboard";
 import { Toaster } from "@/components/ui/toaster";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
@@ -42,6 +43,7 @@ const navigationKeys = {
   periods: 'periods' as const,
   academicYear: 'academicYear' as const,
   actions: 'actions' as const,
+  resilience: 'resilience' as const,
 };
 
 export default function AdminConfigPage() {
@@ -90,6 +92,12 @@ export default function AdminConfigPage() {
       labelKey: "actions",
       icon: Settings,
       descKey: "actions",
+    },
+    {
+      id: "resilience",
+      labelKey: "resilience",
+      icon: Activity,
+      descKey: "resilience",
     },
   ];
   const [activeView, setActiveView] = useState("analytics");
@@ -202,6 +210,8 @@ export default function AdminConfigPage() {
             <StudentActionsManager />
           </div>
         );
+      case "resilience":
+        return <ResilienceDashboard />;
       default:
         return null;
     }

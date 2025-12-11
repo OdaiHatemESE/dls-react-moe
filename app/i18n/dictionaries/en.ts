@@ -380,6 +380,8 @@ export const en = {
       academicYearDesc: "Set active academic year",
       actions: "Student Actions",
       actionsDesc: "Manage student actions",
+      resilience: "API Resilience",
+      resilienceDesc: "Monitor system health & performance",
     },
     analytics: {
       title: "System Analytics Overview",
