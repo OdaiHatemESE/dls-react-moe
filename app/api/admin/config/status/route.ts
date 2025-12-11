@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { metricsTracker } from '@/lib/metrics-tracker';
 import { 
   isUpdatePeriodActive, 
   getCurrentUpdatePeriod,
@@ -7,6 +8,9 @@ import {
 
 // GET configuration status for a specific education type
 export async function GET(request: Request) {
+  const startTime = Date.now();
+  const endpoint = '/api/admin/config/status';
+  
   try {
     const { searchParams } = new URL(request.url);
     const educationType = searchParams.get("educationType");
@@ -21,6 +25,7 @@ export async function GET(request: Request) {
       actions = await getEnabledActionsForEducationType(educationType);
     }
 
+    metricsTracker.recordRequest(endpoint, true, Date.now() - startTime);
     return NextResponse.json({
       updatePeriod: {
         isActive,
@@ -42,6 +47,7 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     console.error("Error fetching config status:", error);
+    metricsTracker.recordRequest(endpoint, false, Date.now() - startTime, { statusCode: 500 });
     return NextResponse.json(
       { error: "Failed to fetch configuration status" },
       { status: 500 }

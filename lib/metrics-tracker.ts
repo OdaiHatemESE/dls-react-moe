@@ -8,6 +8,8 @@
  * - Retry effectiveness
  */
 
+import { metricsStorage } from './metrics-storage';
+
 export interface EndpointMetrics {
   endpoint: string;
   totalRequests: number;
@@ -38,6 +40,11 @@ export interface MetricsSummary {
 class MetricsTracker {
   private endpoints: Map<string, EndpointMetrics> = new Map();
   private maxResponseTimesSamples = 1000; // Keep last 1000 response times
+  private persistenceEnabled = true; // Enable database persistence
+
+  constructor() {
+    // No auto-persistence needed - we persist after each request
+  }
 
   /**
    * Record a request for an endpoint
@@ -86,6 +93,13 @@ class MetricsTracker {
     if (metadata?.statusCode && !success) {
       const statusKey = metadata.statusCode.toString();
       metrics.errors[statusKey] = (metrics.errors[statusKey] || 0) + 1;
+    }
+
+    // Persist to database (batched by metricsStorage)
+    if (this.persistenceEnabled) {
+      metricsStorage.recordMetrics(endpoint, metrics).catch((error) => {
+        console.error('[MetricsTracker] Failed to persist metrics:', error);
+      });
     }
   }
 
@@ -169,6 +183,21 @@ class MetricsTracker {
    */
   resetAll() {
     this.endpoints.clear();
+  }
+
+  /**
+   * Manually trigger persistence to database
+   */
+  async persistNow(): Promise<void> {
+    // Force flush the storage batch queue
+    await metricsStorage.flush();
+  }
+
+  /**
+   * Cleanup and persist before shutdown
+   */
+  async shutdown(): Promise<void> {
+    await metricsStorage.shutdown();
   }
 
   /**

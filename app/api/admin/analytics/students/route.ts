@@ -2,12 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prismaParent } from "@/lib/prisma-parent";
+import { metricsTracker } from '@/lib/metrics-tracker';
 
 /**
  * GET /api/admin/analytics/students
  * Returns comprehensive student list with all information
  */
 export async function GET(req: NextRequest) {
+  const startTime = Date.now();
+  const endpoint = '/api/admin/analytics/students';
+  
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.emiratesId) {
@@ -77,6 +81,7 @@ export async function GET(req: NextRequest) {
     const studentsUpdated = students.filter(s => s.isInformationUpdated).length;
     const studentsWithConduct = students.filter(s => s.isConductAgreementSigned).length;
 
+    metricsTracker.recordRequest(endpoint, true, Date.now() - startTime);
     return NextResponse.json({
       students,
       pagination: {
@@ -98,6 +103,7 @@ export async function GET(req: NextRequest) {
     });
   } catch (error) {
     console.error("[Admin Analytics - Students]", error);
+    metricsTracker.recordRequest(endpoint, false, Date.now() - startTime, { statusCode: 500 });
     return NextResponse.json(
       { error: "Failed to fetch student analytics" },
       { status: 500 }

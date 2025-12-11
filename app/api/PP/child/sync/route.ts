@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import type { StudentProfileV1 } from '@/app/types/studentprofile';
 import { cacheSetJSON } from '@/lib/cache';
 import { getActiveAcademicYearValue } from '@/lib/admin-config';
+import { metricsTracker } from '@/lib/metrics-tracker';
 
 type PPTokenResponse = {
   accessToken?: string;
@@ -30,6 +31,9 @@ type StudentWithActiveStatus = StudentProfileV1 & {
  * Returns: Fresh student profiles from upstream API
  */
 async function handleSync(req: Request) {
+  const startTime = Date.now();
+  const endpoint = '/api/PP/child/sync';
+  
   try {
     const url = new URL(req.url);
     const emirateId = url.searchParams.get('emirateId');
@@ -205,6 +209,7 @@ async function handleSync(req: Request) {
     );
 
     // Return the synced data
+    metricsTracker.recordRequest(endpoint, true, Date.now() - startTime);
     return NextResponse.json({
       success: true,
       students: studentsWithStatus,
@@ -218,6 +223,7 @@ async function handleSync(req: Request) {
     });
   } catch (err: any) {
     console.error('[PP Child Sync] Error:', err);
+    metricsTracker.recordRequest(endpoint, false, Date.now() - startTime, { statusCode: 500 });
     return NextResponse.json(
       { error: String(err) },
       { status: 500 }

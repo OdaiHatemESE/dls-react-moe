@@ -11,6 +11,7 @@
 import PQueue from 'p-queue';
 import pRetry, { AbortError } from 'p-retry';
 import { FetchTimeoutError } from './fetch-with-timeout';
+import { resilienceStorage } from './resilience-storage';
 
 // Configuration based on observed IDH API limits
 const IDH_QUEUE_CONFIG = {
@@ -200,7 +201,7 @@ class IdhQueueManager {
    */
   getMetrics() {
     const uptime = Date.now() - this.metrics.lastResetTime;
-    return {
+    const metrics = {
       ...this.metrics,
       uptimeMs: uptime,
       successRate: this.metrics.totalRequests > 0
@@ -209,6 +210,15 @@ class IdhQueueManager {
       currentQueueSize: this.queue.size,
       currentPending: this.queue.pending,
     };
+    
+    // Periodically persist to database (every 50 requests)
+    if (this.metrics.totalRequests % 50 === 0 && this.metrics.totalRequests > 0) {
+      resilienceStorage.saveQueueSnapshot('IDH-Queue', metrics).catch((err) => {
+        console.error('[IDH Queue] Failed to persist metrics:', err);
+      });
+    }
+    
+    return metrics;
   }
 
   /**

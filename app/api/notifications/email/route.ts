@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createRemoteJWKSet, jwtVerify } from "jose";
+import { metricsTracker } from '@/lib/metrics-tracker';
 
 interface EmailRequestBody {
   pdf64: string;
@@ -9,6 +10,9 @@ interface EmailRequestBody {
 }
 
 export async function POST(request: NextRequest) {
+  const startTime = Date.now();
+  const endpoint = '/api/notifications/email';
+  
   const username = process.env.BASIC_EMAIL_USERNAME as string | undefined;
   const password = process.env.BASIC_EMAIL_PASSWORD as string | undefined;
   const clientId = process.env.CLIENT_EMAIL as string | undefined;
@@ -118,8 +122,10 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await response.json().catch(() => ({}));
+    metricsTracker.recordRequest(endpoint, true, Date.now() - startTime);
     return NextResponse.json({ ok: true, providerResponse: data }, { status: 200 });
   } catch (_error) {
+    metricsTracker.recordRequest(endpoint, false, Date.now() - startTime, { statusCode: 500 });
     return NextResponse.json({ error: "An error occurred" }, { status: 500 });
   }
 }

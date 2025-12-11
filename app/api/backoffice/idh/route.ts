@@ -6,6 +6,7 @@ import type { IDHStudent } from '@/app/types/idh';
 import { authorizeStudentAccess } from '@/lib/student-authorization';
 import { fetchWithTimeout, FetchTimeoutError } from '@/lib/fetch-with-timeout';
 import { idhQueue } from '@/lib/idh-queue';
+import { metricsTracker } from '@/lib/metrics-tracker';
 
 type PPTokenResponse = {
   accessToken?: string;
@@ -35,6 +36,9 @@ function buildTokenUrl(req: Request): string {
  * Fetches IDH student data by sourceId (student person ID)
  */
 export async function GET(req: Request) {
+  const startTime = Date.now();
+  const endpoint = '/api/backoffice/idh';
+  
   try {
     const session = await requireSession();
     if (!session?.user) {
@@ -168,7 +172,7 @@ export async function GET(req: Request) {
     const unwrapped = unwrap(raw);
     const idhData: IDHStudent = normalize(unwrapped);
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       ok: true,
       data: idhData,
       meta: {
@@ -176,8 +180,19 @@ export async function GET(req: Request) {
         fetchedAt: new Date().toISOString(),
       },
     });
+    
+    // Track successful request
+    metricsTracker.recordRequest(endpoint, true, Date.now() - startTime);
+    return response;
   } catch (err: unknown) {
     console.error('Error fetching IDH data:', err);
+    
+    // Track failed request with error details
+    const isTimeout = err instanceof FetchTimeoutError;
+    metricsTracker.recordRequest(endpoint, false, Date.now() - startTime, {
+      timeout: isTimeout,
+      statusCode: isTimeout ? 504 : 500,
+    });
     
     // Handle timeout errors specifically
     if (err instanceof FetchTimeoutError) {
@@ -201,6 +216,9 @@ export async function GET(req: Request) {
  * Request body should contain IDHStudent data including sourceId
  */
 export async function POST(req: Request) {
+  const startTime = Date.now();
+  const endpoint = '/api/backoffice/idh [POST]';
+  
   try {
     const session = await requireSession();
     if (!session?.user) {
@@ -323,7 +341,7 @@ export async function POST(req: Request) {
 
     const responseData = await idhRes.json();
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       ok: true,
       data: responseData,
       meta: {
@@ -331,8 +349,19 @@ export async function POST(req: Request) {
         insertedAt: new Date().toISOString(),
       },
     });
+    
+    // Track successful request
+    metricsTracker.recordRequest(endpoint, true, Date.now() - startTime);
+    return response;
   } catch (err: unknown) {
     console.error('Error inserting IDH data:', err);
+    
+    // Track failed request with error details
+    const isTimeout = err instanceof FetchTimeoutError;
+    metricsTracker.recordRequest(endpoint, false, Date.now() - startTime, {
+      timeout: isTimeout,
+      statusCode: isTimeout ? 504 : 500,
+    });
     
     // Handle timeout errors specifically
     if (err instanceof FetchTimeoutError) {

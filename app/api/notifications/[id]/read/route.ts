@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { PrismaClient as ParentPortalClient } from "@prisma/client-parent-portal";
+import { metricsTracker } from '@/lib/metrics-tracker';
 
 const prisma = new ParentPortalClient();
 
@@ -14,6 +15,9 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const startTime = Date.now();
+  const endpoint = '/api/notifications/[id]/read';
+  
   try {
     const session = await getServerSession(authOptions);
     
@@ -83,6 +87,7 @@ export async function PATCH(
       },
     });
 
+    metricsTracker.recordRequest(endpoint, true, Date.now() - startTime);
     return NextResponse.json({
       notification: {
         ...updated,
@@ -91,6 +96,7 @@ export async function PATCH(
     });
   } catch (error) {
     console.error(`[PATCH /api/notifications/[id]/read] Error:`, error);
+    metricsTracker.recordRequest(endpoint, false, Date.now() - startTime, { statusCode: 500 });
     return NextResponse.json(
       { error: "Failed to mark notification as read" },
       { status: 500 }

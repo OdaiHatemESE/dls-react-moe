@@ -3,6 +3,7 @@ import type { StudentProfileV1 } from '@/app/types/studentprofile';
 import { cacheGetJSON, cacheSetJSON } from '@/lib/cache';
 import { getActiveAcademicYearValue } from '@/lib/admin-config';
 import { fetchWithTimeout, FetchTimeoutError } from '@/lib/fetch-with-timeout';
+import { metricsTracker } from '@/lib/metrics-tracker';
 
 type PPTokenResponse = {
   accessToken?: string;
@@ -23,6 +24,9 @@ export async function GET(
   req: Request,
   { params }: { params: Promise<{ eid: string }> }
 ) {
+  const startTime = Date.now();
+  const endpoint = '/api/PP/ChildList/[eid]';
+  
   try {
     const { eid } = await params;
 
@@ -291,6 +295,7 @@ export async function GET(
       message: err.message,
       stack: err.stack?.split('\n').slice(0, 3), // Log first 3 lines of stack
     });
+    metricsTracker.recordRequest(endpoint, false, Date.now() - startTime, { statusCode: 500 });
     return NextResponse.json({ 
       error: 'An unexpected error occurred. Please try again.',
       details: err.message 

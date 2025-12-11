@@ -2,12 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prismaParent } from "@/lib/prisma-parent";
+import { metricsTracker } from '@/lib/metrics-tracker';
 
 /**
  * GET /api/admin/analytics/stats
  * Returns comprehensive database statistics
  */
 export async function GET(req: NextRequest) {
+  const startTime = Date.now();
+  const endpoint = '/api/admin/analytics/stats';
+  
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.emiratesId) {
@@ -269,6 +273,7 @@ export async function GET(req: NextRequest) {
     });
   } catch (error) {
     console.error("[Admin Analytics - Stats]", error);
+    metricsTracker.recordRequest(endpoint, false, Date.now() - startTime, { statusCode: 500 });
     return NextResponse.json(
       { error: "Failed to fetch system statistics" },
       { status: 500 }

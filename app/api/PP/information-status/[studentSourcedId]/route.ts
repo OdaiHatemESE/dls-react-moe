@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { fetchWithTimeout, FetchTimeoutError } from '@/lib/fetch-with-timeout';
+import { metricsTracker } from '@/lib/metrics-tracker';
 
 type PPTokenResponse = {
   accessToken?: string;
@@ -19,6 +20,9 @@ export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ studentSourcedId: string }> }
 ) {
+  const startTime = Date.now();
+  const endpoint = '/api/PP/information-status/[studentSourcedId]';
+  
   try {
     const { studentSourcedId } = await params;
 
@@ -159,6 +163,7 @@ export async function PATCH(
 
     const result = await ppRes.json();
 
+    metricsTracker.recordRequest(endpoint, true, Date.now() - startTime);
     return NextResponse.json({
       success: true,
       data: result,
@@ -173,6 +178,7 @@ export async function PATCH(
       message: err.message,
       stack: err.stack?.split('\n').slice(0, 3),
     });
+    metricsTracker.recordRequest(endpoint, false, Date.now() - startTime, { statusCode: 500 });
     return NextResponse.json(
       { 
         error: 'An unexpected error occurred. Please try again.',

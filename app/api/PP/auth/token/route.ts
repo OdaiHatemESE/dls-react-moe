@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { cacheGetJSON, cacheSetJSON } from '@/lib/cache';
 import { fetchWithTimeout, FetchTimeoutError } from '@/lib/fetch-with-timeout';
+import { metricsTracker } from '@/lib/metrics-tracker';
 
 type PPLoginResponse = {
   accessToken?: string;
@@ -19,6 +20,9 @@ type PPTokenCache = {
 const PP_CACHE_KEY = 'pp:auth:token';
 
 export async function GET() {
+  const startTime = Date.now();
+  const endpoint = '/api/PP/auth/token';
+  
   try {
     const now = Math.floor(Date.now() / 1000);
     
@@ -27,6 +31,7 @@ export async function GET() {
     if (cached && cached.exp - 30 > now) {
       // Ensure we return a string, not an object
       const tokenString = typeof cached.token === 'string' ? cached.token : String(cached.token);
+      metricsTracker.recordRequest(endpoint, true, Date.now() - startTime);
       return NextResponse.json({ accessToken: tokenString });
     }
 
@@ -82,9 +87,14 @@ export async function GET() {
     await cacheSetJSON(PP_CACHE_KEY, { token: accessToken, exp }, { ttlSeconds: expiresIn });
 
     // Return just the token string, not the entire response object
+    metricsTracker.recordRequest(endpoint, true, Date.now() - startTime);
     return NextResponse.json({ accessToken });
   } catch (err: any) {
     const status = err instanceof FetchTimeoutError ? 504 : 500;
+    metricsTracker.recordRequest(endpoint, false, Date.now() - startTime, { 
+      statusCode: status,
+      timeout: err instanceof FetchTimeoutError 
+    });
     return NextResponse.json({ error: String(err) }, { status });
   }
 }

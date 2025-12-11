@@ -13,6 +13,8 @@
  * - HALF_OPEN: Testing if service recovered, limited requests allowed
  */
 
+import { resilienceStorage } from './resilience-storage';
+
 export enum CircuitState {
   CLOSED = 'CLOSED',
   OPEN = 'OPEN',
@@ -115,6 +117,11 @@ class CircuitBreaker {
         this.transitionToClosed();
       }
     }
+    
+    // Periodically persist stats (every 10 successes)
+    if (this.successes % 10 === 0) {
+      this.persistSnapshot();
+    }
   }
 
   /**
@@ -154,6 +161,8 @@ class CircuitBreaker {
     this.rejections = 0;
     this.failureTimestamps = [];
     this.nextAttemptTime = null;
+    
+    this.persistSnapshot();
   }
 
   /**
@@ -170,6 +179,8 @@ class CircuitBreaker {
       timeWindow: `${this.options.timeout}ms`,
       nextAttempt: new Date(this.nextAttemptTime).toISOString(),
     });
+    
+    this.persistSnapshot();
   }
 
   /**
@@ -185,6 +196,8 @@ class CircuitBreaker {
       previousFailures: this.failureTimestamps.length,
       downtime: this.lastFailureTime ? `${Date.now() - this.lastFailureTime}ms` : 'N/A',
     });
+    
+    this.persistSnapshot();
   }
 
   /**
@@ -219,6 +232,17 @@ class CircuitBreaker {
   }
 
   /**
+   * Persist current snapshot to database (non-blocking)
+   */
+  private persistSnapshot() {
+    const name = this.options.name || 'unknown';
+    // Fire and forget - don't block execution
+    resilienceStorage.saveCircuitBreakerSnapshot(name, this.getStats()).catch((err) => {
+      console.error(`[Circuit Breaker: ${name}] Failed to persist snapshot:`, err);
+    });
+  }
+
+  /**
    * Force reset circuit breaker (for testing/manual intervention)
    */
   reset() {
@@ -233,6 +257,8 @@ class CircuitBreaker {
     this.lastFailureTime = null;
     this.lastSuccessTime = null;
     this.nextAttemptTime = null;
+    
+    this.persistSnapshot();
   }
 
   /**
@@ -244,6 +270,8 @@ class CircuitBreaker {
     
     this.state = CircuitState.OPEN;
     this.nextAttemptTime = Date.now() + this.options.resetTimeout;
+    
+    this.persistSnapshot();
   }
 }
 

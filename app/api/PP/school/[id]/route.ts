@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { cacheGetJSON, cacheSetJSON } from '@/lib/cache';
 import { fetchWithTimeout, FetchTimeoutError } from '@/lib/fetch-with-timeout';
 import { ppApiCircuitBreaker, CircuitBreakerError } from '@/lib/circuit-breaker';
+import { metricsTracker } from '@/lib/metrics-tracker';
 
 type PPTokenResponse = {
   accessToken?: string;
@@ -56,6 +57,9 @@ export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const startTime = Date.now();
+  const endpoint = '/api/PP/school/[id]';
+  
   try {
     const { id: schoolId } = await params;
 
@@ -236,6 +240,7 @@ export async function GET(
       { ttlSeconds: 3600 }
     );
 
+    metricsTracker.recordRequest(endpoint, true, Date.now() - startTime);
     return NextResponse.json({
       ...school,
       meta: {
@@ -247,6 +252,7 @@ export async function GET(
     });
   } catch (err: any) {
     console.error('[PP School] Unexpected error:', { schoolId: (await params).id, error: String(err) });
+    metricsTracker.recordRequest(endpoint, false, Date.now() - startTime, { statusCode: 500 });
     return NextResponse.json({ error: String(err) }, { status: 500 });
   }
 }

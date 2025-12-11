@@ -241,3 +241,62 @@ model Notification {
   @@index([createdAt])
   @@index([userId, isRead])
 }
+
+model ApiMetrics {
+  Id                       Int      @id(map: "PK_ApiMetrics") @default(autoincrement())
+  Endpoint                 String   @db.NVarChar(500)
+  ServiceName              String?  @db.NVarChar(100)
+  Timestamp                DateTime @default(dbgenerated("getutcdate()"), map: "DF__ApiMetric__Times__3EA749C6")
+  AggregationPeriod        String   @db.NVarChar(20)
+  TotalRequests            Int      @default(0, map: "DF__ApiMetric__Total__3F9B6DFF")
+  SuccessfulRequests       Int      @default(0, map: "DF__ApiMetric__Succe__408F9238")
+  FailedRequests           Int      @default(0, map: "DF__ApiMetric__Faile__4183B671")
+  TimeoutErrors            Int      @default(0, map: "DF__ApiMetric__Timeo__4277DAAA")
+  CircuitBreakerRejections Int      @default(0, map: "DF__ApiMetric__Circu__436BFEE3")
+  NetworkErrors            Int      @default(0, map: "DF__ApiMetric__Netwo__4460231C")
+  TotalRetries             Int      @default(0, map: "DF__ApiMetric__Total__45544755")
+  SuccessfulRetries        Int      @default(0, map: "DF__ApiMetric__Succe__46486B8E")
+  AvgResponseTime          Float    @default(0, map: "DF__ApiMetric__AvgRe__473C8FC7")
+  MinResponseTime          Float    @default(0, map: "DF__ApiMetric__MinRe__4830B400")
+  MaxResponseTime          Float    @default(0, map: "DF__ApiMetric__MaxRe__4924D839")
+  P50ResponseTime          Float?
+  P95ResponseTime          Float?
+  P99ResponseTime          Float?
+  StatusCodeBreakdown      String?  @db.NVarChar(Max)
+  CreatedAt                DateTime @default(dbgenerated("getutcdate()"), map: "DF__ApiMetric__Creat__4A18FC72")
+  UpdatedAt                DateTime @default(dbgenerated("getutcdate()"), map: "DF__ApiMetric__Updat__4B0D20AB")
+
+  @@index([AggregationPeriod, Timestamp(sort: Desc)], map: "IX_ApiMetrics_AggregationPeriod_Timestamp")
+  @@index([Endpoint, Timestamp(sort: Desc)], map: "IX_ApiMetrics_Endpoint_Timestamp")
+  @@index([Timestamp(sort: Desc), Endpoint], map: "IX_ApiMetrics_Timestamp_Endpoint")
+}
+
+model CircuitBreakerMetrics {
+  Id              Int      @id @default(autoincrement())
+  Name            String   @db.NVarChar(100)
+  State           String   @db.NVarChar(20)
+  Failures        Int      @default(0)
+  Successes       Int      @default(0)
+  Rejections      Int      @default(0)
+  LastFailureTime DateTime?
+  LastSuccessTime DateTime?
+  NextAttemptTime DateTime?
+  Timestamp       DateTime @default(dbgenerated("getutcdate()"))
+  
+  @@index([Name, Timestamp(sort: Desc)])
+}
+
+model QueueMetrics {
+  Id                  Int      @id @default(autoincrement())
+  QueueName           String   @db.NVarChar(100)
+  CurrentPending      Int      @default(0)
+  CurrentQueueSize    Int      @default(0)
+  SuccessfulRequests  Int      @default(0)
+  FailedRequests      Int      @default(0)
+  RetriedRequests     Int      @default(0)
+  SuccessRate         String?  @db.NVarChar(20)
+  Timestamp           DateTime @default(dbgenerated("getutcdate()"))
+  
+  @@index([QueueName, Timestamp(sort: Desc)])
+}
+

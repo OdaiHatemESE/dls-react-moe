@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchWithTimeout, FetchTimeoutError } from '@/lib/fetch-with-timeout';
 import { ppApiCircuitBreaker, CircuitBreakerError } from '@/lib/circuit-breaker';
+import { metricsTracker } from '@/lib/metrics-tracker';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,6 +16,9 @@ const MAX_RETRIES = 1; // Retry once on timeout
  * PP_BASE_URL/Oneroster/persons?eid=<EID>
  */
 export async function GET(req: NextRequest) {
+  const startTime = Date.now();
+  const endpoint = '/api/PP/persons';
+  
   try {
     const { searchParams } = new URL(req.url);
     const eid = searchParams.get('eid');
@@ -136,9 +140,11 @@ export async function GET(req: NextRequest) {
     }
 
     const data = await ppRes.json();
+    metricsTracker.recordRequest(endpoint, true, Date.now() - startTime);
     return NextResponse.json(data);
   } catch (error) {
     console.error('[PP OneRoster Persons] Error:', error);
+    metricsTracker.recordRequest(endpoint, false, Date.now() - startTime, { statusCode: 500 });
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Internal server error' },
       { status: 500 }

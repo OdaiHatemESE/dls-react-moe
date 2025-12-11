@@ -1,15 +1,20 @@
 import { NextResponse } from 'next/server';
 import { getActiveAcademicYear } from '@/lib/admin-config';
+import { metricsTracker } from '@/lib/metrics-tracker';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
+  const startTime = Date.now();
+  const endpoint = '/api/admin/academic-year/active';
+  
   try {
     const activeYear = await getActiveAcademicYear();
     
     if (!activeYear) {
       // Return current year as default if no active academic year is set
       const currentYear = new Date().getFullYear();
+      metricsTracker.recordRequest(endpoint, true, Date.now() - startTime);
       return NextResponse.json({
         yearValue: currentYear,
         isDefault: true,
@@ -17,6 +22,7 @@ export async function GET() {
       });
     }
 
+    metricsTracker.recordRequest(endpoint, true, Date.now() - startTime);
     return NextResponse.json({
       id: activeYear.id,
       academicYear: activeYear.academicYear,
@@ -32,6 +38,7 @@ export async function GET() {
     
     // Return current year as fallback
     const currentYear = new Date().getFullYear();
+    metricsTracker.recordRequest(endpoint, false, Date.now() - startTime, { statusCode: 500 });
     return NextResponse.json({
       yearValue: currentYear,
       isDefault: true,

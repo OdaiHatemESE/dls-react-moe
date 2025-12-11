@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { orFetch } from "@/lib/oneroster";
 import { cacheGetJSON, cacheSetJSON, makeKey } from "@/lib/cache";
+import { metricsTracker } from '@/lib/metrics-tracker';
 
 // Ensure this route is always dynamic (no ISR)
 export const dynamic = "force-dynamic";
@@ -11,6 +12,9 @@ const TTL_SECONDS = 10 * 60;
 type RouteParams = { params: Promise<{ sourcedId: string }> };
 
 export async function GET(req: Request, ctx: RouteParams) {
+  const startTime = Date.now();
+  const endpoint = '/api/oneroster/students/[sourcedId]';
+  
   const { sourcedId } = await ctx.params;
   const url = new URL(req.url);
   const searchParams = url.searchParams;
@@ -46,9 +50,11 @@ export async function GET(req: Request, ctx: RouteParams) {
     // Cache the payload (best-effort)
     await cacheSetJSON(key, data, { ttlSeconds: TTL_SECONDS });
 
+    metricsTracker.recordRequest(endpoint, true, Date.now() - startTime);
     return NextResponse.json(data);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Server error";
+    metricsTracker.recordRequest(endpoint, false, Date.now() - startTime, { statusCode: 500 });
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

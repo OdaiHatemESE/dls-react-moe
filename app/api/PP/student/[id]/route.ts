@@ -5,6 +5,7 @@ import type { StudentProfileV1 } from '@/app/types/studentprofile';
 import { cacheGetJSON, cacheSetJSON } from '@/lib/cache';
 import { getActiveAcademicYearValue } from '@/lib/admin-config';
 import { fetchWithTimeout, FetchTimeoutError } from '@/lib/fetch-with-timeout';
+import { metricsTracker } from '@/lib/metrics-tracker';
 
 type PPTokenResponse = {
   accessToken?: string;
@@ -18,6 +19,9 @@ export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const startTime = Date.now();
+  const endpoint = '/api/PP/student/[id]';
+  
   try {
     const { id: studentId } = await params;
 
@@ -301,7 +305,7 @@ export async function GET(
       { ttlSeconds: 300 }
     );
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       ...studentWithActiveStatus,
       meta: {
         cache: {
@@ -310,7 +314,15 @@ export async function GET(
         },
       },
     });
+    
+    // Track successful request
+    metricsTracker.recordRequest(endpoint, true, Date.now() - startTime);
+    return response;
   } catch (err: any) {
+    // Track failed request
+    metricsTracker.recordRequest(endpoint, false, Date.now() - startTime, {
+      statusCode: 500,
+    });
     return NextResponse.json({ error: String(err) }, { status: 500 });
   }
 }

@@ -2,11 +2,15 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { PrismaClient as ParentPortalPrisma } from "@prisma/client-parent-portal";
+import { metricsTracker } from '@/lib/metrics-tracker';
 
 const prisma = new ParentPortalPrisma();
 
 // GET all academic years or get active academic year
 export async function GET(request: Request) {
+  const startTime = Date.now();
+  const endpoint = '/api/admin/config/academic-year';
+  
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -20,6 +24,7 @@ export async function GET(request: Request) {
       const activeYear = await prisma.academicYearConfig.findFirst({
         where: { isActive: true },
       });
+      metricsTracker.recordRequest(endpoint, true, Date.now() - startTime);
       return NextResponse.json(activeYear);
     }
 
@@ -27,9 +32,11 @@ export async function GET(request: Request) {
       orderBy: { yearValue: "desc" },
     });
 
+    metricsTracker.recordRequest(endpoint, true, Date.now() - startTime);
     return NextResponse.json(academicYears);
   } catch (error) {
     console.error("Error fetching academic years:", error);
+    metricsTracker.recordRequest(endpoint, false, Date.now() - startTime, { statusCode: 500 });
     return NextResponse.json(
       { error: "Failed to fetch academic years" },
       { status: 500 }

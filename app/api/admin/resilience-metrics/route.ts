@@ -4,6 +4,8 @@ import { authOptions } from '@/lib/auth';
 import { ppApiCircuitBreaker, idhApiCircuitBreaker, oneRosterCircuitBreaker } from '@/lib/circuit-breaker';
 import { idhQueue } from '@/lib/idh-queue';
 import { metricsTracker } from '@/lib/metrics-tracker';
+import { metricsStorage } from '@/lib/metrics-storage';
+import { resilienceStorage } from '@/lib/resilience-storage';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,22 +34,30 @@ export async function GET() {
       );
     }
 
-    // Gather circuit breaker metrics
+    // Gather circuit breaker metrics (current + database history)
+    const [cbSnapshots, queueSnapshots] = await Promise.all([
+      resilienceStorage.getLatestCircuitBreakerSnapshots(),
+      resilienceStorage.getLatestQueueSnapshots(),
+    ]);
+    
     const circuitBreakers = {
       ppApi: {
         ...ppApiCircuitBreaker.getStats(),
         name: 'PP API',
         description: 'Parent Portal API circuit breaker',
+        dbSnapshot: cbSnapshots.find((s: any) => s.Name === 'PP-API'),
       },
       idhApi: {
         ...idhApiCircuitBreaker.getStats(),
         name: 'IDH API',
         description: 'Student status/transportation API circuit breaker',
+        dbSnapshot: cbSnapshots.find((s: any) => s.Name === 'IDH-API'),
       },
       oneRoster: {
         ...oneRosterCircuitBreaker.getStats(),
         name: 'OneRoster API',
         description: 'Enrollment data API circuit breaker',
+        dbSnapshot: cbSnapshots.find((s: any) => s.Name === 'OneRoster-API'),
       },
     };
 
@@ -70,16 +80,17 @@ export async function GET() {
       }
     });
 
-    // Gather queue metrics
+    // Gather queue metrics (current + database history)
     const queueMetrics = {
       idh: {
         ...idhQueue.getMetrics(),
         name: 'IDH Request Queue',
         description: 'Rate-limited queue for IDH API requests',
+        dbSnapshot: queueSnapshots.find((s: any) => s.QueueName === 'IDH-Queue'),
       },
     };
 
-    // Gather endpoint metrics
+    // Gather endpoint metrics from in-memory tracker
     const endpointMetrics: Record<string, any> = {};
     const allMetrics = metricsTracker.getAllMetrics();
     
@@ -92,6 +103,25 @@ export async function GET() {
         summary,
         healthScore,
         responseTimes: undefined, // Don't send raw data (too large)
+      };
+    }
+
+    // Fetch database metrics (last 24 hours)
+    const dbMetrics = await metricsStorage.getEndpointSummary(24);
+    const dbEndpointMetrics: Record<string, any> = {};
+    
+    for (const dbMetric of dbMetrics) {
+      dbEndpointMetrics[dbMetric.endpoint] = {
+        endpoint: dbMetric.endpoint,
+        serviceName: dbMetric.serviceName,
+        totalRequests: dbMetric.totalRequests,
+        successfulRequests: dbMetric.successfulRequests,
+        failedRequests: dbMetric.failedRequests,
+        avgResponseTime: dbMetric.avgResponseTime,
+        p95ResponseTime: dbMetric.p95ResponseTime,
+        timeoutErrors: dbMetric.timeoutErrors,
+        circuitBreakerRejections: dbMetric.circuitBreakerRejections,
+        source: 'database',
       };
     }
 
@@ -115,6 +145,7 @@ export async function GET() {
       endpoints: {
         count: allMetrics.size,
         metrics: endpointMetrics,
+        databaseMetrics: dbEndpointMetrics,
         global: globalSummary,
         problematic: problematicEndpoints,
         healthScores,
@@ -151,8 +182,17 @@ export async function POST(req: Request) {
     const body = await req.json().catch(() => ({}));
     const { action, target } = body;
 
+    if (action === 'persist') {
+      // Manually trigger persistence to database
+      await metricsTracker.persistNow();
+      await metricsStorage.flush();
+      return NextResponse.json({ message: 'Metrics persisted to database successfully' });
+    }
+
     if (action === 'reset') {
       if (target === 'metrics') {
+        // Persist before reset
+        await metricsTracker.persistNow();
         metricsTracker.resetAll();
         return NextResponse.json({ message: 'All metrics reset successfully' });
       } else if (target === 'queue') {

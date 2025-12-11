@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { getChildActionsSummary } from "@/lib/child-actions";
+import { metricsTracker } from '@/lib/metrics-tracker';
 import { getActiveAcademicYearValue } from "@/lib/admin-config";
 import { fetchStudentProfile } from "@/lib/fetch-student-profile";
 import { fetchWithTimeout, FetchTimeoutError } from "@/lib/fetch-with-timeout";
@@ -196,6 +197,7 @@ export async function GET(req: Request) {
       actionCount: payload.actions?.length ?? 0,
     });
 
+    metricsTracker.recordRequest('/api/parent/child-actions', true, totalDuration);
     return NextResponse.json(
       payload as ChildActionResponse,
       { headers: { 'x-correlation-id': correlationId } }
@@ -221,6 +223,7 @@ export async function GET(req: Request) {
       message = 'Gateway timeout - service took too long to respond';
     }
     
+    metricsTracker.recordRequest('/api/parent/child-actions', false, totalDuration, { statusCode: status });
     return NextResponse.json(
       { ok: false, error: message },
       { 

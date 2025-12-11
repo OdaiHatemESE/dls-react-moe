@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { PrismaClient as ParentPortalPrisma } from "@prisma/client-parent-portal";
+import { metricsTracker } from '@/lib/metrics-tracker';
 import type {
   AdminActionConfigSchema,
   ChildActionColor,
@@ -14,6 +15,9 @@ const prisma = new ParentPortalPrisma();
 
 // GET all student actions
 export async function GET(request: Request) {
+  const startTime = Date.now();
+  const endpoint = '/api/admin/config/actions';
+  
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -30,6 +34,7 @@ export async function GET(request: Request) {
       orderBy: [{ educationType: "asc" }, { displayOrder: "asc" }],
     });
 
+    metricsTracker.recordRequest(endpoint, true, Date.now() - startTime);
     return NextResponse.json(actions, {
       headers: {
         'Content-Type': 'application/json; charset=utf-8',
@@ -37,6 +42,7 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     console.error("Error fetching student actions:", error);
+    metricsTracker.recordRequest(endpoint, false, Date.now() - startTime, { statusCode: 500 });
     return NextResponse.json(
       { error: "Failed to fetch student actions" },
       { status: 500 }

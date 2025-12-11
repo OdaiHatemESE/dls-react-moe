@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import prismaParent from "@/lib/prisma-parent";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { metricsTracker } from '@/lib/metrics-tracker';
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +22,9 @@ type Body = {
 };
 
 export async function POST(req: Request) {
+  const startTime = Date.now();
+  const endpoint = '/api/parent/update-information-requests';
+  
   try {
     const body = (await req.json()) as Body;
     const studentPersonId = body?.studentPersonId?.trim();
@@ -51,6 +55,7 @@ export async function POST(req: Request) {
     });
 
     if (existing) {
+      metricsTracker.recordRequest(endpoint, true, Date.now() - startTime);
       return NextResponse.json({ ok: true, alreadyExists: true, data: existing }, { status: 200 });
     }
 
@@ -81,14 +86,19 @@ export async function POST(req: Request) {
       },
     });
 
+    metricsTracker.recordRequest(endpoint, true, Date.now() - startTime);
     return NextResponse.json({ ok: true, created: true, data: created }, { status: 201 });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unknown error";
+    metricsTracker.recordRequest(endpoint, false, Date.now() - startTime, { statusCode: 500 });
     return NextResponse.json({ ok: false, error: message }, { status: 500 });
   }
 }
 
 export async function GET(req: Request) {
+  const startTime = Date.now();
+  const endpoint = '/api/parent/update-information-requests';
+  
   try {
     // Require authentication
     const session = await getServerSession(authOptions);
@@ -174,14 +184,19 @@ export async function GET(req: Request) {
       updateAt: now,
     } as const;
 
+    metricsTracker.recordRequest(endpoint, true, Date.now() - startTime);
     return NextResponse.json({ ok: true, data: synthetic });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unknown error";
+    metricsTracker.recordRequest(endpoint, false, Date.now() - startTime, { statusCode: 500 });
     return NextResponse.json({ ok: false, error: message }, { status: 500 });
   }
 }
 
 export async function PATCH(req: Request) {
+  const startTime = Date.now();
+  const endpoint = '/api/parent/update-information-requests';
+  
   try {
     const body = (await req.json()) as Body;
     const studentPersonId = body?.studentPersonId?.trim();
@@ -350,9 +365,11 @@ export async function PATCH(req: Request) {
       });
     }
 
+    metricsTracker.recordRequest(endpoint, true, Date.now() - startTime);
     return NextResponse.json({ ok: true, data: updated }, { status: 200 });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unknown error";
+    metricsTracker.recordRequest(endpoint, false, Date.now() - startTime, { statusCode: 500 });
     return NextResponse.json({ ok: false, error: message }, { status: 500 });
   }
 }

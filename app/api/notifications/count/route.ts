@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { PrismaClient as ParentPortalClient } from "@prisma/client-parent-portal";
+import { metricsTracker } from '@/lib/metrics-tracker';
 
 const prisma = new ParentPortalClient();
 
@@ -15,6 +16,9 @@ const prisma = new ParentPortalClient();
  * - unread: number of unread notifications
  */
 export async function GET(request: NextRequest) {
+  const startTime = Date.now();
+  const endpoint = '/api/notifications/count';
+  
   try {
     const session = await getServerSession(authOptions);
     
@@ -61,12 +65,14 @@ export async function GET(request: NextRequest) {
       }),
     ]);
 
+    metricsTracker.recordRequest(endpoint, true, Date.now() - startTime);
     return NextResponse.json({
       total,
       unread,
     });
   } catch (error) {
     console.error("[GET /api/notifications/count] Error:", error);
+    metricsTracker.recordRequest(endpoint, false, Date.now() - startTime, { statusCode: 500 });
     return NextResponse.json(
       { error: "Failed to fetch notification count" },
       { status: 500 }

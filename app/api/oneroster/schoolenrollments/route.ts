@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSchoolEnrollmentsByStudent, getOrgBySourcedId, getStreamGradeById } from "@/lib/roster-repo";
+import { metricsTracker } from '@/lib/metrics-tracker';
 // Caching helpers
 import { cacheGetJSON, cacheSetJSON, makeKey } from "@/lib/cache";
 // Ensure route is dynamic (no ISR)
@@ -14,6 +15,9 @@ const TTL = {
  
 
 export async function GET(req: Request) {
+  const startTime = Date.now();
+  const endpoint = '/api/oneroster/schoolenrollments';
+  
   const { searchParams } = new URL(req.url);
   const studentId = searchParams.get("studentId");
   const schoolYear = searchParams.get("schoolYear");
@@ -128,6 +132,7 @@ export async function GET(req: Request) {
     );
 
   
+    metricsTracker.recordRequest(endpoint, true, Date.now() - startTime);
     return NextResponse.json({
       enrollments,
       count: enrollments.length,
@@ -150,6 +155,7 @@ export async function GET(req: Request) {
   } catch (error: unknown) {
     console.error("Error fetching school enrollments:", error);
     const errorMessage = error instanceof Error ? error.message : "Server error";
+    metricsTracker.recordRequest(endpoint, false, Date.now() - startTime, { statusCode: 500 });
     return NextResponse.json(
       { error: errorMessage }, 
       { status: 500 }

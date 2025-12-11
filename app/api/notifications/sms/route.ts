@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createRemoteJWKSet, jwtVerify } from "jose";
+import { metricsTracker } from '@/lib/metrics-tracker';
 
 interface SmsRequestBody {
   recipient?: string;
@@ -7,6 +8,9 @@ interface SmsRequestBody {
 }
 
 export async function POST(request: NextRequest) {
+  const startTime = Date.now();
+  const endpoint = '/api/notifications/sms';
+  
   const username = process.env.BASIC_SMS_USERNAME  ??  ""; 
   const password = process.env.BASIC_SMS_PASSWORD ?? "";
   const portalLink = process.env.NEXTAUTH_URL ?? "";
@@ -118,8 +122,10 @@ export async function POST(request: NextRequest) {
       ? await response.json().catch(() => ({}))
       : await response.text().catch(() => "");
 
+    metricsTracker.recordRequest(endpoint, true, Date.now() - startTime);
     return NextResponse.json({ ok: true, providerResponse: data }, { status: 200 });
   } catch (_error) {
+    metricsTracker.recordRequest(endpoint, false, Date.now() - startTime, { statusCode: 500 });
     return NextResponse.json({ error: "An error occurred" }, { status: 500 });
   }
 }

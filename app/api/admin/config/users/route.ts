@@ -2,11 +2,15 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { PrismaClient as ParentPortalPrisma } from "@prisma/client-parent-portal";
+import { metricsTracker } from '@/lib/metrics-tracker';
 
 const prisma = new ParentPortalPrisma();
 
 // GET all admin users
 export async function GET() {
+  const startTime = Date.now();
+  const endpoint = '/api/admin/config/users';
+  
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -17,9 +21,11 @@ export async function GET() {
       orderBy: { createdAt: "desc" },
     });
 
+    metricsTracker.recordRequest(endpoint, true, Date.now() - startTime);
     return NextResponse.json(users);
   } catch (error) {
     console.error("Error fetching admin users:", error);
+    metricsTracker.recordRequest(endpoint, false, Date.now() - startTime, { statusCode: 500 });
     return NextResponse.json(
       { error: "Failed to fetch admin users" },
       { status: 500 }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { PrismaClient as ParentPortalClient } from "@prisma/client-parent-portal";
+import { metricsTracker } from '@/lib/metrics-tracker';
 
 const prisma = new ParentPortalClient();
 
@@ -11,6 +12,9 @@ const prisma = new ParentPortalClient();
  * Mark all notifications as read for the authenticated user.
  */
 export async function POST(request: NextRequest) {
+  const startTime = Date.now();
+  const endpoint = '/api/notifications/mark-all-read';
+  
   try {
     const session = await getServerSession(authOptions);
     
@@ -59,6 +63,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    metricsTracker.recordRequest(endpoint, true, Date.now() - startTime);
     return NextResponse.json({
       success: true,
       count: result.count,
@@ -66,6 +71,7 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("[POST /api/notifications/mark-all-read] Error:", error);
+    metricsTracker.recordRequest(endpoint, false, Date.now() - startTime, { statusCode: 500 });
     return NextResponse.json(
       { error: "Failed to mark all notifications as read" },
       { status: 500 }

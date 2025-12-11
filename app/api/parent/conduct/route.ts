@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { metricsTracker } from '@/lib/metrics-tracker';
 import type {
   ParentConductAggregatedResponse,
 } from "@/lib/parent-conduct";
@@ -68,6 +69,9 @@ async function fetchJson<T>(
 }
 
 export async function GET(req: NextRequest) {
+  const startTime = Date.now();
+  const endpoint = '/api/parent/conduct';
+  
   const { searchParams } = req.nextUrl;
   const studentPersonId = searchParams.get("studentPersonId");
   if (!studentPersonId) {
@@ -209,6 +213,7 @@ export async function GET(req: NextRequest) {
       hasSchoolInfo: !!schoolInfo,
     });
 
+    metricsTracker.recordRequest(endpoint, true, Date.now() - startTime);
     return NextResponse.json({
       ok: true,
       data: payload,
@@ -221,17 +226,20 @@ export async function GET(req: NextRequest) {
         status: error.status,
         upstream: error.upstreamPayload,
       });
+      const errorStatus = error.status >= 400 ? error.status : 500;
+      metricsTracker.recordRequest(endpoint, false, Date.now() - startTime, { statusCode: errorStatus });
       return NextResponse.json(
         {
           ok: false,
           error: error.message,
           upstream: { path: error.path, status: error.status },
         },
-        { status: error.status >= 400 ? error.status : 500 },
+        { status: errorStatus },
       );
     }
 
     console.error("Parent conduct aggregation unexpected error", error);
+    metricsTracker.recordRequest(endpoint, false, Date.now() - startTime, { statusCode: 500 });
     return NextResponse.json(
       { ok: false, error: error instanceof Error ? error.message : "Unknown error" },
       { status: 500 },

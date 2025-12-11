@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { PrismaClient as ParentPortalClient } from "@prisma/client-parent-portal";
 import type { NotificationFilter } from "@/types";
+import { metricsTracker } from '@/lib/metrics-tracker';
 
 const prisma = new ParentPortalClient();
 
@@ -18,6 +19,9 @@ const prisma = new ParentPortalClient();
  * - offset: pagination offset (default: 0)
  */
 export async function GET(request: NextRequest) {
+  const startTime = Date.now();
+  const endpoint = '/api/notifications';
+  
   try {
     const session = await getServerSession(authOptions);
     
@@ -149,12 +153,14 @@ export async function GET(request: NextRequest) {
       return !hasStatusChange;
     });
 
+    metricsTracker.recordRequest(endpoint, true, Date.now() - startTime);
     return NextResponse.json({
       notifications: deduplicatedNotifications,
       total: await prisma.notification.count({ where }),
     });
   } catch (error) {
     console.error("[GET /api/notifications] Error:", error);
+    metricsTracker.recordRequest(endpoint, false, Date.now() - startTime, { statusCode: 500 });
     return NextResponse.json(
       { error: "Failed to fetch notifications" },
       { status: 500 }
@@ -175,6 +181,9 @@ export async function GET(request: NextRequest) {
  * - data: object (optional)
  */
 export async function POST(request: NextRequest) {
+  const startTime = Date.now();
+  const endpoint = '/api/notifications';
+  
   try {
     const session = await getServerSession(authOptions);
     
@@ -207,6 +216,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    metricsTracker.recordRequest(endpoint, true, Date.now() - startTime);
     return NextResponse.json({
       notification: {
         ...notification,
@@ -215,6 +225,7 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("[POST /api/notifications] Error:", error);
+    metricsTracker.recordRequest(endpoint, false, Date.now() - startTime, { statusCode: 500 });
     return NextResponse.json(
       { error: "Failed to create notification" },
       { status: 500 }
