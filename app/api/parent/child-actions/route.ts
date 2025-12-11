@@ -5,6 +5,7 @@ import { getChildActionsSummary } from "@/lib/child-actions";
 import { getActiveAcademicYearValue } from "@/lib/admin-config";
 import { fetchStudentProfile } from "@/lib/fetch-student-profile";
 import { fetchWithTimeout, FetchTimeoutError } from "@/lib/fetch-with-timeout";
+import { idhQueue } from "@/lib/idh-queue";
 import Logger, { createScopedLogger } from "@/lib/logger";
 import { safeValidateChildActionResponse } from "@/lib/child-actions-schema";
 import type { StudentProfileV1 } from "@/app/types/studentprofile";
@@ -285,14 +286,19 @@ async function fetchIdhStatus(studentPersonId: string, req: Request, options?: F
 
     const accessToken = tokenJson.accessToken;
     const upstreamUrl = `${baseUrl.replace(/\/$/, "")}/idh?sourceId=${encodeURIComponent(studentPersonId)}`;
-    const idhRes = await fetchWithTimeout(upstreamUrl, {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
-      },
-      cache: "no-store",
-      timeoutMs,
-    });
+    
+    // Use queue to prevent 429 rate limiting errors
+    const idhRes = await idhQueue.execute(
+      () => fetchWithTimeout(upstreamUrl, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        cache: "no-store",
+        timeoutMs,
+      }),
+      { studentId: studentPersonId }
+    );
 
     if (trace) {
       trace.upstreamStatus = idhRes.status;

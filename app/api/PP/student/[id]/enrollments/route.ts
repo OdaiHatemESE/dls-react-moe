@@ -12,7 +12,7 @@ type PPTokenResponse = {
 };
 
 const TOKEN_TIMEOUT_MS = 8000;
-const PROFILES_TIMEOUT_MS = 15000;
+const PROFILES_TIMEOUT_MS = 25000; // Increased from 15s to 25s for slower upstream responses
 
 type SchoolResponse = {
   sourcedId: string;
@@ -149,22 +149,52 @@ export async function GET(
     const profilesUrl = `${baseUrl.replace(/\/$/, '')}/oneroster/students/profiles?EmirateId=${eid}`;
     
     let profilesRes: Response;
-    try {
-      profilesRes = await fetchWithTimeout(profilesUrl, {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-        cache: 'no-store',
-        timeoutMs: PROFILES_TIMEOUT_MS,
-      });
-    } catch (error) {
-      const status = error instanceof FetchTimeoutError ? 504 : 502;
-      const message =
-        error instanceof FetchTimeoutError
-          ? 'Timed out while fetching student profiles'
-          : 'Failed to reach PP student profiles endpoint';
-      return NextResponse.json({ error: message }, { status });
+    let lastError: Error | null = null;
+    const MAX_RETRIES = 1; // Retry once on timeout/error
+    
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        profilesRes = await fetchWithTimeout(profilesUrl, {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+          cache: 'no-store',
+          timeoutMs: PROFILES_TIMEOUT_MS,
+        });
+        break; // Success, exit retry loop
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error));
+        
+        console.error('[PP Student Enrollments] Profiles fetch error:', {
+          url: profilesUrl,
+          attempt: attempt + 1,
+          maxAttempts: MAX_RETRIES + 1,
+          error: error instanceof FetchTimeoutError ? 'timeout' : 'network',
+        });
+        
+        // Retry on last attempt
+        if (attempt < MAX_RETRIES) {
+          await new Promise((resolve) => setTimeout(resolve, 500 * (attempt + 1)));
+          continue;
+        }
+        
+        // All retries exhausted
+        const status = error instanceof FetchTimeoutError ? 504 : 502;
+        const message =
+          error instanceof FetchTimeoutError
+            ? 'Timed out while fetching student profiles'
+            : 'Failed to reach PP student profiles endpoint';
+        return NextResponse.json({ error: message }, { status });
+      }
+    }
+    
+    // Check if we have a response (should always be true here)
+    if (!profilesRes!) {
+      return NextResponse.json(
+        { error: lastError?.message || 'Failed to fetch profiles' },
+        { status: 502 }
+      );
     }
 
     if (!profilesRes.ok) {

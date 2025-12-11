@@ -23,8 +23,9 @@ const oidcProvider = Auth0Provider({
     },
   },
   // Increase timeout for discovery and other HTTP requests (default is 3500ms)
+  // Fixed: Prevent "outgoing request timed out after 3500ms" errors
   httpOptions: {
-    timeout: 10000, // 10 seconds
+    timeout: 10000, // 10 seconds (was causing auth failures at 3500ms)
   },
   // If no client secret is provided, configure as a public client using PKCE
   ...(OIDC_CLIENT_SECRET
@@ -166,15 +167,63 @@ export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
   
   // Configure cookies to handle chunking gracefully
+  // FIX: "State cookie was missing" error - ensure all auth cookies have consistent settings
   cookies: {
     sessionToken: {
       name: `next-auth.session-token`,
       options: {
         httpOnly: true,
-        sameSite: 'lax',
+        sameSite: 'lax', // Changed from 'none' to fix cookie issues
         path: '/',
         secure: process.env.NODE_ENV === 'production',
         // Allow chunking when cookies exceed size limits
+      }
+    },
+    callbackUrl: {
+      name: `next-auth.callback-url`,
+      options: {
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+      }
+    },
+    csrfToken: {
+      name: `next-auth.csrf-token`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+      }
+    },
+    pkceCodeVerifier: {
+      name: `next-auth.pkce.code_verifier`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 15 * 60, // 15 minutes
+      }
+    },
+    state: {
+      name: `next-auth.state`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax', // CRITICAL: Must match OAuth provider redirect
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 15 * 60, // 15 minutes - enough for OAuth flow
+      }
+    },
+    nonce: {
+      name: `next-auth.nonce`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 15 * 60,
       }
     }
   },

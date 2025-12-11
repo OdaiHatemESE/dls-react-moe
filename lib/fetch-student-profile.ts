@@ -109,12 +109,26 @@ export async function fetchStudentProfile(
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
 
-      // Don't retry timeout errors
+      // Log timeout errors for debugging
       if (error instanceof FetchTimeoutError) {
+        console.error('Student profile fetch timeout:', {
+          url,
+          attempt: attempt + 1,
+          maxAttempts: retries + 1,
+          timeoutMs,
+        });
+
+        // Retry timeout errors (changed behavior)
+        if (attempt < retries) {
+          await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS * (attempt + 1)));
+          continue;
+        }
+
+        // Final attempt failed due to timeout
         return {
           ok: false,
           status: 504,
-          message: `Student profile request timed out after ${timeoutMs}ms`,
+          message: `Student profile request timed out after ${timeoutMs}ms (${retries + 1} attempts)`,
         };
       }
 
