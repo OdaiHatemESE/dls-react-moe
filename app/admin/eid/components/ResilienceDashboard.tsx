@@ -236,14 +236,33 @@ export function ResilienceDashboard() {
       {/* Recommendations */}
       {recommendations.length > 0 && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-          <h2 className="text-xl font-bold mb-4 text-blue-900">Recommendations</h2>
-          <ul className="space-y-2">
-            {recommendations.map((rec, i) => (
-              <li key={i} className="flex gap-3">
-                <span className="text-blue-600 font-bold">→</span>
-                <span className="text-blue-900">{rec}</span>
-              </li>
-            ))}
+          <h2 className="text-xl font-bold mb-4 text-blue-900">💡 Recommendations</h2>
+          <ul className="space-y-3">
+            {recommendations.map((rec, i) => {
+              // Determine priority based on keywords
+              const isUrgent = rec.includes('URGENT') || rec.includes('critical');
+              const isWarning = rec.includes('High error rate') || rec.includes('Very slow');
+              
+              const itemClass = isUrgent 
+                ? 'bg-red-50 border border-red-200 rounded-lg p-3'
+                : isWarning
+                ? 'bg-yellow-50 border border-yellow-200 rounded-lg p-3'
+                : 'bg-white border border-blue-100 rounded-lg p-3';
+              
+              const iconColor = isUrgent ? 'text-red-600' : isWarning ? 'text-yellow-600' : 'text-blue-600';
+              const textColor = isUrgent ? 'text-red-900' : isWarning ? 'text-yellow-900' : 'text-blue-900';
+              
+              return (
+                <li key={i} className={itemClass}>
+                  <div className="flex gap-3">
+                    <span className={`${iconColor} font-bold flex-shrink-0`}>
+                      {isUrgent ? '⚠️' : isWarning ? '⚡' : '→'}
+                    </span>
+                    <span className={`${textColor} text-sm leading-relaxed`}>{rec}</span>
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         </div>
       )}

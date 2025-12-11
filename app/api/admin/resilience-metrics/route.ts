@@ -9,6 +9,89 @@ import { resilienceStorage } from '@/lib/resilience-storage';
 
 export const dynamic = 'force-dynamic';
 
+// Helper functions - defined before use
+
+function calculateGlobalSummaryFromDbMetrics(dbMetrics: any[]): any {
+  const totalRequests = dbMetrics.reduce((sum, m) => sum + m.totalRequests, 0);
+  const successfulRequests = dbMetrics.reduce((sum, m) => sum + m.successfulRequests, 0);
+  const failedRequests = dbMetrics.reduce((sum, m) => sum + m.failedRequests, 0);
+  
+  // Weighted average response time
+  const totalWeightedAvg = dbMetrics.reduce((sum, m) => sum + (m.avgResponseTime * m.totalRequests), 0);
+  const avgResponseTime = totalRequests > 0 ? Math.round(totalWeightedAvg / totalRequests) : 0;
+  
+  // Calculate overall P95 (approximation)
+  const totalWeightedP95 = dbMetrics.reduce((sum, m) => sum + ((m.p95ResponseTime || m.avgResponseTime) * m.totalRequests), 0);
+  const p95ResponseTime = totalRequests > 0 ? Math.round(totalWeightedP95 / totalRequests) : 0;
+  
+  const successRate = totalRequests > 0 ? ((successfulRequests / totalRequests) * 100).toFixed(2) + '%' : '0.00%';
+  
+  return {
+    totalRequests,
+    successfulRequests,
+    failedRequests,
+    successRate,
+    averageResponseTime: avgResponseTime + 'ms',
+    p95ResponseTime: p95ResponseTime + 'ms',
+  };
+}
+
+function calculateProblematicEndpointsFromDb(dbMetrics: any[], limit: number): Array<{ endpoint: string; errorRate: number; summary: any }> {
+  return dbMetrics
+    .map(metric => {
+      const errorRate = metric.totalRequests > 0 
+        ? (metric.failedRequests / metric.totalRequests) * 100 
+        : 0;
+      
+      return {
+        endpoint: metric.endpoint,
+        errorRate,
+        summary: {
+          successRate: ((metric.successfulRequests / metric.totalRequests) * 100).toFixed(1) + '%',
+          p95ResponseTime: (metric.p95ResponseTime || metric.avgResponseTime) + 'ms',
+          retrySuccessRate: 'N/A',
+        },
+      };
+    })
+    .filter(ep => ep.errorRate > 5) // Only endpoints with >5% error rate
+    .sort((a, b) => b.errorRate - a.errorRate) // Highest error rate first
+    .slice(0, limit);
+}
+
+function calculateHealthScoreFromDbMetric(metric: any): number {
+  if (metric.totalRequests === 0) return 0;
+
+  // Factors:
+  // 1. Availability (40%): Success rate
+  // 2. Performance (30%): Response time vs baseline
+  // 3. Reliability (20%): Based on failures
+  // 4. Resilience (10%): Circuit breaker rejections
+
+  const successRate = (metric.successfulRequests / metric.totalRequests) * 100;
+  const availabilityScore = successRate;
+
+  // Performance: Assume baseline is 2s, score decreases as P95 increases
+  const p95 = metric.p95ResponseTime || metric.avgResponseTime;
+  const baselineMs = 2000;
+  const performanceScore = Math.max(0, 100 - ((p95 - baselineMs) / baselineMs) * 100);
+
+  // Reliability: Based on failure rate
+  const failureRate = (metric.failedRequests / metric.totalRequests) * 100;
+  const reliabilityScore = Math.max(0, 100 - failureRate * 2);
+
+  // Resilience: Low circuit breaker rejections is good
+  const rejectionRate = ((metric.circuitBreakerRejections || 0) / metric.totalRequests) * 100;
+  const resilienceScore = Math.max(0, 100 - rejectionRate * 10);
+
+  const healthScore = 
+    (availabilityScore * 0.4) +
+    (performanceScore * 0.3) +
+    (reliabilityScore * 0.2) +
+    (resilienceScore * 0.1);
+
+  return Math.round(healthScore);
+}
+
 /**
  * GET /api/admin/resilience-metrics
  * 
@@ -126,13 +209,32 @@ export async function GET() {
     }
 
     // Get global summary
-    const globalSummary = metricsTracker.getGlobalSummary();
+    let globalSummary = metricsTracker.getGlobalSummary();
+
+    // If no in-memory data, calculate from database metrics
+    if (globalSummary.totalRequests === 0 && dbMetrics.length > 0) {
+      globalSummary = calculateGlobalSummaryFromDbMetrics(dbMetrics);
+    }
 
     // Get problematic endpoints
-    const problematicEndpoints = metricsTracker.getProblematicEndpoints(5);
+    let problematicEndpoints = metricsTracker.getProblematicEndpoints(5);
 
-    // Get health scores
-    const healthScores = metricsTracker.getAllHealthScores();
+    // If no in-memory problematic endpoints, calculate from database metrics
+    if (problematicEndpoints.length === 0 && dbMetrics.length > 0) {
+      problematicEndpoints = calculateProblematicEndpointsFromDb(dbMetrics, 5);
+    }
+
+    // Get health scores from in-memory tracker
+    let healthScores = metricsTracker.getAllHealthScores();
+
+    // If no in-memory health scores, calculate from database metrics
+    if (healthScores.length === 0 && dbMetrics.length > 0) {
+      healthScores = dbMetrics.map(metric => ({
+        endpoint: metric.endpoint,
+        score: calculateHealthScoreFromDbMetric(metric),
+        trend: 'stable',
+      })).sort((a, b) => a.score - b.score); // Worst first
+    }
 
     // System health assessment
     const systemHealth = calculateSystemHealth(circuitBreakers, queueMetrics, healthScores);
@@ -221,7 +323,7 @@ export async function POST(req: Request) {
   }
 }
 
-// Helper functions
+// Helper functions (remaining utilities)
 
 function formatTimeAgo(timestamp: number): string {
   const seconds = Math.floor((Date.now() - timestamp) / 1000);
@@ -322,14 +424,16 @@ function generateRecommendations(
   for (const endpoint of problematicEndpoints.slice(0, 3)) {
     if (endpoint.errorRate > 20) {
       recommendations.push(
-        `${endpoint.endpoint}: High error rate (${endpoint.errorRate.toFixed(1)}%). Review timeout configuration and upstream service.`
+        `${endpoint.endpoint}: High error rate (${endpoint.errorRate.toFixed(1)}%). Actions: Review logs for common errors, add retry logic, validate upstream service health, or adjust circuit breaker thresholds.`
       );
     }
     
-    const p95 = parseInt(endpoint.summary.p95ResponseTime);
-    if (p95 > 10000) {
+    // Handle both string (e.g., "5000ms") and number formats
+    const p95String = endpoint.summary.p95ResponseTime;
+    const p95 = typeof p95String === 'string' ? parseInt(p95String) : p95String;
+    if (!isNaN(p95) && p95 > 10000) {
       recommendations.push(
-        `${endpoint.endpoint}: Slow P95 response time (${endpoint.summary.p95ResponseTime}). Consider increasing timeout or optimizing upstream.`
+        `${endpoint.endpoint}: Very slow (${endpoint.summary.p95ResponseTime} P95). Actions: Increase timeout from current setting, optimize database queries, implement background jobs, or add response streaming.`
       );
     }
   }
@@ -337,9 +441,64 @@ function generateRecommendations(
   // Low health scores
   const criticalEndpoints = healthScores.filter(e => e.score < 50);
   if (criticalEndpoints.length > 0) {
+    const endpointList = criticalEndpoints.slice(0, 3).map(e => e.endpoint).join(', ');
+    const more = criticalEndpoints.length > 3 ? ` and ${criticalEndpoints.length - 3} more` : '';
     recommendations.push(
-      `${criticalEndpoints.length} endpoints have critical health scores (< 50). Immediate investigation recommended.`
+      `URGENT: ${criticalEndpoints.length} critical endpoints (${endpointList}${more}). Actions: Investigate immediately, check upstream services, review recent deployments, enable detailed logging, or temporarily disable non-essential features.`
     );
+  }
+
+  // Medium health scores - warning
+  const warningEndpoints = healthScores.filter(e => e.score >= 50 && e.score < 70);
+  if (warningEndpoints.length > 0) {
+    const endpointList = warningEndpoints.slice(0, 3).map(e => e.endpoint).join(', ');
+    const more = warningEndpoints.length > 3 ? ` and ${warningEndpoints.length - 3} more` : '';
+    recommendations.push(
+      `Monitor these endpoints closely: ${endpointList}${more}. Actions: Check error rates, optimize response times, or review upstream dependencies.`
+    );
+  }
+
+  // Slow endpoints (even if not problematic)
+  const slowEndpoints = problematicEndpoints.filter(ep => {
+    const p95String = ep.summary.p95ResponseTime;
+    const p95 = typeof p95String === 'string' ? parseInt(p95String) : p95String;
+    return !isNaN(p95) && p95 > 5000 && p95 <= 10000;
+  });
+  if (slowEndpoints.length > 0) {
+    const endpointList = slowEndpoints.slice(0, 2).map(e => e.endpoint).join(', ');
+    recommendations.push(
+      `Optimize slow endpoints (${endpointList}): Add database indexes, implement Redis caching, use pagination, or increase concurrent request limits.`
+    );
+  }
+
+  // Overall health assessment with actionable advice
+  if (healthScores.length > 0) {
+    const avgHealthScore = healthScores.reduce((sum, ep) => sum + ep.score, 0) / healthScores.length;
+    if (avgHealthScore < 80 && recommendations.length === 0) {
+      const actionableSteps: string[] = [];
+      
+      // Analyze what's affecting the score
+      const lowSuccessRate = healthScores.filter(ep => ep.score < 80).length;
+      const hasSlowEndpoints = problematicEndpoints.some(ep => {
+        const p95String = ep.summary.p95ResponseTime;
+        const p95 = typeof p95String === 'string' ? parseInt(p95String) : p95String;
+        return !isNaN(p95) && p95 > 3000;
+      });
+      
+      if (lowSuccessRate > healthScores.length * 0.3) {
+        actionableSteps.push('Review error logs and implement better error handling');
+      }
+      if (hasSlowEndpoints) {
+        actionableSteps.push('Optimize database queries, add caching, or increase timeouts for slow endpoints');
+      }
+      if (actionableSteps.length === 0) {
+        actionableSteps.push('Monitor response times and implement caching where possible');
+      }
+      
+      recommendations.push(
+        `Average health score is ${avgHealthScore.toFixed(1)}. Recommended actions: ${actionableSteps.join('; ')}.`
+      );
+    }
   }
 
   if (recommendations.length === 0) {
