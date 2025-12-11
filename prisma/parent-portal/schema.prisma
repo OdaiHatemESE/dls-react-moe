@@ -88,6 +88,7 @@ model StudentAddress {
   studentId    Int
   createdAt    DateTime @default(now())
   updatedAt    DateTime
+  IsPrimary    Boolean  @default(false, map: "DF__StudentAd__IsPri__3AD6B8E2")
   Student      Student  @relation(fields: [studentId], references: [id])
 }
 
@@ -98,6 +99,7 @@ model StudentContact {
   studentId Int
   createdAt DateTime @default(now())
   updatedAt DateTime
+  IsPrimary Boolean  @default(false, map: "DF__StudentCo__IsPri__39E294A9")
   Student   Student  @relation(fields: [studentId], references: [id])
 }
 
@@ -208,6 +210,7 @@ model ParentContact {
   parentId  Int
   createdAt DateTime @default(now())
   updatedAt DateTime
+  IsPrimary Boolean  @default(false, map: "DF__ParentCon__IsPri__3BCADD1B")
   Parent    Parent   @relation(fields: [parentId], references: [id])
 }
 
