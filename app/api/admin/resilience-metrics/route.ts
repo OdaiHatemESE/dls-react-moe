@@ -6,6 +6,7 @@ import { idhQueue } from '@/lib/idh-queue';
 import { metricsTracker } from '@/lib/metrics-tracker';
 import { metricsStorage } from '@/lib/metrics-storage';
 import { resilienceStorage } from '@/lib/resilience-storage';
+import { prismaParent } from '@/lib/prisma-parent';
 
 export const dynamic = 'force-dynamic';
 
@@ -293,10 +294,65 @@ export async function POST(req: Request) {
 
     if (action === 'reset') {
       if (target === 'metrics') {
-        // Persist before reset
+        // Persist before reset (optional - saves current state)
         await metricsTracker.persistNow();
         metricsTracker.resetAll();
-        return NextResponse.json({ message: 'All metrics reset successfully' });
+        return NextResponse.json({ message: 'In-memory metrics reset successfully' });
+      } else if (target === 'database') {
+        // Clear database metrics (last 24 hours data)
+        try {
+          // Delete old metrics from database
+          const hoursCutoff = parseInt(body.hours || '24');
+          const cutoffDate = new Date(Date.now() - hoursCutoff * 60 * 60 * 1000);
+          
+          const [deletedMetrics, deletedCB, deletedQueue] = await Promise.all([
+            prismaParent.apiMetrics.deleteMany({
+              where: {
+                Timestamp: { gte: cutoffDate }
+              }
+            }),
+            prismaParent.circuitBreakerMetrics.deleteMany({
+              where: {
+                Timestamp: { gte: cutoffDate }
+              }
+            }),
+            prismaParent.queueMetrics.deleteMany({
+              where: {
+                Timestamp: { gte: cutoffDate }
+              }
+            }),
+          ]);
+          
+          return NextResponse.json({ 
+            message: `Database metrics cleared successfully`, 
+            deleted: {
+              apiMetrics: deletedMetrics.count,
+              circuitBreaker: deletedCB.count,
+              queue: deletedQueue.count,
+            }
+          });
+        } catch (err) {
+          console.error('Error clearing database metrics:', err);
+          return NextResponse.json({ error: 'Failed to clear database metrics' }, { status: 500 });
+        }
+      } else if (target === 'all') {
+        // Reset both in-memory and database
+        metricsTracker.resetAll();
+        
+        const cutoffDate = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        await Promise.all([
+          prismaParent.apiMetrics.deleteMany({
+            where: { Timestamp: { gte: cutoffDate } }
+          }),
+          prismaParent.circuitBreakerMetrics.deleteMany({
+            where: { Timestamp: { gte: cutoffDate } }
+          }),
+          prismaParent.queueMetrics.deleteMany({
+            where: { Timestamp: { gte: cutoffDate } }
+          }),
+        ]);
+        
+        return NextResponse.json({ message: 'All metrics (memory + database) reset successfully' });
       } else if (target === 'queue') {
         idhQueue.resetMetrics();
         return NextResponse.json({ message: 'Queue metrics reset successfully' });

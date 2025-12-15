@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Forbidden - Admin access required" }, { status: 403 });
     }
 
-    // Get comprehensive statistics in parallel
+    // Get comprehensive statistics in parallel - ALL queries in one Promise.all
     const [
       totalStudents,
       activeStudents,
@@ -50,6 +50,14 @@ export async function GET(req: NextRequest) {
       genderBreakdown,
       religionBreakdown,
       citizenshipBreakdown,
+      studentsWithAddresses,
+      studentsWithContacts,
+      studentsWithEnrollments,
+      studentsWithInfoUpdated,
+      studentsWithConductSigned,
+      infoUpdateStatusBreakdown,
+      recentInfoUpdates,
+      recentConductSignatures,
     ] = await Promise.all([
       // Student counts
       prismaParent.student.count(),
@@ -118,88 +126,85 @@ export async function GET(req: NextRequest) {
         by: ["CitizenshipStatus"],
         _count: true,
       }),
+
+      // Student relationship counts (moved from separate queries)
+      prismaParent.student.count({
+        where: {
+          StudentAddress: {
+            some: {},
+          },
+        },
+      }),
+      prismaParent.student.count({
+        where: {
+          StudentContact: {
+            some: {},
+          },
+        },
+      }),
+      prismaParent.student.count({
+        where: {
+          StudentEnrollment: {
+            some: {},
+          },
+        },
+      }),
+
+      // Information update statistics (moved from separate queries)
+      prismaParent.student.count({
+        where: { isInformationUpdated: true },
+      }),
+      prismaParent.student.count({
+        where: { isConductAgreementSigned: true },
+      }),
+
+      // Information update status breakdown (moved from separate query)
+      prismaParent.student.groupBy({
+        by: ["informationUpdateStatus"],
+        _count: true,
+        where: {
+          informationUpdateStatus: { not: null },
+        },
+      }),
+
+      // Recent information updates (moved from separate query)
+      prismaParent.student.findMany({
+        where: {
+          isInformationUpdated: true,
+          informationUpdatedAt: { not: null },
+        },
+        orderBy: { informationUpdatedAt: "desc" },
+        take: 10,
+        select: {
+          id: true,
+          emirateId: true,
+          firstNameEnglish: true,
+          familyNameEnglish: true,
+          informationUpdatedAt: true,
+          informationUpdateStatus: true,
+          isConductAgreementSigned: true,
+          conductAgreementSignedAt: true,
+        },
+      }),
+
+      // Recent conduct agreement signatures (moved from separate query)
+      prismaParent.student.findMany({
+        where: {
+          isConductAgreementSigned: true,
+          conductAgreementSignedAt: { not: null },
+        },
+        orderBy: { conductAgreementSignedAt: "desc" },
+        take: 10,
+        select: {
+          id: true,
+          emirateId: true,
+          firstNameEnglish: true,
+          familyNameEnglish: true,
+          conductAgreementSignedAt: true,
+          informationUpdateStatus: true,
+        },
+      }),
     ]);
-
-    // Calculate percentages and trends
-    const studentsWithAddresses = await prismaParent.student.count({
-      where: {
-        StudentAddress: {
-          some: {},
-        },
-      },
-    });
-
-    const studentsWithContacts = await prismaParent.student.count({
-      where: {
-        StudentContact: {
-          some: {},
-        },
-      },
-    });
-
-    const studentsWithEnrollments = await prismaParent.student.count({
-      where: {
-        StudentEnrollment: {
-          some: {},
-        },
-      },
-    });
-
-    // Information update statistics
-    const studentsWithInfoUpdated = await prismaParent.student.count({
-      where: { isInformationUpdated: true },
-    });
-
-    const studentsWithConductSigned = await prismaParent.student.count({
-      where: { isConductAgreementSigned: true },
-    });
-
-    // Information update status breakdown
-    const infoUpdateStatusBreakdown = await prismaParent.student.groupBy({
-      by: ["informationUpdateStatus"],
-      _count: true,
-      where: {
-        informationUpdateStatus: { not: null },
-      },
-    });
-
-    // Recent information updates
-    const recentInfoUpdates = await prismaParent.student.findMany({
-      where: {
-        isInformationUpdated: true,
-        informationUpdatedAt: { not: null },
-      },
-      orderBy: { informationUpdatedAt: "desc" },
-      take: 10,
-      select: {
-        id: true,
-        emirateId: true,
-        firstNameEnglish: true,
-        familyNameEnglish: true,
-        informationUpdatedAt: true,
-        informationUpdateStatus: true,
-        isConductAgreementSigned: true,
-        conductAgreementSignedAt: true,
-      },
-    });
-
-    // Recent conduct agreement signatures
-    const recentConductSignatures = await prismaParent.student.findMany({
-      where: {
-        isConductAgreementSigned: true,
-        conductAgreementSignedAt: { not: null },
-      },
-      orderBy: { conductAgreementSignedAt: "desc" },
-      take: 10,
-      select: {
-        id: true,
-        emirateId: true,
-        firstNameEnglish: true,
-        familyNameEnglish: true,
-        conductAgreementSignedAt: true,
-        informationUpdateStatus: true,
-      },
-    });
 
     return NextResponse.json({
       overview: {
@@ -278,5 +283,8 @@ export async function GET(req: NextRequest) {
       { error: "Failed to fetch system statistics" },
       { status: 500 }
     );
+  } finally {
+    // Record successful metrics
+    metricsTracker.recordRequest(endpoint, true, Date.now() - startTime);
   }
 }

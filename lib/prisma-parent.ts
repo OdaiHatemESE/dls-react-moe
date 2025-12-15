@@ -11,4 +11,9 @@ export const prismaParent =
 
 if (process.env.NODE_ENV !== "production") globalForPrisma.prismaParent = prismaParent;
 
+// Graceful shutdown
+process.on('beforeExit', async () => {
+  await prismaParent.$disconnect();
+});
+
 export default prismaParent;
