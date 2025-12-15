@@ -32,6 +32,8 @@ interface ResilienceMetrics {
   queues: any;
   endpoints: {
     count: number;
+    metrics?: Record<string, any>;
+    databaseMetrics?: Record<string, any>;
     global: any;
     problematic: Array<{ endpoint: string; errorRate: number; summary: any }>;
     healthScores: Array<{ endpoint: string; score: number; trend: string }>;
