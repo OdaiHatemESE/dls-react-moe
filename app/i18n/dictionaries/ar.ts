@@ -287,7 +287,7 @@ export const ar = {
         changeToggle: "هل تغيّر العنوان؟",
         newAddressLabel: "تفاصيل العنوان الجديد",
         newAddressPlaceholder: "اكتب العنوان السكني المحدّث، بما في ذلك المبنى والشارع والمنطقة والإمارة.",
-        documentLabel: "إرفاق إثبات العنوان (PDF، JPG، PNG)",
+        documentLabel: "إرفاق إثبات العنوان (PDF)",
         documentHelper: "أرفق فاتورة خدمات حديثة أو عقد إيجار أو مستندًا رسميًا يوضح العنوان الجديد.",
         summaryLabel: "معاينة العنوان الجديد",
         summaryPending: "اختر العنوان لعرض التفاصيل هنا.",

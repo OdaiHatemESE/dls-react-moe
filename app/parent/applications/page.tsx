@@ -237,7 +237,7 @@ export default function MyApplicationsPage() {
       {/* Main Content */}
       <div className="container mx-auto px-4 sm:px-6 py-8 sm:py-12">
         {/* Statistics Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-8">
           <Card className="border-0 bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg">
             <CardContent className="p-6">
               <div className={`flex items-center justify-between ${locale === 'ar' ? 'flex-row-reverse' : ''}`}>
@@ -296,23 +296,7 @@ export default function MyApplicationsPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-0 bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-lg">
-            <CardContent className="p-6">
-              <div className={`flex items-center justify-between ${locale === 'ar' ? 'flex-row-reverse' : ''}`}>
-                <div className={locale === 'ar' ? 'text-right' : 'text-left'}>
-                  <p className="text-sm opacity-90 mb-1">
-                    {locale === 'ar' ? 'الطلاب بطلبات' : 'Students with Applications'}
-                  </p>
-                  <p className="text-3xl font-bold">{childrenWithApplications.length}</p>
-                </div>
-                <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                  </svg>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+       
         </div>
 
         {/* Applications Table */}

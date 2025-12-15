@@ -248,7 +248,7 @@ export const en = {
         changeToggle: "Has your address changed?",
         newAddressLabel: "New address details",
         newAddressPlaceholder: "Enter your updated residential address, including building, street, area, and emirate.",
-        documentLabel: "Upload proof of address (PDF, JPG, PNG)",
+        documentLabel: "Upload proof of address (PDF)",
         documentHelper: "Attach a recent utility bill, tenancy contract, or official document showing the new address.",
         summaryLabel: "New address preview",
         summaryPending: "Select an address to preview the full details here.",

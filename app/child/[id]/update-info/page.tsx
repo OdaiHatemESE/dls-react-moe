@@ -1943,8 +1943,8 @@ export default function UpdateStudentInfoPage() {
                           </svg>
                           <span>
                             {locale === 'ar' 
-                              ? 'المستندات المقبولة: فاتورة المرافق، عقد الإيجار، أو مستند رسمي'
-                              : 'Accepted: Utility bill, tenancy contract, or official document'}
+                              ? 'المستندات المقبولة: فاتورة خدمات، عقد الإيجار، أو مستند رسمي'
+                              : 'Accepted: Services bill, tenancy contract, or official document'}
                           </span>
                         </li>
                       </ul>
