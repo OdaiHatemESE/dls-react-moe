@@ -10,7 +10,7 @@ export default function MainContent({ children }: MainContentProps) {
   const { locale } = useI18n();
   
   return (
-    <div className={`${locale === 'ar' ? 'lg:pr-72' : 'lg:pl-72'}`}>
+    <div className={`${locale === 'ar' ? 'lg:pr-96' : 'lg:pl-96'}`}>
       <main className="min-h-screen pb-20 lg:pb-0">{children}</main>
     </div>
   );

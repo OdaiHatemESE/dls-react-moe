@@ -173,7 +173,15 @@ export default function VerticalHeader() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                   </svg>
                 </div>
-                <span className="hidden sm:block font-bold">ParentPortal</span>
+                <div className="hidden sm:flex sm:flex-col gap-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold whitespace-nowrap">ParentPortal</span>
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-600 dark:bg-amber-400/10 dark:text-amber-400 border border-amber-500/20">
+                      {locale === 'ar' ? 'تجريبي' : 'BETA'}
+                    </span>
+                  </div>
+                  <span className="text-xs text-muted-foreground font-medium">MOE</span>
+                </div>
               </Link>
             </div>
 
@@ -353,7 +361,7 @@ export default function VerticalHeader() {
       {/* Professional Desktop Sidebar */}
       <aside className={`hidden lg:fixed lg:flex lg:flex-col lg:inset-y-0 z-50 ${
         locale === 'ar' ? 'lg:right-0' : 'lg:left-0'
-      } lg:w-80`}>
+      } lg:w-96`}>
         <div className={`relative flex grow flex-col gap-y-6 overflow-y-auto bg-gradient-to-br from-card via-card to-card/95 backdrop-blur-xl px-7 pb-7 border-r-2 border-border/50 hover:border-primary/20 transition-all duration-500`}>
           {/* Decorative Elements */}
           <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-primary/10 to-transparent rounded-full -translate-y-20 translate-x-20 blur-3xl" />
@@ -374,9 +382,14 @@ export default function VerticalHeader() {
                     </svg>
                   </div>
                 </div>
-                <div className="flex flex-col">
-                  <span className="font-bold group-hover:translate-x-1 transition-transform">{locale === 'ar' ? 'بوابة أولياء الأمور' : 'Parent Portal'}</span>
-                  <span className="text-xs text-muted-foreground font-medium">{locale === 'ar' ? 'وزارة التربية' : 'MOE'}</span>
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold group-hover:translate-x-1 transition-transform whitespace-nowrap">{locale === 'ar' ? 'بوابة أولياء الأمور' : 'Parent Portal'}</span>
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-600 dark:bg-amber-400/10 dark:text-amber-400 border border-amber-500/20">
+                      {locale === 'ar' ? 'تجريبي' : 'BETA'}
+                    </span>
+                  </div>
+                  <span className="text-xs text-muted-foreground font-medium">{locale === 'ar' ? 'وزارة التربية والتعليم' : 'MOE'}</span>
                 </div>
               </Link>
             </div>
