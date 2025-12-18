@@ -172,7 +172,27 @@ function SignConductSection({ locale, studentId, studentNumber, academicYear }: 
     const actions = visibleActions;
     const statusBanner = data?.statusBanner ?? null;
     const badge = data?.badge ?? null;
-    const reasons = data?.reasons ?? [];
+    
+    // Translate reasons from English to current locale
+    const reasons = React.useMemo(() => {
+        const rawReasons = data?.reasons ?? [];
+        if (locale === 'ar') {
+            // Map English reasons to Arabic
+            return rawReasons.map(reason => {
+                if (reason === "Conduct PDF not available yet.") {
+                    return "ميثاق الشراكة غير متوفر بعد. يرجى التوقيع الميثاق.";
+                }
+                if (reason === "Updates temporarily disabled.") {
+                    return "تم إيقاف التحديثات مؤقتًا.";
+                }
+                if (reason === "No active enrollment found for the current academic year.") {
+                    return "لا يوجد تسجيل نشط للعام الدراسي الحالي.";
+                }
+                return reason;
+            });
+        }
+        return rawReasons;
+    }, [data?.reasons, locale]);
 
     const handleDownloadPdf = React.useCallback(() => {
         const base64 = pdfBase64;

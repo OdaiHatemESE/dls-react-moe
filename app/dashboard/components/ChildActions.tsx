@@ -607,11 +607,11 @@ const FALLBACK_ACTION_DESCRIPTIONS: Record<string, { en: string; ar: string }> =
   },
   "sign-conduct": {
     en: "Review and digitally sign the school conduct charter.",
-    ar: "راجع ووقع على ميثاق السلوك المدرسي رقميًا.",
+    ar: "راجع ووقع على ميثاق الشراكة المدرسي رقميًا.",
   },
   "download-conduct": {
     en: "Download a copy of the signed conduct agreement.",
-    ar: "حمّل نسخة من اتفاقية السلوك الموقعة.",
+    ar: "حمّل نسخة من ميثاق الشراكة الموقع.",
   },
   "view-profile": {
     en: "Review full student profile details in one place.",
@@ -641,7 +641,7 @@ const REASON_LABELS: Record<string, { en: string; ar: string }> = {
   },
   "childActions.reasons.pdfUnavailable": {
     en: "Conduct PDF not available yet.",
-    ar: "ملف السلوك غير متوفر بعد.",
+    ar: "ميثاق الشراكة غير متوفر بعد. يرجى التوقيع الميثاق.",
   },
   "childActions.reasons.noActiveEnrollment": {
     en: "No active enrollment for the current academic year.",
@@ -656,7 +656,7 @@ const BADGE_LABELS: Record<string, { label: { en: string; ar: string }; tooltip:
   },
   "childActions.badge.signatureRequired": {
     label: { en: "Signature Required", ar: "يتطلب توقيع" },
-    tooltip: { en: "Conduct signature required", ar: "يتطلب توقيع السلوك" },
+    tooltip: { en: "Conduct signature required", ar: "يتطلب توقيع ميثاق الشراكة" },
   },
 };
 
@@ -680,7 +680,7 @@ export function getActionLabel(action: ChildActionDescriptor, locale: string): s
 
 export function getActionReason(action: ChildActionDescriptor, locale: string): string | null {
   if (action.disabledReason) {
-    const localized = getLocalizedText(action.disabledReason, locale, undefined);
+    const localized = getLocalizedText(action.disabledReason, locale, action.reason ?? undefined);
     if (localized) {
       return localized;
     }

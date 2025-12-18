@@ -46,7 +46,7 @@ type ResolveContext = {
 
 const DEFAULT_PDF_REASON: LocalizedText = {
   en: "Conduct PDF not available yet.",
-  ar: "ملف السلوك غير متوفر بعد.",
+  ar: "ميثاق الشراكة غير متوفر بعد. يرجى التوقيع الميثاق.",
 };
 
 const UPDATE_DISABLED_REASON: LocalizedText = {
@@ -98,11 +98,11 @@ const DEFAULT_DESCRIPTIONS: Record<string, LocalizedText> = {
   },
   "sign-conduct": {
     en: "Review and digitally sign the school conduct charter.",
-    ar: "راجع ووقع على ميثاق السلوك المدرسي رقميًا.",
+    ar: "راجع ووقع على ميثاق الشراكة المدرسي رقميًا.",
   },
   "download-conduct": {
     en: "Download a copy of the signed conduct agreement.",
-    ar: "حمّل نسخة من اتفاقية السلوك الموقعة.",
+    ar: "حمّل نسخة من ميثاق الشراكة الموقع.",
   },
   "view-profile": {
     en: "Review full student profile details in one place.",

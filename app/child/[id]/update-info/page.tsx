@@ -2589,8 +2589,8 @@ export default function UpdateStudentInfoPage() {
                     {!isFetchingChildren && !childFetchError && eligibleChildren.length === 0 && (
                       <p className="text-sm text-muted-foreground">
                         {locale === 'ar'
-                          ? 'لا يوجد أطفال آخرون مؤهلون في الوقت الحالي.'
-                          : 'No other children are eligible at the moment.'}
+                          ?  'لا يوجد أطفال مستوفون للشروط حاليًا'
+                          : 'No children are currently eligible.'}
                       </p>
                     )}
 
