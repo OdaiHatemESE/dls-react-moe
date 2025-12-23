@@ -230,10 +230,10 @@ model BackofficeSyncState {
 model Notification {
   id        Int       @id @default(autoincrement())
   userId    String    @db.VarChar(64)
-  type      String    @db.VarChar(100)
-  title     String    @db.VarChar(500)
-  body      String    @db.VarChar(Max)
-  data      String    @db.VarChar(Max)
+  type      String    @db.NVarChar(100)
+  title     String    @db.NVarChar(500)
+  body      String    @db.NVarChar(Max)
+  data      String    @db.NVarChar(Max)
   isRead    Boolean   @default(false)
   createdAt DateTime  @default(now())
   readAt    DateTime?
@@ -272,31 +272,30 @@ model ApiMetrics {
 }
 
 model CircuitBreakerMetrics {
-  Id              Int      @id @default(autoincrement())
-  Name            String   @db.NVarChar(100)
-  State           String   @db.NVarChar(20)
-  Failures        Int      @default(0)
-  Successes       Int      @default(0)
-  Rejections      Int      @default(0)
+  Id              Int       @id(map: "PK__CircuitB__3214EC074B59260A") @default(autoincrement())
+  Name            String    @db.NVarChar(100)
+  State           String    @db.NVarChar(20)
+  Failures        Int       @default(0, map: "DF__CircuitBr__Failu__51BA1E3A")
+  Successes       Int       @default(0, map: "DF__CircuitBr__Succe__52AE4273")
+  Rejections      Int       @default(0, map: "DF__CircuitBr__Rejec__53A266AC")
   LastFailureTime DateTime?
   LastSuccessTime DateTime?
   NextAttemptTime DateTime?
-  Timestamp       DateTime @default(dbgenerated("getutcdate()"))
-  
-  @@index([Name, Timestamp(sort: Desc)])
+  Timestamp       DateTime  @default(dbgenerated("getutcdate()"), map: "DF__CircuitBr__Times__54968AE5")
+
+  @@index([Name, Timestamp(sort: Desc)], map: "IX_CircuitBreakerMetrics_Name_Timestamp")
 }
 
 model QueueMetrics {
-  Id                  Int      @id @default(autoincrement())
-  QueueName           String   @db.NVarChar(100)
-  CurrentPending      Int      @default(0)
-  CurrentQueueSize    Int      @default(0)
-  SuccessfulRequests  Int      @default(0)
-  FailedRequests      Int      @default(0)
-  RetriedRequests     Int      @default(0)
-  SuccessRate         String?  @db.NVarChar(20)
-  Timestamp           DateTime @default(dbgenerated("getutcdate()"))
-  
-  @@index([QueueName, Timestamp(sort: Desc)])
-}
+  Id                 Int      @id(map: "PK__QueueMet__3214EC07D2D32D8E") @default(autoincrement())
+  QueueName          String   @db.NVarChar(100)
+  CurrentPending     Int      @default(0, map: "DF__QueueMetr__Curre__5772F790")
+  CurrentQueueSize   Int      @default(0, map: "DF__QueueMetr__Curre__58671BC9")
+  SuccessfulRequests Int      @default(0, map: "DF__QueueMetr__Succe__595B4002")
+  FailedRequests     Int      @default(0, map: "DF__QueueMetr__Faile__5A4F643B")
+  RetriedRequests    Int      @default(0, map: "DF__QueueMetr__Retri__5B438874")
+  SuccessRate        String?  @db.NVarChar(20)
+  Timestamp          DateTime @default(dbgenerated("getutcdate()"), map: "DF__QueueMetr__Times__5C37ACAD")
 
+  @@index([QueueName, Timestamp(sort: Desc)], map: "IX_QueueMetrics_QueueName_Timestamp")
+}
