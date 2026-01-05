@@ -51,17 +51,24 @@ export default function ProfilePage() {
   }, [data, person]);
 
   const getPrimaryEmail = (p: Person): string => {
-    return p.email || p.metadata?.contacts?.[0]?.value || '';
+    const primaryEmail = p.metadata?.contacts?.find(
+      (c: any) => c.isPrimary && c.contactType?.toLowerCase().includes('email')
+    );
+    const anyEmail = p.metadata?.contacts?.find(
+      (c: any) => c.contactType?.toLowerCase().includes('email')
+    );
+    return primaryEmail?.value || anyEmail?.value || '';
   };
 
   const getPrimaryPhone = (p: Person): string => {
-    const phoneContact = p.metadata?.contacts?.find(
-      (c: any) => c.contactType?.toLowerCase().includes('mobile')
+    const primaryPhone = p.metadata?.contacts?.find(
+      (c: any) => c.isPrimary && (c.contactType?.toLowerCase().includes('phone') || c.contactType?.toLowerCase().includes('mobile'))
     );
-    return p.phone || phoneContact?.value || '';
-  };
-
-  const getDisplayName = (p: Person, lng: string): string => {
+    const anyPhone = p.metadata?.contacts?.find(
+      (c: any) => c.contactType?.toLowerCase().includes('phone') || c.contactType?.toLowerCase().includes('mobile')
+    );
+    return primaryPhone?.value || anyPhone?.value || '';
+  };  const getDisplayName = (p: Person, lng: string): string => {
     if (lng === 'ar') {
       return [p.givenName, p.familyName].filter(Boolean).join(' ') || p.username || 'User';
     }
@@ -353,43 +360,7 @@ export default function ProfilePage() {
                   </div>
                 )}
 
-                {/* All Other Contacts */}
-                {contacts.length > 0 && (
-                  <>
-                    <Separator className="my-4" />
-                    <div className="space-y-3">
-                      <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                        {locale === 'ar' ? 'جميع جهات الاتصال' : 'All Contacts'}
-                      </h4>
-                      {contacts.map((contact: any, index: number) => (
-                        <div 
-                          key={index} 
-                          className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
-                        >
-                          {contact.contactType?.toLowerCase().includes('email') ? (
-                            <EnvelopeSimple className="w-4 h-4 text-muted-foreground mt-0.5" weight="duotone" />
-                          ) : (
-                            <Phone className="w-4 h-4 text-muted-foreground mt-0.5" weight="duotone" />
-                          )}
-                          <div className="flex-1">
-                            <dt className="text-xs font-medium text-muted-foreground mb-1 flex items-center gap-2">
-                              {contact.contactType || (locale === 'ar' ? 'اتصال' : 'Contact')}
-                              {contact.isPrimary && (
-                                <Badge variant="secondary" className="text-[10px] px-1 py-0">
-                                  {locale === 'ar' ? 'أساسي' : 'Primary'}
-                                </Badge>
-                              )}
-                            </dt>
-                            <dd className="text-sm text-foreground">{contact.value || '-'}</dd>
-                            {contact.note && (
-                              <dd className="text-xs text-muted-foreground mt-1">{contact.note}</dd>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </>
-                )}
+
               </CardContent>
             </Card>
             )}
@@ -410,7 +381,7 @@ export default function ProfilePage() {
                       <dt className="text-xs font-medium text-muted-foreground mb-1">
                         {locale === 'ar' ? 'الاسم بالعربي' : 'Arabic Name'}
                       </dt>
-                      <dd className="text-sm text-foreground font-medium" dir="rtl">{arabicName}</dd>
+                      <dd className="text-sm text-foreground font-medium" dir="rtl" style={{ textAlign: 'right' }}>{arabicName}</dd>
                     </div>
                   )}
                   {englishName && (
@@ -418,7 +389,7 @@ export default function ProfilePage() {
                       <dt className="text-xs font-medium text-muted-foreground mb-1">
                         {locale === 'ar' ? 'الاسم بالإنجليزي' : 'English Name'}
                       </dt>
-                      <dd className="text-sm text-foreground font-medium">{englishName}</dd>
+                      <dd className="text-sm text-foreground font-medium" dir="ltr">{englishName}</dd>
                     </div>
                   )}
                   {person.metadata?.birthDate && (
@@ -475,37 +446,29 @@ export default function ProfilePage() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-lg">
                     <MapPin className="w-5 h-5 text-primary" weight="duotone" />
-                    {locale === 'ar' ? 'العناوين' : 'Addresses'}
+                    {locale === 'ar' ? 'العنوان' : 'Address'}
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-6">
-                  {addresses.map((address: any, index: number) => {
-                    const isPrimary = index === 0;
-                    const addressLines = [address.addressLine1, address.addressLine2, address.addressLine3].filter(Boolean);
-                    const cityCountry = [address.city, address.state, address.country].filter(Boolean).join(', ');
+                <CardContent>
+                  {(() => {
+                    // Find primary address or fall back to first address
+                    const primaryAddress = addresses.find((a: any) => a.isPrimary) || addresses[0];
+                    const addressLines = [primaryAddress.addressLine1, primaryAddress.addressLine2, primaryAddress.addressLine3].filter(Boolean);
+                    const cityCountry = [primaryAddress.city, primaryAddress.state, primaryAddress.country].filter(Boolean).join(', ');
                     
                     return (
-                      <div 
-                        key={index}
-                        className={`p-4 rounded-lg border transition-all ${
-                          isPrimary 
-                            ? 'bg-primary/5 border-primary/20 hover:bg-primary/10' 
-                            : 'bg-muted/30 border-border hover:bg-muted/50'
-                        }`}
-                      >
+                      <div className="p-4 rounded-lg border bg-primary/5 border-primary/20 hover:bg-primary/10 transition-all">
                         {/* Header with Badge */}
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center gap-2">
-                            <MapPin className={`w-4 h-4 ${isPrimary ? 'text-primary' : 'text-muted-foreground'}`} weight="duotone" />
+                            <MapPin className="w-4 h-4 text-primary" weight="duotone" />
                             <span className="text-xs font-semibold text-foreground">
-                              {locale === 'ar' ? `العنوان ${index + 1}` : `Address ${index + 1}`}
+                              {locale === 'ar' ? 'العنوان الأساسي' : 'Primary Address'}
                             </span>
                           </div>
-                          {isPrimary && (
-                            <Badge variant="default" className="text-[10px] px-2 py-0.5">
-                              {locale === 'ar' ? 'أساسي' : 'Primary'}
-                            </Badge>
-                          )}
+                          <Badge variant="default" className="text-[10px] px-2 py-0.5">
+                            {locale === 'ar' ? 'أساسي' : 'Primary'}
+                          </Badge>
                         </div>
 
                         {/* Address Details */}
@@ -523,24 +486,24 @@ export default function ProfilePage() {
                           )}
 
                           {/* Additional Details */}
-                          {(address.zipCode || address.poBox || address.region) && (
+                          {(primaryAddress.zipCode || primaryAddress.poBox || primaryAddress.region) && (
                             <div className="flex flex-wrap gap-3 mt-3 pt-3 border-t border-border/50">
-                              {address.zipCode && (
+                              {primaryAddress.zipCode && (
                                 <div className="text-xs">
                                   <span className="text-muted-foreground">{locale === 'ar' ? 'الرمز البريدي:' : 'ZIP:'} </span>
-                                  <span className="text-foreground font-medium">{address.zipCode}</span>
+                                  <span className="text-foreground font-medium">{primaryAddress.zipCode}</span>
                                 </div>
                               )}
-                              {address.poBox && (
+                              {primaryAddress.poBox && (
                                 <div className="text-xs">
                                   <span className="text-muted-foreground">{locale === 'ar' ? 'ص.ب:' : 'P.O. Box:'} </span>
-                                  <span className="text-foreground font-medium">{address.poBox}</span>
+                                  <span className="text-foreground font-medium">{primaryAddress.poBox}</span>
                                 </div>
                               )}
-                              {address.region && (
+                              {primaryAddress.region && (
                                 <div className="text-xs">
                                   <span className="text-muted-foreground">{locale === 'ar' ? 'المنطقة:' : 'Region:'} </span>
-                                  <span className="text-foreground font-medium">{address.region}</span>
+                                  <span className="text-foreground font-medium">{primaryAddress.region}</span>
                                 </div>
                               )}
                             </div>
@@ -548,7 +511,7 @@ export default function ProfilePage() {
                         </div>
                       </div>
                     );
-                  })}
+                  })()}
                 </CardContent>
               </Card>
             )}

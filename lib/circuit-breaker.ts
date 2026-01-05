@@ -286,10 +286,10 @@ export const ppApiCircuitBreaker = new CircuitBreaker({
 
 export const idhApiCircuitBreaker = new CircuitBreaker({
   name: 'IDH-API',
-  failureThreshold: 3,      // More aggressive (IDH is critical)
-  successThreshold: 0.9,    // Need 90% success
-  timeout: 5000,            // 5 second window
-  resetTimeout: 20000,      // 20 second cooldown
+  failureThreshold: 5,      // Increased to be more tolerant of transient issues
+  successThreshold: 0.85,   // Slightly reduced from 90% to 85%
+  timeout: 15000,           // Increased to 15s to match actual request timeout
+  resetTimeout: 30000,      // Increased to 30 second cooldown
 });
 
 export const oneRosterCircuitBreaker = new CircuitBreaker({

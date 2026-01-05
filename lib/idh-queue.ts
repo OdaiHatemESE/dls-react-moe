@@ -28,10 +28,10 @@ const IDH_QUEUE_CONFIG = {
 
 // Retry configuration for failed requests
 const IDH_RETRY_CONFIG = {
-  retries: 3,
+  retries: 2, // Reduced from 3 to prevent queue timeout
   factor: 2, // Exponential backoff factor
-  minTimeout: 500,
-  maxTimeout: 5000,
+  minTimeout: 1000, // Increased from 500ms
+  maxTimeout: 3000, // Reduced from 5000ms to prevent timeout stacking
   randomize: true, // Add jitter to prevent thundering herd
   
   // Only retry on rate limit or transient errors
@@ -100,6 +100,15 @@ class IdhQueueManager {
     this.metrics.queuedRequests = this.queue.size;
 
     const startTime = Date.now();
+    const queueStartSize = this.queue.size;
+    const queueStartPending = this.queue.pending;
+    
+    console.log('[IDH Queue] Request starting', {
+      studentId,
+      queueSize: queueStartSize,
+      pending: queueStartPending,
+      totalRequests: this.metrics.totalRequests,
+    });
 
     try {
       const result = await this.queue.add(
@@ -117,6 +126,15 @@ class IdhQueueManager {
                   studentId,
                   waitTime: `${(Date.now() - startTime) / 1000}s`,
                 });
+              }
+              
+              // Don't retry timeout errors - fail fast
+              if (error instanceof FetchTimeoutError) {
+                console.warn('[IDH Queue] Request timeout - not retrying', {
+                  studentId,
+                  timeout: error.timeoutMs,
+                });
+                throw new AbortError(error.message);
               }
               
               // Only retry on rate limits and 5xx errors
@@ -152,9 +170,15 @@ class IdhQueueManager {
       return result as T;
     } catch (error: any) {
       this.metrics.failedRequests++;
+      const duration = Date.now() - startTime;
+      
       console.error('[IDH Queue] Request failed after retries', {
         studentId,
         error: error.message,
+        errorType: error.name,
+        duration: `${duration}ms`,
+        queueSizeAtStart: queueStartSize,
+        queueSizeNow: this.queue.size,
         metrics: this.getMetrics(),
       });
       throw error;

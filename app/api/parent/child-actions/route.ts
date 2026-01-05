@@ -25,8 +25,8 @@ const ALLOWED_DEBUG_USERS = new Set(process.env.ALLOWED_DEBUG_USER_IDS?.split(',
 // Timeout configuration - increased for staging environment
 const isProduction = process.env.NODE_ENV === 'production';
 const REQUEST_TIMEOUT_MS = isProduction ? 20000 : 15000; // 20s prod, 15s dev for student profile
-const IDH_TIMEOUT_MS = isProduction ? 12000 : 10000; // 12s prod, 10s dev for IDH
-const TOKEN_TIMEOUT_MS = 8000; // 8 seconds for token fetch
+const IDH_TIMEOUT_MS = isProduction ? 15000 : 12000; // Increased: 15s prod, 12s dev for IDH
+const TOKEN_TIMEOUT_MS = 10000; // Increased to 10 seconds for token fetch
 
 Logger.debug("child-actions route loaded");
 export async function GET(req: Request) {
@@ -272,14 +272,26 @@ async function fetchIdhStatus(studentPersonId: string, req: Request, options?: F
     const origin = new URL(req.url).origin;
       
     const internalApiBaseUrl = process.env.PUBLIC_URL || process.env.NEXTAUTH_URL || 'http://localhost:4200';
+    
+    const tokenFetchStart = Date.now();
+    Logger.debug('Fetching PP token', { url: `${internalApiBaseUrl}/api/PP/auth/token` });
+    
     const tokenRes = await fetchWithTimeout(`${internalApiBaseUrl}/api/PP/auth/token`, { 
       cache: "no-store",
       timeoutMs: TOKEN_TIMEOUT_MS
     });
+    
+    const tokenFetchDuration = Date.now() - tokenFetchStart;
+    Logger.debug('PP token fetch completed', { duration: `${tokenFetchDuration}ms`, status: tokenRes.status });
+    
     const tokenJson = (await tokenRes.json().catch(() => null)) as { accessToken?: string } | null;
 
     if (!tokenRes.ok || !tokenJson?.accessToken) {
-      Logger.warn("Failed to retrieve PP token", { status: tokenRes.status });
+      Logger.warn("Failed to retrieve PP token", { 
+        status: tokenRes.status, 
+        duration: `${tokenFetchDuration}ms`,
+        url: `${internalApiBaseUrl}/api/PP/auth/token`
+      });
       if (trace) {
         trace.warning = `Failed to retrieve PP token (${tokenRes.status})`;
         trace.parsedShape = "empty";
@@ -289,6 +301,14 @@ async function fetchIdhStatus(studentPersonId: string, req: Request, options?: F
 
     const accessToken = tokenJson.accessToken;
     const upstreamUrl = `${baseUrl.replace(/\/$/, "")}/idh?sourceId=${encodeURIComponent(studentPersonId)}`;
+    
+    Logger.debug('Fetching IDH status', { 
+      url: upstreamUrl.replace(/sourceId=.+/, 'sourceId=***'),
+      timeout: `${timeoutMs}ms`,
+      studentPersonId 
+    });
+    
+    const idhFetchStart = Date.now();
     
     // Use queue to prevent 429 rate limiting errors
     const idhRes = await idhQueue.execute(
@@ -302,6 +322,13 @@ async function fetchIdhStatus(studentPersonId: string, req: Request, options?: F
       }),
       { studentId: studentPersonId }
     );
+    
+    const idhFetchDuration = Date.now() - idhFetchStart;
+    Logger.debug('IDH fetch completed', { 
+      duration: `${idhFetchDuration}ms`, 
+      status: idhRes.status,
+      studentPersonId
+    });
 
     if (trace) {
       trace.upstreamStatus = idhRes.status;
