@@ -22,10 +22,10 @@ export const dynamic = "force-dynamic";
 const TRUE_VALUES = new Set(["1", "true", "yes", "on"]);
 const ALLOWED_DEBUG_USERS = new Set(process.env.ALLOWED_DEBUG_USER_IDS?.split(',').map(id => id.trim()) ?? []);
 
-// Timeout configuration - increased for staging environment
+// Timeout configuration - adjusted based on observed staging performance
 const isProduction = process.env.NODE_ENV === 'production';
 const REQUEST_TIMEOUT_MS = isProduction ? 20000 : 15000; // 20s prod, 15s dev for student profile
-const IDH_TIMEOUT_MS = isProduction ? 15000 : 12000; // Increased: 15s prod, 12s dev for IDH
+const IDH_TIMEOUT_MS = isProduction ? 18000 : 12000; // Increased: 18s prod (PP API in staging is slow), 12s dev
 const TOKEN_TIMEOUT_MS = 10000; // Increased to 10 seconds for token fetch
 
 Logger.debug("child-actions route loaded");

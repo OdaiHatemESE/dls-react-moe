@@ -22,8 +22,8 @@ const IDH_QUEUE_CONFIG = {
   intervalCap: 5,     // Max 5 requests...
   interval: 1000,     // ...per 1 second (5 req/s)
   
-  // Queue timeout
-  timeout: 30000, // 30 seconds max in queue before failing
+  // Queue timeout - increased for slow staging environment
+  timeout: 45000, // 45 seconds max in queue (increased from 30s due to slow PP API)
 } as const;
 
 // Retry configuration for failed requests
@@ -111,59 +111,96 @@ class IdhQueueManager {
     });
 
     try {
+      const queuedAt = Date.now();
       const result = await this.queue.add(
-        () => pRetry(
-          async () => {
-            try {
-              return await requestFn();
-            } catch (error: any) {
-              const status = error?.response?.status || error?.status;
-              
-              // Track rate limit hits
-              if (status === 429) {
-                this.metrics.rateLimitHits++;
-                console.warn('[IDH Queue] Rate limit hit - will retry', {
-                  studentId,
-                  waitTime: `${(Date.now() - startTime) / 1000}s`,
-                });
+        () => {
+          const executionStartTime = Date.now();
+          const timeInQueue = executionStartTime - queuedAt;
+          
+          if (timeInQueue > 100) {
+            console.log('[IDH Queue] Request waited in queue', {
+              studentId,
+              waitTime: `${timeInQueue}ms`,
+            });
+          }
+          
+          return pRetry(
+            async () => {
+              try {
+                const apiCallStart = Date.now();
+                const response = await requestFn();
+                const apiCallDuration = Date.now() - apiCallStart;
+                
+                if (apiCallDuration > 3000) {
+                  console.log('[IDH Queue] API call timing', {
+                    studentId,
+                    apiCallDuration: `${apiCallDuration}ms`,
+                    status: 'completed',
+                  });
+                }
+                
+                return response;
+              } catch (error: any) {
+                const status = error?.response?.status || error?.status;
+                
+                // Track rate limit hits
+                if (status === 429) {
+                  this.metrics.rateLimitHits++;
+                  console.warn('[IDH Queue] Rate limit hit - will retry', {
+                    studentId,
+                    waitTime: `${(Date.now() - startTime) / 1000}s`,
+                  });
+                }
+                
+                // Don't retry timeout errors - fail fast
+                if (error instanceof FetchTimeoutError) {
+                  console.warn('[IDH Queue] Request timeout - not retrying', {
+                    studentId,
+                    timeout: error.timeoutMs,
+                  });
+                  throw new AbortError(error.message);
+                }
+                
+                // Only retry on rate limits and 5xx errors
+                if (status === 429 || (status >= 500 && status < 600)) {
+                  this.metrics.retriedRequests++;
+                  throw error; // Will trigger retry
+                }
+                
+                // Don't retry client errors (4xx except 429)
+                if (status >= 400 && status < 500) {
+                  throw new AbortError(error.message);
+                }
+                
+                throw error;
               }
-              
-              // Don't retry timeout errors - fail fast
-              if (error instanceof FetchTimeoutError) {
-                console.warn('[IDH Queue] Request timeout - not retrying', {
-                  studentId,
-                  timeout: error.timeoutMs,
-                });
-                throw new AbortError(error.message);
-              }
-              
-              // Only retry on rate limits and 5xx errors
-              if (status === 429 || (status >= 500 && status < 600)) {
-                this.metrics.retriedRequests++;
-                throw error; // Will trigger retry
-              }
-              
-              // Don't retry client errors (4xx except 429)
-              if (status >= 400 && status < 500) {
-                throw new AbortError(error.message);
-              }
-              
-              throw error;
-            }
-          },
-          IDH_RETRY_CONFIG
-        ),
+            },
+            IDH_RETRY_CONFIG
+          );
+        },
         { priority }
       );
 
       this.metrics.successfulRequests++;
       
       const duration = Date.now() - startTime;
-      if (duration > 5000) {
+      const queueWait = duration > 0 ? Math.max(0, duration - (Date.now() - startTime)) : 0;
+      
+      // Log if request took longer than 8 seconds (increased threshold for staging)
+      if (duration > 8000) {
         console.warn('[IDH Queue] Slow request detected', {
           studentId,
+          totalDuration: `${duration}ms`,
+          queueWaitTime: `${queueWait}ms`,
+          actualRequestTime: `${duration - queueWait}ms`,
+          queueSizeAtStart: queueStartSize,
+          queuePendingAtStart: queueStartPending,
+        });
+      } else if (duration > 5000) {
+        console.log('[IDH Queue] Request completed', {
+          studentId,
           duration: `${duration}ms`,
-          queueWait: `${duration - (Date.now() - startTime)}ms`,
+          status: 'acceptable',
         });
       }
 
