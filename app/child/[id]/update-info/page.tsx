@@ -1391,8 +1391,8 @@ export default function UpdateStudentInfoPage() {
 
       await new Promise((resolve) => setTimeout(resolve, 1500));
 
-      // After successful update, navigate back to dashboard
-      router.push('/dashboard');
+      // After successful update, navigate to my applications page
+      router.push('/parent/applications');
     } catch (submitError: unknown) {
       console.error('IDH submission failed', submitError);
       const status = typeof submitError === 'object' && submitError && 'status' in submitError
