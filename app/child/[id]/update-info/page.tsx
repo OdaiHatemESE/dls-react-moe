@@ -1111,14 +1111,39 @@ export default function UpdateStudentInfoPage() {
       }
 
       // ========== Handle attachment based on mode and user action ==========
-      let attachmentBase64 = '';
+      let fileGuid = '';
       
       if (supportingDocument) {
-        // User uploaded a new document (either mode)
-        attachmentBase64 = await validateAndEncodeAttachment(supportingDocument, locale);
+        // User uploaded a new document - upload to file-share API
+        const formData = new FormData();
+        formData.append('ReferenceNumber', sourceId ?? '');
+        formData.append('ReferenceName', studentNumber ?? '');
+        formData.append('File', supportingDocument);
+
+        const uploadResponse = await fetch('/api/file-share', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!uploadResponse.ok) {
+          const errorData = await uploadResponse.json().catch(() => null);
+          throw new Error(
+            errorData?.error || 
+            (locale === 'ar' ? 'فشل رفع المستند' : 'Failed to upload document')
+          );
+        }
+
+        const uploadResult = await uploadResponse.json();
+        fileGuid = uploadResult?.data?.fileGuid || '';
+        
+        if (!fileGuid) {
+          throw new Error(
+            locale === 'ar' ? 'لم يتم استلام معرف الملف من الخادم' : 'No file ID received from server'
+          );
+        }
       } else if (mode === 'edit' && idhResp?.data?.attachment01) {
-        // EDIT mode: No new document uploaded, reuse existing attachment from IDH
-        attachmentBase64 = idhResp.data.attachment01;
+        // EDIT mode: No new document uploaded, reuse existing fileGuid from IDH
+        fileGuid = idhResp.data.attachment01;
       }
       // INIT mode with no document will remain empty string
 
@@ -1210,7 +1235,7 @@ export default function UpdateStudentInfoPage() {
         premises: resolvedAddress.premises,
         latitude: resolvedAddress.latitude,
         longitude: resolvedAddress.longitude,
-        attachment01: attachmentBase64,
+        attachment01: fileGuid,
         statusId: mode === 'init' ? 1 : 3, // STATUS: INIT=1, EDIT=3
         datetime: new Date().toISOString(),
         stateID: stateID,
