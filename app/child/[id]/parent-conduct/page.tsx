@@ -186,7 +186,11 @@ export default function ParentConductPage() {
     error: aggregatedError,
     isLoading,
     mutate: mutateAggregated,
-  } = useSWR<AggregatedApiResponse>(dataKey, jsonFetcher);
+  } = useSWR<AggregatedApiResponse>(dataKey, jsonFetcher, {
+    revalidateOnMount: true,
+    revalidateOnFocus: false,
+    dedupingInterval: 0,
+  });
 
   const aggregated = aggregatedResponse?.data ?? null;
 
@@ -198,7 +202,12 @@ export default function ParentConductPage() {
     data: idhResponse,
     error: idhError,
     isLoading: isIdhLoading,
-  } = useSWR<IDHApiResponse>(idhKey, jsonFetcher);
+    mutate: mutateIdh,
+  } = useSWR<IDHApiResponse>(idhKey, jsonFetcher, {
+    revalidateOnMount: true,
+    revalidateOnFocus: false,
+    dedupingInterval: 0,
+  });
 
   const idhData = idhResponse?.data ?? null;
   const idhStatusId = idhData?.statusId ?? null;
@@ -412,31 +421,35 @@ export default function ParentConductPage() {
   const isInitialCharterLoading =
     Boolean(studentNumber) && isCharterLoading && !charterStatusResponse && !charterErrorMessage;
   
-  const studentAddress = React.useMemo(() => {
-    if (!student?.addresses?.length) return PLACEHOLDER;
-    const address = student.addresses[0];
-    const parts = [
-      address.addressLine1,
-      address.addressLine2,
-      address.addressLine3,
-      address.city,
-      address.state,
-      address.country,
-    ].filter(Boolean).join(', ');
-    return parts || PLACEHOLDER;
+  // Get primary address (marked with isPrimary flag) or fall back to first address
+  const primaryAddress = React.useMemo(() => {
+    if (!student?.addresses?.length) return null;
+    return student.addresses.find(a => a.isPrimary) || student.addresses[0];
   }, [student]);
 
+  const studentAddress = React.useMemo(() => {
+    if (!primaryAddress) return PLACEHOLDER;
+    const parts = [
+      primaryAddress.addressLine1,
+      primaryAddress.addressLine2,
+      primaryAddress.addressLine3,
+      primaryAddress.city,
+      primaryAddress.state,
+      primaryAddress.country,
+    ].filter(Boolean).join(', ');
+    return parts || PLACEHOLDER;
+  }, [primaryAddress]);
+
   const hasValidStudentAddress = React.useMemo(() => {
-    if (!student?.addresses?.length) return false;
-    const address = student.addresses[0];
+    if (!primaryAddress) return false;
     const hasMeaningfulData = Boolean(
-      address.addressLine1 || 
-      address.addressLine2 || 
-      address.addressLine3 || 
-      address.city
+      primaryAddress.addressLine1 || 
+      primaryAddress.addressLine2 || 
+      primaryAddress.addressLine3 || 
+      primaryAddress.city
     );
     return hasMeaningfulData;
-  }, [student]);
+  }, [primaryAddress]);
 
   const studentContacts = React.useMemo(() => {
     if (!student?.contacts) return { phone: undefined, email: undefined };
@@ -651,6 +664,59 @@ export default function ParentConductPage() {
       );
     }
   }, [handleGeneratePDF, latestPdfBase64, studentFullName, toast, locale]);
+
+  // Handle sync update information to refresh data after profile update
+  const handleSyncUpdate = React.useCallback(async () => {
+    if (isSyncing) return;
+
+    const parentEmiratesId = parentInfo?.identifier;
+    if (!parentEmiratesId || parentEmiratesId === PLACEHOLDER) {
+      toast.error(
+        locale === 'ar' ? 'خطأ' : 'Error',
+        locale === 'ar'
+          ? 'لم يتم العثور على رقم هوية ولي الأمر.'
+          : 'Parent Emirates ID not found.'
+      );
+      return;
+    }
+
+    setIsSyncing(true);
+    try {
+      const syncUrl = `/api/PP/child/sync?emirateId=${encodeURIComponent(parentEmiratesId)}`;
+      const response = await fetch(syncUrl, {
+        method: 'GET',
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.error || `Sync failed with status ${response.status}`);
+      }
+
+      // Refresh all relevant data
+      await Promise.all([
+        mutateAggregated(),
+        mutateIdh(),
+      ]);
+
+      toast.success(
+        locale === 'ar' ? 'تم بنجاح' : 'Success',
+        locale === 'ar'
+          ? 'تم تحديث البيانات بنجاح. يمكنك الآن المتابعة.'
+          : 'Data synced successfully. You can now proceed.'
+      );
+    } catch (error) {
+      console.error('Error syncing update information:', error);
+      toast.error(
+        locale === 'ar' ? 'خطأ' : 'Error',
+        locale === 'ar'
+          ? 'فشل تحديث البيانات. يرجى المحاولة مرة أخرى.'
+          : 'Failed to sync data. Please try again.'
+      );
+    } finally {
+      setIsSyncing(false);
+    }
+  }, [isSyncing, parentInfo?.identifier, locale, toast, mutateAggregated, mutateIdh]);
 
   const handleSign = React.useCallback(async () => {
     if (!isAgreed || isSigning) return;
@@ -1148,7 +1214,7 @@ export default function ParentConductPage() {
             </Card>
           )}
 
-          {/* IDH Status Alert - Complete (Status 4) */}
+          {/* IDH Status Alert - Complete (Status 4) - Confirm Profile Update */}
           {idhData && idhStatusId === 4 && (
             <Card className="border-2 border-green-500 shadow-md bg-green-50/50 dark:bg-green-900/20">
               <CardContent className="pt-4">
@@ -1158,14 +1224,14 @@ export default function ParentConductPage() {
                   </svg>
                   <div className="flex-1">
                     <h4 className="font-semibold text-green-800 dark:text-green-300 mb-1">
-                      {locale === 'ar' ? 'تم تحديث البيانات بنجاح' : ' Data Complete'}
+                      {locale === 'ar' ? 'تأكيد تحديث ملفك الشخصي' : 'Confirm Your Profile Update'}
                     </h4>
                     <p className="text-sm text-green-700 dark:text-green-400 mb-3">
                       {locale === 'ar'
-                        ? 'تم تحديث بيانات الطالب بنجاح. يمكنك المتابعة لتوقيع الميثاق.'
-                        : "Student data has been successfully updated. You can proceed to sign the charter."}
+                        ? 'تم تحديث بيانات الطالب بنجاح. يرجى الضغط على زر "مزامنة البيانات" لتأكيد التحديث ثم المتابعة لتوقيع الميثاق.'
+                        : 'Student data has been successfully updated. Please click "Sync Data" button to confirm the update, then proceed to sign the charter.'}
                     </p>
-                    <div className="bg-white dark:bg-green-950 rounded p-3 text-xs">
+                    <div className="bg-white dark:bg-green-950 rounded p-3 text-xs mb-3">
                       <div className="flex items-center gap-2">
                         <span className="font-medium text-green-900 dark:text-green-200">
                           {locale === 'ar' ? 'الحالة:' : 'Status:'}
@@ -1175,6 +1241,32 @@ export default function ParentConductPage() {
                         </span>
                       </div>
                     </div>
+                    <button
+                      type="button"
+                      onClick={handleSyncUpdate}
+                      disabled={isSyncing}
+                      className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all shadow-md hover:shadow-lg text-sm w-full justify-center ${
+                        isSyncing
+                          ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                          : 'bg-green-600 hover:bg-green-700 text-white'
+                      }`}
+                    >
+                      {isSyncing ? (
+                        <>
+                          <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                          </svg>
+                          {locale === 'ar' ? 'جاري المزامنة...' : 'Syncing...'}
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                          </svg>
+                          {locale === 'ar' ? 'مزامنة البيانات' : 'Sync Data'}
+                        </>
+                      )}
+                    </button>
                   </div>
                 </div>
               </CardContent>
