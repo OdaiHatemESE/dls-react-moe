@@ -1566,22 +1566,33 @@ export default function UpdateStudentInfoPage() {
           </div>
         )}
         
-        {/* IDH Return Comment (edit mode) */}
+        {/* IDH Return Comment (edit mode) - Sticky */}
         {mode === 'edit' && idhResp?.data?.ReturnComment && textOrNull(idhResp.data.ReturnComment) && (
           
           <div
-            className="rounded-lg border border-amber-500/40 bg-amber-50/60 dark:bg-amber-900/20 px-4 py-3 text-sm text-amber-800 dark:text-amber-200 flex items-start gap-3"
+            className="sticky top-0 z-30 rounded-lg border-2 border-amber-500/60 bg-gradient-to-r from-amber-50 via-amber-100/80 to-amber-50 dark:from-amber-900/40 dark:via-amber-900/60 dark:to-amber-900/40 px-5 py-4 text-sm shadow-lg backdrop-blur-sm animate-in slide-in-from-top-4"
             role="alert"
             aria-live="assertive"
           >
-            <svg className="w-5 h-5 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-            <div className="space-y-1">
-              <p className="font-semibold">
-                {locale === 'ar' ? 'سبب الإرجاع' : 'Return comment'}
-              </p>
-              <p className="whitespace-pre-wrap break-words">{idhResp.data.ReturnComment}</p>
+            <div className="flex items-start gap-3">
+              <div className="p-2 rounded-full bg-amber-500/20 shrink-0">
+                <svg className="w-6 h-6 text-amber-700 dark:text-amber-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <div className="flex-1 space-y-2">
+                <p className="font-bold text-base text-amber-900 dark:text-amber-100">
+                  {locale === 'ar' ? '⚠️ سبب الإرجاع' : '⚠️ Return Reason'}
+                </p>
+                <p className="whitespace-pre-wrap break-words text-amber-800 dark:text-amber-200 leading-relaxed font-medium">
+                  {idhResp.data.ReturnComment}
+                </p>
+                <p className="text-xs text-amber-700 dark:text-amber-300 pt-1 border-t border-amber-300/30">
+                  {locale === 'ar' 
+                    ? 'الرجاء مراجعة هذا السبب وتحديث المعلومات المطلوبة قبل إعادة الإرسال'
+                    : 'Please review this reason and update the required information before resubmitting'}
+                </p>
+              </div>
             </div>
           </div>
         )}
@@ -1796,6 +1807,45 @@ export default function UpdateStudentInfoPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 sm:space-y-5">
+              {/* Transportation Section */}
+              <div className="space-y-2 pb-4 border-b border-border/30 mt-5">
+                <Label htmlFor="transportation-method" className={clsx("text-sm font-medium flex items-center gap-2", locale === 'ar' && 'flex-row-reverse justify-end')}>
+                  <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                  </svg>
+                  <span>{updateInfo.transportationSection.selectLabel}</span>
+                  <span className="text-destructive" aria-label={locale === 'ar' ? 'مطلوب' : 'required'}>*</span>
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  {updateInfo.transportationSection.description}
+                </p>
+                <Select 
+                  key={`transportation-${mode}-${transportation}`}
+                  value={transportation} 
+                  onValueChange={(value) => setTransportation(value)}
+                  disabled={isSubmitting}
+                  required
+                >
+                  <SelectTrigger 
+                    id="transportation-method"
+                    aria-required="true"
+                    aria-invalid={errorMessage?.includes('transportation')}
+                    className={clsx(
+                      "h-11 border-2 bg-background hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200",
+                      locale === 'ar' && 'text-right'
+                    )}
+                    dir={locale === 'ar' ? 'rtl' : 'ltr'}
+                  >
+                    <SelectValue placeholder={locale === 'ar' ? 'اختر طريقة المواصلات' : 'Select a method'} />
+                  </SelectTrigger>
+                  <SelectContent dir={locale === 'ar' ? 'rtl' : 'ltr'} className={clsx(locale === 'ar' && 'text-right')}>
+                    <SelectItem value="Bus">{locale === 'ar' ? 'بواسطة الحافلة' : 'By Bus'}</SelectItem>
+                    <SelectItem value="Car">{locale === 'ar' ? 'بالسيارة' : 'By Car'}</SelectItem>
+                    <SelectItem value="On Foot">{locale === 'ar' ? 'سيراً على الأقدام' : 'On Foot'}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
               <div className='my-5'>
                 <Label className={clsx("text-sm font-medium block mb-2 flex items-center gap-2", locale === 'ar' && 'flex-row-reverse justify-end')}>
                   <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -2051,55 +2101,6 @@ export default function UpdateStudentInfoPage() {
                     <span>{updateInfo.addressSection.documentHelper}</span>
                   </p>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-md border-2 border-border/40 bg-card/50 backdrop-blur-sm hover:shadow-xl hover:border-primary/30 transition-all duration-500 animate-in fade-in slide-in-from-bottom-4 group" style={{ animationDelay: '400ms' }}>
-            <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent border-b border-border/40 group-hover:from-primary/10 transition-all duration-500">
-              <CardTitle className="text-lg sm:text-xl text-foreground flex items-center gap-2">
-                <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 group-hover:scale-110 transition-all duration-300">
-                  <svg className="w-5 h-5 sm:w-6 sm:h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                  </svg>
-                </div>
-                <span className='mb-2'> {updateInfo.transportationSection.title}</span>
-              </CardTitle>
-              <CardDescription className="text-sm text-muted-foreground  !mt-5">
-                {updateInfo.transportationSection.description}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4 sm:space-y-5 pt-6">
-              <div className="space-y-2">
-                <Label htmlFor="transportation-method" className={clsx("text-sm font-medium flex items-center gap-2", locale === 'ar' && 'flex-row-reverse justify-end')}>
-                  <span>{updateInfo.transportationSection.selectLabel}</span>
-                  <span className="text-destructive" aria-label={locale === 'ar' ? 'مطلوب' : 'required'}>*</span>
-                </Label> 
-                <Select 
-                  key={`transportation-${mode}-${transportation}`}
-                  value={transportation} 
-                  onValueChange={(value) => setTransportation(value)}
-                  disabled={isSubmitting}
-                  required
-                >
-                  <SelectTrigger 
-                    id="transportation-method"
-                    aria-required="true"
-                    aria-invalid={errorMessage?.includes('transportation')}
-                    className={clsx(
-                      "h-11 border-2 bg-background hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200",
-                      locale === 'ar' && 'text-right'
-                    )}
-                    dir={locale === 'ar' ? 'rtl' : 'ltr'}
-                  >
-                    <SelectValue placeholder={locale === 'ar' ? 'اختر طريقة المواصلات' : 'Select a method'} />
-                  </SelectTrigger>
-                  <SelectContent dir={locale === 'ar' ? 'rtl' : 'ltr'} className={clsx(locale === 'ar' && 'text-right')}>
-                    <SelectItem value="Bus">{locale === 'ar' ? 'بواسطة الحافلة' : 'By Bus'}</SelectItem>
-                    <SelectItem value="Car">{locale === 'ar' ? 'بالسيارة' : 'By Car'}</SelectItem>
-                    <SelectItem value="On Foot">{locale === 'ar' ? 'سيراً على الأقدام' : 'On Foot'}</SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
             </CardContent>
           </Card>

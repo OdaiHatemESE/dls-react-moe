@@ -281,10 +281,10 @@ export const ar = {
         removeButton: "إزالة الرقم",
       },
       addressSection: {
-        title: "العنوان السكني",
+        title: "بيانات الطالب",
         description: "تأكد من أن العنوان المسجل لدينا ما زال صحيحًا. إذا تغيّر، يرجى إدخال العنوان الجديد وإرفاق مستند داعم.",
-        currentLabel: "العنوان الحالي لدينا",
-        changeToggle: "هل تغيّر العنوان؟",
+        currentLabel: "العنوان الحالي ",
+        changeToggle: "هل سيتم تغيير عنوان السكن؟",
         newAddressLabel: "تفاصيل العنوان الجديد",
         newAddressPlaceholder: "اكتب العنوان السكني المحدّث، بما في ذلك المبنى والشارع والمنطقة والإمارة.",
         documentLabel: "إرفاق إثبات العنوان (PDF)",

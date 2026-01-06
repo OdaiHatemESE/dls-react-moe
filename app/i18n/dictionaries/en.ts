@@ -242,9 +242,9 @@ export const en = {
         removeButton: "Remove number",
       },
       addressSection: {
-        title: "Residential Address",
+        title: "Student Information",
         description: "Confirm that the address on file is still correct. If it changed, share the new details and upload a supporting document.",
-        currentLabel: "Current address on file",
+        currentLabel: "Current address",
         changeToggle: "Has your address changed?",
         newAddressLabel: "New address details",
         newAddressPlaceholder: "Enter your updated residential address, including building, street, area, and emirate.",
