@@ -515,22 +515,15 @@ export default function UpdateStudentInfoPage() {
   React.useEffect(() => {
     if (mode !== 'edit') return;
     
-    let url: string | null = null;
-    try {
-      const b64 = (idhResp?.data?.attachment01 ?? '').trim();
-      if (b64) {
-        const blob = base64ToBlob(b64, 'application/pdf');
-        url = URL.createObjectURL(blob);
-        setIdhAttachmentUrl(url);
-      } else {
-        setIdhAttachmentUrl(null);
-      }
-    } catch {
+    const fileGuid = (idhResp?.data?.attachment01 ?? '').trim();
+    if (fileGuid) {
+      // Use file-share API download endpoint with FileGuid from environment variable
+      const fileServerUrl = process.env.FILE_SERVER_URL || 'https://apps.moe.gov.ae/file/api/File';
+      const downloadUrl = `${fileServerUrl}/Download/Stream/${fileGuid}`;
+      setIdhAttachmentUrl(downloadUrl);
+    } else {
       setIdhAttachmentUrl(null);
     }
-    return () => {
-      if (url) URL.revokeObjectURL(url);
-    };
   }, [mode, idhResp?.data?.attachment01]);
 
   React.useEffect(() => {
@@ -1974,14 +1967,15 @@ export default function UpdateStudentInfoPage() {
                 </div>
               )}
 
-              <div className="space-y-4">
-                <Label htmlFor="address-document" className={clsx("text-sm font-medium flex items-center gap-2", locale === 'ar' && 'flex-row-reverse justify-end')}>
-                  <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                  </svg>
-                  <span>{updateInfo.addressSection.documentLabel}</span>
-                  {addressChanged && <span className="text-destructive" aria-label={locale === 'ar' ? 'مطلوب' : 'required'}>*</span>}
-                </Label>
+              {addressChanged && (
+                <div className="space-y-4 animate-in fade-in-50 duration-300">
+                  <Label htmlFor="address-document" className={clsx("text-sm font-medium flex items-center gap-2", locale === 'ar' && 'flex-row-reverse justify-end')}>
+                    <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                    </svg>
+                    <span>{updateInfo.addressSection.documentLabel}</span>
+                    <span className="text-destructive" aria-label={locale === 'ar' ? 'مطلوب' : 'required'}>*</span>
+                  </Label>
 
                 {/* File Requirements Info Card */}
                 <div className="rounded-xl bg-gradient-to-br from-primary/5 via-primary/3 to-transparent border-2 border-primary/20 p-4 space-y-3 shadow-sm">
@@ -2127,6 +2121,7 @@ export default function UpdateStudentInfoPage() {
                   </p>
                 </div>
               </div>
+              )}
             </CardContent>
           </Card>
 
