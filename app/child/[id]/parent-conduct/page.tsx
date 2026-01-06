@@ -20,6 +20,7 @@ import {
 } from '@/lib/parent-conduct';
 import type { StudentProfileV1 } from '@/app/types/studentprofile';
 import type { Org } from '@/types';
+import type { IDHApiResponse } from '@/app/types/idh';
 
 type AggregatedApiResponse = {
   ok: boolean;
@@ -44,6 +45,7 @@ const PLACEHOLDER = '—';
 const CONDUCT_DATA_ENDPOINT = '/api/parent/conduct';
 const GENERATE_CONDUCT_PDF_ENDPOINT = '/api/parent/generate-conduct-pdf';
 const STUDENTS_PARTNERSHIP_CHARTER_ENDPOINT = '/api/parent/students-partnership-charter';
+const IDH_ENDPOINT = '/api/backoffice/idh';
 
 type PdfRequestBody = PdfFormData & { template?: 'uae' | 'expats' };
 
@@ -174,6 +176,7 @@ export default function ParentConductPage() {
   const [isSigned, setIsSigned] = React.useState(false);
   const [isSigning, setIsSigning] = React.useState(false);
   const [latestPdfBase64, setLatestPdfBase64] = React.useState<string | null>(null);
+  const [isSyncing, setIsSyncing] = React.useState(false);
 
   const dataKey = resolvedStudentId
     ? `${CONDUCT_DATA_ENDPOINT}?studentPersonId=${encodeURIComponent(resolvedStudentId)}&schoolYear=2026`
@@ -186,6 +189,63 @@ export default function ParentConductPage() {
   } = useSWR<AggregatedApiResponse>(dataKey, jsonFetcher);
 
   const aggregated = aggregatedResponse?.data ?? null;
+
+  // Fetch IDH data - always prepare the key, SWR will handle null keys
+  const idhKey = resolvedStudentId
+    ? `${IDH_ENDPOINT}?sourceId=${encodeURIComponent(resolvedStudentId)}`
+    : null;
+  const {
+    data: idhResponse,
+    error: idhError,
+    isLoading: isIdhLoading,
+  } = useSWR<IDHApiResponse>(idhKey, jsonFetcher);
+
+  const idhData = idhResponse?.data ?? null;
+  const idhStatusId = idhData?.statusId ?? null;
+
+  // Get descriptive status text
+  const getStatusText = React.useCallback((statusId: number | null, currentLocale: string): string => {
+    if (statusId === null) return currentLocale === 'ar' ? 'غير معروف' : 'Unknown';
+    
+    const statusMap: Record<number, { ar: string; en: string }> = {
+      1: { ar: 'قيد الإجراء', en: 'Pending' },
+      2: { ar: 'قيد المراجعة', en: 'Under Review' },
+      3: { ar: 'قيد التحديث', en: 'Updating' },
+      4: { ar: 'مكتمل', en: 'Complete' },
+      5: { ar: 'مرفوض', en: 'Rejected' },
+    };
+    
+    const localeKey = currentLocale === 'ar' ? 'ar' : 'en';
+    return statusMap[statusId]?.[localeKey] || `${statusId}`;
+  }, []);
+
+  const idhStatusText = React.useMemo(() => 
+    getStatusText(idhStatusId, locale === 'ar' ? 'ar' : 'en'),
+    [idhStatusId, locale, getStatusText]
+  );
+
+  // Check if IDH status allows signing (status must be 4)
+  const canProceedWithIDH = React.useMemo(() => {
+    // If we're still loading, don't block yet
+    if (isIdhLoading) return true;
+    // If there's no IDH data at all, allow proceeding (optional IDH)
+    if (!idhData) return true;
+    // If IDH data exists, status must be 4 to proceed
+    return idhStatusId === 4;
+  }, [idhData, idhStatusId, isIdhLoading]);
+
+  // Log IDH data when it's fetched (for debugging)
+  React.useEffect(() => {
+    if (idhData && currentStep >= 2) {
+      console.log('IDH data fetched:', {
+        sourceId: idhData.sourceId,
+        statusId: idhData.statusId,
+        studentNumber: idhData.studentNumber,
+        transportationType: idhData.transportationType,
+        canProceed: idhStatusId === 4,
+      });
+    }
+  }, [idhData, currentStep, idhStatusId]);
   
   // Better error message extraction
   const apiErrorMessage = React.useMemo(() => {
@@ -341,6 +401,14 @@ export default function ParentConductPage() {
 
   const hasFetchError = Boolean(apiErrorMessage);
   const combinedErrorMessage = apiErrorMessage ?? charterErrorMessage;
+  
+  // IDH error handling (non-blocking - just log it)
+  React.useEffect(() => {
+    if (idhError && currentStep >= 2) {
+      console.warn('IDH fetch error (non-blocking):', idhError);
+    }
+  }, [idhError, currentStep]);
+  
   const isInitialCharterLoading =
     Boolean(studentNumber) && isCharterLoading && !charterStatusResponse && !charterErrorMessage;
   
@@ -943,6 +1011,17 @@ export default function ParentConductPage() {
     : parentSectionsAll.slice(0, Math.max(0, parentSectionsAll.length - 1));
 
   const handleNext = () => {
+    // Check IDH status before allowing to proceed from Step 2
+    if (currentStep === 2 && !canProceedWithIDH) {
+      toast.error(
+        locale === 'ar' ? 'خطأ في الحالة' : 'Status Error',
+        locale === 'ar'
+          ? 'لا يمكن المتابعة. يجب أن تكون حالة IDH "مكتمل" (4) للمتابعة لتوقيع الميثاق.'
+          : 'Cannot proceed. IDH status must be "Complete" (4) to continue signing the charter.'
+      );
+      return;
+    }
+
     // Validate before moving to signature step
     if (currentStep === 3 && hasValidationErrors) {
       toast.error(
@@ -958,7 +1037,7 @@ export default function ParentConductPage() {
   const handlePrevious = () => {
     if (currentStep > 1) setCurrentStep(currentStep - 1);
   };
-
+ 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6" dir={locale === 'ar' ? 'rtl' : 'ltr'}>
       {/* Top nav */}
@@ -1053,6 +1132,97 @@ export default function ParentConductPage() {
       {/* Step 2: Parent Information */}
       {currentStep === 2 && (
         <div className="space-y-6">
+          {/* IDH Status Loading */}
+          {isIdhLoading && (
+            <Card className="border border-blue-200 shadow-sm bg-blue-50/50 dark:bg-blue-900/20">
+              <CardContent className="pt-4">
+                <div className="flex items-center gap-3">
+                  <Spinner variant="education" />
+                  <span className="text-sm text-muted-foreground">
+                    {locale === 'ar' 
+                      ? 'جاري تحميل بيانات ...'
+                      : 'Loading  data...'}
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* IDH Status Alert - Complete (Status 4) */}
+          {idhData && idhStatusId === 4 && (
+            <Card className="border-2 border-green-500 shadow-md bg-green-50/50 dark:bg-green-900/20">
+              <CardContent className="pt-4">
+                <div className="flex items-start gap-3">
+                  <svg className="w-6 h-6 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-green-800 dark:text-green-300 mb-1">
+                      {locale === 'ar' ? 'تم تحديث البيانات بنجاح' : ' Data Complete'}
+                    </h4>
+                    <p className="text-sm text-green-700 dark:text-green-400 mb-3">
+                      {locale === 'ar'
+                        ? 'تم تحديث بيانات الطالب بنجاح. يمكنك المتابعة لتوقيع الميثاق.'
+                        : "Student data has been successfully updated. You can proceed to sign the charter."}
+                    </p>
+                    <div className="bg-white dark:bg-green-950 rounded p-3 text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-green-900 dark:text-green-200">
+                          {locale === 'ar' ? 'الحالة:' : 'Status:'}
+                        </span>
+                        <span className="px-2 py-0.5 bg-green-200 dark:bg-green-800 text-green-900 dark:text-green-100 rounded font-medium">
+                          {idhStatusText}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* IDH Status Alert - Not Complete (Status not 4) */}
+          {idhData && idhStatusId !== null && idhStatusId !== 4 && (
+            <Card className="border-2 border-orange-500 shadow-md bg-orange-50/50 dark:bg-orange-900/20">
+              <CardContent className="pt-4">
+                <div className="flex items-start gap-3">
+                  <svg className="w-6 h-6 text-orange-600 dark:text-orange-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-orange-800 dark:text-orange-300 mb-1">
+                      {locale === 'ar' ? 'يجب تحديث بيانات الطالب' : 'Student Data Update Required'}
+                    </h4>
+                    <p className="text-sm text-orange-700 dark:text-orange-400 mb-3">
+                      {locale === 'ar'
+                        ? 'لا يمكن توقيع الميثاق حاليًا. يجب تحديث بيانات الطالب (IDH) أولاً قبل المتابعة.'
+                        : 'Charter signing is currently unavailable. Student data (IDH) must be updated first before proceeding.'}
+                    </p>
+                    <div className="bg-white dark:bg-orange-950 rounded p-3 text-xs">
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="font-medium text-orange-900 dark:text-orange-200">
+                          {locale === 'ar' ? 'الحالة الحالية:' : 'Current Status:'}
+                        </span>
+                        <span className="px-2 py-0.5 bg-orange-200 dark:bg-orange-800 text-orange-900 dark:text-orange-100 rounded font-medium">
+                          {idhStatusText}
+                        </span>
+                      </div>
+                      <Link 
+                        href={routeChildId ? `/child/${encodeURIComponent(routeChildId)}` : '/dashboard'}
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium transition-all shadow-md hover:shadow-lg text-sm w-full justify-center"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                        {locale === 'ar' ? 'تحديث بيانات الطالب' : 'Update Student Profile'}
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Validation Errors Banner */}
           {hasValidationErrors && (
             <Card className="border-2 border-destructive shadow-md">
@@ -1395,8 +1565,13 @@ export default function ParentConductPage() {
           {currentStep < 4 && (
             <button 
               type="button" 
-              className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-2 rounded"
+              className={`px-6 py-2 rounded font-medium transition-all ${
+                currentStep === 2 && !canProceedWithIDH
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : 'bg-primary hover:bg-primary/90 text-primary-foreground'
+              }`}
               onClick={handleNext}
+              disabled={currentStep === 2 && !canProceedWithIDH}
             >
               {t.parentConduct.navigation.next}
             </button>

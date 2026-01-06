@@ -159,7 +159,7 @@ export async function GET(req: Request) {
         latitude: getStr(['latitude', 'Latitude']),
         longitude: getStr(['longitude', 'Longitude']),
         attachment01: getStr(['attachment01', 'Attachment01']),
-        statusId: getNum(['statusId', 'Status_ID', 'StatusId']),
+        statusId: getNum(['statusId', 'status_ID', 'Status_ID', 'StatusId']),
         datetime: getStr(['datetime', 'Datetime']),
         ReturnComment: getStr(['ReturnComment', 'returnComment']) || undefined,
         stateID: getStr(['stateID', 'StateID', 'stateId']) || undefined,
