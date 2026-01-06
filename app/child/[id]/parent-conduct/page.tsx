@@ -130,16 +130,30 @@ function InfoField({
   value,
   span = 1,
   mono = false,
+  isRequired = false,
+  isMissing = false,
 }: {
   label: string;
   value?: React.ReactNode;
   span?: 1 | 2;
   mono?: boolean;
+  isRequired?: boolean;
+  isMissing?: boolean;
 }) {
   return (
     <div className={`space-y-2 ${span === 2 ? 'md:col-span-2' : ''}`}>
-      <div className="block text-sm font-medium text-foreground mb-1">{label}</div>
-      <div className={`bg-muted rounded px-3 py-2 text-sm ${mono ? 'font-mono' : ''}`}>
+      <div className="flex items-center gap-2">
+        <div className="block text-sm font-medium text-foreground mb-1">
+          {label}
+          {isRequired && <span className="text-destructive ml-1">*</span>}
+        </div>
+        {isMissing && (
+          <span className="text-xs text-destructive bg-destructive/10 px-2 py-0.5 rounded">
+            مطلوب / Required
+          </span>
+        )}
+      </div>
+      <div className={`bg-muted rounded px-3 py-2 text-sm ${mono ? 'font-mono' : ''} ${isMissing ? 'border-2 border-destructive' : ''}`}>
         {value ?? PLACEHOLDER}
       </div>
     </div>
@@ -344,6 +358,18 @@ export default function ParentConductPage() {
     return parts || PLACEHOLDER;
   }, [student]);
 
+  const hasValidStudentAddress = React.useMemo(() => {
+    if (!student?.addresses?.length) return false;
+    const address = student.addresses[0];
+    const hasMeaningfulData = Boolean(
+      address.addressLine1 || 
+      address.addressLine2 || 
+      address.addressLine3 || 
+      address.city
+    );
+    return hasMeaningfulData;
+  }, [student]);
+
   const studentContacts = React.useMemo(() => {
     if (!student?.contacts) return { phone: undefined, email: undefined };
     const mobile = student.contacts.find(c => c.type === 'Mobile' || c.type.toLowerCase().includes('mobile'));
@@ -393,6 +419,36 @@ export default function ParentConductPage() {
       email: email?.value,
     };
   }, [parentInfo]);
+
+  const hasValidParentMobile = React.useMemo(() => {
+    const mobile = parentContacts.phone?.trim();
+    return Boolean(mobile && mobile.length > 0);
+  }, [parentContacts.phone]);
+
+  // Validation: check if required data is present
+  const validationErrors = React.useMemo(() => {
+    const errors: string[] = [];
+    
+    if (!hasValidParentMobile) {
+      errors.push(
+        locale === 'ar' 
+          ? 'رقم التواصل ولي الأمر مطلوب'
+          : 'Parent mobile number is required'
+      );
+    }
+    
+    if (!hasValidStudentAddress) {
+      errors.push(
+        locale === 'ar'
+          ? 'عنوان الطالب مطلوب'
+          : 'Student address is required'
+      );
+    }
+    
+    return errors;
+  }, [hasValidParentMobile, hasValidStudentAddress, locale]);
+
+  const hasValidationErrors = validationErrors.length > 0;
   
   // Extract school information from API response
   const schoolName = React.useMemo(() => {
@@ -535,6 +591,15 @@ export default function ParentConductPage() {
       toast.error(
         locale === 'ar' ? 'خطأ' : 'Error',
         locale === 'ar' ? 'رقم الطالب غير متوفر.' : 'Student number is unavailable.'
+      );
+      return;
+    }
+
+    // Validate required data before signing
+    if (hasValidationErrors) {
+      toast.error(
+        locale === 'ar' ? 'خطأ في البيانات' : 'Data Validation Error',
+        validationErrors.join(' • ')
       );
       return;
     }
@@ -689,10 +754,13 @@ export default function ParentConductPage() {
     mutateAggregated,
     mutateCharter,
     parentContacts.email,
-    parentContacts.phone,
-    resolvedStudentId,
-    studentNumber,
-  ]);
+      parentContacts.phone,
+      resolvedStudentId,
+      studentNumber,
+      toast,
+      hasValidationErrors,
+      validationErrors,
+    ]);
 
   if (!resolvedStudentId) {
     return (
@@ -700,9 +768,7 @@ export default function ParentConductPage() {
         {t.parentConduct.noStudentId}
       </div>
     );
-  }
-
-  if (isLoading || isInitialCharterLoading) {
+  }  if (isLoading || isInitialCharterLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <Spinner variant="education" text={t.parentConduct.loading} />
@@ -877,6 +943,15 @@ export default function ParentConductPage() {
     : parentSectionsAll.slice(0, Math.max(0, parentSectionsAll.length - 1));
 
   const handleNext = () => {
+    // Validate before moving to signature step
+    if (currentStep === 3 && hasValidationErrors) {
+      toast.error(
+        locale === 'ar' ? 'خطأ في البيانات' : 'Data Validation Error',
+        validationErrors.join(' • ')
+      );
+      return;
+    }
+    
     if (currentStep < 4) setCurrentStep(currentStep + 1);
   };
 
@@ -978,6 +1053,39 @@ export default function ParentConductPage() {
       {/* Step 2: Parent Information */}
       {currentStep === 2 && (
         <div className="space-y-6">
+          {/* Validation Errors Banner */}
+          {hasValidationErrors && (
+            <Card className="border-2 border-destructive shadow-md">
+              <CardContent className="pt-4">
+                <div className="bg-destructive/10 rounded-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <svg className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-destructive mb-2">
+                        {locale === 'ar' ? 'بيانات مطلوبة مفقودة' : 'Required Data Missing'}
+                      </h4>
+                      <ul className="space-y-1">
+                        {validationErrors.map((error, index) => (
+                          <li key={index} className="text-sm text-destructive flex items-start gap-2">
+                            <span className="text-destructive">•</span>
+                            <span>{error}</span>
+                          </li>
+                        ))}
+                      </ul>
+                      <p className="text-xs text-muted-foreground mt-3">
+                        {locale === 'ar'
+                          ? 'يرجى تحديث معلومات الطالب/ولي الأمر قبل المتابعة لتوقيع الميثاق.'
+                          : 'Please update student/parent information before proceeding to sign the charter.'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           <Card className="border shadow-md">
             <CardHeader className="bg-gradient-to-r from-primary/70 to-primary/80 border-b">
               <CardTitle className="text-lg flex items-center text-primary-foreground">
@@ -994,7 +1102,12 @@ export default function ParentConductPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <InfoField label={t.parentConduct.parentSection.parentName} value={parentFullName} />
                     <InfoField label={t.parentConduct.parentSection.parentNationalId} value={parentEid} mono />
-                    <InfoField label={t.parentConduct.parentSection.contactNumber} value={parentContacts.phone || PLACEHOLDER} />
+                    <InfoField 
+                      label={t.parentConduct.parentSection.contactNumber} 
+                      value={parentContacts.phone || PLACEHOLDER}
+                      isRequired={true}
+                      isMissing={!hasValidParentMobile}
+                    />
                     <InfoField label={t.parentConduct.parentSection.parentEmail} value={parentContacts.email || PLACEHOLDER} />
                   </div>
                 </section>
@@ -1006,7 +1119,13 @@ export default function ParentConductPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <InfoField label={t.parentConduct.parentSection.studentFullName} value={studentFullName} />
                     <InfoField label={t.parentConduct.schoolSection.nationalId} value={studentNationalId} mono />
-                    <InfoField label={t.parentConduct.parentSection.parentAddress} value={studentAddress} span={2} />
+                    <InfoField 
+                      label={t.parentConduct.parentSection.parentAddress} 
+                      value={studentAddress} 
+                      span={2}
+                      isRequired={true}
+                      isMissing={!hasValidStudentAddress}
+                    />
                   </div>
                 </section>
               </div>
@@ -1197,9 +1316,9 @@ export default function ParentConductPage() {
                       <button
                         type="button"
                         onClick={handleSign}
-                        disabled={!isAgreed || isSigning || !studentNumber || isCharterLoading}
+                        disabled={!isAgreed || isSigning || !studentNumber || isCharterLoading || hasValidationErrors}
                         className={`w-full sm:w-auto px-6 py-3 rounded-lg font-medium transition-all ${
-                          !isAgreed || isSigning || !studentNumber || isCharterLoading
+                          !isAgreed || isSigning || !studentNumber || isCharterLoading || hasValidationErrors
                             ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                             : 'bg-primary hover:bg-primary/90 text-primary-foreground shadow-md hover:shadow-lg'
                         }`}
@@ -1213,12 +1332,25 @@ export default function ParentConductPage() {
                             : 'Sign Charter'}
                       </button>
                       
-                      {!isAgreed && (
+                      {!isAgreed && !hasValidationErrors && (
                         <p className="text-xs text-muted-foreground mt-2">
                           {locale === 'ar' 
                             ? 'يرجى الموافقة على الشروط للمتابعة'
                             : 'Please agree to the terms to proceed'}
                         </p>
+                      )}
+                      
+                      {hasValidationErrors && (
+                        <div className="text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded p-2 mt-2">
+                          <div className="font-semibold mb-1">
+                            {locale === 'ar' ? 'لا يمكن التوقيع:' : 'Cannot sign:'}
+                          </div>
+                          <ul className="space-y-1">
+                            {validationErrors.map((error, index) => (
+                              <li key={index}>• {error}</li>
+                            ))}
+                          </ul>
+                        </div>
                       )}
                     </div>
                   </div>
