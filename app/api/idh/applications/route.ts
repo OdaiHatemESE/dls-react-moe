@@ -155,16 +155,14 @@ export async function GET(req: Request) {
     }
 
     // Extract data array from response
-    let applications = parsed;
+    let applications: unknown[] = [];
     
     // Handle wrapped response (e.g., { data: [...] })
     if (parsed && typeof parsed === 'object' && 'data' in parsed) {
-      applications = (parsed as { data: unknown }).data;
-    }
-    
-    // Ensure we have an array
-    if (!Array.isArray(applications)) {
-      applications = [];
+      const wrappedData = (parsed as { data: unknown }).data;
+      applications = Array.isArray(wrappedData) ? wrappedData : [];
+    } else if (Array.isArray(parsed)) {
+      applications = parsed;
     }
 
     console.log('[IDH Applications] Successfully fetched applications', {
