@@ -39,13 +39,15 @@ const oidcProvider = Auth0Provider({
   profile(profile) {
     const claims = profile as Record<string, unknown>;
     const emiratesId = extractEmiratesId(claims);
+    const phoneNumber = (claims.phone_number as string) || (claims.PhoneNumber as string) || undefined;
     // Return object compatible with NextAuth User/AdapterUser
-    const mapped: Partial<User> & { id: string; emiratesId?: string } = {
+    const mapped: Partial<User> & { id: string; emiratesId?: string; phoneNumber?: string } = {
       id: (claims.sub as string) || "",
       name: (claims.name as string) || undefined,
       email: (claims.email as string) || undefined,
       image: (claims.picture as string) || undefined,
       emiratesId,
+      phoneNumber,
     };
     return mapped as User;
   },
@@ -57,6 +59,8 @@ type MobileClaims = {
   email?: string;
   emiratesId?: string;
   EID?: string;
+  phone_number?: string;
+  PhoneNumber?: string;
   [key: string]: unknown;
 };
 
@@ -254,13 +258,16 @@ export const authOptions: NextAuthOptions = {
         const emiratesId = normalizeEmiratesId(
           (claims as Record<string, unknown>).EmiratesId ?? claims.EID
         );
+        const phoneNumber = typeof claims.phone_number === "string" ? claims.phone_number : 
+                           typeof claims.PhoneNumber === "string" ? claims.PhoneNumber : undefined;
 
-        const user: User & { accessToken?: string; emiratesId?: string } = {
+        const user: User & { accessToken?: string; emiratesId?: string; phoneNumber?: string } = {
           id: sub,
           name,
           email,
           accessToken,
           emiratesId,
+          phoneNumber,
         };
         return user;
       },
@@ -286,7 +293,7 @@ export const authOptions: NextAuthOptions = {
       }
       // From OIDC flow
       if (account?.access_token) {
-        const t = token as JWT & { emiratesId?: string; atKey?: string; idTokenKey?: string };
+        const t = token as JWT & { emiratesId?: string; phoneNumber?: string; atKey?: string; idTokenKey?: string };
         // Store access token in Redis and keep only a small key reference in JWT
         t.atKey = await persistAccessToken(account.access_token, token.sub as string | undefined);
         // Persist id_token if available and extract claims we care about
@@ -296,6 +303,9 @@ export const authOptions: NextAuthOptions = {
           const idClaims = decodeJwtPayload(account.id_token) || {};
           const maybeEmiratesId = extractEmiratesId(idClaims as Record<string, unknown>);
           if (maybeEmiratesId) t.emiratesId = normalizeEmiratesId(maybeEmiratesId);
+          // Extract phone number from id_token claims
+          const phoneNumber = (idClaims.phone_number as string) || (idClaims.PhoneNumber as string);
+          if (phoneNumber) t.phoneNumber = phoneNumber;
           // If token doesn't have sub/name/email yet, hydrate from id_token claims
           token.sub = token.sub || (idClaims.sub as string | undefined);
           if (!t.name && typeof idClaims.name === "string") t.name = idClaims.name as string;
@@ -307,27 +317,35 @@ export const authOptions: NextAuthOptions = {
           const maybeEmiratesId = extractEmiratesId(atClaims as Record<string, unknown>);
           if (maybeEmiratesId) t.emiratesId = normalizeEmiratesId(maybeEmiratesId);
         }
+        // Try to extract phone number from access token if not found in id_token
+        if (!t.phoneNumber) {
+          const atClaims = decodeJwtPayload(account.access_token) || {};
+          const phoneNumber = (atClaims.phone_number as string) || (atClaims.PhoneNumber as string);
+          if (phoneNumber) t.phoneNumber = phoneNumber;
+        }
       }
       // From mobile-token (credentials) flow
       if (user) {
-        const u = user as User & { accessToken?: string; emiratesId?: string };
-        const t = token as JWT & { emiratesId?: string; atKey?: string };
+        const u = user as User & { accessToken?: string; emiratesId?: string; phoneNumber?: string };
+        const t = token as JWT & { emiratesId?: string; phoneNumber?: string; atKey?: string };
         if (u.accessToken) {
           t.atKey = await persistAccessToken(u.accessToken, token.sub as string | undefined);
         }
         t.emiratesId = normalizeEmiratesId(u.emiratesId) || t.emiratesId;
+        t.phoneNumber = u.phoneNumber || t.phoneNumber;
       }
       return token;
     },
 
     async session({ session, token }): Promise<Session> {
-  const t = token as JWT & { emiratesId?: string; sub?: string; atKey?: string };
+  const t = token as JWT & { emiratesId?: string; phoneNumber?: string; sub?: string; atKey?: string };
       
       // Only expose essential user information in the session to keep cookie size small
       // Access tokens and large objects should be accessed via server-side API calls when needed
-      const u = (session.user ?? {}) as User & { id?: string; emiratesId?: string };
+      const u = (session.user ?? {}) as User & { id?: string; emiratesId?: string; phoneNumber?: string };
       if (t.sub) u.id = t.sub;
       if (t.emiratesId) u.emiratesId = normalizeEmiratesId(t.emiratesId);
+      if (t.phoneNumber) u.phoneNumber = t.phoneNumber;
   // Keep standard small profile fields
   const name = (t as Partial<JWT>).name as unknown;
   const email = (t as Partial<JWT> & { email?: unknown }).email;

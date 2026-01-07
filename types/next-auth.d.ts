@@ -5,7 +5,7 @@ declare module "next-auth" {
   interface Session {
     // Small pointer to access token stored server-side
     atKey?: string;
-    user: (DefaultSession["user"] & { id?: string; emiratesId?: string }) | null;
+    user: (DefaultSession["user"] & { id?: string; emiratesId?: string; phoneNumber?: string }) | null;
     // Optional identity profile blob (debug view may display this if present)
     identityProfile?: Record<string, unknown>;
   }
@@ -13,6 +13,7 @@ declare module "next-auth" {
   interface User extends DefaultUser {
     accessToken?: string;
     emiratesId?: string;
+    phoneNumber?: string;
   }
 }
 
@@ -21,6 +22,7 @@ declare module "next-auth/jwt" {
     // Small pointer to access token stored server-side
     atKey?: string;
     emiratesId?: string;
+    phoneNumber?: string;
     name?: string;
     email?: string;
   }
