@@ -5,6 +5,7 @@ import type { StudentProfileV1 } from '@/app/types/studentprofile';
 import { cacheSetJSON } from '@/lib/cache';
 import { getActiveAcademicYearValue } from '@/lib/admin-config';
 import { metricsTracker } from '@/lib/metrics-tracker';
+import { redis } from '@/lib/redis';
 
 type PPTokenResponse = {
   accessToken?: string;
@@ -63,6 +64,16 @@ async function handleSync(req: Request) {
         { error: 'Unauthorized: Cannot sync data for another user' },
         { status: 403 }
       );
+    }
+
+    // Flush all Redis cache when syncing (to ensure fresh data)
+    try {
+      console.log('[PP Child Sync] Flushing Redis cache...');
+      await redis.flushdb();
+      console.log('[PP Child Sync] Redis cache flushed successfully');
+    } catch (flushError) {
+      console.error('[PP Child Sync] Failed to flush Redis cache:', flushError);
+      // Continue anyway - not a critical failure
     }
 
     // Get PP token from our token endpoint

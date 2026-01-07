@@ -2,6 +2,7 @@
 
 import React from 'react';
 import useSWR from 'swr';
+import { useSession } from 'next-auth/react';
 import { useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -165,6 +166,7 @@ function InfoField({
 export default function ParentConductPage() {
   const { t, locale } = useI18n();
   const toast = useToastNotifications();
+  const { data: session } = useSession();
   const params = useParams();
   const searchParams = useSearchParams();
   const routeChildId = params?.id as string | undefined;
@@ -189,7 +191,7 @@ export default function ParentConductPage() {
   } = useSWR<AggregatedApiResponse>(dataKey, jsonFetcher, {
     revalidateOnMount: true,
     revalidateOnFocus: false,
-    dedupingInterval: 0,
+    dedupingInterval: 5000,
   });
 
   const aggregated = aggregatedResponse?.data ?? null;
@@ -214,7 +216,11 @@ export default function ParentConductPage() {
 
   // Get descriptive status text
   const getStatusText = React.useCallback((statusId: number | null, currentLocale: string): string => {
-    if (statusId === null) return currentLocale === 'ar' ? 'غير معروف' : 'Unknown';
+    if (statusId === null) {
+      return currentLocale === 'ar' 
+        ? 'لم يتم تقديم طلب لتحديث البيانات' 
+        : 'No application submitted';
+    }
     
     const statusMap: Record<number, { ar: string; en: string }> = {
       1: { ar: 'قيد الإجراء', en: 'Pending' },
@@ -225,7 +231,7 @@ export default function ParentConductPage() {
     };
     
     const localeKey = currentLocale === 'ar' ? 'ar' : 'en';
-    return statusMap[statusId]?.[localeKey] || `${statusId}`;
+    return statusMap[statusId]?.[localeKey] || (currentLocale === 'ar' ? 'لم يتم تقديم طلب لتحديث البيانات' : 'No application submitted');
   }, []);
 
   const idhStatusText = React.useMemo(() => 
@@ -233,13 +239,15 @@ export default function ParentConductPage() {
     [idhStatusId, locale, getStatusText]
   );
 
-  // Check if IDH status allows signing (status must be 4)
+  // Check if IDH status allows signing (status must be 4 or null/no application)
   const canProceedWithIDH = React.useMemo(() => {
     // If we're still loading, don't block yet
     if (isIdhLoading) return true;
     // If there's no IDH data at all, allow proceeding (optional IDH)
     if (!idhData) return true;
-    // If IDH data exists, status must be 4 to proceed
+    // If status is null (no application submitted), allow proceeding
+    if (idhStatusId === null) return true;
+    // If IDH data exists with a status, status must be 4 to proceed
     return idhStatusId === 4;
   }, [idhData, idhStatusId, isIdhLoading]);
 
@@ -501,22 +509,26 @@ export default function ParentConductPage() {
     };
   }, [parentInfo]);
 
+  // Use session phone as fallback when parent phone is not available
+  const effectiveParentPhone = React.useMemo(() => {
+    const parentPhone = parentContacts.phone?.trim();
+    if (parentPhone && parentPhone.length > 0) {
+      return { value: parentPhone, source: 'alManhal' as const };
+    }
+    const sessionPhone = session?.user?.phoneNumber?.trim();
+    if (sessionPhone && sessionPhone.length > 0) {
+      return { value: sessionPhone, source: 'uaePass' as const };
+    }
+    return { value: undefined, source: 'none' as const };
+  }, [parentContacts.phone, session?.user?.phoneNumber]);
+
   const hasValidParentMobile = React.useMemo(() => {
-    const mobile = parentContacts.phone?.trim();
-    return Boolean(mobile && mobile.length > 0);
-  }, [parentContacts.phone]);
+    return Boolean(effectiveParentPhone.value);
+  }, [effectiveParentPhone.value]);
 
   // Validation: check if required data is present
   const validationErrors = React.useMemo(() => {
     const errors: string[] = [];
-    
-    if (!hasValidParentMobile) {
-      errors.push(
-        locale === 'ar' 
-          ? 'رقم التواصل ولي الأمر مطلوب'
-          : 'Parent mobile number is required'
-      );
-    }
     
     if (!hasValidStudentAddress) {
       errors.push(
@@ -527,7 +539,7 @@ export default function ParentConductPage() {
     }
     
     return errors;
-  }, [hasValidParentMobile, hasValidStudentAddress, locale]);
+  }, [hasValidStudentAddress, locale]);
 
   const hasValidationErrors = validationErrors.length > 0;
   
@@ -609,7 +621,7 @@ export default function ParentConductPage() {
         StudentEmiratesID: studentNationalId !== PLACEHOLDER ? studentNationalId : '',
         ParentName: parentFullName !== PLACEHOLDER ? parentFullName : '',
         ParentEmiratesID: parentEid !== PLACEHOLDER ? parentEid : '',
-        Phone: parentContacts.phone || '',
+        Phone: effectiveParentPhone.value || '',
         Address: '',
         SignDate: today,
       };
@@ -631,7 +643,7 @@ export default function ParentConductPage() {
       return { base64, filename };
     },
     [
-      parentContacts.phone,
+      effectiveParentPhone.value,
       parentEid,
       parentFullName,
       schoolAddress,
@@ -693,10 +705,10 @@ export default function ParentConductPage() {
         throw new Error(errorData?.error || `Sync failed with status ${response.status}`);
       }
 
-      // Refresh all relevant data
+      // Force immediate revalidation with revalidate: true to bypass SWR cache
       await Promise.all([
-        mutateAggregated(),
-        mutateIdh(),
+        mutateAggregated(undefined, { revalidate: true }),
+        mutateIdh(undefined, { revalidate: true }),
       ]);
 
       toast.success(
@@ -756,7 +768,7 @@ export default function ParentConductPage() {
 
       const notifyParent = async (pdf: string) => {
         const emailRecipient = parentContacts.email?.trim();
-        const smsRecipient = parentContacts.phone?.trim();
+        const smsRecipient = effectiveParentPhone.value?.trim();
 
         const sendEmail = async () => {
           if (!emailRecipient) return;
@@ -888,13 +900,13 @@ export default function ParentConductPage() {
     mutateAggregated,
     mutateCharter,
     parentContacts.email,
-      parentContacts.phone,
-      resolvedStudentId,
-      studentNumber,
-      toast,
-      hasValidationErrors,
-      validationErrors,
-    ]);
+    effectiveParentPhone.value,
+    resolvedStudentId,
+    studentNumber,
+    toast,
+    hasValidationErrors,
+    validationErrors,
+  ]);
 
   if (!resolvedStudentId) {
     return (
@@ -1273,6 +1285,39 @@ export default function ParentConductPage() {
             </Card>
           )}
 
+          {/* IDH Status Alert - No Application (Status null) */}
+          {idhData && idhStatusId === null && (
+            <Card className="border-2 border-blue-500 shadow-md bg-blue-50/50 dark:bg-blue-900/20">
+              <CardContent className="pt-4">
+                <div className="flex items-start gap-3">
+                  <svg className="w-6 h-6 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-blue-800 dark:text-blue-300 mb-1">
+                      {locale === 'ar' ? 'لا يوجد طلب مقدم مسبقًا' : 'No Previous Application'}
+                    </h4>
+                    <p className="text-sm text-blue-700 dark:text-blue-400 mb-3">
+                      {locale === 'ar'
+                        ? 'لم يتم العثور على طلب تحديث بيانات سابق. يمكنك المتابعة لتوقيع الميثاق مباشرة.'
+                        : 'No previous data update application found. You can proceed directly to sign the charter.'}
+                    </p>
+                    <div className="bg-white dark:bg-blue-950 rounded p-3 text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-blue-900 dark:text-blue-200">
+                          {locale === 'ar' ? 'الحالة:' : 'Status:'}
+                        </span>
+                        <span className="px-2 py-0.5 bg-blue-200 dark:bg-blue-800 text-blue-900 dark:text-blue-100 rounded font-medium">
+                          {idhStatusText}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* IDH Status Alert - Not Complete (Status not 4) */}
           {idhData && idhStatusId !== null && idhStatusId !== 4 && (
             <Card className="border-2 border-orange-500 shadow-md bg-orange-50/50 dark:bg-orange-900/20">
@@ -1364,12 +1409,29 @@ export default function ParentConductPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <InfoField label={t.parentConduct.parentSection.parentName} value={parentFullName} />
                     <InfoField label={t.parentConduct.parentSection.parentNationalId} value={parentEid} mono />
-                    <InfoField 
-                      label={t.parentConduct.parentSection.contactNumber} 
-                      value={parentContacts.phone || PLACEHOLDER}
-                      isRequired={true}
-                      isMissing={!hasValidParentMobile}
-                    />
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <div className="block text-sm font-medium text-foreground mb-1">
+                          {t.parentConduct.parentSection.contactNumber}
+                          <span className="text-destructive ml-1">*</span>
+                        </div>
+                      </div>
+                      <div className="bg-muted rounded px-3 py-2 text-sm">
+                        {effectiveParentPhone.value || PLACEHOLDER}
+                      </div>
+                      {effectiveParentPhone.source === 'uaePass' && (
+                        <p className="text-xs text-muted-foreground mt-1 flex items-start gap-1">
+                          <svg className="w-3 h-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <span>
+                            {locale === 'ar'
+                              ? 'رقم الهاتف غير متوفر في نظام المنهل، سيتم استخدام الرقم من هوية الإمارات الرقمية (UAE Pass)'
+                              : 'Phone number not available in Al Manhal system, using number from UAE Pass'}
+                          </span>
+                        </p>
+                      )}
+                    </div>
                     <InfoField label={t.parentConduct.parentSection.parentEmail} value={parentContacts.email || PLACEHOLDER} />
                   </div>
                 </section>

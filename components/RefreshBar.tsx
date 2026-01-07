@@ -183,7 +183,8 @@ export function RefreshBar<T = any>({
       }
       
       const json = (await res.json()) as T;
-      mutate(swrKey, onAfterFetch ? onAfterFetch(json) : json, false);
+      // Use revalidate: true to force immediate cache update and trigger revalidation
+      mutate(swrKey, onAfterFetch ? onAfterFetch(json) : json, { revalidate: true });
       const refreshTime = new Date();
       setLastRefresh(refreshTime);
       setRefreshStatus("success");

@@ -137,7 +137,24 @@ export async function GET(req: NextRequest) {
   const cookie = req.headers.get("cookie") ?? "";
 
   try {
-    // Fetch student info from PP API instead of OneRoster
+    // First, sync data to get the freshest information from upstream
+    console.log('[Parent Conduct] Syncing student data for fresh info:', { parentEid });
+    const syncUrl = `${internalApiBaseUrl}/api/PP/child/sync?emirateId=${encodeURIComponent(parentEid)}`;
+    const syncRes = await fetch(syncUrl, {
+      headers: cookie ? { cookie } : undefined,
+      cache: "no-store",
+    });
+
+    if (!syncRes.ok) {
+      console.warn('[Parent Conduct] Sync failed, continuing with cached data:', { 
+        status: syncRes.status,
+        parentEid 
+      });
+    } else {
+      console.log('[Parent Conduct] Data synced successfully');
+    }
+
+    // Fetch student info from PP API (now with fresh synced data)
     const studentInfoUrl = `/api/PP/student/${encodeURIComponent(studentPersonId)}${querySuffix}`;
     console.log('[Parent Conduct] Fetching student info:', { 
       studentPersonId, 
@@ -218,6 +235,12 @@ export async function GET(req: NextRequest) {
       ok: true,
       data: payload,
       meta: { aggregatedAt: new Date().toISOString() },
+    }, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+      }
     });
   } catch (error) {
     if (error instanceof UpstreamFetchError) {
