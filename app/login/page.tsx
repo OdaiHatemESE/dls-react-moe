@@ -1,22 +1,13 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import React, { useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { useI18n } from '@/app/i18n/I18nProvider';
 import clsx from 'clsx';
 import { signIn } from 'next-auth/react';
 
 export default function LoginPage() {
-  const router = useRouter();
   const { t, locale } = useI18n();
-  const [formData, setFormData] = useState({
-    email: '',
-    password: ''
-  });
-  const [isLoading, setIsLoading] = useState(false);
 
   // If user lands on this page, immediately redirect to the OIDC provider
   useEffect(() => {
@@ -24,24 +15,6 @@ export default function LoginPage() {
     const callbackUrl = params.get('callbackUrl') || '/';
     signIn('oidc', { callbackUrl });
   }, []);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    
-    // Simulate login process
-    setTimeout(() => {
-      setIsLoading(false);
-      router.push('/dashboard');
-    }, 1500);
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData(prev => ({
-      ...prev,
-      [e.target.name]: e.target.value
-    }));
-  };
 
   return (
     <div className={clsx("min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8", locale === 'ar' && 'direction-rtl')}>
@@ -52,89 +25,19 @@ export default function LoginPage() {
         </div>
 
         <Card className="mt-8">
-          <CardContent>
-            <form className="space-y-6" onSubmit={handleSubmit}>
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                  {t.login.emailAddress}
-                </label>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary"
-                  placeholder={t.login.emailAddress}
-                />
+          <CardContent className="py-12">
+            <div className="text-center">
+              <div className="mb-4">
+                <svg className="animate-spin h-12 w-12 mx-auto text-aegold-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
               </div>
-
-              <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                  {t.login.password}
-                </label>
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary"
-                  placeholder={t.login.password}
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <input
-                    id="remember-me"
-                    name="remember-me"
-                    type="checkbox"
-                    className="h-4 w-4 text-aegold-600 focus:ring-aegold-500 border-gray-300 rounded"
-                  />
-                  <label htmlFor="remember-me" className="ms-2 block text-sm text-gray-700">
-                    {t.login.rememberMe}
-                  </label>
-                </div>
-
-                <Link
-                  href="/forgot-password"
-                  className="text-sm text-aegold-600 hover:text-aegold-500 focus:outline-none focus:ring-2 focus:ring-aegold-500 focus:ring-offset-2 rounded-md px-1"
-                >
-                  {t.login.forgotPassword}
-                </Link>
-              </div>
-
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={isLoading || !formData.email || !formData.password}
-              >
-                {isLoading ? t.login.signingIn : t.login.signIn}
-              </Button>
-            </form>
-
-            <div className="mt-6 text-center">
-              <p className="text-sm text-gray-600">
-                {t.login.needHelp}{' '}
-                <Link
-                  href="/support"
-                  className="text-aegold-600 hover:text-aegold-500 focus:outline-none focus:ring-2 focus:ring-aegold-500 focus:ring-offset-2 rounded-md px-1"
-                >
-                  {t.login.contactSupport}
-                </Link>
-              </p>
+              <p className="text-lg font-medium text-gray-900">Redirecting to login...</p>
+              <p className="mt-2 text-sm text-gray-600">Please wait while we redirect you to the authentication page.</p>
             </div>
           </CardContent>
         </Card>
-
-        <div className="text-center text-xs text-gray-500">
-          <p>{t.login.demoCreds}</p>
-        </div>
       </div>
     </div>
   );
