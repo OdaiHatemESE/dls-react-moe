@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
     
     const baseUrl = process.env.NEXTAUTH_URL || `${req.nextUrl.protocol}//${req.nextUrl.host}`;
     const logoutBase = process.env.OIDC_LOGOUT_URL || (OIDC_ISSUER ? `${OIDC_ISSUER.replace(/\/$/, "")}/connect/endsession` : "");
-    const returnTo = process.env.OIDC_LOGOUT_RETURN_TO || `${baseUrl}/login`;
+    const returnTo = process.env.OIDC_LOGOUT_RETURN_TO || `${baseUrl}/signout`;
     
     if (!logoutBase) {
       // No OIDC logout URL configured, just redirect to login

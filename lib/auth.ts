@@ -361,7 +361,7 @@ export const authOptions: NextAuthOptions = {
       if (url === "/api/auth/logout" || url === "/api/auth/signout") {
         // Use OIDC end session endpoint: /connect/endsession
         const logoutBase = process.env.OIDC_LOGOUT_URL || (OIDC_ISSUER ? `${OIDC_ISSUER.replace(/\/$/, "")}/connect/endsession` : "");
-        const returnTo = process.env.OIDC_LOGOUT_RETURN_TO || `${baseUrl}/login`;
+        const returnTo = process.env.OIDC_LOGOUT_RETURN_TO || `${baseUrl}/signout`;
         
         if (logoutBase) {
           // Build OIDC logout URL with id_token_hint and post_logout_redirect_uri
