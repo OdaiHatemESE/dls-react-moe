@@ -197,6 +197,24 @@ export function formatOrgAddress(org?: Org | null): string {
   return parts;
 }
 
+/**
+ * Extract citizenship status from StudentProfileV1 (PP API response)
+ */
+export function extractCitizenshipFromStudentProfile(student?: StudentProfileV1 | null): string | undefined {
+  if (!student) return undefined;
+
+  // Direct citizenship status field (note: capitalized in PP API)
+  const directStatus = student.CitizenshipStatus;
+  if (typeof directStatus === "string" && directStatus.trim().length > 0) {
+    return directStatus.trim();
+  }
+
+  return undefined;
+}
+
+/**
+ * @deprecated Use extractCitizenshipFromStudentProfile with studentInfo from /api/parent/conduct instead
+ */
 export async function extractCitizenship(person?: Person | null): Promise<string | undefined> {
   if (!person) return undefined;
 
@@ -212,34 +230,16 @@ export async function extractCitizenship(person?: Person | null): Promise<string
     return cached ?? undefined;
   }
 
-  if (typeof window === "undefined") {
-    return undefined;
+  // Try to extract from OneRoster Person payload first
+  const fromPerson = extractCitizenshipStatusFromStudentPayload(person);
+  if (fromPerson && fromPerson.trim().length > 0) {
+    const trimmed = fromPerson.trim();
+    citizenshipStatusCache.set(sourcedId, trimmed);
+    return trimmed;
   }
 
-  try {
-    const res = await fetch(`/api/oneroster/students/${encodeURIComponent(sourcedId)}?fields=citizenshipStatus`, {
-      cache: "no-store",
-    });
-    if (!res.ok) {
-      citizenshipStatusCache.set(sourcedId, null);
-      return undefined;
-    }
-
-    const payload = await res.json().catch(() => null);
-    const remote = extractCitizenshipStatusFromStudentPayload(payload ?? undefined);
-    if (remote && remote.trim().length > 0) {
-      const trimmed = remote.trim();
-      citizenshipStatusCache.set(sourcedId, trimmed);
-      return trimmed;
-    }
-
-    citizenshipStatusCache.set(sourcedId, null);
-    return undefined;
-  } catch (error) {
-    console.warn("Failed to resolve citizenshipStatus", error);
-    citizenshipStatusCache.set(sourcedId, null);
-    return undefined;
-  }
+  citizenshipStatusCache.set(sourcedId, null);
+  return undefined;
 }
 
 export function findContactValue(

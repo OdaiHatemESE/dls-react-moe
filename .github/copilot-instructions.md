@@ -40,7 +40,7 @@ These notes help AI agents work productively in this codebase. Keep answers conc
 
 ## Data flow examples
 - Auth flow: User authenticates via OIDC; access_token is stored in Redis (`lib/redis.ts`) and referenced in JWT as `atKey`. Session payload is trimmed to essentials (id, name, email, optional emiratesId). See `lib/auth.ts`.
-- OneRoster lookups: Routes under `app/api/oneroster/**` call helpers from `lib/oneroster.ts`. For example, `basic-info-full` resolves a person by EID, determines role, and fetches linked students, returning vendor-native payloads.
+- OneRoster lookups: Routes under `app/api/oneroster/**` call helpers from `lib/oneroster.ts`. For example, `schoolenrollments` fetches enrollment data for students.
 - Client fetching: Components use SWR with `jsonFetcher` and read API JSON directly.
 
 ## Coding tips for agents

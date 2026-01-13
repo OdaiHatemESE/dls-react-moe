@@ -276,7 +276,7 @@ const student = await orFetch<Student>('/students/SST-1-1-Pers-521025', 'read', 
 - Circuit breaker: Optional
 
 **All OneRoster Endpoints Protected** (via `orFetch`):
-- `/api/oneroster/students/[id]`
+- `- `/api/oneroster/schoolenrollments``
 - `/api/oneroster/classes/[sourcedId]`
 - `/api/oneroster/enrollments`
 - `/api/oneroster/persons`

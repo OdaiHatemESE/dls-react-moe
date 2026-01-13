@@ -14,10 +14,7 @@ Complete documentation of all API endpoints in the dls-react-moe application.
 | `/api/parent/child-actions` | GET | Child dashboard cards | Determine available actions for student | ✅ Active |
 | `/api/parent/update-information-requests` | GET, POST, PATCH | Update info form, dashboard | Submit/retrieve/update student information | ✅ Active |
 | `/api/students/[id]` | GET | Student profile page | Fetch student data from shared database | ✅ Active |
-| `/api/oneroster/basic-info-full` | GET | Dashboard, profile loading | Get person data from OneRoster vendor | ✅ Active |
-| `/api/oneroster/students/[sourcedId]` | GET | Student detail views | Fetch specific student from OneRoster | ✅ Active |
 | `/api/oneroster/schoolenrollments` | GET | Enrollment history view | Get student enrollment records | ✅ Active |
-| `/api/oneroster/latest-enrollment` | GET | Current school display | Find active enrollment for academic year | ✅ Active |
 | `/api/db/health` | GET | Deployment checks | Test shared database connectivity | ✅ Active |
 | `/api/db/health-parent` | GET | Deployment checks | Test parent portal database connectivity | ✅ Active |
 | `/api/db/emirates` | GET | AddressPicker component | Populate UAE emirates dropdown | ✅ Active |
@@ -188,25 +185,6 @@ Complete documentation of all API endpoints in the dls-react-moe application.
 
 ## OneRoster Integration APIs
 
-### `/api/oneroster/basic-info-full`
-**Method:** GET  
-**Purpose:** Get comprehensive person data from OneRoster  
-**Query Params:** `eid` (Emirates ID), `personType`, `sourceId`, `nocache`  
-**Used For:**
-- Fetching parent/student data from OneRoster vendor
-- Resolving person type (parent/student/guardian)
-- Getting linked students for parents
-- Retrieving org/school information
-
-### `/api/oneroster/students/[sourcedId]`
-**Method:** GET  
-**Purpose:** Get single student data from OneRoster  
-**URL Params:** `sourcedId`  
-**Used For:**
-- Fetching specific student record
-- Getting student demographics
-- Retrieving student metadata
-
 ### `/api/oneroster/schoolenrollments`
 **Method:** GET  
 **Purpose:** Get school enrollments for a student  
@@ -215,15 +193,6 @@ Complete documentation of all API endpoints in the dls-react-moe application.
 - Fetching enrollment history
 - Determining current school
 - Getting enrollment dates and status
-
-### `/api/oneroster/latest-enrollment`
-**Method:** GET  
-**Purpose:** Get most recent active enrollment  
-**Query Params:** `studentSourcedId`, `schoolYear`, `nocache`  
-**Used For:**
-- Finding current school enrollment
-- Filtering by academic year
-- Getting active school information
 
 ---
 

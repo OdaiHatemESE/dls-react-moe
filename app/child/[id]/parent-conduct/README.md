@@ -17,8 +17,8 @@ All runtime data is fetched on the client with SWR using the shared `jsonFetcher
 
 | Purpose | Endpoint | SWR key |
 | ------- | -------- | ------- |
-| Fetch parent, student, and school metadata (contact info, roles, addresses) | `/api/oneroster/basic-info-full?eid={id}` | `['oneroster/basic-info-full', id]` |
-| Retrieve the students recent school enrollment to determine the current school and stream | `/api/oneroster/schoolenrollments?studentSourcedId={studentId}` | `['oneroster/schoolenrollments', studentSourcedId]` |
+| Fetch parent, student, and school metadata (contact info, roles, addresses) | `/api/parent/conduct?studentPersonId={id}&schoolYear={year}` | Constructed dynamically |
+| Retrieve the students recent school enrollment to determine the current school and stream | Included in parent/conduct response | N/A - embedded in aggregated response |
 
 The page keeps the OneRoster payloads in their original structure whenever possible. Helper functions in `page.tsx` (e.g., `collectOrgs`, `findLatestEnrollment`, `extractStreamGradeName`) normalize specific fields for display without mutating the source data.
 
@@ -62,5 +62,5 @@ When adding new fields or steps:
 
 - `app/child/[id]/page.tsx` – Child dashboard overview page that links into the conduct wizard.
 - `lib/oneroster.ts` – Fetch utilities and token management for OneRoster APIs.
-- `app/api/oneroster/basic-info-full/route.ts` – Supplies the parent/student payloads consumed here.
-- `app/api/oneroster/schoolenrollments/route.ts` – Provides enrollment data for resolving the current school.
+- `app/api/parent/conduct/route.ts` – Aggregates parent, student, and school data from PP backend.
+- `app/api/backoffice/idh/route.ts` – Provides IDH status for information update validation.
