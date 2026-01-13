@@ -179,9 +179,10 @@ export default function ParentConductPage() {
   const [isSigning, setIsSigning] = React.useState(false);
   const [latestPdfBase64, setLatestPdfBase64] = React.useState<string | null>(null);
   const [isSyncing, setIsSyncing] = React.useState(false);
+  const [activeAcademicYear, setActiveAcademicYear] = React.useState<number | null>(null);
 
-  const dataKey = resolvedStudentId
-    ? `${CONDUCT_DATA_ENDPOINT}?studentPersonId=${encodeURIComponent(resolvedStudentId)}&schoolYear=2026`
+  const dataKey = resolvedStudentId && activeAcademicYear
+    ? `${CONDUCT_DATA_ENDPOINT}?studentPersonId=${encodeURIComponent(resolvedStudentId)}&schoolYear=${activeAcademicYear}`
     : null;
   const {
     data: aggregatedResponse,
@@ -379,6 +380,34 @@ export default function ParentConductPage() {
   } = useSWR<CharterStatusResponse>(charterStatusKey, jsonFetcher);
 
   const charterRecord = charterStatusResponse?.data ?? null;
+
+  // Fetch active academic year from admin config
+  React.useEffect(() => {
+    const fetchActiveYear = async () => {
+      try {
+        const response = await fetch('/api/admin/active-academic-year');
+        if (response.ok) {
+          const result = await response.json();
+          if (result.ok && result.data?.yearValue) {
+            setActiveAcademicYear(result.data.yearValue);
+          } else {
+            // Fallback to current year if no active year configured
+            console.warn('No active academic year configured, using current year');
+            setActiveAcademicYear(new Date().getFullYear());
+          }
+        } else {
+          // Fallback to current year on error
+          console.warn('Failed to fetch active academic year, using current year');
+          setActiveAcademicYear(new Date().getFullYear());
+        }
+      } catch (error) {
+        console.error('Error fetching active academic year:', error);
+        // Fallback to current year on error
+        setActiveAcademicYear(new Date().getFullYear());
+      }
+    };
+    fetchActiveYear();
+  }, []);
 
   React.useEffect(() => {
     setIsSigned(false);
@@ -914,7 +943,7 @@ export default function ParentConductPage() {
         {t.parentConduct.noStudentId}
       </div>
     );
-  }  if (isLoading || isInitialCharterLoading) {
+  }  if (isLoading || isInitialCharterLoading || activeAcademicYear === null) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <Spinner variant="education" text={t.parentConduct.loading} />

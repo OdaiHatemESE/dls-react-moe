@@ -639,7 +639,8 @@ export const en = {
             items: [
               "Encourage their children to adopt moral and educational values, promote positive behavior, motivate them to learn and abide by laws and respect all school staff.",
               "Review the approved student behavior management regulations in federal government educational institutions, and raise awareness and guide their children on the necessity of adhering to them and the consequences of violating them.",
-              "Urge students to adhere to attendance and departure schedules and be aware of the consequences of being late and not absent without an acceptable excuse, arriving early to school according to specified schedules and being aware of the consequences of being absent without an acceptable excuse, which include failing the school year and repeating the entire year.",
+              "Urge students to adhere to attendance and departure schedules and be aware of the consequences of being late and not arriving early to school.",
+              "Urge students to adhere to attendance and departure schedules and be aware of the consequences of being absent without an excuse.",
               "Adhere to the school's instructions when coming to request a service, discuss a problem, or settle any disputes."
             ]
           },
@@ -666,7 +667,7 @@ export const en = {
             title: "Academic Achievement and Educational Programs",
             items: [
               "Update children's data according to the procedures, conditions and provisions approved in the Ministry.",
-              "The parent commits to providing a computer according to the procedures and specifications approved by the Ministry, while complying with the standards and conditions for the computer usage policy.",
+              "The parent commits to providing a computer device according to the procedures and specifications approved by the Ministry, while complying with the standards and conditions for the computer usage policy.",
               "Communicate with the school administration to follow up on their children's performance in school and provide support to them.",
               "Motivate children to study, set clear goals for them, guide them, and show the importance of education in their future lives.",
               "Prepare the family atmosphere and allocate sufficient time for studying, preparing and preparing for examinations while ensuring sufficient time for rest.",
@@ -679,7 +680,8 @@ export const en = {
               "Review the approved assessment policy and comply with what is stated in it and adhere to the specified assessment and examination schedules.",
               "Continuously follow up on children's assessments and examinations to raise their performance level throughout the school year.",
               "Ensure children are ready to take the exam (bring necessary tools, charge computer/tablet).",
-              "Raise student awareness to comply with exam rules and regulations and not to cheat or leak exam questions or participate in them in any way."
+              "Raise student awareness to comply with exam rules and regulations and not to cheat or leak exam questions or participate in them in any way.",
+              "Emphasize to the student not to use mobile phones or other electronic devices in the examination hall."
             ]
           },
           {
