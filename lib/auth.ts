@@ -360,7 +360,21 @@ export const authOptions: NextAuthOptions = {
       // Support custom logout flow via /api/auth/logout or /api/auth/signout
       if (url === "/api/auth/logout" || url === "/api/auth/signout") {
         // Use OIDC end session endpoint: /connect/endsession
-        const logoutBase = process.env.OIDC_LOGOUT_URL || (OIDC_ISSUER ? `${OIDC_ISSUER.replace(/\/$/, "")}/connect/endsession` : "");
+        // Ensure URL has https:// protocol to prevent relative URL issues
+        let logoutBase = process.env.OIDC_LOGOUT_URL || '';
+        if (!logoutBase && OIDC_ISSUER) {
+          const issuer = OIDC_ISSUER.replace(/\/$/, '');
+          // Add https:// if missing
+          const issuerWithProtocol = issuer.startsWith('http://') || issuer.startsWith('https://') 
+            ? issuer 
+            : `https://${issuer}`;
+          logoutBase = `${issuerWithProtocol}/connect/endsession`;
+        }
+        // Final check: ensure logoutBase has protocol
+        if (logoutBase && !logoutBase.startsWith('http://') && !logoutBase.startsWith('https://')) {
+          logoutBase = `https://${logoutBase}`;
+        }
+        
         const returnTo = process.env.OIDC_LOGOUT_RETURN_TO || `${baseUrl}/signout`;
         
         if (logoutBase) {
