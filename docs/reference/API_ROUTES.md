@@ -4,54 +4,53 @@ Complete documentation of all API endpoints in the dls-react-moe application.
 
 ## Quick Reference Table
 
-| API Route | Method(s) | Where Used | Why Used | Status |
-|-----------|-----------|------------|----------|--------|
-| `/api/auth/[...nextauth]` | ALL | Login page, middleware | NextAuth OIDC authentication handler | ✅ Active |
-| `/api/auth/custom-logout` | GET | Header logout button | Custom logout with Redis cleanup | ✅ Active |
-| `/api/parent/conduct` | GET | Conduct agreement page | Fetch aggregate conduct data | ✅ Active |
-| `/api/parent/generate-conduct-pdf` | POST | Conduct form submission | Server-side PDF generation with Arabic fonts | ✅ Active |
-| `/api/parent/students-partnership-charter` | GET, POST | Child dashboard cards | Check/submit conduct agreement signature | ✅ Active |
-| `/api/parent/child-actions` | GET | Child dashboard cards | Determine available actions for student | ✅ Active |
-| `/api/parent/update-information-requests` | GET, POST, PATCH | Update info form, dashboard | Submit/retrieve/update student information | ✅ Active |
-| `/api/students/[id]` | GET | Student profile page | Fetch student data from shared database | ✅ Active |
-| `/api/oneroster/schoolenrollments` | GET | Enrollment history view | Get student enrollment records | ✅ Active |
-| `/api/db/health` | GET | Deployment checks | Test shared database connectivity | ✅ Active |
-| `/api/db/health-parent` | GET | Deployment checks | Test parent portal database connectivity | ✅ Active |
-| `/api/db/emirates` | GET | AddressPicker component | Populate UAE emirates dropdown | ✅ Active |
-| `/api/db/regions` | GET | AddressPicker (Abu Dhabi) | Load regions for Abu Dhabi cascade | ✅ Active |
-| `/api/db/zones` | GET | AddressPicker (Abu Dhabi) | Load zones for Abu Dhabi cascade | ✅ Active |
-| `/api/db/areas` | GET | AddressPicker (all emirates) | Load areas with grade/gender filtering | ✅ Active |
-| `/api/db/plots` | GET | Onwani map picker | Enrich plot data after map selection | ✅ Active |
-| `/api/admin/check-access` | GET | Admin layout, route guards | Verify user has admin permissions | ✅ Active |
-| `/api/admin/academic-year/active` | GET | Admin panel, queries | Get currently active academic year | ✅ Active |
-| `/api/admin/config/academic-year` | GET, POST, PATCH, DELETE | Admin config page | Manage academic year configurations | ✅ Active |
-| `/api/admin/config/periods` | GET, POST, PATCH, DELETE | Admin config page | Manage update period configurations | ✅ Active |
-| `/api/admin/config/actions` | GET, POST, PATCH, DELETE | Admin config page | Manage action configurations by education type | ✅ Active |
-| `/api/admin/config/users` | GET, POST, PATCH, DELETE | Admin users page | Manage admin user access | ✅ Active |
-| `/api/admin/config/status` | GET | Admin dashboard | Get current configuration status | ✅ Active |
-| `/api/admin/analytics/stats` | GET | Admin analytics page | Display student statistics and metrics | ✅ Active |
-| `/api/admin/analytics/students` | GET | Admin students table | Paginated student list with filters | ✅ Active |
-| `/api/admin/analytics/updates` | GET | Admin updates log | Track information update history | ✅ Active |
-| `/api/admin/resilience-metrics` | GET, POST | Admin monitoring page | View/reset API circuit breaker metrics | ✅ Active |
-| `/api/notifications` | GET, POST | Notifications page, bell icon | Fetch/create user notifications | ✅ Active |
-| `/api/notifications/count` | GET | Header bell icon badge | Get unread notification count | ✅ Active |
-| `/api/notifications/[id]/read` | PATCH | Notification click | Mark single notification as read | ✅ Active |
-| `/api/notifications/mark-all-read` | POST | Notifications page button | Mark all notifications as read | ✅ Active |
-| `/api/notifications/email` | POST | Conduct PDF email | Send PDF via email to parent | ✅ Active |
-| `/api/notifications/sms` | POST | Status change alerts | Send SMS notifications | ✅ Active |
-| `/api/PP/auth/token` | GET | All PP API calls | Get OAuth token for .NET backend | ✅ Active |
-| `/api/PP/persons` | GET | Legacy lookups | Look up persons by Emirates ID | ⚠️ Legacy |
-| `/api/PP/ChildList/[eid]` | GET | Dashboard fallback | Get children list from .NET API | ⚠️ Legacy |
-| `/api/PP/student/[id]` | GET | Legacy profile views | Get student from .NET API | ⚠️ Legacy |
-| `/api/PP/student/[id]/enrollments` | GET | Legacy enrollment views | Get enrollments from .NET API | ⚠️ Legacy |
-| `/api/PP/school/[id]` | GET | School info display | Get school details from .NET API | ⚠️ Legacy |
-| `/api/PP/child/sync` | GET, POST | Admin sync operations | Sync data between systems | ⚠️ Maintenance |
-| `/api/PP/myapplications` | POST | Application submission | Forward applications to legacy system | ⚠️ Legacy |
-| `/api/PP/information-status/[studentSourcedId]` | PATCH | Update workflow | Sync status changes to .NET backend | ✅ Active |
-| `/api/PP/conduct-status/[studentSourcedId]` | PATCH | Conduct workflow | Sync conduct signatures to .NET backend | ✅ Active |
-| `/api/backoffice/idh` | GET, POST | Update info flow | Interface with Ministry IDH system | ✅ Active |
-| `/api/debug/student/[id]` | GET | Development only | Debug student data inspection | 🔧 Debug |
-| `/api/debug/conduct` | GET | Development only | Debug conduct aggregation flow | 🔧 Debug |
+| API Route | Method(s) | Database Used | Page Link | Why Used | Status |
+|-----------|-----------|---------------|-----------|----------|--------|
+| `/api/auth/[...nextauth]` | ALL | Redis | [Login](../sitemap/03-login/README.md) | NextAuth OIDC authentication handler | ✅ Active |
+| `/api/auth/custom-logout` | GET | Redis | [Signout](../sitemap/12-signout/README.md) | Custom logout with Redis cleanup | ✅ Active |
+| `/api/parent/conduct` | GET | Parent Portal + Shared DB | [Parent Conduct](../sitemap/08-child-parent-conduct/README.md) | Fetch aggregate conduct data | ✅ Active |
+| `/api/parent/generate-conduct-pdf` | POST | None | [Parent Conduct](../sitemap/08-child-parent-conduct/README.md) | Server-side PDF generation with Arabic fonts | ✅ Active |
+| `/api/parent/students-partnership-charter` | GET, POST | Parent Portal DB | [Dashboard](../sitemap/02-dashboard/README.md), [Child Detail](../sitemap/06-child-detail/README.md) | Check/submit conduct agreement signature | ✅ Active |
+| `/api/parent/child-actions` | GET | Parent Portal + Shared DB | [Dashboard](../sitemap/02-dashboard/README.md), [Child Detail](../sitemap/06-child-detail/README.md) | Determine available actions for student | ✅ Active |
+| `/api/parent/update-information-requests` | GET, POST, PATCH | Parent Portal DB | [Update Info](../sitemap/07-child-update-info/README.md), [Dashboard](../sitemap/02-dashboard/README.md) | Submit/retrieve/update student information | ✅ Active |
+| `/api/students/[id]` | GET | Shared DB (Student) | [Child Detail](../sitemap/06-child-detail/README.md), [Profile](../sitemap/04-profile/README.md) | Fetch student data from shared database | ✅ Active |
+| `/api/db/health` | GET | Shared DB (Student) | System Health | Test shared database connectivity | ✅ Active |
+| `/api/db/health-parent` | GET | Parent Portal DB | System Health | Test parent portal database connectivity | ✅ Active |
+| `/api/db/emirates` | GET | Shared DB (Student) | [Update Info](../sitemap/07-child-update-info/README.md) | Populate UAE emirates dropdown | ✅ Active |
+| `/api/db/regions` | GET | Shared DB (Student) | [Update Info](../sitemap/07-child-update-info/README.md) | Load regions for Abu Dhabi cascade | ✅ Active |
+| `/api/db/zones` | GET | Shared DB (Student) | [Update Info](../sitemap/07-child-update-info/README.md) | Load zones for Abu Dhabi cascade | ✅ Active |
+| `/api/db/areas` | GET | Shared DB (Student) | [Update Info](../sitemap/07-child-update-info/README.md) | Load areas with grade/gender filtering | ✅ Active |
+| `/api/db/plots` | GET | Shared DB (Student) | [Update Info](../sitemap/07-child-update-info/README.md) | Enrich plot data after map selection | ✅ Active |
+| `/api/admin/check-access` | GET | Parent Portal DB | [Admin EID](../sitemap/11-admin-eid/README.md) | Verify user has admin permissions | ✅ Active |
+| `/api/admin/academic-year/active` | GET | Parent Portal DB | [Admin EID](../sitemap/11-admin-eid/README.md) | Get currently active academic year | ✅ Active |
+| `/api/admin/config/academic-year` | GET, POST, PATCH, DELETE | Parent Portal DB | [Admin EID](../sitemap/11-admin-eid/README.md) | Manage academic year configurations | ✅ Active |
+| `/api/admin/config/periods` | GET, POST, PATCH, DELETE | Parent Portal DB | [Admin EID](../sitemap/11-admin-eid/README.md) | Manage update period configurations | ✅ Active |
+| `/api/admin/config/actions` | GET, POST, PATCH, DELETE | Parent Portal DB | [Admin EID](../sitemap/11-admin-eid/README.md) | Manage action configurations by education type | ✅ Active |
+| `/api/admin/config/users` | GET, POST, PATCH, DELETE | Parent Portal DB | [Admin EID](../sitemap/11-admin-eid/README.md) | Manage admin user access | ✅ Active |
+| `/api/admin/config/status` | GET | Parent Portal DB | [Admin EID](../sitemap/11-admin-eid/README.md) | Get current configuration status | ✅ Active |
+| `/api/admin/analytics/stats` | GET | Parent Portal + Shared DB | [Admin EID](../sitemap/11-admin-eid/README.md) | Display student statistics and metrics | ✅ Active |
+| `/api/admin/analytics/students` | GET | Parent Portal + Shared DB | [Admin EID](../sitemap/11-admin-eid/README.md) | Paginated student list with filters | ✅ Active |
+| `/api/admin/analytics/updates` | GET | Parent Portal DB | [Admin EID](../sitemap/11-admin-eid/README.md) | Track information update history | ✅ Active |
+| `/api/admin/resilience-metrics` | GET, POST | Redis (Metrics) | [Admin EID](../sitemap/11-admin-eid/README.md) | View/reset API circuit breaker metrics | ✅ Active |
+| `/api/notifications` | GET, POST | Parent Portal DB | [Notifications](../sitemap/05-notifications/README.md), [Dashboard](../sitemap/02-dashboard/README.md) | Fetch/create user notifications | ✅ Active |
+| `/api/notifications/count` | GET | Parent Portal DB | [Dashboard](../sitemap/02-dashboard/README.md) (Header) | Get unread notification count | ✅ Active |
+| `/api/notifications/[id]/read` | PATCH | Parent Portal DB | [Notifications](../sitemap/05-notifications/README.md) | Mark single notification as read | ✅ Active |
+| `/api/notifications/mark-all-read` | POST | Parent Portal DB | [Notifications](../sitemap/05-notifications/README.md) | Mark all notifications as read | ✅ Active |
+| `/api/notifications/email` | POST | None (Email Service) | [Parent Conduct](../sitemap/08-child-parent-conduct/README.md) | Send PDF via email to parent | ✅ Active |
+| `/api/notifications/sms` | POST | None (SMS Service) | Multiple Pages | Send SMS notifications | ✅ Active |
+| `/api/PP/auth/token` | GET | None (OAuth) | All PP API Calls | Get OAuth token for .NET backend | ✅ Active |
+| `/api/PP/persons` | GET | None (.NET API) | Legacy | Look up persons by Emirates ID | ⚠️ Legacy |
+| `/api/PP/ChildList/[eid]` | GET | None (.NET API) | [Dashboard](../sitemap/02-dashboard/README.md) | Get children list from .NET API | ⚠️ Legacy |
+| `/api/PP/student/[id]` | GET | None (.NET API) | [Child Detail](../sitemap/06-child-detail/README.md) | Get student from .NET API | ⚠️ Legacy |
+| `/api/PP/student/[id]/enrollments` | GET | None (.NET API) | [Child Detail](../sitemap/06-child-detail/README.md) | Get enrollments from .NET API | ⚠️ Legacy |
+| `/api/PP/school/[id]` | GET | None (.NET API) | [Child Detail](../sitemap/06-child-detail/README.md) | Get school details from .NET API | ⚠️ Legacy |
+| `/api/PP/child/sync` | GET, POST | Parent Portal + .NET API | [Admin EID](../sitemap/11-admin-eid/README.md) | Sync data between systems | ⚠️ Maintenance |
+| `/api/PP/myapplications` | POST | None (.NET API) | [Applications](../sitemap/09-parent-applications/README.md) | Forward applications to legacy system | ⚠️ Legacy |
+| `/api/PP/information-status/[studentSourcedId]` | PATCH | None (.NET API) | [Update Info](../sitemap/07-child-update-info/README.md) | Sync status changes to .NET backend | ✅ Active |
+| `/api/PP/conduct-status/[studentSourcedId]` | PATCH | None (.NET API) | [Parent Conduct](../sitemap/08-child-parent-conduct/README.md) | Sync conduct signatures to .NET backend | ✅ Active |
+| `/api/backoffice/idh` | GET, POST | None (IDH Ministry API) | [Update Info](../sitemap/07-child-update-info/README.md) | Interface with Ministry IDH system | ✅ Active |
+| `/api/debug/student/[id]` | GET | Shared DB (Student) | Development Only | Debug student data inspection | 🔧 Debug |
+| `/api/debug/conduct` | GET | Parent Portal + Shared DB | Development Only | Debug conduct aggregation flow | 🔧 Debug |
 
 ### Status Legend
 
@@ -65,15 +64,14 @@ Complete documentation of all API endpoints in the dls-react-moe application.
 ## Table of Contents
 
 - [Authentication APIs](#authentication-apis)
+- [Authentication APIs](#authentication-apis)
 - [Parent Portal APIs](#parent-portal-apis)
 - [Student Data APIs](#student-data-apis)
-- [OneRoster Integration APIs](#oneroster-integration-apis)
 - [Database APIs](#database-apis)
 - [Admin Panel APIs](#admin-panel-apis)
 - [Notification APIs](#notification-apis)
 - [Backend Integration APIs](#backend-integration-apis)
 - [Debug APIs](#debug-apis)
-
 ---
 
 ## Authentication APIs
@@ -183,22 +181,9 @@ Complete documentation of all API endpoints in the dls-react-moe application.
 
 ---
 
-## OneRoster Integration APIs
-
-### `/api/oneroster/schoolenrollments`
-**Method:** GET  
-**Purpose:** Get school enrollments for a student  
-**Query Params:** `studentSourcedId`, `nocache`  
-**Used For:**
-- Fetching enrollment history
-- Determining current school
-- Getting enrollment dates and status
-
 ---
 
-## Database APIs
-
-### `/api/db/health`
+## Database APIslth`
 **Method:** GET  
 **Purpose:** Check shared database connectivity  
 **Used For:**
@@ -711,8 +696,7 @@ Common status codes:
 - **Database APIs**: Use pagination for large datasets
 - **IDH APIs**: Queue-based processing to prevent overload
 - **Notification APIs**: Limit query with `limit` parameter
-- **Admin APIs**: Protected by authentication checks
-
+       ├─ /api/PP/* ─────────> .NET Parent Portal API
 ---
 
 ## Security Notes
