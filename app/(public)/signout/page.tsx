@@ -6,6 +6,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2 } from 'lucide-react';
 
+// Prevent static generation - this page must be dynamic
+export const dynamic = 'force-dynamic';
+
 export default function SignOutPage() {
   useEffect(() => {
     console.log('🟢 [SIGNOUT PAGE] Page loaded successfully');

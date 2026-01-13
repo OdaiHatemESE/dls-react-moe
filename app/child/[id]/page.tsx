@@ -17,8 +17,6 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-import SchoolInfo from './SchoolInfo';
-import StreamGrades from './StreamGrades';
 import SignConductSection from './components/SignConductSection';
 import { LoadingSkeleton } from './components/LoadingSkeleton';
 import InfoTab from './components/InfoTab';

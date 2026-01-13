@@ -10,8 +10,6 @@ import { Badge } from "@/components/ui/badge";
 import { jsonFetcher } from "@/lib/swr";
 import RefreshBar from "@/components/RefreshBar";
 import ChildCards from "./components/ChildCards";
-import RecentAnnouncements from "./components/RecentAnnouncements";
-import UpcomingEvents from "./components/UpcomingEvents";
 import Link from "next/link";
  
 export default function DashboardPage() {
