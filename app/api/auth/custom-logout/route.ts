@@ -24,7 +24,8 @@ export async function GET(req: NextRequest) {
     });
     
     const baseUrl = process.env.NEXTAUTH_URL || `${req.nextUrl.protocol}//${req.nextUrl.host}`;
-    const logoutBase = process.env.OIDC_LOGOUT_URL || (OIDC_ISSUER ? `${OIDC_ISSUER.replace(/\/$/, "")}/connect/endsession` : "");
+    const logoutBase = 'https://stg-login.moe.gov.ae/connect/endsession';
+    console.log('🔴 [LOGOUT] OIDC_ISSUER:', logoutBase);
     const returnTo = process.env.OIDC_LOGOUT_RETURN_TO || `${baseUrl}/signout`;
     
     console.log('🔴 [LOGOUT] Step 3: URLs configured:', {
@@ -61,6 +62,8 @@ export async function GET(req: NextRequest) {
     
     const logoutUrl = `${logoutBase}?${params.toString()}`;
     console.log('🔴 [LOGOUT] Step 5: Full logout URL:', logoutUrl);
+    console.log('🔴 [LOGOUT] logoutBase:', logoutBase);
+    console.log('🔴 [LOGOUT] params:', params.toString());
     
     // Validate that logout URL is absolute and external
     if (!logoutUrl.startsWith('http://') && !logoutUrl.startsWith('https://')) {
@@ -68,9 +71,11 @@ export async function GET(req: NextRequest) {
       return NextResponse.redirect(new URL('/login', baseUrl));
     }
     
-    // Clear NextAuth session cookies before redirecting
-    // IMPORTANT: Must use absolute URL for external redirect
-    const response = NextResponse.redirect(logoutUrl);
+    // Clear NextAuth session cookies and use 307 redirect to external URL
+    // CRITICAL: NextResponse.redirect with string URL is treated as relative
+    // We must use NextResponse with proper headers for external redirect
+    const response = NextResponse.redirect(new URL(logoutUrl), { status: 307 });
+
     
     // Clear session cookies
     response.cookies.delete('next-auth.session-token');
