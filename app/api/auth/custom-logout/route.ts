@@ -3,6 +3,9 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { getToken } from 'next-auth/jwt';
 
+// Force dynamic rendering - never cache this endpoint
+export const dynamic = 'force-dynamic';
+
 const OIDC_ISSUER = process.env.OIDC_ISSUER || process.env.AUTH0_ISSUER || "";
 
 export async function GET(req: NextRequest) {
@@ -59,7 +62,14 @@ export async function GET(req: NextRequest) {
     const logoutUrl = `${logoutBase}?${params.toString()}`;
     console.log('🔴 [LOGOUT] Step 5: Full logout URL:', logoutUrl);
     
+    // Validate that logout URL is absolute and external
+    if (!logoutUrl.startsWith('http://') && !logoutUrl.startsWith('https://')) {
+      console.error('🔴 [LOGOUT] ERROR: Logout URL is not absolute:', logoutUrl);
+      return NextResponse.redirect(new URL('/login', baseUrl));
+    }
+    
     // Clear NextAuth session cookies before redirecting
+    // IMPORTANT: Must use absolute URL for external redirect
     const response = NextResponse.redirect(logoutUrl);
     
     // Clear session cookies
@@ -70,7 +80,7 @@ export async function GET(req: NextRequest) {
     response.cookies.delete('next-auth.callback-url');
     response.cookies.delete('__Secure-next-auth.callback-url');
     
-    console.log('🔴 [LOGOUT] Step 6: Session cookies cleared, redirecting to OIDC provider');
+    console.log('🔴 [LOGOUT] Step 6: Session cookies cleared, redirecting to OIDC provider at:', logoutUrl);
     
     return response;
   } catch (error) {
