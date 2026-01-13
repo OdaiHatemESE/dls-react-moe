@@ -8,7 +8,21 @@ export const dynamic = 'force-dynamic';
 
 const OIDC_ISSUER = process.env.OIDC_ISSUER || process.env.AUTH0_ISSUER || "";
 
+// Helper to ensure URL has https:// protocol
+function ensureHttpsProtocol(url: string): string {
+  if (!url) return url;
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url;
+  }
+  return `https://${url}`;
+}
+
 export async function GET(req: NextRequest) {
+  // Log immediately to confirm this route is being hit
+  console.log('🔴🔴🔴 [LOGOUT] ROUTE HIT - BUILD TIME:', new Date().toISOString());
+  console.log('🔴 [LOGOUT] Request URL:', req.url);
+  console.log('🔴 [LOGOUT] Request Headers:', Object.fromEntries(req.headers.entries()));
+  
   try {
     console.log('🔴 [LOGOUT] Step 1: Custom logout endpoint called');
     
@@ -24,8 +38,19 @@ export async function GET(req: NextRequest) {
     });
     
     const baseUrl = process.env.NEXTAUTH_URL || `${req.nextUrl.protocol}//${req.nextUrl.host}`;
-    const logoutBase = 'https://stg-login.moe.gov.ae/connect/endsession';
-    console.log('🔴 [LOGOUT] OIDC_ISSUER:', logoutBase);
+    
+    // Build logout URL with proper protocol handling
+    let logoutBase = process.env.OIDC_LOGOUT_URL || '';
+    if (!logoutBase && OIDC_ISSUER) {
+      const issuerWithProtocol = ensureHttpsProtocol(OIDC_ISSUER.replace(/\/$/, ''));
+      logoutBase = `${issuerWithProtocol}/connect/endsession`;
+    }
+    // Ensure final URL has protocol
+    logoutBase = ensureHttpsProtocol(logoutBase);
+    
+    console.log('🔴 [LOGOUT] OIDC_ISSUER env:', OIDC_ISSUER);
+    console.log('🔴 [LOGOUT] OIDC_LOGOUT_URL env:', process.env.OIDC_LOGOUT_URL || '(not set)');
+    console.log('🔴 [LOGOUT] Final logoutBase:', logoutBase);
     const returnTo = process.env.OIDC_LOGOUT_RETURN_TO || `${baseUrl}/signout`;
     
     console.log('🔴 [LOGOUT] Step 3: URLs configured:', {
@@ -71,11 +96,15 @@ export async function GET(req: NextRequest) {
       return NextResponse.redirect(new URL('/login', baseUrl));
     }
     
-    // Clear NextAuth session cookies and use 307 redirect to external URL
-    // CRITICAL: NextResponse.redirect with string URL is treated as relative
-    // We must use NextResponse with proper headers for external redirect
-    const response = NextResponse.redirect(new URL(logoutUrl), { status: 307 });
-
+    // Clear NextAuth session cookies and use 302 redirect to external URL
+    // IMPORTANT: Use 302 (not 307) to prevent browser caching the redirect
+    const response = NextResponse.redirect(new URL(logoutUrl), { status: 302 });
+    
+    // CRITICAL: Prevent browser from caching this redirect
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
+    response.headers.set('Pragma', 'no-cache');
+    response.headers.set('Expires', '0');
+    response.headers.set('Surrogate-Control', 'no-store');
     
     // Clear session cookies
     response.cookies.delete('next-auth.session-token');
