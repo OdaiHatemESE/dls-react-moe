@@ -102,6 +102,20 @@ export default function VerticalHeader() {
   // Check admin access
   const { data: adminAccess } = useSWR<{ hasAccess: boolean }>('/api/admin/check-access', jsonFetcher);
 
+  // Handle sign out with proper OIDC end session
+  const handleSignOut = async () => {
+    try {
+      // Use custom logout endpoint that includes id_token_hint for proper OIDC logout
+      await signOut({ callbackUrl: '/login' });
+      const logoutUrl = process.env.NEXT_PUBLIC_OIDC_LOGOUT_URL || 'https://stg-login.moe.gov.ae/connect/endsession';
+      window.location.href = logoutUrl;
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Fallback to NextAuth signOut if custom logout fails
+      await signOut({ callbackUrl: '/login' });
+    }
+  };
+
   // Close theme menu when clicking outside or pressing escape
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -258,8 +272,7 @@ export default function VerticalHeader() {
                   className={`group flex items-center gap-4 px-4 py-4 rounded-xl ${locale === 'ar' ? 'text-sm font-semibold tracking-wide' : 'text-sm font-semibold'} transition-all duration-300 border text-foreground hover:text-white bg-card/80 hover:bg-gradient-to-r hover:from-destructive hover:to-destructive/90 border-border hover:border-destructive/20 hover:shadow-md backdrop-blur-sm w-full`}
                   onClick={() => { 
                     setIsMenuOpen(false); 
-                    // Use custom logout endpoint that includes id_token_hint
-                    window.location.href = '/api/auth/custom-logout';
+                    handleSignOut();
                   }}
                 >
                   <div className="p-2.5 rounded-lg transition-all duration-300 bg-muted group-hover:bg-white/20">
@@ -555,10 +568,7 @@ export default function VerticalHeader() {
                     {/* Logout Menu Item */}
                     <li key="logout">
                       <button
-                        onClick={() => {
-                          // Use custom logout endpoint that includes id_token_hint
-                          window.location.href = '/api/auth/custom-logout';
-                        }}
+                        onClick={handleSignOut}
                         className={clsx(
                           'group relative flex items-center gap-x-4 rounded-2xl px-5 py-4 transition-all duration-300 overflow-hidden w-full',
                           locale === 'ar' ? 'text-base font-semibold tracking-wide' : 'text-base font-semibold',

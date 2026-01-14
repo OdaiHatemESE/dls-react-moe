@@ -9,10 +9,11 @@ export default function AuthButtons() {
   if (session?.user) {
     return (
       <button
-        onClick={() => {
-          // Use custom logout endpoint that properly handles OIDC logout
+        onClick={async () => {
+          await signOut({ callbackUrl: '/login' });
+          const logoutUrl = process.env.NEXT_PUBLIC_OIDC_LOGOUT_URL || 'https://stg-login.moe.gov.ae/connect/endsession';
           if (typeof window !== 'undefined') {
-            window.location.href = '/api/auth/custom-logout';
+            window.location.href = logoutUrl;
           }
         }}
         className="lg:h-12 xl:h-14 lg:px-2 xl:px-3 flex items-center justify-center flex-shrink-0"

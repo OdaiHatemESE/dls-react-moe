@@ -16,7 +16,6 @@ export async function middleware(req: NextRequest) {
     "/", // keep public, or delete to protect everything
     "/signout", // allow signout page for post-logout redirect
     "/login", // allow login page
-    "/api/auth/custom-logout", // allow custom logout endpoint
   ]);
   
   if (publicRoutes.has(pathname)) {

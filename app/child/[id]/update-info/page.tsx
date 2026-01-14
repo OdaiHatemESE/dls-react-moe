@@ -518,7 +518,7 @@ export default function UpdateStudentInfoPage() {
     const fileGuid = (idhResp?.data?.attachment01 ?? '').trim();
     if (fileGuid) {
       // Use file-share API download endpoint with FileGuid from environment variable
-      const fileServerUrl = process.env.FILE_SERVER_URL || 'https://apps.moe.gov.ae/file/api/File';
+      const fileServerUrl = process.env.NEXT_PUBLIC_FILE_SERVER_URL || 'https://apps.moe.gov.ae/file/api/File';
       const downloadUrl = `${fileServerUrl}/Download/Stream/${fileGuid}`;
       setIdhAttachmentUrl(downloadUrl);
     } else {

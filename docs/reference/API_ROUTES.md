@@ -7,7 +7,6 @@ Complete documentation of all API endpoints in the dls-react-moe application.
 | API Route | Method(s) | Database Used | Page Link | Why Used | Status |
 |-----------|-----------|---------------|-----------|----------|--------|
 | `/api/auth/[...nextauth]` | ALL | Redis | [Login](../sitemap/03-login/README.md) | NextAuth OIDC authentication handler | ✅ Active |
-| `/api/auth/custom-logout` | GET | Redis | [Signout](../sitemap/12-signout/README.md) | Custom logout with Redis cleanup | ✅ Active |
 | `/api/parent/conduct` | GET | Parent Portal + Shared DB | [Parent Conduct](../sitemap/08-child-parent-conduct/README.md) | Fetch aggregate conduct data | ✅ Active |
 | `/api/parent/generate-conduct-pdf` | POST | None | [Parent Conduct](../sitemap/08-child-parent-conduct/README.md) | Server-side PDF generation with Arabic fonts | ✅ Active |
 | `/api/parent/students-partnership-charter` | GET, POST | Parent Portal DB | [Dashboard](../sitemap/02-dashboard/README.md), [Child Detail](../sitemap/06-child-detail/README.md) | Check/submit conduct agreement signature | ✅ Active |
@@ -84,14 +83,6 @@ Complete documentation of all API endpoints in the dls-react-moe application.
 - Session management with JWT
 - Credentials provider for mobile token authentication
 - Automatic token refresh and storage in Redis
-
-### `/api/auth/custom-logout`
-**Method:** GET  
-**Purpose:** Custom logout handler with Redis cleanup  
-**Used For:**
-- Clearing Redis-stored access tokens
-- Removing session data
-- Redirecting to signout confirmation page
 
 ---
 
