@@ -164,13 +164,23 @@ Each page has detailed documentation covering:
 - Electronic signature capture
 - Conduct agreement forms
 
-### [ADDRESS_PICKER.md](./features/ADDRESS_PICKER.md)
-**Address Selection Component**
+### [ADDRESS_SYSTEM_MIGRATION.md](./features/ADDRESS_SYSTEM_MIGRATION.md) ⭐
+**Database-Backed Address System**
 
-- UAE emirate cascade
-- Abu Dhabi region/zone/area
-- Onwani map integration
-- Grade & gender filtering
+- Migration from Onwani API to database
+- AuhAddresses table usage
+- ManhalCode lookup via /api/db/plots
+- GISID-based hierarchy fetching
+- Performance improvements
+
+### [ADDRESS_PICKER.md](./features/ADDRESS_PICKER.md)
+**Address Selection Component (Legacy)**
+
+- UAE emirate cascade (deprecated)
+- Onwani API integration (legacy reference)
+- Historical implementation
+
+⭐ = Active system - use this for current development
 
 ---
 

@@ -32,6 +32,11 @@
 | **[HANDOVER.md](./HANDOVER.md)** | Complete onboarding & developer guide | First day on project |
 | **[README.md](./README.md)** | Documentation hub & navigation | To find other docs |
 | **[DOCUMENTATION_INDEX.md](./DOCUMENTATION_INDEX.md)** | This file - Quick navigation | Finding specific docs |
+| **[ADDRESS_UPDATE_SUMMARY.md](./ADDRESS_UPDATE_SUMMARY.md)** | Address system changes summary | Quick overview of migration ⭐ |
+| **[ADDRESS_OLD_VS_NEW.md](./ADDRESS_OLD_VS_NEW.md)** | Side-by-side comparison | Understanding what changed ⭐ |
+| **[ADDRESS_ARCHITECTURE_DIAGRAMS.md](./ADDRESS_ARCHITECTURE_DIAGRAMS.md)** | Visual diagrams | See architecture visually ⭐ |
+
+⭐ = New - Read if working with addresses
 
 ### 🗺️ Page Documentation (Sitemap)
 
@@ -63,7 +68,8 @@
 | **[NOTIFICATIONS.md](./features/NOTIFICATIONS.md)** | Notifications | Database & toast system ⭐ |
 | **[ADMIN_PANEL.md](./features/ADMIN_PANEL.md)** | Admin | Configuration, users, periods ⭐ |
 | **[PDF_GENERATION.md](./features/PDF_GENERATION.md)** | PDFs | Form filling, signatures |
-| **[ADDRESS_PICKER.md](./features/ADDRESS_PICKER.md)** | Address | UAE address selection |
+| **[ADDRESS_SYSTEM_MIGRATION.md](./features/ADDRESS_SYSTEM_MIGRATION.md)** | Address | Database-backed address system ⭐ |
+| **[ADDRESS_PICKER.md](./features/ADDRESS_PICKER.md)** | Address (Legacy) | Onwani API reference (deprecated) |
 
 ⭐ = Critical business logic
 
@@ -138,6 +144,7 @@
 | Fix database issue | [HANDOVER.md → Common Issues](./HANDOVER.md#-common-issues--solutions) |
 | Debug API timeout | [Architecture → API Resilience](./core/ARCHITECTURE.md) |
 | Understand auth flow | [Architecture](./core/ARCHITECTURE.md) + [Login Page](./sitemap/03-login/README.md) |
+| Work with address system | [Address System Migration](./features/ADDRESS_SYSTEM_MIGRATION.md) |
 
 ### By Topic
 
@@ -151,7 +158,8 @@
 | Notifications | [Notifications](./features/NOTIFICATIONS.md) |
 | Admin | [Admin Panel](./features/ADMIN_PANEL.md) |
 | PDFs | [PDF Generation](./features/PDF_GENERATION.md) |
-| Address | [Address Picker](./features/ADDRESS_PICKER.md) |
+| Address | [Address System Migration](./features/ADDRESS_SYSTEM_MIGRATION.md) |
+| Address (Legacy) | [Address Picker (Legacy)](./features/ADDRESS_PICKER.md) |
 | Pages | [Sitemap](./sitemap/) |
 
 ### By Component

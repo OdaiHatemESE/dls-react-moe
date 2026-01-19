@@ -778,7 +778,7 @@ export default function UpdateStudentInfoPage() {
         source: 'idh' as const,
         data: {
           emirate: textOrNull(prev.emirate) ?? '',
-          city: textOrNull(prev.city) ?? '',
+          city: '', // IDH doesn't store city separately
           region: textOrNull(prev.region) ?? '',
           area: textOrNull(prev.area) ?? '',
           street: textOrNull(prev.street) ?? '',

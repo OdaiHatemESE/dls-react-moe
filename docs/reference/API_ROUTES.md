@@ -224,12 +224,31 @@ Complete documentation of all API endpoints in the dls-react-moe application.
 
 ### `/api/db/plots`
 **Method:** GET  
-**Purpose:** Get plot information from Onwani map selection  
-**Query Params:** `gisid`, `plotNumber`, `municipalityEn`  
+**Purpose:** Get ManhalCodes from address hierarchy based on GISID lookup  
+**Query Params:** `filter` (required) - GISID suffix to match against PlotId or PlotNumber  
+**Data Source:** `AuhAddresses` table (refreshed address authority data)  
+**Response:**
+```typescript
+{
+  data: {
+    areaId: number,
+    areaManhalCode: string | null,      // SectorCode
+    zoneId: number,
+    zoneManhalCode: string | null,      // RegionCode
+    regionId: number,
+    regionManhalCode: string | null,    // CityCode
+    emirateId: number,
+    emirateManhalCode: string | null    // StateCode
+  },
+  meta: { filter: string, count: number }
+}
+```
 **Used For:**
-- Looking up plot details after map selection
-- Enriching Onwani map data with database information
-- Fallback when Onwani API doesn't return complete data
+- Fetching ManhalCodes for Abu Dhabi addresses during student info updates
+- Enriching address data before submission to IDH API
+- Replacing direct Onwani API calls with database lookups
+
+**See:** [Address System Migration](../features/ADDRESS_SYSTEM_MIGRATION.md) for complete documentation
 
 ---
 
