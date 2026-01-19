@@ -1,7 +1,6 @@
 generator client {
   provider = "prisma-client-js"
-    output   = "../../node_modules/@prisma/client-student-registration"
-
+  output   = "../../node_modules/@prisma/client-student-registration"
 }
 
 datasource db {
@@ -27,119 +26,107 @@ model AcademicYear {
   AgeCutOfMonth     Int        @default(0, map: "DF__AcademicY__CutOf__21A1C21B")
   Year              Int        @default(0, map: "DF__AcademicYe__Year__2295E654")
   AlmanhalEntryDate DateTime   @default(dbgenerated("0001-01-01T00:00:00.0000000"), map: "DF__AcademicY__Alman__16BA1F54")
-  AgeCutOfYear      Int        @default(0, map: "DF__AcademicY__AgeCu__4EFE7877")
+  AgeCutOfYear      Int        @default(0, map: "DF__AcademicY__AgeCu__733BD8ED")
   Requests          Requests[]
 }
 
-model Address {
-  Id                     Int        @id(map: "PK_Address") @default(autoincrement())
-  Emirate                String?    @db.NVarChar(50)
-  City                   String?    @db.NVarChar(50)
-  Area                   String?    @db.NVarChar(50)
-  Street                 String?    @db.NVarChar(50)
-  Building               String?    @db.NVarChar(50)
-  POBox                  String?    @db.NVarChar(50)
-  MobileNumber           String?    @db.NVarChar(50)
-  AdditionalMobileNumber String?    @db.NVarChar(50)
-  HomePhone              String?    @db.NVarChar(50)
-  WorkPhone              String?    @db.NVarChar(50)
-  Fax                    String?    @db.NVarChar(50)
-  Email                  String?    @db.NVarChar(100)
-  ApplicantId            Int        @unique(map: "IX_Address_ApplicantId")
-  IsActive               Boolean
-  Applicants             Applicants @relation(fields: [ApplicantId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_Address_Applicants_ApplicantId")
-}
-
 model Applicants {
-  Id                       Int                     @id(map: "PK_Applicants") @default(autoincrement())
-  UserId                   String                  @db.NVarChar(50)
-  PassportInformationId    Int?
-  ProfileId                Int?
-  SponsorInformationId     Int?
-  ImmigrationInformationId Int?
-  AddressId                Int?
-  IsActive                 Boolean
-  Address                  Address?
-  ImmigrationInformation   ImmigrationInformation?
-  PassportInformation      PassportInformation?
-  ProfileDetails           ProfileDetails?
-  Requests                 Requests[]
-  SponsorInformation       SponsorInformation?
+  Id                Int        @id(map: "PK_Applicants") @default(autoincrement())
+  UserId            String     @db.NVarChar(50)
+  IsActive          Boolean
+  CreatedAt         DateTime   @default(dbgenerated("0001-01-01T00:00:00.0000000"), map: "DF__Applicant__Creat__72D1C499")
+  CreatedBy         String?    @db.NVarChar(Max)
+  Email             String?    @db.NVarChar(250)
+  Mobile            String?    @db.NVarChar(25)
+  ModifiedAt        DateTime?
+  ModifiedBy        String?    @db.NVarChar(Max)
+  MoeIdentityUserId String?    @db.NVarChar(50)
+  UaePassUuid       String?    @db.NVarChar(50)
+  UapUserId         String?    @db.NVarChar(50)
+  EmiratesId        String?    @db.NVarChar(50)
+  FullNameAr        String?    @db.NVarChar(500)
+  FullNameEn        String?    @db.NVarChar(500)
+  Requests          Requests[]
 }
 
 model Applications {
-  Id                          Int       @id(map: "PK_Applications") @default(autoincrement())
-  RequestId                   Int?
-  SchoolCode                  String?   @db.NVarChar(100)
-  GradeCode                   String?   @db.NVarChar(500)
-  StreamCode                  String?   @db.NVarChar(500)
-  DisabilityCenterId          Int?
-  ApplicationID               String?   @db.NVarChar(500)
-  ApplicationStatus           String?   @db.NVarChar(500)
-  ApplicationStatusCategory   String?   @db.NVarChar(500)
-  ApplicationStatusId         Int?
-  ApplicationStatusCategoryId Int?
-  StudentGender               String?   @db.NVarChar(500)
-  ApplicantEmail              String?   @db.NVarChar(500)
-  ApplicantMobile             String?   @db.NVarChar(500)
-  SchoolName                  String?   @db.NVarChar(500)
-  SectorCode                  Int?
-  RequestCreationDate         DateTime?
-  LastSubmissionDate          DateTime?
-  PeopleofDetermination       String?   @db.NVarChar(3)
-  DisabilityType              String?   @db.NVarChar(Max)
-  DisabilityCenter            String?   @db.NVarChar(100)
-  EmiratesId                  String?   @db.NVarChar(15)
-  EidExpiryDate               Int?
-  StudentName                 String?   @db.NVarChar(100)
-  Nationality                 String?   @db.NVarChar(50)
-  NationalityCategory         String?   @db.NVarChar(50)
-  ServiceId                   Int?
-  ServiceAR                   String?   @db.NVarChar(50)
-  ServiceEN                   String?   @db.NVarChar(100)
-  StudentHomeAreaID           Int?
-  StudentHomeArea             String?   @db.NVarChar(100)
-  NeedTransportation          String?   @db.NVarChar(50)
-  RequestType                 String?   @db.NVarChar(50)
-  RequestTypeId               Int?
-  AssigneeRoleName            String?   @db.NVarChar(Max)
-  AssgineesUsers              String?   @db.NVarChar(Max)
-  ESEHandler                  String?   @db.NVarChar(Max)
-  DisabilityCenterEmail       String?   @db.NVarChar(Max)
-  DisabilityCenterManager     String?   @db.NVarChar(Max)
-  Emirates                    Int?
-  EmiratesArabic              String?   @db.NVarChar(25)
-  EmiratesEnglish             String?   @db.NVarChar(25)
-  Region                      Int?
-  RegionArabic                String?   @db.NVarChar(25)
-  RegionEnglish               String?   @db.NVarChar(25)
-  PreviousSchoolId            Int?
-  PreviousSchoolAr            String?   @db.NVarChar(100)
-  PreviousSchoolEn            String?   @db.NVarChar(100)
-  PersonCategoriesId          Int?
-  NationalityCategoryEn       String?   @db.NVarChar(100)
-  NationalityId               Int?
-  NationalityEn               String?   @db.NVarChar(50)
-  PreviousSchoolCurriculumId  Int?
-  PreviousSchoolCurriculumAr  String?   @db.NVarChar(50)
-  PreviousSchoolCurriculumEn  String?   @db.NVarChar(50)
-  Comments                    String?   @db.NVarChar(2500)
-  AcademicYearId              Int?
-  RegistrationCategoryId      Int?
-  RegistrationCategoryTitleAr String?   @db.NVarChar(25)
-  RegistrationCategoryTitleEn String?   @db.NVarChar(25)
-  ExpatCategoryId             Int?
-  ExpatCategoryTitleAr        String?   @db.NVarChar(50)
-  ExpatCategoryTitleEn        String?   @db.NVarChar(50)
-  Channel                     String?   @db.NVarChar(25)
-  ClosingDate                 DateTime?
-  EducationalZoneId           Int?
-  EducationalZoneTitleAr      String?   @db.NVarChar(Max)
-  EducationalZoneTitleEn      String?   @db.NVarChar(Max)
-  HouseNumber                 String?   @db.NVarChar(250)
-  Latitude                    String?   @db.NVarChar(50)
-  Longitude                   String?   @db.NVarChar(50)
-  Street                      String?   @db.NVarChar(250)
+  Id                            Int       @id(map: "PK_Applications") @default(autoincrement())
+  RequestId                     Int?
+  SchoolCode                    String?   @db.NVarChar(100)
+  GradeCode                     String?   @db.NVarChar(500)
+  StreamCode                    String?   @db.NVarChar(500)
+  DisabilityCenterId            Int?
+  ApplicationID                 String?   @db.NVarChar(500)
+  ApplicationStatus             String?   @db.NVarChar(500)
+  ApplicationStatusCategory     String?   @db.NVarChar(500)
+  ApplicationStatusId           Int?
+  ApplicationStatusCategoryId   Int?
+  StudentGender                 String?   @db.NVarChar(500)
+  ApplicantEmail                String?   @db.NVarChar(500)
+  ApplicantMobile               String?   @db.NVarChar(500)
+  SchoolName                    String?   @db.NVarChar(500)
+  SectorCode                    Int?
+  RequestCreationDate           DateTime?
+  LastSubmissionDate            DateTime?
+  PeopleofDetermination         String?   @db.NVarChar(3)
+  DisabilityType                String?   @db.NVarChar(Max)
+  DisabilityCenter              String?   @db.NVarChar(100)
+  EmiratesId                    String?   @db.NVarChar(15)
+  EidExpiryDate                 Int?
+  StudentName                   String?   @db.NVarChar(100)
+  Nationality                   String?   @db.NVarChar(50)
+  NationalityCategory           String?   @db.NVarChar(50)
+  ServiceId                     Int?
+  ServiceAR                     String?   @db.NVarChar(50)
+  ServiceEN                     String?   @db.NVarChar(100)
+  StudentHomeAreaID             Int?
+  StudentHomeArea               String?   @db.NVarChar(100)
+  NeedTransportation            String?   @db.NVarChar(50)
+  RequestType                   String?   @db.NVarChar(50)
+  RequestTypeId                 Int?
+  AssigneeRoleName              String?   @db.NVarChar(Max)
+  AssgineesUsers                String?   @db.NVarChar(Max)
+  ESEHandler                    String?   @db.NVarChar(Max)
+  DisabilityCenterEmail         String?   @db.NVarChar(Max)
+  DisabilityCenterManager       String?   @db.NVarChar(Max)
+  Emirates                      Int?
+  EmiratesArabic                String?   @db.NVarChar(25)
+  EmiratesEnglish               String?   @db.NVarChar(25)
+  Region                        Int?
+  RegionArabic                  String?   @db.NVarChar(25)
+  RegionEnglish                 String?   @db.NVarChar(25)
+  PreviousSchoolId              Int?
+  PreviousSchoolAr              String?   @db.NVarChar(100)
+  PreviousSchoolEn              String?   @db.NVarChar(100)
+  PersonCategoriesId            Int?
+  NationalityCategoryEn         String?   @db.NVarChar(100)
+  NationalityId                 Int?
+  NationalityEn                 String?   @db.NVarChar(50)
+  PreviousSchoolCurriculumId    Int?
+  PreviousSchoolCurriculumAr    String?   @db.NVarChar(50)
+  PreviousSchoolCurriculumEn    String?   @db.NVarChar(50)
+  Comments                      String?   @db.NVarChar(2500)
+  AcademicYearId                Int?
+  RegistrationCategoryId        Int?
+  RegistrationCategoryTitleAr   String?   @db.NVarChar(25)
+  RegistrationCategoryTitleEn   String?   @db.NVarChar(25)
+  ExpatCategoryId               Int?
+  ExpatCategoryTitleAr          String?   @db.NVarChar(50)
+  ExpatCategoryTitleEn          String?   @db.NVarChar(50)
+  Channel                       String?   @db.NVarChar(25)
+  ClosingDate                   DateTime?
+  EducationalZoneId             Int?
+  EducationalZoneTitleAr        String?   @db.NVarChar(Max)
+  EducationalZoneTitleEn        String?   @db.NVarChar(Max)
+  HouseNumber                   String?   @db.NVarChar(250)
+  Latitude                      String?   @db.NVarChar(50)
+  Longitude                     String?   @db.NVarChar(50)
+  Street                        String?   @db.NVarChar(250)
+  ApplicationAgeDays            String?   @db.NVarChar(20)
+  ApplicationAgeDaysInBranch    String?   @db.NVarChar(20)
+  ApplicationAgeDaysInInclusive String?   @db.NVarChar(20)
+  ApplicationAgeDaysInSchool    String?   @db.NVarChar(20)
+  SlaPerformance                String?   @db.NVarChar(50)
 }
 
 model ApplicationsWorkingOurs {
@@ -159,39 +146,32 @@ model ApplicationsWorkingOurs {
 }
 
 model Areas {
-  Id               Int                @id(map: "PK_Areas")
-  TitleAr          String             @db.NVarChar(100)
-  TitleEn          String             @db.NVarChar(100)
-  IsActive         Boolean
-  ZoneId           Int
-  ManhalCode       String?            @db.NVarChar(50)
-  AreaSchools      AreaSchools[]
-  DisabilityCenter DisabilityCenter[]
-  Drafts           Drafts[]
-  Plots            Plots[]
-  RequestDetails   RequestDetails[]
+  Id             Int              @id(map: "PK_Areas")
+  TitleAr        String           @db.NVarChar(100)
+  TitleEn        String           @db.NVarChar(100)
+  IsActive       Boolean
+  ZoneId         Int
+  ManhalCode     String?          @db.NVarChar(50)
+  AreaSchools    AreaSchools[]
+  Drafts         Drafts[]
+  Plots          Plots[]
+  RequestDetails RequestDetails[]
+
+  @@index([Id], map: "IX_Areas_Id")
 }
 
 model AreaSchools {
   Id           Int     @id(map: "PK_AreaSchools") @default(autoincrement())
   AreaId       Int
   SchoolCode   String  @db.NVarChar(100)
-  IsAdvancedC2 Boolean @default(dbgenerated("CONVERT([bit],(0))"), map: "DF__AreaSchoo__IsAdv__6B9AB725")
+  IsAdvancedC2 Boolean @default(dbgenerated("CONVERT([bit],(0))"), map: "DF__AreaSchoo__IsAdv__149CCCB8")
+  Genders      String? @db.NVarChar(Max)
+  Grades       String? @db.NVarChar(Max)
   Areas        Areas   @relation(fields: [AreaId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_AreaSchools_Areas_AreaId")
   Schools      Schools @relation(fields: [SchoolCode], references: [SchoolCode], onDelete: Cascade, onUpdate: NoAction, map: "FK_AreaSchools_Schools_SchoolCode")
 
   @@unique([SchoolCode, AreaId], map: "IX_AreaSchools_SchoolCode_AreaId")
   @@index([AreaId], map: "IX_AreaSchools_AreaId")
-}
-
-/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model AreaSchools06022025 {
-  Id           Int     @default(autoincrement())
-  AreaId       Int
-  SchoolCode   String  @db.NVarChar(100)
-  IsAdvancedC2 Boolean
-
-  @@ignore
 }
 
 model Assignees {
@@ -276,6 +256,10 @@ model AuhAddresses {
   BuildingNumber String? @db.NVarChar(350)
   PostalCode     String? @db.NVarChar(350)
   StreetName     String? @db.NVarChar(350)
+  StateId        Int     @default(0, map: "DF__AuhAddres__State__011FE3F0")
+  StateCode      String  @default("N'", map: "DF__AuhAddres__State__02140829") @db.NVarChar(Max)
+  StateNameAr    String  @default("N'", map: "DF__AuhAddres__State__03082C62") @db.NVarChar(Max)
+  StateNameEn    String  @default("N'", map: "DF__AuhAddres__State__03FC509B") @db.NVarChar(Max)
 }
 
 model BranchGroups {
@@ -402,6 +386,9 @@ model Curriculums {
   CurriculumSchool        CurriculumSchool[]
   Drafts                  Drafts[]
   RequestDetails          RequestDetails[]
+
+  @@index([Id], map: "IX_Curriculums_Id")
+  @@index([Id], map: "IX_Curriculums_Id_Include")
 }
 
 model CurriculumSchool {
@@ -415,23 +402,26 @@ model CurriculumSchool {
 }
 
 model DisabilityCenter {
-  Id                     Int                      @id(map: "PK_DisabilityCenter") @default(autoincrement())
-  TitleAr                String                   @db.NVarChar(100)
-  TitleEn                String                   @db.NVarChar(100)
-  IsActive               Boolean
-  GroupId                Int
-  AreaId                 Int?
-  EmirateId              Int
-  Areas                  Areas?                   @relation(fields: [AreaId], references: [Id], onDelete: NoAction, onUpdate: NoAction, map: "FK_DisabilityCenter_Areas_AreaId")
-  Emirates               Emirates                 @relation(fields: [EmirateId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_DisabilityCenter_Emirates_EmirateId")
-  Groups                 Groups                   @relation(fields: [GroupId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_DisabilityCenter_Groups_GroupId")
-  DisabilityCenterGroups DisabilityCenterGroups[]
-  Drafts                 Drafts[]
-  RequestDetails         RequestDetails[]
+  Id                      Int                       @id(map: "PK_DisabilityCenter") @default(autoincrement())
+  TitleAr                 String                    @db.NVarChar(100)
+  TitleEn                 String                    @db.NVarChar(100)
+  IsActive                Boolean
+  GroupId                 Int
+  EducationalZoneId       Int?
+  EmirateId               Int
+  EducationalZones        EducationalZones?         @relation(fields: [EducationalZoneId], references: [Id], onDelete: NoAction, onUpdate: NoAction, map: "FK_DisabilityCenter_EducationalZones_EducationalZoneId")
+  Emirates                Emirates                  @relation(fields: [EmirateId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_DisabilityCenter_Emirates_EmirateId")
+  Groups                  Groups                    @relation(fields: [GroupId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_DisabilityCenter_Groups_GroupId")
+  DisabilityCenterGroups  DisabilityCenterGroups[]
+  DisabilityCenterSchools DisabilityCenterSchools[]
+  Drafts                  Drafts[]
+  RequestDetails          RequestDetails[]
 
-  @@index([AreaId], map: "IX_DisabilityCenter_AreaId")
   @@index([EmirateId], map: "IX_DisabilityCenter_EmirateId")
   @@index([GroupId], map: "IX_DisabilityCenter_GroupId")
+  @@index([EducationalZoneId], map: "IX_DisabilityCenter_EducationalZoneId")
+  @@index([Id], map: "IX_DisabilityCenter_Id")
+  @@index([Id], map: "IX_DisabilityCenter_Id_Include")
 }
 
 model DisabilityCenterGroups {
@@ -457,6 +447,9 @@ model DisabilityTypes {
   IsActive       Boolean
   Drafts         Drafts[]
   RequestDetails RequestDetails[]
+
+  @@index([Id], map: "IX_DisabilityTypes_Id")
+  @@index([Id], map: "IX_DisabilityTypes_Id_Include")
 }
 
 model DneAddresses {
@@ -634,15 +627,17 @@ model Drafts {
 }
 
 model EducationalZones {
-  Id        Int       @id(map: "PK_EducationalZones") @default(autoincrement())
-  TitleAr   String    @db.NVarChar(Max)
-  TitleEn   String    @db.NVarChar(Max)
-  IsActive  Boolean
-  EmirateId Int
-  Emirates  Emirates  @relation(fields: [EmirateId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_EducationalZones_Emirates_EmirateId")
-  Schools   Schools[]
+  Id               Int                @id(map: "PK_EducationalZones") @default(autoincrement())
+  TitleAr          String             @db.NVarChar(Max)
+  TitleEn          String             @db.NVarChar(Max)
+  IsActive         Boolean
+  EmirateId        Int
+  DisabilityCenter DisabilityCenter[]
+  Emirates         Emirates           @relation(fields: [EmirateId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_EducationalZones_Emirates_EmirateId")
+  Schools          Schools[]
 
   @@index([EmirateId], map: "IX_EducationalZones_EmirateId")
+  @@index([Id], map: "IX_EducationalZones_Id_Include")
 }
 
 model Emirates {
@@ -659,6 +654,9 @@ model Emirates {
   Regions                                                           Regions[]
   RequestDetails_RequestDetails_DisabilityCenterEmirateIdToEmirates RequestDetails[]   @relation("RequestDetails_DisabilityCenterEmirateIdToEmirates")
   RequestDetails_RequestDetails_EmirateIdToEmirates                 RequestDetails[]   @relation("RequestDetails_EmirateIdToEmirates")
+
+  @@index([Id], map: "IX_Emirates_Id")
+  @@index([Id], map: "IX_Emirates_Id_Include")
 }
 
 model errorCode {
@@ -709,6 +707,9 @@ model Gender {
   TitleAr        String           @db.NVarChar(25)
   TitleEn        String           @db.NVarChar(25)
   RequestDetails RequestDetails[]
+
+  @@index([Id], map: "IX_Gender_Id")
+  @@index([Id], map: "IX_Gender_Id_Include")
 }
 
 model Grades {
@@ -737,7 +738,9 @@ model GradesConfigs {
   ModifiedAt          DateTime?
   NationalityIds      String?   @db.NVarChar(50)
   ForDisability       Boolean   @default(dbgenerated("CONVERT([bit],(0))"), map: "DF__GradesCon__ForDi__3E08F69F")
-  ForAjyal            Boolean   @default(dbgenerated("CONVERT([bit],(0))"), map: "DF__GradesCon__ForAj__69B26EB3")
+  ForAjyal            Boolean   @default(dbgenerated("CONVERT([bit],(0))"), map: "DF__GradesCon__ForAj__12B48446")
+  AgeFromMonths       Int       @default(0, map: "DF__GradesCon__AgeFr__7F379B7E")
+  AgeToMonths         Int       @default(0, map: "DF__GradesCon__AgeTo__002BBFB7")
 }
 
 model GroupMenus {
@@ -795,28 +798,13 @@ model Holidays {
   Id            Int       @id(map: "PK_Holidays") @default(autoincrement())
   ToDate        DateTime
   Comments      String?   @db.NVarChar(50)
-  CreatedAt     DateTime  @default(dbgenerated("0001-01-01T00:00:00.0000000"), map: "DF__Holidays__Create__3BEBA403")
+  CreatedAt     DateTime  @default(dbgenerated("0001-01-01T00:00:00.0000000"), map: "DF__Holidays__Create__68BE4A7A")
   CreatedBy     String    @db.NVarChar(50)
-  IsActive      Boolean   @default(dbgenerated("CONVERT([bit],(0))"), map: "DF__Holidays__IsActi__3DD3EC75")
+  IsActive      Boolean   @default(dbgenerated("CONVERT([bit],(0))"), map: "DF__Holidays__IsActi__6AA692EC")
   ModifiedAt    DateTime?
   ModifiedBy    String?   @db.NVarChar(50)
-  FromDate      DateTime  @default(dbgenerated("0001-01-01T00:00:00.0000000"), map: "DF__Holidays__FromDa__3FBC34E7")
-  IsWaitingList Boolean   @default(dbgenerated("CONVERT([bit],(0))"), map: "DF__Holidays__IsWait__40B05920")
-}
-
-model ImmigrationInformation {
-  Id          Int        @id(map: "PK_ImmigrationInformation") @default(autoincrement())
-  IsActive    Boolean
-  Status      String?    @db.NVarChar(50)
-  Number      String?    @db.NVarChar(50)
-  Department  String?    @db.NVarChar(50)
-  Year        String?    @db.NVarChar(50)
-  Type        String?    @db.NVarChar(50)
-  Sequence    String?    @db.NVarChar(50)
-  IssueDate   String?    @db.NVarChar(50)
-  ExpiryDate  String?    @db.NVarChar(50)
-  ApplicantId Int        @unique(map: "IX_ImmigrationInformation_ApplicantId")
-  Applicants  Applicants @relation(fields: [ApplicantId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_ImmigrationInformation_Applicants_ApplicantId")
+  FromDate      DateTime  @default(dbgenerated("0001-01-01T00:00:00.0000000"), map: "DF__Holidays__FromDa__6D82FF97")
+  IsWaitingList Boolean   @default(dbgenerated("CONVERT([bit],(0))"), map: "DF__Holidays__IsWait__6E7723D0")
 }
 
 model JobConfiguration {
@@ -828,10 +816,10 @@ model JobConfiguration {
   CreatedAt               DateTime
   ModifiedBy              String?         @db.NVarChar(50)
   ModifiedAt              DateTime?
-  TypeRequestStatusReturn Int             @default(0, map: "DF__JobConfig__TypeR__326239C9")
+  TypeRequestStatusReturn Int             @default(0, map: "DF__JobConfig__TypeR__5B644F5C")
   CalculateStartDate      DateTime?
-  JobEnabled              Boolean         @default(dbgenerated("CONVERT([bit],(0))"), map: "DF__JobConfig__JobEn__4E0A543E")
-  IsJobEnabled            Boolean         @default(dbgenerated("CONVERT([bit],(0))"), map: "DF__JobConfig__IsJob__52CF095B")
+  JobEnabled              Boolean         @default(dbgenerated("CONVERT([bit],(0))"), map: "DF__JobConfig__JobEn__7CC54327")
+  IsJobEnabled            Boolean         @default(dbgenerated("CONVERT([bit],(0))"), map: "DF__JobConfig__IsJob__0189F844")
   RequestStatuses         RequestStatuses @relation(fields: [RequestStatusReturnId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_JobConfiguration_RequestStatuses_RequestStatusReturnId")
 
   @@index([RequestStatusReturnId], map: "IX_JobConfiguration_RequestStatusReturnId")
@@ -839,12 +827,12 @@ model JobConfiguration {
 
 model Logs {
   Id          Int      @id(map: "PK__Logs__3214EC07CD8A12ED") @default(autoincrement())
-  Application String   @db.NVarChar(Max)
+  Application String?  @db.NVarChar(25)
   Logged      DateTime
-  Level       String   @db.NVarChar(Max)
+  Level       String?  @db.NVarChar(25)
   Message     String   @db.NVarChar(Max)
-  Logger      String   @db.NVarChar(Max)
-  Callsite    String   @db.NVarChar(Max)
+  Logger      String?  @db.NVarChar(100)
+  Callsite    String?  @db.NVarChar(200)
   Exception   String   @db.NVarChar(Max)
 }
 
@@ -949,6 +937,8 @@ model Nationalities {
   RequestDetails_RequestDetails_ExternalSchoolCountryIdToNationalities RequestDetails[]          @relation("RequestDetails_ExternalSchoolCountryIdToNationalities")
   RequestDetails_RequestDetails_NationalityIdToNationalities           RequestDetails[]          @relation("RequestDetails_NationalityIdToNationalities")
   RequestTaskActionConfig                                              RequestTaskActionConfig[]
+
+  @@index([Id], map: "IX_Nationalities_Id_Include")
 }
 
 model NotificationChannelTypes {
@@ -988,17 +978,6 @@ model OwnerTenantCheckLogs {
   ModifiedAt      DateTime?
 }
 
-model PassportInformation {
-  Id           Int        @id(map: "PK_PassportInformation") @default(autoincrement())
-  IsActive     Boolean
-  Number       String?    @db.NVarChar(50)
-  Type         String?    @db.NVarChar(50)
-  IssueCountry String?    @db.NVarChar(50)
-  IssueDate    String?    @db.NVarChar(50)
-  ApplicantId  Int        @unique(map: "IX_PassportInformation_ApplicantId")
-  Applicants   Applicants @relation(fields: [ApplicantId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_PassportInformation_Applicants_ApplicantId")
-}
-
 model PaymentMethods {
   Id          Int     @id(map: "PK_PaymentMethods") @default(autoincrement())
   IsActive    Boolean
@@ -1020,6 +999,9 @@ model PersonCategories {
   PersonCategoryRegistrationCategories PersonCategoryRegistrationCategories[]
   RequestDetails                       RequestDetails[]
   RequestTaskActionConfig              RequestTaskActionConfig[]
+
+  @@index([Id], map: "IX_PersonCategories_Id")
+  @@index([Id], map: "IX_PersonCategories_Id_Include")
 }
 
 model PersonCategoryRegistrationCategories {
@@ -1076,50 +1058,7 @@ model PrivateSchools {
 
   @@index([EmirateId], map: "IX_PrivateSchools_EmirateId")
   @@index([ExternalCurriculumId], map: "IX_PrivateSchools_ExternalCurriculumId")
-}
-
-model ProfileDetails {
-  Id                   Int        @id(map: "PK_ProfileDetails") @default(autoincrement())
-  IsActive             Boolean
-  UnifiedNumber        String?    @db.NVarChar(50)
-  EmiratesId           String?    @db.NVarChar(50)
-  EmiratesIdIssueDate  String?    @db.NVarChar(50)
-  EmiratesIdExpiryDate String?    @db.NVarChar(50)
-  Nationality          String?    @db.NVarChar(50)
-  FullNameAr           String?    @db.NVarChar(50)
-  FirstNameAr          String?    @db.NVarChar(50)
-  SecondNameAr         String?    @db.NVarChar(50)
-  ThirdNameAr          String?    @db.NVarChar(50)
-  FourthNameAr         String?    @db.NVarChar(50)
-  FamilyhNameAr        String?    @db.NVarChar(50)
-  ClanNameAr           String?    @db.NVarChar(50)
-  FullNameEn           String?    @db.NVarChar(50)
-  FirstNameEn          String?    @db.NVarChar(50)
-  SecondNameEn         String?    @db.NVarChar(50)
-  ThirdNameEn          String?    @db.NVarChar(50)
-  FourthNameEn         String?    @db.NVarChar(50)
-  FamilyhNameEn        String?    @db.NVarChar(50)
-  ClanNameEn           String?    @db.NVarChar(50)
-  Tribe                String?    @db.NVarChar(50)
-  KhulasitQaidNumber   String?    @db.NVarChar(50)
-  FamilyBookNumber     String?    @db.NVarChar(50)
-  Gender               String?    @db.NVarChar(50)
-  DateOfBirth          String?    @db.NVarChar(50)
-  CountryOfBirth       String?    @db.NVarChar(50)
-  EmirateOfBirth       String?    @db.NVarChar(50)
-  CityOfBirth          String?    @db.NVarChar(50)
-  PlaceOfBirthAr       String?    @db.NVarChar(50)
-  PlaceOfBirthEn       String?    @db.NVarChar(50)
-  Religion             String?    @db.NVarChar(50)
-  PersonType           String?    @db.NVarChar(50)
-  Occupation           String?    @db.NVarChar(50)
-  MotherNameAr         String?    @db.NVarChar(50)
-  MotherNameEn         String?    @db.NVarChar(50)
-  FamilyCount          String?    @db.NVarChar(50)
-  FamilyMaleCount      String?    @db.NVarChar(50)
-  FamilyFemaleCount    String?    @db.NVarChar(50)
-  ApplicantId          Int        @unique(map: "IX_ProfileDetails_ApplicantId")
-  Applicants           Applicants @relation(fields: [ApplicantId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_ProfileDetails_Applicants_ApplicantId")
+  @@index([Id], map: "IX_PrivateSchools_Id")
 }
 
 model Regions {
@@ -1134,6 +1073,9 @@ model Regions {
   RequestDetails   RequestDetails[]
   SchoolCatchments SchoolCatchments[]
   Zones            Zones[]
+
+  @@index([EmirateId], map: "IX_Regions_EmirateId")
+  @@index([Id], map: "IX_Regions_Id")
 }
 
 model RegisterationOpenTypes {
@@ -1158,6 +1100,9 @@ model RegistrationCategories {
   PersonCategoryRegistrationCategories PersonCategoryRegistrationCategories[]
   RequestDetails                       RequestDetails[]
   RequestTaskActionConfig              RequestTaskActionConfig[]
+
+  @@index([Id], map: "IX_RegistrationCategories_Id")
+  @@index([Id], map: "IX_RegistrationCategories_Id_Include")
 }
 
 model RegistrationConfig {
@@ -1165,30 +1110,30 @@ model RegistrationConfig {
   IsActive                Boolean
   StatusRegisterationID   Int
   RegisterationOpenTypeId Int
-  RegistrationType        String?   @db.NVarChar(Max)
-  PersonCategory          String?   @db.NVarChar(Max)
-  Emirate                 String?   @db.NVarChar(Max)
-  School                  String?   @db.NVarChar(Max)
-  Grade                   String?   @db.NVarChar(Max)
-  Stream                  String?   @db.NVarChar(Max)
-  AcademicYear            String?   @db.NVarChar(Max)
-  Service                 String?   @db.NVarChar(Max)
-  SchoolBranch            String?   @db.NVarChar(Max)
-  Nationality             String?   @db.NVarChar(Max)
+  RegistrationType        String?   @db.NVarChar(50)
+  PersonCategory          String?   @db.NVarChar(25)
+  Emirate                 String?   @db.NVarChar(50)
+  School                  String?   @db.NVarChar(150)
+  Grade                   String?   @db.NVarChar(50)
+  Stream                  String?   @db.NVarChar(50)
+  AcademicYear            String?   @db.NVarChar(50)
+  Service                 String?   @db.NVarChar(50)
+  SchoolBranch            String?   @db.NVarChar(50)
+  Nationality             String?
   OpenRegisterFrom        DateTime?
   OpenRegisterTo          DateTime?
   CreatedBy               String    @db.NVarChar(50)
   CreatedAt               DateTime
   ModifiedBy              String?   @db.NVarChar(50)
   ModifiedAt              DateTime?
-  NumberRequestPerSchool  Int       @default(0, map: "DF__Registrat__Numbe__28D8CF8F")
-  RegistrationCategories  String?   @db.NVarChar(Max)
+  NumberRequestPerSchool  Int       @default(0, map: "DF__Registrat__Numbe__4D163005")
+  RegistrationCategories  String?   @db.NVarChar(25)
 }
 
 model RegistrationConfigLog {
   Id                             Int       @id(map: "PK_RegistrationConfigLog") @default(autoincrement())
-  RegistrationConfigPreviousData String?   @db.NVarChar(Max)
-  RegistrationConfigCurrentData  String?   @db.NVarChar(Max)
+  RegistrationConfigPreviousData String?   @db.NVarChar(2000)
+  RegistrationConfigCurrentData  String?   @db.NVarChar(2000)
   Action                         Int
   IsActive                       Boolean
   CreatedBy                      String    @db.NVarChar(50)
@@ -1341,10 +1286,11 @@ model RequestDetails {
   @@index([SchoolCode], map: "IX_RequestDetails_SchoolCode")
   @@index([StreamCode], map: "IX_RequestDetails_StreamCode")
   @@index([ZoneId], map: "IX_RequestDetails_ZoneId")
+  @@index([RequestId], map: "IX_RequestDetails_Covering")
 }
 
 model Requests {
-  Id                         Int                 @id(map: "PK_Requests") @unique(map: "ucidx_Request") @default(autoincrement())
+  Id                         Int                 @id(map: "PK_Requests") @unique(map: "index_Request") @default(autoincrement())
   RequestNumber              String              @unique(map: "IX_Requests_RequestNumber") @db.NVarChar(450)
   ServiceId                  Int
   RequestDetailsId           Int
@@ -1356,7 +1302,7 @@ model Requests {
   ModifiedAt                 DateTime?
   ApplicantId                Int?
   DeviceType                 Int                 @default(0, map: "DF__Requests__Device__07ACE5EE")
-  IsWaitingList              Boolean             @default(dbgenerated("CONVERT([bit],(0))"), map: "DF__Requests__IsWait__41A47D59")
+  IsWaitingList              Boolean             @default(dbgenerated("CONVERT([bit],(0))"), map: "DF__Requests__IsWait__6F6B4809")
   CustomerPulseTransactionId String?             @db.NVarChar(50)
   AcademicYearId             Int?
   RequestForId               Int?
@@ -1393,6 +1339,7 @@ model RequestStatuses {
   StatusTransitions_StatusTransitions_NextStatusIdToRequestStatuses     StatusTransitions[] @relation("StatusTransitions_NextStatusIdToRequestStatuses")
 
   @@index([StatusCategoryId], map: "IX_RequestStatuses_StatusCategoryId")
+  @@index([Id, StatusCategoryId], map: "IX_RequestStatuses_StatusCategory")
 }
 
 model RequestStatusLogs {
@@ -1415,6 +1362,8 @@ model RequestStatusLogs {
   @@index([CurrentStatusId], map: "IX_RequestStatusLogs_CurrentStatusId")
   @@index([PreviousStatusId], map: "IX_RequestStatusLogs_PreviousStatusId")
   @@index([RequestId], map: "IX_RequestStatusLogs_RequestId")
+  @@index([RequestId, CurrentStatusId, CreatedAt(sort: Desc)], map: "IX_RequestStatusLogs_RequestId_Status_CreatedAt")
+  @@index([RequestId, CurrentStatusId, CreatedAt(sort: Desc)], map: "IX_RequestStatusLogs_RequestId_StatusId")
 }
 
 model RequestTaskActionConfig {
@@ -1439,7 +1388,7 @@ model RequestTaskActionConfig {
   CanReturnToEditAttachment Boolean                 @default(dbgenerated("CONVERT([bit],(0))"), map: "DF__RequestTa__CanRe__6522C3C0")
   TaskTypeTabId             Int?
   StatusCategoryId          Int?
-  CanUndoRejectRequest      Boolean                 @default(dbgenerated("CONVERT([bit],(0))"), map: "DF__RequestTa__CanUn__4298A192")
+  CanUndoRejectRequest      Boolean                 @default(dbgenerated("CONVERT([bit],(0))"), map: "DF__RequestTa__CanUn__705F6C42")
   RegistrationCategoryId    Int?
   GroupTypes                GroupTypes?             @relation(fields: [GroupTypeId], references: [Id], onDelete: NoAction, onUpdate: NoAction, map: "FK_RequestTaskActionConfig_GroupTypes_GroupTypeId")
   Nationalities             Nationalities?          @relation(fields: [NationalityId], references: [Id], onDelete: NoAction, onUpdate: NoAction, map: "FK_RequestTaskActionConfig_Nationalities_NationalityId")
@@ -1473,6 +1422,7 @@ model RequestTasks {
   @@index([GroupId], map: "IX_RequestTasks_GroupId")
   @@index([RequestId], map: "IX_RequestTasks_RequestId")
   @@index([RequestTaskStatusId], map: "IX_RequestTasks_RequestTaskStatusId")
+  @@index([RequestId, GroupId], map: "IX_RequestTasks_RequestId_GroupId")
 }
 
 model RequestTaskStatuses {
@@ -1554,31 +1504,32 @@ model SchoolGroups {
 }
 
 model Schools {
-  SchoolCode       String             @id(map: "PK_Schools") @db.NVarChar(100)
-  Id               Int
-  NameAr           String             @db.NVarChar(150)
-  NameEn           String             @db.NVarChar(150)
-  IsActive         Boolean
-  SectorCode       Int
-  SchoolUID        String             @db.NVarChar(100)
-  GenderCode       Int?
-  SchoolBranchId   Int?
-  SchoolGenderId   Int?
-  IsAjyal          Boolean?
-  IsAdvancedC2     Boolean?
-  EducationZoneId  Int?
-  EmirateId        Int?
-  AreaSchools      AreaSchools[]
-  CurriculumSchool CurriculumSchool[]
-  Drafts           Drafts[]
-  RequestDetails   RequestDetails[]
-  SchoolCatchments SchoolCatchments[]
-  SchoolGrades     SchoolGrades[]
-  SchoolGroups     SchoolGroups[]
-  EducationalZones EducationalZones?  @relation(fields: [EducationZoneId], references: [Id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Schools_EducationalZones_EducationZoneId")
-  SchoolBranch     SchoolBranch?      @relation(fields: [SchoolBranchId], references: [Id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Schools_SchoolBranch_SchoolBranchId")
-  SchoolGender     SchoolGender?      @relation(fields: [SchoolGenderId], references: [Id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Schools_SchoolGender_SchoolGenderId")
-  StreamCapacities StreamCapacities[]
+  SchoolCode              String                    @id(map: "PK_Schools") @db.NVarChar(100)
+  Id                      Int
+  NameAr                  String                    @db.NVarChar(150)
+  NameEn                  String                    @db.NVarChar(150)
+  IsActive                Boolean
+  SectorCode              Int
+  SchoolUID               String                    @db.NVarChar(100)
+  GenderCode              Int?
+  SchoolBranchId          Int?
+  SchoolGenderId          Int?
+  IsAjyal                 Boolean?
+  IsAdvancedC2            Boolean?
+  EducationZoneId         Int?
+  EmirateId               Int?
+  AreaSchools             AreaSchools[]
+  CurriculumSchool        CurriculumSchool[]
+  DisabilityCenterSchools DisabilityCenterSchools[]
+  Drafts                  Drafts[]
+  RequestDetails          RequestDetails[]
+  SchoolCatchments        SchoolCatchments[]
+  SchoolGrades            SchoolGrades[]
+  SchoolGroups            SchoolGroups[]
+  EducationalZones        EducationalZones?         @relation(fields: [EducationZoneId], references: [Id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Schools_EducationalZones_EducationZoneId")
+  SchoolBranch            SchoolBranch?             @relation(fields: [SchoolBranchId], references: [Id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Schools_SchoolBranch_SchoolBranchId")
+  SchoolGender            SchoolGender?             @relation(fields: [SchoolGenderId], references: [Id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Schools_SchoolGender_SchoolGenderId")
+  StreamCapacities        StreamCapacities[]
 
   @@index([EducationZoneId], map: "IX_Schools_EducationZoneId")
   @@index([SchoolBranchId], map: "IX_Schools_SchoolBranchId")
@@ -1604,88 +1555,6 @@ model Services {
   Requests      Requests[]
 }
 
-/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model Sheet1_ {
-  EmirateId            Float?
-  AreaSchoolsId        Float?
-  IsAdvancedC2         Boolean
-  EmirateAR            String? @db.NVarChar(255)
-  EmirateEN            String? @db.NVarChar(255)
-  EmirateMNHLStateCode String? @db.NVarChar(255)
-  EmirateActive        String? @db.NVarChar(255)
-  RegionId             Float?
-  RegionAR             String? @db.NVarChar(255)
-  RegionEN             String? @db.NVarChar(255)
-  RegionMNHLCityCode   String? @db.NVarChar(255)
-  RegionActive         String? @db.NVarChar(255)
-  ZoneId               Float?
-  ZoneAR               String? @db.NVarChar(255)
-  ZoneEN               String? @db.NVarChar(255)
-  ZoneMNHLRegionCode   String? @db.NVarChar(255)
-  ZoneActive           String? @db.NVarChar(255)
-  AreaID               Float?
-  AreaAR               String? @db.NVarChar(255)
-  AreaEN               String? @db.NVarChar(255)
-  AreaMNHLSectorCode   String? @db.NVarChar(255)
-  AreaActive           String? @db.NVarChar(255)
-  Full_Area_Name       String? @map("Full Area Name") @db.NVarChar(255)
-  SchoolCode           String? @db.NVarChar(255)
-  SchoolAR             String? @db.NVarChar(255)
-  SchoolEN             String? @db.NVarChar(255)
-  SectorCode           Float?
-  SchoolActive         String? @db.NVarChar(255)
-
-  @@map("Sheet1$")
-  @@ignore
-}
-
-/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model Sheet1New_ {
-  EmirateId            Float?
-  AreaSchoolsId        Float?
-  IsAdvancedC2         Boolean
-  EmirateAR            String? @db.NVarChar(255)
-  EmirateEN            String? @db.NVarChar(255)
-  EmirateMNHLStateCode String? @db.NVarChar(255)
-  EmirateActive        String? @db.NVarChar(255)
-  RegionId             Float?
-  RegionAR             String? @db.NVarChar(255)
-  RegionEN             String? @db.NVarChar(255)
-  RegionMNHLCityCode   String? @db.NVarChar(255)
-  RegionActive         String? @db.NVarChar(255)
-  ZoneId               Float?
-  ZoneAR               String? @db.NVarChar(255)
-  ZoneEN               String? @db.NVarChar(255)
-  ZoneMNHLRegionCode   String? @db.NVarChar(255)
-  ZoneActive           String? @db.NVarChar(255)
-  AreaId               Float?
-  AreaAR               String? @db.NVarChar(255)
-  AreaEN               String? @db.NVarChar(255)
-  AreaMNHLSectorCode   String? @db.NVarChar(255)
-  AreaActive           String? @db.NVarChar(255)
-  Full_Area_Name       String? @map("Full Area Name") @db.NVarChar(255)
-  SchoolCode           String? @db.NVarChar(255)
-  SchoolAR             String? @db.NVarChar(255)
-  SchoolEN             String? @db.NVarChar(255)
-  SectorCode           Float?
-  SchoolActive         String? @db.NVarChar(255)
-
-  @@map("Sheet1New$")
-  @@ignore
-}
-
-model SponsorInformation {
-  Id          Int        @id(map: "PK_SponsorInformation") @default(autoincrement())
-  IsActive    Boolean
-  Number      String?    @db.NVarChar(50)
-  NameAr      String?    @db.NVarChar(50)
-  NameEn      String?    @db.NVarChar(50)
-  Department  String?    @db.NVarChar(50)
-  Addresses   String?    @db.NVarChar(50)
-  ApplicantId Int        @unique(map: "IX_SponsorInformation_ApplicantId")
-  Applicants  Applicants @relation(fields: [ApplicantId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_SponsorInformation_Applicants_ApplicantId")
-}
-
 model StatusCategories {
   Id                      Int                       @id(map: "PK_StatusCategories") @default(autoincrement())
   TitleAr                 String                    @db.NVarChar(50)
@@ -1694,6 +1563,8 @@ model StatusCategories {
   isPurchaseLaptop        Boolean
   RequestStatuses         RequestStatuses[]
   RequestTaskActionConfig RequestTaskActionConfig[]
+
+  @@index([Id], map: "IX_StatusCategories_Id_Include")
 }
 
 model StatusTransitions {
@@ -1732,7 +1603,7 @@ model StreamCapacities {
   AcademicYear           Int
   IsRural                Boolean
   LastUpdate             DateTime
-  OpenForRegistration    Boolean      @default(dbgenerated("CONVERT([bit],(1))"), map: "DF__StreamCap__OpenF__2D687A82")
+  OpenForRegistration    Boolean      @default(dbgenerated("CONVERT([bit],(1))"), map: "DF__StreamCap__OpenF__39CE5167")
   SchoolGender           SchoolGender @relation(fields: [HomeroomGender], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_StreamCapacities_SchoolGender_HomeroomGender")
   Schools                Schools      @relation(fields: [SchoolCode], references: [SchoolCode], onDelete: Cascade, onUpdate: NoAction, map: "FK_StreamCapacities_Schools_SchoolCode")
   Streams                Streams      @relation(fields: [StreamCode], references: [StreamCode], onDelete: Cascade, onUpdate: NoAction, map: "FK_StreamCapacities_Streams_StreamCode")
@@ -1742,49 +1613,19 @@ model StreamCapacities {
   @@index([SchoolCode], map: "IX_StreamCapacities_SchoolCode")
 }
 
-/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model StreamCapacities26062024 {
-  SchoolCode             String   @db.NVarChar(100)
-  HomeroomGender         Int
-  StreamCode             String   @db.NVarChar(450)
-  SchoolExpatPercentage  Int?
-  MaxCapacity            Int
-  StudentCount           Int
-  NonExpatsCount         Int
-  ExpatsCount            Int
-  SchoolTotalExpat       Int
-  SchoolMaxExpatCapacity Int
-  AcademicYear           Int
-  IsRural                Boolean
-  LastUpdate             DateTime
-  OpenForRegistration    Boolean
-
-  @@ignore
-}
-
 model Streams {
   StreamCode       String             @id(map: "PK_Streams") @db.NVarChar(450)
   NameAr           String             @db.NVarChar(100)
   NameEn           String             @db.NVarChar(100)
   GradeCode        String             @db.NVarChar(450)
   IsActive         Boolean
-  IsAdvancedC2     Boolean            @default(dbgenerated("CONVERT([bit],(0))"), map: "DF__Streams__IsAdvan__6AA692EC")
+  IsAdvancedC2     Boolean            @default(dbgenerated("CONVERT([bit],(0))"), map: "DF__Streams__IsAdvan__13A8A87F")
   Drafts           Drafts[]
   RequestDetails   RequestDetails[]
   StreamCapacities StreamCapacities[]
   Grades           Grades             @relation(fields: [GradeCode], references: [GradeCode], onDelete: Cascade, onUpdate: NoAction, map: "FK_Streams_Grades_GradeCode")
 
   @@index([GradeCode], map: "IX_Streams_GradeCode")
-}
-
-model sysdiagrams {
-  name         String @db.NVarChar(128)
-  principal_id Int
-  diagram_id   Int    @id(map: "PK__sysdiagr__C2B05B61F38345CA") @default(autoincrement())
-  version      Int?
-  definition   Bytes?
-
-  @@unique([principal_id, name], map: "UK_principal_name")
 }
 
 model TaskTypeTabs {
@@ -1809,79 +1650,75 @@ model Token {
 }
 
 model UserGroups {
-  Id         Int       @id(map: "PK_UserGroups") @default(autoincrement())
-  IsActive   Boolean
-  UserId     Int
-  GroupId    Int
-  CreatedBy  String    @db.NVarChar(50)
-  CreatedAt  DateTime
-  ModifiedBy String?   @db.NVarChar(50)
-  ModifiedAt DateTime?
-  Groups     Groups    @relation(fields: [GroupId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_UserGroups_Groups_GroupId")
-  Users      Users     @relation(fields: [UserId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_UserGroups_Users_UserId")
+  Id              Int       @id(map: "PK_UserGroups") @default(autoincrement())
+  IsActive        Boolean
+  UserId          Int
+  GroupId         Int
+  CreatedBy       String    @db.NVarChar(50)
+  CreatedAt       DateTime
+  ModifiedBy      String?   @db.NVarChar(50)
+  ModifiedAt      DateTime?
+  IsManuallyAdded Boolean   @default(dbgenerated("CONVERT([bit],(0))"), map: "DF__UserGroup__IsMan__7E437745")
+  Groups          Groups    @relation(fields: [GroupId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_UserGroups_Groups_GroupId")
+  Users           Users     @relation(fields: [UserId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_UserGroups_Users_UserId")
 
   @@index([GroupId], map: "IX_UserGroups_GroupId")
   @@index([UserId], map: "IX_UserGroups_UserId")
+  @@index([GroupId, UserId], map: "IX_UserGroups_GroupId_UserId")
 }
 
 model Users {
-  Id         Int          @id(map: "PK_Users") @default(autoincrement())
-  IsActive   Boolean
-  UserId     String       @db.NVarChar(50)
-  UserName   String       @db.NVarChar(100)
-  Email      String       @db.NVarChar(100)
-  CreatedBy  String       @db.NVarChar(50)
-  CreatedAt  DateTime
-  ModifiedBy String?      @db.NVarChar(50)
-  ModifiedAt DateTime?
-  UserGroups UserGroups[]
+  Id          Int          @id(map: "PK_Users") @default(autoincrement())
+  IsActive    Boolean
+  UserId      String       @db.NVarChar(100)
+  UserName    String       @db.NVarChar(100)
+  Email       String       @db.NVarChar(100)
+  CreatedBy   String       @db.NVarChar(50)
+  CreatedAt   DateTime
+  ModifiedBy  String?      @db.NVarChar(50)
+  ModifiedAt  DateTime?
+  AzureUserId String?      @db.NVarChar(50)
+  SsoUserId   String?      @db.NVarChar(100)
+  UserGroups  UserGroups[]
+}
+
+model Zones {
+  Id             Int              @id(map: "PK_Zones")
+  TitleAr        String           @db.NVarChar(100)
+  TitleEn        String           @db.NVarChar(100)
+  IsActive       Boolean
+  RegionId       Int
+  ManhalCode     String?          @db.NVarChar(25)
+  Drafts         Drafts[]
+  RequestDetails RequestDetails[]
+  Regions        Regions          @relation(fields: [RegionId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_Zones_Regions_RegionId")
+
+  @@index([RegionId], map: "IX_Zones_RegionId")
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model XXX_AjyalCatchment {
-  SchoolsSchoolCode Float?
-  ZoneManhalCode    String? @db.NVarChar(255)
-  RegionManhalCode  String? @db.NVarChar(255)
-  EmirateManhalCode String? @db.NVarChar(255)
+model AreaSchools07022025 {
+  Id           Int     @default(autoincrement())
+  AreaId       Int
+  SchoolCode   String  @db.NVarChar(100)
+  IsAdvancedC2 Boolean
 
   @@ignore
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model XXX_AUH_CAT {
-  EmirateId            Float?
-  AreaSchoolsId        String? @db.NVarChar(255)
-  EmirateAR            String? @db.NVarChar(255)
-  EmirateEN            String? @db.NVarChar(255)
-  EmirateMNHLStateCode String? @db.NVarChar(255)
-  EmirateActive        String? @db.NVarChar(255)
-  RegionId             Float?
-  RegionAR             String? @db.NVarChar(255)
-  RegionEN             String? @db.NVarChar(255)
-  RegionMNHLCityCode   String? @db.NVarChar(255)
-  RegionActive         String? @db.NVarChar(255)
-  ZoneId               Float?
-  ZoneAR               String? @db.NVarChar(255)
-  ZoneEN               String? @db.NVarChar(255)
-  ZoneMNHLRegionCode   String? @db.NVarChar(255)
-  ZoneActive           String? @db.NVarChar(255)
-  AreaID               Float?
-  AreaAR               String? @db.NVarChar(255)
-  AreaEN               String? @db.NVarChar(255)
-  AreaMNHLSectorCode   String? @db.NVarChar(255)
-  AreaActive           String? @db.NVarChar(255)
-  Full_Area_Name       String? @map("Full Area Name") @db.NVarChar(255)
-  SchoolCode           String? @db.NVarChar(255)
-  SchoolAR             String? @db.NVarChar(255)
-  SchoolEN             String? @db.NVarChar(255)
-  SectorCode           String? @db.NVarChar(255)
-  SchoolActive         String? @db.NVarChar(255)
+model AUH_Groups {
+  SchoolCode String? @db.NVarChar(255)
+  SchoolName String? @db.NVarChar(255)
+  EmployeeId String? @db.NVarChar(255)
+  Name       String? @db.NVarChar(255)
+  Email      String? @db.NVarChar(255)
 
   @@ignore
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model XXX_AUH_CAT_17042024 {
+model AuhCath_752025 {
   EmirateId            Float?
   AreaSchoolsId        String? @db.NVarChar(255)
   IsAdvancedC2         Boolean
@@ -1910,12 +1747,248 @@ model XXX_AUH_CAT_17042024 {
   SchoolEN             String? @db.NVarChar(255)
   SectorCode           Float?
   SchoolActive         String? @db.NVarChar(255)
+  F29                  String? @db.NVarChar(255)
+  F30                  String? @db.NVarChar(255)
+  F31                  String? @db.NVarChar(255)
+  F32                  String? @db.NVarChar(255)
+  F33                  String? @db.NVarChar(255)
+
+  @@ignore
+}
+
+model BackgroundUploadJobs {
+  Id           Int       @id(map: "PK_BackgroundUploadJobs") @default(autoincrement())
+  JobId        String    @db.NVarChar(100)
+  JobType      String    @db.NVarChar(100)
+  UserId       String    @db.NVarChar(100)
+  Status       Int
+  FileName     String?   @db.NVarChar(500)
+  TotalRows    Int
+  SuccessCount Int
+  SkippedCount Int
+  ErrorCount   Int
+  Progress     Int
+  Message      String?
+  ErrorDetails String?   @db.NVarChar(Max)
+  StartedAt    DateTime?
+  CompletedAt  DateTime?
+  CreatedAt    DateTime
+  CreatedBy    String?   @db.NVarChar(50)
+  ModifiedAt   DateTime?
+  ModifiedBy   String?   @db.NVarChar(50)
+  UpdatedCount Int       @default(0, map: "DF__Backgroun__Updat__76A2557D")
+  FileContent  Bytes?
+
+  @@index([JobType], map: "IX_BackgroundUploadJobs_JobType")
+  @@index([Status], map: "IX_BackgroundUploadJobs_Status")
+  @@index([UserId], map: "IX_BackgroundUploadJobs_UserId")
+}
+
+model DisabilityCenterSchools {
+  Id                 Int              @id(map: "PK_DisabilityCenterSchools") @default(autoincrement())
+  DisabilityCenterId Int
+  SchoolCode         String           @db.NVarChar(100)
+  IsActive           Boolean
+  DisabilityCenter   DisabilityCenter @relation(fields: [DisabilityCenterId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_DisabilityCenterSchools_DisabilityCenter_DisabilityCenterId")
+  Schools            Schools          @relation(fields: [SchoolCode], references: [SchoolCode], onDelete: Cascade, onUpdate: NoAction, map: "FK_DisabilityCenterSchools_Schools_SchoolCode")
+
+  @@unique([DisabilityCenterId, SchoolCode], map: "IX_DisabilityCenterSchools_DisabilityCenterId_SchoolCode")
+  @@index([SchoolCode], map: "IX_DisabilityCenterSchools_SchoolCode")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model ListUsers {
+  Name   String? @db.NVarChar(255)
+  Email  String? @db.NVarChar(255)
+  UserId String? @db.NVarChar(50)
 
   @@ignore
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model XXX_AUH_CAT_17042024_2 {
+model MissingAdress {
+  AcademicYear_Id      Float?
+  OperationEnglishName String? @db.NVarChar(255)
+  CouncilEnglishName   String? @db.NVarChar(255)
+  ClusterEnglishName   String? @db.NVarChar(255)
+  BlockEnglishName     String? @db.NVarChar(255)
+  Emirate              String? @db.NVarChar(255)
+  EducationType        String? @db.NVarChar(255)
+  School_Code          Float?
+  School_Name_EN       String? @db.NVarChar(255)
+  School_Name_AR       String? @db.NVarChar(255)
+  StudentNumber        Float?
+  Emirate_Id           Float?
+  StudentName_Ar       String? @db.NVarChar(255)
+  StudentName_En       String? @db.NVarChar(255)
+  Grade                String? @db.NVarChar(255)
+  Transportion_Type    String? @db.NVarChar(255)
+  Emirate2             String? @db.NVarChar(255)
+  Region               String? @db.NVarChar(255)
+
+  /// This field was commented out because of an invalid name. Please provide a valid one that matches [a-zA-Z][a-zA-Z0-9_]*
+  // خط العرض Float? @map("خط العرض")
+  /// This field was commented out because of an invalid name. Please provide a valid one that matches [a-zA-Z][a-zA-Z0-9_]*
+  // خط الطول Float? @map("خط الطول")
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model NewAUHCat {
+  EmirateId            Float?
+  AreaSchoolsId        String? @db.NVarChar(255)
+  IsAdvancedC2         Boolean
+  EmirateAR            String? @db.NVarChar(255)
+  EmirateEN            String? @db.NVarChar(255)
+  EmirateMNHLStateCode String? @db.NVarChar(255)
+  EmirateActive        String? @db.NVarChar(255)
+  RegionId             Float?
+  RegionAR             String? @db.NVarChar(255)
+  RegionEN             String? @db.NVarChar(255)
+  RegionMNHLCityCode   String? @db.NVarChar(255)
+  RegionActive         String? @db.NVarChar(255)
+  ZoneId               Float?
+  ZoneAR               String? @db.NVarChar(255)
+  ZoneEN               String? @db.NVarChar(255)
+  ZoneMNHLRegionCode   String? @db.NVarChar(255)
+  ZoneActive           String? @db.NVarChar(255)
+  AreaId               Float?
+  AreaAR               String? @db.NVarChar(255)
+  AreaEN               String? @db.NVarChar(255)
+  AreaMNHLSectorCode   String? @db.NVarChar(255)
+  AreaActive           String? @db.NVarChar(255)
+  Full_Area_Name       String? @map("Full Area Name") @db.NVarChar(255)
+  SchoolCode           String? @db.NVarChar(255)
+  SchoolAR             String? @db.NVarChar(255)
+  SchoolEN             String? @db.NVarChar(255)
+  SectorCode           Float?
+  SchoolActive         String? @db.NVarChar(255)
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model NotificationTemplates_backup {
+  Id            Int       @default(autoincrement())
+  IsActive      Boolean
+  TitleAr       String    @db.NVarChar(Max)
+  TitleEn       String    @db.NVarChar(Max)
+  ChannelTypeId Int
+  ContentAr     String    @db.NVarChar(Max)
+  ContentEn     String    @db.NVarChar(Max)
+  CreatedBy     String    @db.NVarChar(Max)
+  CreatedAt     DateTime
+  ModifiedBy    String?   @db.NVarChar(Max)
+  ModifiedAt    DateTime?
+
+  @@ignore
+}
+
+model Numbers {
+  N Int @id(map: "PK__Numbers__3BD019B3DB016FD1")
+}
+
+model Schools_Employees_SIS_DataSource {
+  AcademicYear_Id      Int
+  AcademicYear         String   @db.NVarChar(100)
+  SectorEn             String   @db.NVarChar(50)
+  SectorAr             String   @db.NVarChar(50)
+  Emirate_En           String   @db.NVarChar(100)
+  Emirate              String   @db.NVarChar(100)
+  Site_Id              Int
+  SiteCode             String   @db.NVarChar(50)
+  SiteTitleEn          String   @db.NVarChar(200)
+  SiteTitleAr          String   @db.NVarChar(200)
+  StudentsPerSchool    Int
+  StaffId              Int
+  StaffNumber          String   @db.NVarChar(50)
+  StaffFullEnglishName String   @db.NVarChar(200)
+  StaffFullArabicName  String   @db.NVarChar(200)
+  RoleId               String   @db.NVarChar(50)
+  RoleDescriptionAr    String   @db.NVarChar(200)
+  RoleDescriptionEn    String   @db.NVarChar(200)
+  OfficialEmail        String   @db.NVarChar(200)
+  ManagerialRoleOrder  Int
+  IsSchoolPrincipal    Boolean
+  Id                   Int      @id(map: "PK_Schools_Employees_SIS_DataSource") @default(autoincrement())
+  PULLED_ON            DateTime @default(dbgenerated("0001-01-01T00:00:00.0000000"), map: "DF__Schools_E__PULLE__6B30A2D1")
+}
+
+model Schools_Employees_SIS_DataSource_Temp {
+  AcademicYear_Id      Int
+  AcademicYear         String   @db.NVarChar(100)
+  SectorEn             String   @db.NVarChar(50)
+  SectorAr             String   @db.NVarChar(50)
+  Emirate_En           String   @db.NVarChar(100)
+  Emirate              String   @db.NVarChar(100)
+  Site_Id              Int
+  SiteCode             String   @db.NVarChar(50)
+  SiteTitleEn          String   @db.NVarChar(200)
+  SiteTitleAr          String   @db.NVarChar(200)
+  StudentsPerSchool    Int
+  StaffId              Int
+  StaffNumber          String   @db.NVarChar(50)
+  StaffFullEnglishName String   @db.NVarChar(200)
+  StaffFullArabicName  String   @db.NVarChar(200)
+  RoleId               String   @db.NVarChar(50)
+  RoleDescriptionAr    String   @db.NVarChar(200)
+  RoleDescriptionEn    String   @db.NVarChar(200)
+  OfficialEmail        String   @db.NVarChar(200)
+  ManagerialRoleOrder  Int
+  IsSchoolPrincipal    Boolean
+  Id                   Int      @id(map: "PK_Schools_Employees_SIS_DataSource_Temp") @default(autoincrement())
+  PULLED_ON            DateTime @default(dbgenerated("0001-01-01T00:00:00.0000000"), map: "DF__Schools_E__PULLE__6E0D0F7C")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model Sheet01Cat_ {
+  EmirateId            Float?
+  AreaSchoolsId        Float?
+  IsAdvancedC2         Boolean
+  EmirateAR            String? @db.NVarChar(255)
+  EmirateEN            String? @db.NVarChar(255)
+  EmirateMNHLStateCode String? @db.NVarChar(255)
+  EmirateActive        String? @db.NVarChar(255)
+  RegionId             Float?
+  RegionAR             String? @db.NVarChar(255)
+  RegionEN             String? @db.NVarChar(255)
+  RegionMNHLCityCode   String? @db.NVarChar(255)
+  RegionActive         String? @db.NVarChar(255)
+  ZoneId               Float?
+  ZoneAR               String? @db.NVarChar(255)
+  ZoneEN               String? @db.NVarChar(255)
+  ZoneMNHLRegionCode   String? @db.NVarChar(255)
+  ZoneActive           String? @db.NVarChar(255)
+  AreaId               Float?
+  AreaAR               String? @db.NVarChar(255)
+  AreaEN               String? @db.NVarChar(255)
+  AreaMNHLSectorCode   String? @db.NVarChar(255)
+  AreaActive           String? @db.NVarChar(255)
+  Full_Area_Name       String? @map("Full Area Name") @db.NVarChar(255)
+  SchoolCode           String? @db.NVarChar(255)
+  SchoolAR             String? @db.NVarChar(255)
+  SchoolEN             String? @db.NVarChar(255)
+  SectorCode           Float?
+  SchoolActive         String? @db.NVarChar(255)
+
+  @@map("Sheet01Cat$")
+  @@ignore
+}
+
+model user_temp {
+  id         Int       @id(map: "PK_user_temp") @default(autoincrement())
+  UserId     String?   @db.NVarChar(450)
+  UserName   String?   @db.NVarChar(50)
+  Email      String?   @db.NVarChar(50)
+  IsActive   Boolean?
+  CreatedBy  String?   @db.NVarChar(50)
+  CreatedAt  DateTime?
+  ModifiedBy String?   @db.NVarChar(50)
+  ModifiedAt DateTime?
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model XXX_AUH_CAT_15082025 {
   EmirateId            Float?
   AreaSchoolsId        Float?
   IsAdvancedC2         Boolean
@@ -1949,29 +2022,10 @@ model XXX_AUH_CAT_17042024_2 {
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model XXX_AUH_CAT_ADVC2 {
-  City_Id       Float?
-  Code          String? @db.NVarChar(255)
-  Name          String? @db.NVarChar(255)
-  City_NameAr   String? @db.NVarChar(255)
-  Region_Id     Float?
-  Region_Code   String? @db.NVarChar(255)
-  Region_NameEn String? @db.NVarChar(255)
-  Region_NameAr String? @db.NVarChar(255)
-  Sector_Id     Float?
-  Sector_Code   String? @db.NVarChar(255)
-  Sector_NameEn String? @db.NVarChar(255)
-  Sector_NameAr String? @db.NVarChar(255)
-  School_ID     String? @map("School ID") @db.NVarChar(255)
-  Elite_School1 String? @map("Elite School1") @db.NVarChar(255)
-
-  @@ignore
-}
-
-/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model XXX_AUH_CAT2 {
+model XXX_AUH_CAT_682025 {
   EmirateId            Float?
-  AreaSchoolsId        String? @db.NVarChar(255)
+  AreaSchoolsId        Float?
+  IsAdvancedC2         Boolean
   EmirateAR            String? @db.NVarChar(255)
   EmirateEN            String? @db.NVarChar(255)
   EmirateMNHLStateCode String? @db.NVarChar(255)
@@ -1986,7 +2040,7 @@ model XXX_AUH_CAT2 {
   ZoneEN               String? @db.NVarChar(255)
   ZoneMNHLRegionCode   String? @db.NVarChar(255)
   ZoneActive           String? @db.NVarChar(255)
-  AreaID               Float?
+  AreaID               String? @db.NVarChar(255)
   AreaAR               String? @db.NVarChar(255)
   AreaEN               String? @db.NVarChar(255)
   AreaMNHLSectorCode   String? @db.NVarChar(255)
@@ -2002,37 +2056,31 @@ model XXX_AUH_CAT2 {
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model XXX_DNE_CAT {
-  School_Id          Float?
-  School_Code        String? @db.NVarChar(255)
-  School_Name        String? @db.NVarChar(255)
-  EnglishSchool_Name String? @db.NVarChar(255)
-  State_Id           Float?
-  State_Code         String? @db.NVarChar(255)
-  State_NameEN       String? @db.NVarChar(255)
-  State_NameAR       String? @db.NVarChar(255)
-  City_Id            Float?
-  City_Code          String? @db.NVarChar(255)
-  City_NameEN        String? @db.NVarChar(255)
-  Cite_NameAR        String? @db.NVarChar(255)
-  Region_Id          Float?
-  Region_Code        String? @db.NVarChar(255)
-  Region_NameEN      String? @db.NVarChar(255)
-  Region_NameAR      String? @db.NVarChar(255)
+model XXX_AuhSchoolAuth {
+  SchoolCode String? @db.NVarChar(255)
+  SchoolName String? @db.NVarChar(255)
+  EmpNo      String? @db.NVarChar(255)
+  EmpName    String? @db.NVarChar(255)
+  Email      String? @db.NVarChar(255)
+  Sector     String? @db.NVarChar(255)
 
   @@ignore
 }
 
-model Zones {
-  Id             Int              @id(map: "PK_Zones")
-  TitleAr        String           @db.NVarChar(100)
-  TitleEn        String           @db.NVarChar(100)
-  IsActive       Boolean
-  RegionId       Int
-  ManhalCode     String?          @db.NVarChar(25)
-  Drafts         Drafts[]
-  RequestDetails RequestDetails[]
-  Regions        Regions          @relation(fields: [RegionId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_Zones_Regions_RegionId")
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model XXX_ChangedEmails {
+  ESEEmail String? @db.NVarChar(255)
+  NewEmail String? @db.NVarChar(255)
 
-  @@index([RegionId], map: "IX_Zones_RegionId")
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model XXX_MoeIdentityUsers {
+  id           String? @db.NVarChar(255)
+  UaePassId    String? @db.NVarChar(255)
+  aspnetuserid String? @db.NVarChar(255)
+  uaepassuuid  String? @db.NVarChar(255)
+
+  @@ignore
 }
