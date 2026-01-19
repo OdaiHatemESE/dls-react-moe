@@ -46,30 +46,49 @@ export type AddressValue = {
 
 type Area = {
   Id: number;
+  id?: number; // Support new API format
   TitleAr: string;
+  titleAr?: string; // Support new API format
   TitleEn: string;
-  IsActive: boolean;
-  ZoneId: number;
+  titleEn?: string; // Support new API format
+  IsActive?: boolean;
+  ZoneId?: number;
   ManhalCode: string | null;
+  manhalCode?: string | null; // Support new API format
   ZoneManhalCode?: string | null; // For Dubai/Northern enrichment
 };
 
 type Region = {
   Id: number;
+  id?: number; // Support new API format
   TitleAr: string;
+  titleAr?: string; // Support new API format
   TitleEn: string;
-  IsActive: boolean;
-  EmirateId: number;
+  titleEn?: string; // Support new API format
+  IsActive?: boolean;
+  EmirateId?: number;
+  ManhalCode?: string | null;
+  manhalCode?: string | null; // Support new API format
 };
 
 type Zone = {
   Id: number;
+  id?: number; // Support new API format
   TitleAr: string;
+  titleAr?: string; // Support new API format
   TitleEn: string;
-  IsActive: boolean;
-  RegionId: number;
+  titleEn?: string; // Support new API format
+  IsActive?: boolean;
+  RegionId?: number;
   ManhalCode: string | null;
+  manhalCode?: string | null; // Support new API format
 };
+
+// Helper functions to support both old and new API formats
+const getId = (item: Region | Zone | Area): number => (item as any).id ?? (item as any).Id;
+const getTitleEn = (item: Region | Zone | Area): string => (item as any).titleEn ?? (item as any).TitleEn;
+const getTitleAr = (item: Region | Zone | Area): string => (item as any).titleAr ?? (item as any).TitleAr;
+const getManhalCode = (item: Region | Zone | Area): string | null => (item as any).manhalCode ?? (item as any).ManhalCode ?? null;
 
 // ============================================
 // Dubai & Northern Emirates Layout
@@ -161,15 +180,15 @@ export function DubaiNorthernEmiratesFields({
               : undefined
           }
           onValueChange={(v) => {
-            const selectedRegion = regions.find((r) => String(r.Id) === v);
+            const selectedRegion = regions.find((r) => String(getId(r)) === v);
             if (selectedRegion) {
               emit({ 
-                regionId: selectedRegion.Id,
-                regionManhalCode: selectedRegion.ManhalCode,
+                regionId: getId(selectedRegion),
+                regionManhalCode: getManhalCode(selectedRegion),
                 zoneId: undefined,
                 areaId: undefined,
-                regionNameEn: selectedRegion.TitleEn,
-                regionNameAr: selectedRegion.TitleAr,
+                regionNameEn: getTitleEn(selectedRegion),
+                regionNameAr: getTitleAr(selectedRegion),
                 zoneManhalCode: null,
                 zoneNameEn: null,
                 zoneNameAr: null,
@@ -208,14 +227,14 @@ export function DubaiNorthernEmiratesFields({
             )}
             {regions.map((r) => (
               <SelectItem
-                key={r.Id}
-                value={String(r.Id)}
+                key={getId(r)}
+                value={String(getId(r))}
                 className={cn(
                   "cursor-pointer hover:bg-primary/10 focus:bg-primary/10 rounded-lg my-0.5 transition-colors",
                   isRTL ? "text-right" : "text-left"
                 )}
               >
-                {locale === "ar" ? r.TitleAr : r.TitleEn}
+                {locale === "ar" ? getTitleAr(r) : getTitleEn(r)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -257,14 +276,14 @@ export function DubaiNorthernEmiratesFields({
               : undefined
           }
           onValueChange={(v) => {
-            const selectedZone = zones.find((z) => z.ManhalCode === v || String(z.Id) === v);
+            const selectedZone = zones.find((z) => getManhalCode(z) === v || String(getId(z)) === v);
             if (selectedZone) {
               emit({ 
-                zoneId: selectedZone.Id,
-                zoneManhalCode: selectedZone.ManhalCode,
+                zoneId: getId(selectedZone),
+                zoneManhalCode: getManhalCode(selectedZone),
                 areaId: undefined,
-                zoneNameEn: selectedZone.TitleEn,
-                zoneNameAr: selectedZone.TitleAr,
+                zoneNameEn: getTitleEn(selectedZone),
+                zoneNameAr: getTitleAr(selectedZone),
                 areaNameEn: null,
                 areaNameAr: null,
               });
@@ -300,14 +319,14 @@ export function DubaiNorthernEmiratesFields({
             )}
             {zones.map((z) => (
               <SelectItem
-                key={z.Id}
-                value={z.ManhalCode || String(z.Id)}
+                key={getId(z)}
+                value={getManhalCode(z) || String(getId(z))}
                 className={cn(
                   "cursor-pointer hover:bg-primary/10 focus:bg-primary/10 rounded-lg my-0.5 transition-colors",
                   isRTL ? "text-right" : "text-left"
                 )}
               >
-                {locale === "ar" ? z.TitleAr : z.TitleEn}
+                {locale === "ar" ? getTitleAr(z) : getTitleEn(z)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -348,13 +367,13 @@ export function DubaiNorthernEmiratesFields({
               : undefined
           }
           onValueChange={(v) => {
-            const selectedArea = areas.find((a) => a.ManhalCode === v || String(a.Id) === v);
+            const selectedArea = areas.find((a) => getManhalCode(a) === v || String(getId(a)) === v);
             if (selectedArea) {
               emit({ 
-                areaId: selectedArea.Id,
-                areaManhalCode: selectedArea.ManhalCode,
-                areaNameEn: selectedArea.TitleEn,
-                areaNameAr: selectedArea.TitleAr,
+                areaId: getId(selectedArea),
+                areaManhalCode: getManhalCode(selectedArea),
+                areaNameEn: getTitleEn(selectedArea),
+                areaNameAr: getTitleAr(selectedArea),
               });
             }
           }}
@@ -388,14 +407,14 @@ export function DubaiNorthernEmiratesFields({
             )}
             {areas.map((a) => (
               <SelectItem
-                key={a.Id}
-                value={a.ManhalCode || String(a.Id)}
+                key={getId(a)}
+                value={getManhalCode(a) || String(getId(a))}
                 className={cn(
                   "cursor-pointer hover:bg-primary/10 focus:bg-primary/10 rounded-lg my-0.5 transition-colors",
                   isRTL ? "text-right" : "text-left"
                 )}
               >
-                {locale === "ar" ? a.TitleAr : a.TitleEn}
+                {locale === "ar" ? getTitleAr(a) : getTitleEn(a)}
               </SelectItem>
             ))}
           </SelectContent>

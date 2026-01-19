@@ -26,38 +26,54 @@ import { DubaiNorthernEmiratesFields, AbuDhabiEmirateFields } from "./AddressPic
 
 type Emirate = {
   Id: number;
+  id?: number; // Support both formats from new API
   TitleAr: string;
+  titleAr?: string; // Support both formats from new API
   TitleEn: string;
-  IsActive: boolean;
+  titleEn?: string; // Support both formats from new API
+  IsActive?: boolean;
   ManhalCode: string | null;
+  manhalCode?: string | null; // Support both formats from new API
 };
 
 type Area = {
   Id: number;
+  id?: number; // Support both formats from new API
   TitleAr: string;
+  titleAr?: string; // Support both formats from new API
   TitleEn: string;
-  IsActive: boolean;
-  ZoneId: number;
+  titleEn?: string; // Support both formats from new API
+  IsActive?: boolean;
+  ZoneId?: number;
   ManhalCode: string | null;
+  manhalCode?: string | null; // Support both formats from new API
   ZoneManhalCode?: string | null; // For Dubai/Northern enrichment
 };
 
 type Region = {
   Id: number;
+  id?: number; // Support both formats from new API
   TitleAr: string;
+  titleAr?: string; // Support both formats from new API
   TitleEn: string;
-  IsActive: boolean;
-  EmirateId: number;
+  titleEn?: string; // Support both formats from new API
+  IsActive?: boolean;
+  EmirateId?: number;
   ManhalCode: string | null;
+  manhalCode?: string | null; // Support both formats from new API
 };
 
 type Zone = {
   Id: number;
+  id?: number; // Support both formats from new API
   TitleAr: string;
+  titleAr?: string; // Support both formats from new API
   TitleEn: string;
-  IsActive: boolean;
-  RegionId: number;
+  titleEn?: string; // Support both formats from new API
+  IsActive?: boolean;
+  RegionId?: number;
   ManhalCode: string | null;
+  manhalCode?: string | null; // Support both formats from new API
 };
 
 export type AddressValue = {
@@ -112,11 +128,17 @@ function enrichAddressWithLookups(
 ): AddressValue {
   const next: AddressValue = { ...value };
 
+  // Helper to get value from both old and new API formats
+  const getId = (item: any) => item.id ?? item.Id;
+  const getTitleEn = (item: any) => item.titleEn ?? item.TitleEn;
+  const getTitleAr = (item: any) => item.titleAr ?? item.TitleAr;
+  const getManhalCode = (item: any) => item.manhalCode ?? item.ManhalCode;
+
   if (value.emirateId) {
-    const emirate = lookups.emirates.find((item) => item.Id === value.emirateId);
+    const emirate = lookups.emirates.find((item) => getId(item) === value.emirateId);
     if (emirate) {
-      next.emirateNameEn = emirate.TitleEn ?? value.emirateNameEn ?? null;
-      next.emirateNameAr = emirate.TitleAr ?? value.emirateNameAr ?? null;
+      next.emirateNameEn = getTitleEn(emirate) ?? value.emirateNameEn ?? null;
+      next.emirateNameAr = getTitleAr(emirate) ?? value.emirateNameAr ?? null;
     }
     // Keep existing names if lookup not found
   } else {
@@ -126,10 +148,10 @@ function enrichAddressWithLookups(
 
   const allAreas = [...lookups.areas, ...lookups.abuDhabiAreas];
   if (value.areaId) {
-    const area = allAreas.find((item) => item.Id === value.areaId);
+    const area = allAreas.find((item) => getId(item) === value.areaId);
     if (area) {
-      next.areaNameEn = area.TitleEn ?? value.areaNameEn ?? null;
-      next.areaNameAr = area.TitleAr ?? value.areaNameAr ?? null;
+      next.areaNameEn = getTitleEn(area) ?? value.areaNameEn ?? null;
+      next.areaNameAr = getTitleAr(area) ?? value.areaNameAr ?? null;
     }
     // Keep existing names if lookup not found
   } else {
@@ -138,10 +160,10 @@ function enrichAddressWithLookups(
   }
 
   if (value.regionId) {
-    const region = lookups.regions.find((item) => item.Id === value.regionId);
+    const region = lookups.regions.find((item) => getId(item) === value.regionId);
     if (region) {
-      next.regionNameEn = region.TitleEn ?? value.regionNameEn ?? null;
-      next.regionNameAr = region.TitleAr ?? value.regionNameAr ?? null;
+      next.regionNameEn = getTitleEn(region) ?? value.regionNameEn ?? null;
+      next.regionNameAr = getTitleAr(region) ?? value.regionNameAr ?? null;
     }
     // Keep existing names if lookup not found
   } else {
@@ -150,11 +172,11 @@ function enrichAddressWithLookups(
   }
 
   if (value.zoneId) {
-    const zone = lookups.zones.find((item) => item.Id === value.zoneId);
+    const zone = lookups.zones.find((item) => getId(item) === value.zoneId);
     if (zone) {
-      next.zoneNameEn = zone.TitleEn ?? value.zoneNameEn ?? null;
-      next.zoneNameAr = zone.TitleAr ?? value.zoneNameAr ?? null;
-      next.zoneManhalCode = zone.ManhalCode ?? value.zoneManhalCode ?? null;
+      next.zoneNameEn = getTitleEn(zone) ?? value.zoneNameEn ?? null;
+      next.zoneNameAr = getTitleAr(zone) ?? value.zoneNameAr ?? null;
+      next.zoneManhalCode = getManhalCode(zone) ?? value.zoneManhalCode ?? null;
     }
     // Keep existing names if lookup not found
   } else {
@@ -221,22 +243,22 @@ export type AddressPickerProps = {
 };
 
 function useEmirates() {
-  return useSWR<{ data: Emirate[] }>("/api/db/emirates", jsonFetcher);
+  return useSWR<{ data: Emirate[] }>("/api/db/auh-addresses?level=emirate", jsonFetcher);
 }
 
-function useRegions(emirateId?: number | null) {
+function useRegions(stateId?: number | null) {
   const key = React.useMemo(() => {
-    if (emirateId === undefined || emirateId === null) return null;
-    return `/api/db/regions?emirateId=${emirateId}`;
-  }, [emirateId]);
+    if (stateId === undefined || stateId === null) return null;
+    return `/api/db/auh-addresses?level=region&stateId=${stateId}`;
+  }, [stateId]);
   return useSWR<{ data: Region[] }>(key, jsonFetcher);
 }
 
-function useZones(regionId?: number | null) {
+function useZones(cityId?: number | null) {
   const key = React.useMemo(() => {
-    if (regionId === undefined || regionId === null) return null;
-    return `/api/db/zones?regionId=${regionId}`;
-  }, [regionId]);
+    if (cityId === undefined || cityId === null) return null;
+    return `/api/db/auh-addresses?level=zone&cityId=${cityId}`;
+  }, [cityId]);
   return useSWR<{ data: Zone[] }>(key, jsonFetcher);
 }
 
@@ -249,32 +271,24 @@ type AreasMeta = {
 };
 
 function useAreas(params: {
-  emirateId?: number | null;
+  regionId?: number | null;
   isAbuDhabi?: boolean;
-  zoneIdOverride?: number | null;
   gradeCode?: string;
   genderCode?: string;
 }) {
   const {
-    emirateId,
+    regionId,
     isAbuDhabi = false,
-    zoneIdOverride,
     gradeCode,
     genderCode,
   } = params;
   const key = React.useMemo(() => {
-    const idToUse = isAbuDhabi ? zoneIdOverride ?? emirateId : emirateId;
-    if (idToUse === undefined || idToUse === null) return null;
-    const sp = new URLSearchParams();
-    // API expects zoneId, but when not AbuDhabi it treats it as EmirateId via join
-    sp.set("zoneId", String(idToUse));
-    if (isAbuDhabi) sp.set("isAbuDhabi", "1");
-    if (gradeCode) sp.set("gradeCode", gradeCode);
-    if (genderCode) sp.set("genderCode", genderCode);
-    return `/api/db/areas?${sp.toString()}`;
-  }, [emirateId, zoneIdOverride, isAbuDhabi, gradeCode, genderCode]);
+    if (regionId === undefined || regionId === null) return null;
+    // Use unified API for all emirates (data is in AuhAddresses table for all emirates)
+    return `/api/db/auh-addresses?level=area&regionId=${regionId}`;
+  }, [regionId]);
 
-  return useSWR<{ data: Area[]; meta: AreasMeta }>(key, jsonFetcher);
+  return useSWR<{ data: Area[]; meta?: AreasMeta }>(key, jsonFetcher);
 }
 
 export function AddressPicker(props: AddressPickerProps) {
@@ -441,15 +455,15 @@ export function AddressPicker(props: AddressPickerProps) {
 
   // Detect if the currently selected emirate is Abu Dhabi (EN/AR tolerant)
   const selectedEmirate = React.useMemo(
-    () => emirates.find((e) => e.Id === (local.emirateId ?? -1)),
+    () => emirates.find((e) => (e.id ?? e.Id) === (local.emirateId ?? -1)),
     [emirates, local.emirateId]
   );
   const isAbuDhabiSelected = React.useMemo(() => {
     if (!selectedEmirate) return false;
-    const en = (selectedEmirate.TitleEn || "")
+    const en = ((selectedEmirate.titleEn ?? selectedEmirate.TitleEn) || "")
       .toLowerCase()
       .replace(/\s+/g, "");
-    const ar = (selectedEmirate.TitleAr || "").replace(/\s+/g, "");
+    const ar = ((selectedEmirate.titleAr ?? selectedEmirate.TitleAr) || "").replace(/\s+/g, "");
     // Normalize Arabic (remove tatweel U+0640 and punctuation like ؟ )
     const arNorm = ar.replace(/[\u0640\u061F]/g, "");
     const abuDhabiArForms = [
@@ -498,53 +512,50 @@ export function AddressPicker(props: AddressPickerProps) {
     }
   }, [isAbuDhabiSelected, hasMapSelection]);
 
-  // Fetch hierarchical data for all emirates (Region → Zone → Area)
-  // For Dubai/Northern Emirates, we fetch by emirateId → regionId → zoneId
-  // For Abu Dhabi, we use the same flow but with map-driven selection
-  const normalizedEmirateIdForRegions =
+  // Fetch hierarchical data using new unified AuhAddresses API
+  // Flow: Emirates (State) → Regions (City) → Zones (Region) → Areas (Sector)
+  const normalizedStateIdForRegions =
     typeof local.emirateId === "number" && local.emirateId > 0
       ? local.emirateId
       : null;
 
   const { data: regionsData, isLoading: regionsLoading } = useRegions(
-    normalizedEmirateIdForRegions
+    normalizedStateIdForRegions
   );
   const regions = React.useMemo(() => regionsData?.data ?? [], [regionsData]);
 
-  const normalizedRegionId =
+  const normalizedCityId =
     typeof local.regionId === "number" && local.regionId > 0
       ? local.regionId
       : null;
 
   const { data: zonesData, isLoading: zonesLoading } = useZones(
-    normalizedRegionId
+    normalizedCityId
   );
   const zones = React.useMemo(() => zonesData?.data ?? [], [zonesData]);
 
-  // For Abu Dhabi areas, we fetch by zoneId with isAbuDhabi flag
-  const normalizedAbuDhabiZoneId =
+  // For Abu Dhabi areas, we fetch by regionId (zone level in AuhAddresses)
+  const normalizedAbuDhabiRegionId =
     isAbuDhabiSelected && typeof local.zoneId === "number" && local.zoneId > 0
       ? local.zoneId
       : null;
 
   const { data: abuDhabiAreasData, isLoading: abuDhabiAreasLoading } = useAreas({
-    emirateId: normalizedAbuDhabiZoneId,
+    regionId: normalizedAbuDhabiRegionId,
     isAbuDhabi: true,
-    zoneIdOverride: normalizedAbuDhabiZoneId,
     gradeCode,
     genderCode,
   });
 
-  // For Dubai/Northern Emirates, fetch areas by zoneId (not emirateId)
+  // For Dubai/Northern Emirates, fetch areas by zoneId using old API
   const normalizedDubaiNorthZoneId =
     !isAbuDhabiSelected && typeof local.zoneId === "number" && local.zoneId > 0
       ? local.zoneId
       : null;
 
   const { data: areasData, isLoading: areasLoading } = useAreas({
-    emirateId: normalizedDubaiNorthZoneId,
+    regionId: normalizedDubaiNorthZoneId,
     isAbuDhabi: false,
-    zoneIdOverride: normalizedDubaiNorthZoneId,
     gradeCode,
     genderCode,
   });
@@ -806,11 +817,11 @@ export function AddressPicker(props: AddressPickerProps) {
               : undefined
           }
           onValueChange={(v) => {
-            const selectedEmirate = emirates.find((e) => e.ManhalCode === v || String(e.Id) === v);
+            const selectedEmirate = emirates.find((e) => (e.manhalCode ?? e.ManhalCode) === v || String(e.id ?? e.Id) === v);
             if (selectedEmirate) {
               emit({
-                emirateId: selectedEmirate.Id,
-                emirateManhalCode: selectedEmirate.ManhalCode,
+                emirateId: selectedEmirate.id ?? selectedEmirate.Id,
+                emirateManhalCode: selectedEmirate.manhalCode ?? selectedEmirate.ManhalCode,
                 areaId: undefined,
                 areaManhalCode: undefined,
                 regionId: undefined,
@@ -853,14 +864,14 @@ export function AddressPicker(props: AddressPickerProps) {
           <SelectContent className="rounded-xl border-2 shadow-lg" dir={isRTL ? "rtl" : "ltr"}>
             {emirates.map((e) => (
               <SelectItem
-                key={e.Id}
-                value={e.ManhalCode || String(e.Id)}
+                key={e.id ?? e.Id}
+                value={(e.manhalCode ?? e.ManhalCode) || String(e.id ?? e.Id)}
                 className={cn(
                   "cursor-pointer hover:bg-primary/10 focus:bg-primary/10 rounded-lg my-0.5 transition-colors",
                   isRTL ? "text-right" : "text-left"
                 )}
               >
-                {locale === "ar" ? e.TitleAr : e.TitleEn}
+                {locale === "ar" ? (e.titleAr ?? e.TitleAr) : (e.titleEn ?? e.TitleEn)}
               </SelectItem>
             ))}
           </SelectContent>

@@ -2,13 +2,14 @@
  * GET /api/db/plots
  *
  * Returns ManhalCodes from the entire hierarchy (Area → Zone → Region → Emirate) based on GISID lookup.
+ * Uses AuhAddresses table (updated and refreshed address authority data).
  *
  * Query parameters:
- * - filter: string (required) — GISID suffix to match against PremisesPlotId (SQL LIKE '%{filter}').
+ * - filter: string (required) — GISID suffix to match against PlotId or PlotNumber (SQL LIKE '%{filter}').
  *
  * Behavior:
- * - Matches PremisesPlotId LIKE '%{filter}'.
- * - Fetches the full hierarchy: Plot → Area → Zone → Region → Emirate
+ * - Matches PlotId or PlotNumber LIKE '%{filter}' in AuhAddresses table
+ * - Fetches the full hierarchy: Sector (Area) → Region (Zone) → City (Region) → State (Emirate)
  * - Returns all ManhalCodes from each level of the hierarchy
  *
  * Response:
@@ -17,7 +18,7 @@
  *     areaId: number,
  *     areaManhalCode: string | null,
  *     zoneId: number,
- *     curl "http://localhost:4200/api/db/zones?regionId=1": string | null,
+ *     zoneManhalCode: string | null,
  *     regionId: number,
  *     regionManhalCode: string | null,
  *     emirateId: number,
@@ -37,14 +38,14 @@ import { Prisma } from "@prisma/client-student-registration";
 export const dynamic = "force-dynamic";
 
 type HierarchyRow = {
-  AreaId: number;
-  AreaManhalCode: string | null;
-  ZoneId: number;
-  ZoneManhalCode: string | null;
+  SectorId: number;
+  SectorCode: string | null;
   RegionId: number;
-  RegionManhalCode: string | null;
-  EmirateId: number;
-  EmirateManhalCode: string | null;
+  RegionCode: string | null;
+  CityId: number;
+  CityCode: string | null;
+  StateId: number;
+  StateCode: string | null;
 };
 
 export async function GET(req: Request) {
@@ -55,29 +56,23 @@ export async function GET(req: Request) {
     if (!filter) {
       return NextResponse.json({ error: "Missing required query parameter: filter (GISID)" }, { status: 400 });
     }
-
-    // Fetch ManhalCodes from the entire hierarchy: Plot → Area → Zone → Region → Emirate
-    // Search in PremisesPlotId (the only GISID-related column in Plots table)
+    // Fetch ManhalCodes from the entire hierarchy using AuhAddresses (updated address authority data)
+    // Search in PlotId or PlotNumber
     const likeParam = `%${filter}`;
     const rows = (await prisma.$queryRaw(
       Prisma.sql`
         SELECT TOP 1
-          a.Id AS AreaId,
-          a.ManhalCode AS AreaManhalCode,
-          z.Id AS ZoneId,
-          z.ManhalCode AS ZoneManhalCode,
-          r.Id AS RegionId,
-          r.ManhalCode AS RegionManhalCode,
-          e.Id AS EmirateId,
-          e.ManhalCode AS EmirateManhalCode
-        FROM Plots p
-        INNER JOIN Areas a ON a.Id = p.AreaId
-        INNER JOIN Zones z ON z.Id = a.ZoneId
-        INNER JOIN Regions r ON r.Id = z.RegionId
-        INNER JOIN Emirates e ON e.Id = r.EmirateId
-        WHERE p.PremisesPlotId LIKE ${likeParam}
-           OR p.PlotNumber LIKE ${likeParam}
-           OR p.ExternalId LIKE ${likeParam}
+          SectorId,
+          SectorCode,
+          RegionId,
+          RegionCode,
+          CityId,
+          CityCode,
+          StateId,
+          StateCode
+        FROM AuhAddresses
+        WHERE PlotId LIKE ${likeParam}
+           OR PlotNumber LIKE ${likeParam}
       `
     )) as HierarchyRow[];
 
@@ -91,14 +86,14 @@ export async function GET(req: Request) {
 
     return NextResponse.json({ 
       data: {
-        areaId: result.AreaId,
-        areaManhalCode: result.AreaManhalCode,
-        zoneId: result.ZoneId,
-        zoneManhalCode: result.ZoneManhalCode,
-        regionId: result.RegionId,
-        regionManhalCode: result.RegionManhalCode,
-        emirateId: result.EmirateId,
-        emirateManhalCode: result.EmirateManhalCode,
+        areaId: result.SectorId,
+        areaManhalCode: result.SectorCode,
+        zoneId: result.RegionId,
+        zoneManhalCode: result.RegionCode,
+        regionId: result.CityId,
+        regionManhalCode: result.CityCode,
+        emirateId: result.StateId,
+        emirateManhalCode: result.StateCode,
       },
       meta: { 
         filter, 

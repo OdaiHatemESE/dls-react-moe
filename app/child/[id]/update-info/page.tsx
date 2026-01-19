@@ -365,6 +365,7 @@ export default function UpdateStudentInfoPage() {
   const [addressSaveState, setAddressSaveState] = React.useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const addressSignatureRef = React.useRef<string | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState<boolean>(false);
+  const [isFetchingManhalCodes, setIsFetchingManhalCodes] = React.useState<boolean>(false);
   const [showSuccessToast, setShowSuccessToast] = React.useState<boolean>(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = React.useState<boolean>(false);
   const formRef = React.useRef<HTMLFormElement>(null);
@@ -991,13 +992,57 @@ export default function UpdateStudentInfoPage() {
       return;
     }
 
+    // ========== Fetch ManhalCodes for Abu Dhabi addresses BEFORE showing confirmation ==========
+    let enrichedAddress = addressChanged ? newAddress : null;
+    
+    if (addressChanged && newAddress) {
+      const isAbuDhabi = newAddress.emirateNameEn && 
+        (newAddress.emirateNameEn.toLowerCase().includes('abu dhabi') ||
+         newAddress.emirateNameEn.toLowerCase().includes('al ain') ||
+         newAddress.emirateNameEn.toLowerCase().includes('dhafra'));
+      
+      if (isAbuDhabi) {
+        // Fetch ManhalCodes from plots API using GISID
+        const gisid = newAddress.mainPlotId || 
+                      newAddress.premisesPlotId || 
+                      (newAddress.plotId ? String(newAddress.plotId) : null);
+        
+        if (gisid) {
+          setIsFetchingManhalCodes(true);
+          try {
+            const plotsResponse = await fetch(`/api/db/plots?filter=${encodeURIComponent(gisid)}`);
+            
+            if (plotsResponse.ok) {
+              const plotsData = await plotsResponse.json();
+              
+              if (plotsData.data) {
+                // Create enriched address with ManhalCodes
+                enrichedAddress = {
+                  ...newAddress,
+                  emirateManhalCode: plotsData.data.emirateManhalCode || undefined,
+                  regionManhalCode: plotsData.data.regionManhalCode || undefined,
+                  zoneManhalCode: plotsData.data.zoneManhalCode || undefined,
+                  areaManhalCode: plotsData.data.areaManhalCode || undefined,
+                };
+              }
+            }
+          } catch (error) {
+            console.warn('Failed to fetch ManhalCodes for preview:', error);
+            // Continue with original address if fetch fails
+          } finally {
+            setIsFetchingManhalCodes(false);
+          }
+        }
+      }
+    }
+
     // Prepare payload and show confirmation dialog
     const payload: PreparedPayload = {
       studentId: sourcedId || '',
       mode,
       contactNumbers: sanitizedContacts.slice(0, 2),
       addressChanged,
-      newAddress: addressChanged ? newAddress : null,
+      newAddress: enrichedAddress,
       documentName: supportingDocument ? supportingDocument.name : null,
       transportation: transportation,
     };
@@ -1153,7 +1198,7 @@ export default function UpdateStudentInfoPage() {
       }
       // INIT mode with no document will remain empty string
 
-      // ========== Fetch ManhalCodes based on emirate type ==========
+      // ========== Extract ManhalCodes from newAddress (already fetched in handleSubmit) ==========
       let stateID: string | undefined;
       let cityID: string | undefined;
       let regionID: string | undefined;
@@ -1162,63 +1207,11 @@ export default function UpdateStudentInfoPage() {
       if (preparedPayload.addressChanged && preparedPayload.newAddress) {
         const newAddr = preparedPayload.newAddress;
         
-        // Check if it's Abu Dhabi address (from map - has emirateName but might not have emirateId)
-        const isAbuDhabi = newAddr.emirateNameEn && 
-          (newAddr.emirateNameEn.toLowerCase().includes('abu dhabi') ||
-           newAddr.emirateNameEn.toLowerCase().includes('al ain') ||
-           newAddr.emirateNameEn.toLowerCase().includes('dhafra'));
-        
-        if (isAbuDhabi) {
-          // ABU DHABI: Fetch ManhalCodes from plots API using GISID
-          // Determine GISID: prefer mainPlotId, fallback to premisesPlotId, then plotId
-          const gisid = newAddr.mainPlotId || 
-                        newAddr.premisesPlotId || 
-                        (newAddr.plotId ? String(newAddr.plotId) : null);
-          
-          if (gisid) {
-            try {
-              const plotsResponse = await fetch(`/api/db/plots?filter=${encodeURIComponent(gisid)}`);
-              
-              if (plotsResponse.ok) {
-                const plotsData = await plotsResponse.json();
-                
-                if (plotsData.data) {
-                  stateID = plotsData.data.emirateManhalCode || undefined;
-                  cityID = plotsData.data.regionManhalCode || undefined;
-                  regionID = plotsData.data.zoneManhalCode || undefined;
-                  sectorID = plotsData.data.areaManhalCode || undefined;
-                }
-              }
-            } catch {
-              // Silently handle ManhalCode fetch errors
-            }
-          }
-        } else {
-          // OTHER EMIRATES (Dubai/Northern): Use ManhalCode values from dropdowns
-          // stateID = emirate ManhalCode
-           stateID = newAddr.emirateManhalCode && textOrNull(newAddr.emirateManhalCode)
-            ? newAddr.emirateManhalCode
-            : undefined;
-          
-          // cityID = region ManhalCode (from region dropdown)
-          cityID = newAddr.regionManhalCode && textOrNull(newAddr.regionManhalCode)
-            ? newAddr.regionManhalCode
-            : undefined;
-          
-          // regionID = zone ManhalCode (from zone dropdown)
-          regionID = newAddr.zoneManhalCode && textOrNull(newAddr.zoneManhalCode)
-            ? newAddr.zoneManhalCode
-            : undefined;
-          
-          // sectorID = area ManhalCode (from area dropdown)
-          sectorID = newAddr.areaManhalCode && textOrNull(newAddr.areaManhalCode)
-            ? newAddr.areaManhalCode
-            : undefined;
-        
-          
- 
-
-        }
+        // ManhalCodes should already be present in newAddress from handleSubmit
+        stateID = textOrNull(newAddr.emirateManhalCode) ?? undefined;
+        cityID = textOrNull(newAddr.regionManhalCode) ?? undefined;
+        regionID = textOrNull(newAddr.zoneManhalCode) ?? undefined;
+        sectorID = textOrNull(newAddr.areaManhalCode) ?? undefined;
       } else if (mode === 'edit' && idhResp?.data) {
         // EDIT MODE: Address not changed, preserve existing ManhalCodes from IDH
         stateID = textOrNull(idhResp.data.stateID) ?? undefined;
@@ -2230,21 +2223,27 @@ export default function UpdateStudentInfoPage() {
             <Button 
               type="submit" 
               className="w-full sm:w-auto min-w-[200px] relative hover:scale-105 hover:shadow-lg transition-all duration-300 group" 
-              disabled={isSubmitting}
-              aria-label={isSubmitting ? updateInfo.submit.submitting : updateInfo.submit.continue}
+              disabled={isSubmitting || isFetchingManhalCodes}
+              aria-label={(isSubmitting || isFetchingManhalCodes) ? updateInfo.submit.submitting : updateInfo.submit.continue}
             >
-              {isSubmitting && (
+              {(isSubmitting || isFetchingManhalCodes) && (
                 <svg className="animate-spin -ml-1 mr-3 h-5 w-5" fill="none" viewBox="0 0 24 24" aria-hidden="true">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
               )}
-              {!isSubmitting && (
+              {!(isSubmitting || isFetchingManhalCodes) && (
                 <svg className="w-5 h-5 mr-2 group-hover:rotate-12 group-hover:scale-110 transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               )}
-              <span>{isSubmitting ? updateInfo.submit.submitting : updateInfo.submit.continue}</span>
+              <span>
+                {isFetchingManhalCodes 
+                  ? (locale === 'ar' ? 'جارٍ التحميل...' : 'Loading...') 
+                  : isSubmitting 
+                    ? updateInfo.submit.submitting 
+                    : updateInfo.submit.continue}
+              </span>
             </Button>
           </div>
         </form>
