@@ -1,6 +1,30 @@
-# Address Picker - Onwani Integration
+# Address Picker - Onwani Integration (Legacy Reference)
 
-**Last Updated:** December 15, 2025
+**Last Updated:** January 19, 2026  
+**Status:** ⚠️ Legacy Documentation
+
+> **⚠️ IMPORTANT:** This document describes the legacy Onwani API-based address system.  
+> For the current database-backed system, see **[Address System Migration Guide](./ADDRESS_SYSTEM_MIGRATION.md)**
+
+---
+
+## 🔄 Current Status
+
+The address system has been migrated from Onwani public APIs to a database-backed solution using the `AuhAddresses` table.
+
+**What's Changed:**
+- ❌ Direct Onwani API calls are no longer used in the update-info flow
+- ✅ ManhalCodes are now fetched from `/api/db/plots` endpoint
+- ✅ Data comes from the `AuhAddresses` database table
+- ⚠️ Onwani client functions preserved for potential future use
+
+**See:** [Address System Migration Guide](./ADDRESS_SYSTEM_MIGRATION.md) for complete details.
+
+---
+
+## Legacy Documentation
+
+The following documentation is kept for reference purposes.
 
 ## Quick Start
 
