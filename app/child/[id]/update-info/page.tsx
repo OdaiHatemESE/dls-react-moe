@@ -734,22 +734,33 @@ export default function UpdateStudentInfoPage() {
   // ========== Compute confirmation address (mode-specific fallback) ==========
   const confirmAddress = React.useMemo(() => {
     type FlatAddress = {
-      emirate: string; area: string; street: string; houseBuilding: string; region: string; zone: string; plot: string; mainPlot: string; premises: string; latitude: string; longitude: string;
+      emirate: string; city: string; region: string; area: string; street: string; houseBuilding: string; zone: string; plot: string; mainPlot: string; premises: string; latitude: string; longitude: string;
     };
-    const empty: FlatAddress = { emirate: '', area: '', street: '', houseBuilding: '', region: '', zone: '', plot: '', mainPlot: '', premises: '', latitude: '', longitude: '' };
+    const empty: FlatAddress = { emirate: '', city: '', region: '', area: '', street: '', houseBuilding: '', zone: '', plot: '', mainPlot: '', premises: '', latitude: '', longitude: '' };
 
     // If user changed address, use the new one
     if (preparedPayload?.addressChanged && preparedPayload.newAddress) {
       const next = preparedPayload.newAddress;
+      // Detect if Abu Dhabi (from map) or Dubai/Northern (from dropdowns)
+      const hasMapData = !!(next.municipalityNameEn || next.municipalityNameAr);
+      
       return {
         source: 'new' as const,
         data: {
           emirate: textOrNull(next.emirateNameEn) ?? textOrNull(next.emirateName) ?? '',
+          // City: Municipality for Abu Dhabi (map), Region name for Dubai/Northern (dropdown)
+          city: hasMapData 
+            ? (textOrNull(next.municipalityNameEn) ?? '') 
+            : (textOrNull(next.regionNameEn) ?? ''),
+          // Region: District for Abu Dhabi (map), Zone name for Dubai/Northern (dropdown)
+          region: hasMapData
+            ? (textOrNull(next.zoneNameEn) ?? '')
+            : (textOrNull(next.zoneNameEn) ?? ''),
+          // Area: Community for Abu Dhabi (map), Area name for Dubai/Northern (dropdown)
           area: textOrNull(next.areaNameEn) ?? textOrNull(next.areaName) ?? '',
           street: textOrNull(next.fullAddressEn) ?? textOrNull(next.fullAddressAr) ?? textOrNull(next.streetName) ?? '',
           houseBuilding: textOrNull(next.houseNumber) ?? '',
-          region: textOrNull(next.municipalityNameEn) ?? '',
-          zone: textOrNull(next.regionNameEn) ?? '',
+          zone: textOrNull(next.zoneNameEn) ?? '',
           plot: numberToString(next.plotId) ?? '',
           mainPlot: textOrNull(next.mainPlotId) ?? '',
           premises: textOrNull(next.premisesPlotId) ?? textOrNull(next.communityName) ?? '',
@@ -766,10 +777,11 @@ export default function UpdateStudentInfoPage() {
         source: 'idh' as const,
         data: {
           emirate: textOrNull(prev.emirate) ?? '',
+          city: textOrNull(prev.city) ?? '',
+          region: textOrNull(prev.region) ?? '',
           area: textOrNull(prev.area) ?? '',
           street: textOrNull(prev.street) ?? '',
           houseBuilding: textOrNull(prev.houseBuilding) ?? '',
-          region: textOrNull(prev.region) ?? '',
           zone: textOrNull(prev.zone) ?? '',
           plot: textOrNull(prev.plot) ?? '',
           mainPlot: textOrNull(prev.mainPlot) ?? '',
@@ -786,10 +798,11 @@ export default function UpdateStudentInfoPage() {
         source: 'oneroster' as const,
         data: {
           emirate: textOrNull(primaryAddress.state) ?? '',
+          city: textOrNull(primaryAddress.region) ?? '',
+          region: textOrNull(primaryAddress.sector) ?? '',
           area: textOrNull(primaryAddress.city) ?? '',
           street: textOrNull(primaryAddress.addressLine1) ?? '',
           houseBuilding: textOrNull(primaryAddress.addressLine2) ?? '',
-          region: textOrNull(primaryAddress.region) ?? '',
           zone: textOrNull(primaryAddress.sector) ?? '',
           plot: textOrNull(primaryAddress.plotNumber) ?? '',
           mainPlot: textOrNull(primaryAddress.plotId) ?? '',
@@ -1183,17 +1196,22 @@ export default function UpdateStudentInfoPage() {
         } else {
           // OTHER EMIRATES (Dubai/Northern): Use ManhalCode values from dropdowns
           // stateID = emirate ManhalCode
-          stateID = newAddr.emirateManhalCode && textOrNull(newAddr.emirateManhalCode)
+           stateID = newAddr.emirateManhalCode && textOrNull(newAddr.emirateManhalCode)
             ? newAddr.emirateManhalCode
             : undefined;
           
-          // cityID = emirate ManhalCode (same as stateID for non-Abu Dhabi)
-          cityID = newAddr.emirateManhalCode && textOrNull(newAddr.emirateManhalCode)
-            ? newAddr.emirateManhalCode
+          // cityID = region ManhalCode (from region dropdown)
+          cityID = newAddr.regionManhalCode && textOrNull(newAddr.regionManhalCode)
+            ? newAddr.regionManhalCode
             : undefined;
           
-          // regionID = zone ManhalCode
-          regionID = newAddr.areaManhalCode && textOrNull(newAddr.areaManhalCode)
+          // regionID = zone ManhalCode (from zone dropdown)
+          regionID = newAddr.zoneManhalCode && textOrNull(newAddr.zoneManhalCode)
+            ? newAddr.zoneManhalCode
+            : undefined;
+          
+          // sectorID = area ManhalCode (from area dropdown)
+          sectorID = newAddr.areaManhalCode && textOrNull(newAddr.areaManhalCode)
             ? newAddr.areaManhalCode
             : undefined;
         
@@ -2323,26 +2341,26 @@ export default function UpdateStudentInfoPage() {
                           <span className="text-foreground font-medium">{confirmAddress.data.emirate}</span>
                         </div>
                       )}
-                      {confirmAddress.data.region && (
+                      {confirmAddress.data.city && (
                         <div className={clsx("flex gap-3", locale === 'ar' && 'flex-row text-right')}>
                           <span className="font-medium text-muted-foreground min-w-[120px] shrink-0">
                             {locale === 'ar' ? 'المدينة:' : 'City:'}
                           </span>
-                          <span className="text-foreground font-medium">{confirmAddress.data.region}</span>
+                          <span className="text-foreground font-medium">{confirmAddress.data.city}</span>
                         </div>
                       )}
-                      {confirmAddress.data.zone && (
+                      {confirmAddress.data.region && (
                         <div className={clsx("flex gap-3", locale === 'ar' && 'flex-row text-right')}>
                           <span className="font-medium text-muted-foreground min-w-[120px] shrink-0">
                             {locale === 'ar' ? 'المنطقة:' : 'Region:'}
                           </span>
-                          <span className="text-foreground font-medium">{confirmAddress.data.zone}</span>
+                          <span className="text-foreground font-medium">{confirmAddress.data.region}</span>
                         </div>
                       )}
                       {confirmAddress.data.area && (
                         <div className={clsx("flex gap-3", locale === 'ar' && 'flex-row text-right')}>
                           <span className="font-medium text-muted-foreground min-w-[120px] shrink-0">
-                            {locale === 'ar' ? 'الحي/القطاع:' : 'Sector:'}
+                            {locale === 'ar' ? 'الحي:' : 'Area:'}
                           </span>
                           <span className="text-foreground font-medium">{confirmAddress.data.area}</span>
                         </div>
@@ -2413,6 +2431,38 @@ export default function UpdateStudentInfoPage() {
                           </span>
                         </div>
                       )}
+                      
+                      {/* ManhalCodes Section for New Address */}
+                      {(() => {
+                        const manhalCodes = [];
+                        if (preparedPayload.newAddress) {
+                          const addr = preparedPayload.newAddress;
+                          if (addr.emirateManhalCode) manhalCodes.push({ label: locale === 'ar' ? 'رمز الإمارة' : 'Emirate Code', value: addr.emirateManhalCode });
+                          if (addr.regionManhalCode) manhalCodes.push({ label: locale === 'ar' ? 'رمز المدينة' : 'City Code', value: addr.regionManhalCode });
+                          if (addr.zoneManhalCode) manhalCodes.push({ label: locale === 'ar' ? 'رمز المنطقة' : 'Region Code', value: addr.zoneManhalCode });
+                          if (addr.areaManhalCode) manhalCodes.push({ label: locale === 'ar' ? 'رمز القطاع' : 'Sector Code', value: addr.areaManhalCode });
+                        }
+                        
+                        if (manhalCodes.length === 0) return null;
+                        
+                        return (
+                          <div className="pt-3 mt-3 border-t border-border/30">
+                            <h5 className={clsx("text-xs font-semibold text-muted-foreground mb-2", locale === 'ar' && 'text-right')}>
+                              {locale === 'ar' ? 'أكواد منهل (ManhalCodes)' : 'ManhalCodes'}
+                            </h5>
+                            <div className="grid grid-cols-2 gap-2">
+                              {manhalCodes.map((item) => (
+                                <div key={item.label} className={clsx("flex gap-2 items-baseline", locale === 'ar' && 'flex-row text-right')}>
+                                  <span className="text-xs text-muted-foreground">{item.label}:</span>
+                                  <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded font-medium">
+                                    {item.value}
+                                  </code>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
                 ) : (
@@ -2496,6 +2546,38 @@ export default function UpdateStudentInfoPage() {
                             <span className="text-foreground font-medium">{confirmAddress.data.houseBuilding}</span>
                           </div>
                         )}
+                        
+                        {/* ManhalCodes Section for Previous Address */}
+                        {(() => {
+                          const manhalCodes = [];
+                          if (mode === 'edit' && idhResp?.data) {
+                            const idh = idhResp.data;
+                            if (idh.stateID) manhalCodes.push({ label: locale === 'ar' ? 'رمز الإمارة' : 'Emirate Code', value: idh.stateID });
+                            if (idh.cityID) manhalCodes.push({ label: locale === 'ar' ? 'رمز المدينة' : 'City Code', value: idh.cityID });
+                            if (idh.regionID) manhalCodes.push({ label: locale === 'ar' ? 'رمز المنطقة' : 'Region Code', value: idh.regionID });
+                            if (idh.sectorID) manhalCodes.push({ label: locale === 'ar' ? 'رمز القطاع' : 'Sector Code', value: idh.sectorID });
+                          }
+                          
+                          if (manhalCodes.length === 0) return null;
+                          
+                          return (
+                            <div className="pt-3 mt-3 border-t border-border/30">
+                              <h5 className={clsx("text-xs font-semibold text-muted-foreground mb-2", locale === 'ar' && 'text-right')}>
+                                {locale === 'ar' ? 'أكواد منهل (ManhalCodes)' : 'ManhalCodes'}
+                              </h5>
+                              <div className="grid grid-cols-2 gap-2">
+                                {manhalCodes.map((item) => (
+                                  <div key={item.label} className={clsx("flex gap-2 items-baseline", locale === 'ar' && 'flex-row text-right')}>
+                                    <span className="text-xs text-muted-foreground">{item.label}:</span>
+                                    <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded font-medium">
+                                      {item.value}
+                                    </code>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        })()}
                       </div>
                     )}
                   </div>
@@ -2654,7 +2736,7 @@ export default function UpdateStudentInfoPage() {
                               <div className="flex-1 space-y-1">
                                 <p className="font-medium text-sm text-foreground">{name}</p>
                                 {details.length > 0 && (
-                                  <p className="text-xs text-muted-foreground">
+                                  <p className="text-[10px] text-muted-foreground">
                                     {details.join(' | ')}
                                   </p>
                                 )}

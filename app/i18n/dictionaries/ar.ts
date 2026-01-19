@@ -346,12 +346,16 @@ export const ar = {
   pickLocation: {
     title: "اختر الموقع",
     emirate: "الإمارة",
-    area: "المنطقة",
+    region: "المدينة",
+    zone: "المنطقة",
+    area: "القطاع",
     streetName: "رقم / اسم الشارع",
     houseNumber: "رقم المنزل",
     requiredField: "الحقل مطلوب",
     loading: "جاري التحميل...",
-    noAreas: "لا توجد مناطق متاحة",
+    noRegions: "لا توجد مدن متاحة",
+    noZones: "لا توجد مناطق متاحة",
+    noAreas: "لا توجد قطاعات متاحة",
   },
   admin: {
     title: "لوحة التحكم الإدارية",

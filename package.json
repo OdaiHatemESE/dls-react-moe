@@ -22,7 +22,7 @@
     "prisma:gen:all": "npm run prisma:pp:generate && npm run prisma:sr:generate"
   },
   "dependencies": {
-    "@aegov/design-system": "^2.2.10",
+    "@aegov/design-system": "^2.3.0",
     "@fontsource/noto-kufi-arabic": "^5.2.9",
     "@fontsource/roboto": "^5.2.8",
     "@pdf-lib/fontkit": "^1.1.1",

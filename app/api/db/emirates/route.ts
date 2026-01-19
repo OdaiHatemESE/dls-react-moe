@@ -6,8 +6,9 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
+    // Filter for active emirates only (IsActive = 1 or TRUE)
     const emirates = (await prisma.$queryRaw(
-      Prisma.sql`SELECT Id, TitleAr, TitleEn, IsActive, ManhalCode FROM Emirates WHERE IsActive = 1 ORDER BY TitleEn ASC`
+      Prisma.sql`SELECT Id, TitleAr, TitleEn, IsActive, ManhalCode FROM Emirates WHERE IsActive = CAST(1 AS bit) ORDER BY TitleEn ASC`
     )) as Array<{ Id: number; TitleAr: string; TitleEn: string; IsActive: boolean; ManhalCode: string | null }>;
     return NextResponse.json({ data: emirates });
   } catch (err) {

@@ -48,6 +48,7 @@ type Region = {
   TitleEn: string;
   IsActive: boolean;
   EmirateId: number;
+  ManhalCode: string | null;
 };
 
 type Zone = {
@@ -84,6 +85,7 @@ export type AddressValue = {
   fullAddressEn?: string | null;
   fullAddressAr?: string | null;
   emirateManhalCode?: string | null;
+  regionManhalCode?: string | null;
   areaManhalCode?: string | null;
   zoneManhalCode?: string | null;
 };
@@ -312,7 +314,9 @@ export function AddressPicker(props: AddressPickerProps) {
     mainPlotId: value?.mainPlotId ?? undefined,
     premisesPlotId: value?.premisesPlotId ?? undefined,
     emirateManhalCode: value?.emirateManhalCode ?? undefined,
+    regionManhalCode: value?.regionManhalCode ?? undefined,
     areaManhalCode: value?.areaManhalCode ?? undefined,
+    zoneManhalCode: value?.zoneManhalCode ?? undefined,
   }));
 
   // Dialog state for MyLandPicker
@@ -494,19 +498,21 @@ export function AddressPicker(props: AddressPickerProps) {
     }
   }, [isAbuDhabiSelected, hasMapSelection]);
 
-  // Fetch Abu Dhabi hierarchical data
-  const normalizedAbuDhabiEmirateId =
-    isAbuDhabiSelected && typeof local.emirateId === "number" && local.emirateId > 0
+  // Fetch hierarchical data for all emirates (Region → Zone → Area)
+  // For Dubai/Northern Emirates, we fetch by emirateId → regionId → zoneId
+  // For Abu Dhabi, we use the same flow but with map-driven selection
+  const normalizedEmirateIdForRegions =
+    typeof local.emirateId === "number" && local.emirateId > 0
       ? local.emirateId
       : null;
 
   const { data: regionsData, isLoading: regionsLoading } = useRegions(
-    normalizedAbuDhabiEmirateId
+    normalizedEmirateIdForRegions
   );
   const regions = React.useMemo(() => regionsData?.data ?? [], [regionsData]);
 
   const normalizedRegionId =
-    isAbuDhabiSelected && typeof local.regionId === "number" && local.regionId > 0
+    typeof local.regionId === "number" && local.regionId > 0
       ? local.regionId
       : null;
 
@@ -515,25 +521,30 @@ export function AddressPicker(props: AddressPickerProps) {
   );
   const zones = React.useMemo(() => zonesData?.data ?? [], [zonesData]);
 
-  // For Abu Dhabi areas, we fetch by zoneId (not emirateId)
-  const normalizedZoneId =
+  // For Abu Dhabi areas, we fetch by zoneId with isAbuDhabi flag
+  const normalizedAbuDhabiZoneId =
     isAbuDhabiSelected && typeof local.zoneId === "number" && local.zoneId > 0
       ? local.zoneId
       : null;
 
   const { data: abuDhabiAreasData, isLoading: abuDhabiAreasLoading } = useAreas({
-    emirateId: normalizedZoneId,
+    emirateId: normalizedAbuDhabiZoneId,
     isAbuDhabi: true,
-    zoneIdOverride: normalizedZoneId,
+    zoneIdOverride: normalizedAbuDhabiZoneId,
     gradeCode,
     genderCode,
   });
 
-  // Skip areas fetching entirely when Abu Dhabi emirate is selected
+  // For Dubai/Northern Emirates, fetch areas by zoneId (not emirateId)
+  const normalizedDubaiNorthZoneId =
+    !isAbuDhabiSelected && typeof local.zoneId === "number" && local.zoneId > 0
+      ? local.zoneId
+      : null;
+
   const { data: areasData, isLoading: areasLoading } = useAreas({
-    emirateId: isAbuDhabiSelected ? undefined : local.emirateId ?? undefined,
-    isAbuDhabi,
-    zoneIdOverride: props.abuDhabiZoneIdOverride ?? null,
+    emirateId: normalizedDubaiNorthZoneId,
+    isAbuDhabi: false,
+    zoneIdOverride: normalizedDubaiNorthZoneId,
     gradeCode,
     genderCode,
   });
@@ -711,6 +722,8 @@ export function AddressPicker(props: AddressPickerProps) {
 
   const l = {
     emirate: labels?.emirate ?? t.pickLocation.emirate,
+    region: t.pickLocation.region ?? "Region",
+    zone: t.pickLocation.zone ?? "Zone",
     area: labels?.area ?? t.pickLocation.area,
     streetName: labels?.streetName ?? t.pickLocation.streetName,
     houseNumber: labels?.houseNumber ?? t.pickLocation.houseNumber,
@@ -719,12 +732,16 @@ export function AddressPicker(props: AddressPickerProps) {
 
   const req = {
     emirate: !!required?.emirate,
+    region: true, // Region is required for Dubai/Northern Emirates
+    zone: true,   // Zone is required for Dubai/Northern Emirates
     area: !!required?.area,
     streetName: !!required?.streetName,
     houseNumber: !!required?.houseNumber,
   } as const;
 
   const emirateError = req.emirate && touched.emirateId && !local.emirateId;
+  const regionError = !isAbuDhabiSelected && req.region && touched.regionId && !local.regionId;
+  const zoneError = !isAbuDhabiSelected && req.zone && touched.zoneId && !local.zoneId;
   const areaError = req.area && touched.areaId && !local.areaId;
   const streetError =
     req.streetName && touched.streetName && !local.streetName?.trim();
@@ -865,12 +882,16 @@ export function AddressPicker(props: AddressPickerProps) {
           disabled={disabled}
           touched={touched}
           setTouched={setTouched}
+          regions={regions}
+          zones={zones}
           areas={areas}
+          regionsLoading={regionsLoading}
+          zonesLoading={zonesLoading}
           areasLoading={areasLoading}
           emiratesLoading={emiratesLoading}
+          regionError={!!regionError}
+          zoneError={!!zoneError}
           areaError={!!areaError}
-          streetError={!!streetError}
-          houseError={!!houseError}
           l={l}
           req={req}
           isRTL={isRTL}

@@ -348,11 +348,15 @@ export const en = {
   pickLocation: {
     title: "Pick Location",
     emirate: "Emirate",
+    region: "Region",
+    zone: "Zone",
     area: "Area",
     streetName: "Street name / number",
     houseNumber: "House number",
     requiredField: "This field is required",
     loading: "Loading...",
+    noRegions: "No regions available",
+    noZones: "No zones available",
     noAreas: "No areas available",
   },
   admin: {

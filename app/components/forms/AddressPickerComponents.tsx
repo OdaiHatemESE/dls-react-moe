@@ -39,6 +39,7 @@ export type AddressValue = {
   fullAddressEn?: string | null;
   fullAddressAr?: string | null;
   emirateManhalCode?: string | null;
+  regionManhalCode?: string | null;
   areaManhalCode?: string | null;
   zoneManhalCode?: string | null;
 };
@@ -79,28 +80,34 @@ type DubaiNorthernEmiratesFieldsProps = {
   disabled?: boolean;
   touched: { [K in keyof AddressValue]?: boolean };
   setTouched: React.Dispatch<React.SetStateAction<{ [K in keyof AddressValue]?: boolean }>>;
+  regions: Region[];
+  zones: Zone[];
   areas: Area[];
+  regionsLoading: boolean;
+  zonesLoading: boolean;
   areasLoading: boolean;
   emiratesLoading: boolean;
+  regionError: boolean;
+  zoneError: boolean;
   areaError: boolean;
-  streetError: boolean;
-  houseError: boolean;
   l: {
+    region: string;
+    zone: string;
     area: string;
-    streetName: string;
-    houseNumber: string;
     requiredField: string;
   };
   req: {
+    region: boolean;
+    zone: boolean;
     area: boolean;
-    streetName: boolean;
-    houseNumber: boolean;
   };
   isRTL: boolean;
   locale: string;
   t: {
     pickLocation: {
       loading: string;
+      noRegions: string;
+      noZones: string;
       noAreas: string;
     };
   };
@@ -112,12 +119,16 @@ export function DubaiNorthernEmiratesFields({
   disabled,
   touched,
   setTouched,
+  regions,
+  zones,
   areas,
+  regionsLoading,
+  zonesLoading,
   areasLoading,
   emiratesLoading,
+  regionError,
+  zoneError,
   areaError,
-  streetError,
-  houseError,
   l,
   req,
   isRTL,
@@ -126,7 +137,192 @@ export function DubaiNorthernEmiratesFields({
 }: DubaiNorthernEmiratesFieldsProps) {
   return (
     <div id="DubaiNorthEmirate" className="space-y-5 animate-in fade-in-50 duration-300">
-      {/* Area select (depends on emirate) */}
+      {/* Region select (depends on emirate) */}
+      <div className="flex flex-col gap-2.5">
+        <label className="text-sm font-medium text-foreground flex items-center gap-1.5">
+          <svg className="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          {l.region}
+          {req.region && <span className="text-destructive">*</span>}
+        </label>
+        <Select
+          dir={isRTL ? "rtl" : "ltr"}
+          disabled={
+            disabled ||
+            local.emirateId === undefined ||
+            local.emirateId === null ||
+            emiratesLoading ||
+            regionsLoading
+          }
+          value={
+            local.regionId !== undefined && local.regionId !== null
+              ? String(local.regionId)
+              : undefined
+          }
+          onValueChange={(v) => {
+            const selectedRegion = regions.find((r) => String(r.Id) === v);
+            if (selectedRegion) {
+              emit({ 
+                regionId: selectedRegion.Id,
+                regionManhalCode: selectedRegion.ManhalCode,
+                zoneId: undefined,
+                areaId: undefined,
+                regionNameEn: selectedRegion.TitleEn,
+                regionNameAr: selectedRegion.TitleAr,
+                zoneManhalCode: null,
+                zoneNameEn: null,
+                zoneNameAr: null,
+                areaNameEn: null,
+                areaNameAr: null,
+              });
+            }
+          }}
+          onOpenChange={(o) => {
+            if (!o) setTouched((t) => ({ ...t, regionId: true }));
+          }}
+        >
+          <SelectTrigger
+            className={cn(
+              "h-12 rounded-xl border-2 bg-background shadow-sm transition-all duration-200",
+              "hover:border-primary/50 hover:shadow-md focus:border-primary focus:ring-4 focus:ring-primary/10",
+              "disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-60",
+              regionsLoading && "animate-pulse",
+              regionError &&
+                "border-destructive/50 focus:border-destructive focus:ring-destructive/10",
+              isRTL ? "text-right" : "text-left"
+            )}
+          >
+            <SelectValue
+              placeholder={regionsLoading ? t.pickLocation.loading : l.region}
+            />
+          </SelectTrigger>
+          <SelectContent className="rounded-xl border-2 shadow-lg" dir={isRTL ? "rtl" : "ltr"}>
+            {regions.length === 0 && !regionsLoading && (
+              <div className="p-4 text-sm text-muted-foreground text-center flex items-center justify-center gap-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                </svg>
+                {t.pickLocation.noRegions}
+              </div>
+            )}
+            {regions.map((r) => (
+              <SelectItem
+                key={r.Id}
+                value={String(r.Id)}
+                className={cn(
+                  "cursor-pointer hover:bg-primary/10 focus:bg-primary/10 rounded-lg my-0.5 transition-colors",
+                  isRTL ? "text-right" : "text-left"
+                )}
+              >
+                {locale === "ar" ? r.TitleAr : r.TitleEn}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {regionError && (
+          <p className="text-xs text-destructive flex items-center gap-1.5 animate-in slide-in-from-top-1">
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+            {l.requiredField}
+          </p>
+        )}
+      </div>
+
+      {/* Zone select (depends on region) */}
+      <div className="flex flex-col gap-2.5">
+        <label className="text-sm font-medium text-foreground flex items-center gap-1.5">
+          <svg className="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+          {l.zone}
+          {req.zone && <span className="text-destructive">*</span>}
+        </label>
+        <Select
+          dir={isRTL ? "rtl" : "ltr"}
+          disabled={
+            disabled ||
+            local.regionId === undefined ||
+            local.regionId === null ||
+            regionsLoading ||
+            zonesLoading
+          }
+          value={
+            local.zoneManhalCode !== undefined && local.zoneManhalCode !== null
+              ? local.zoneManhalCode
+              : local.zoneId !== undefined && local.zoneId !== null
+              ? String(local.zoneId)
+              : undefined
+          }
+          onValueChange={(v) => {
+            const selectedZone = zones.find((z) => z.ManhalCode === v || String(z.Id) === v);
+            if (selectedZone) {
+              emit({ 
+                zoneId: selectedZone.Id,
+                zoneManhalCode: selectedZone.ManhalCode,
+                areaId: undefined,
+                zoneNameEn: selectedZone.TitleEn,
+                zoneNameAr: selectedZone.TitleAr,
+                areaNameEn: null,
+                areaNameAr: null,
+              });
+            }
+          }}
+          onOpenChange={(o) => {
+            if (!o) setTouched((t) => ({ ...t, zoneId: true }));
+          }}
+        >
+          <SelectTrigger
+            className={cn(
+              "h-12 rounded-xl border-2 bg-background shadow-sm transition-all duration-200",
+              "hover:border-primary/50 hover:shadow-md focus:border-primary focus:ring-4 focus:ring-primary/10",
+              "disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-60",
+              zonesLoading && "animate-pulse",
+              zoneError &&
+                "border-destructive/50 focus:border-destructive focus:ring-destructive/10",
+              isRTL ? "text-right" : "text-left"
+            )}
+          >
+            <SelectValue
+              placeholder={zonesLoading ? t.pickLocation.loading : l.zone}
+            />
+          </SelectTrigger>
+          <SelectContent className="rounded-xl border-2 shadow-lg" dir={isRTL ? "rtl" : "ltr"}>
+            {zones.length === 0 && !zonesLoading && (
+              <div className="p-4 text-sm text-muted-foreground text-center flex items-center justify-center gap-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                </svg>
+                {t.pickLocation.noZones}
+              </div>
+            )}
+            {zones.map((z) => (
+              <SelectItem
+                key={z.Id}
+                value={z.ManhalCode || String(z.Id)}
+                className={cn(
+                  "cursor-pointer hover:bg-primary/10 focus:bg-primary/10 rounded-lg my-0.5 transition-colors",
+                  isRTL ? "text-right" : "text-left"
+                )}
+              >
+                {locale === "ar" ? z.TitleAr : z.TitleEn}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {zoneError && (
+          <p className="text-xs text-destructive flex items-center gap-1.5 animate-in slide-in-from-top-1">
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+            {l.requiredField}
+          </p>
+        )}
+      </div>
+
+      {/* Area select (depends on zone) */}
       <div className="flex flex-col gap-2.5">
         <label className="text-sm font-medium text-foreground flex items-center gap-1.5">
           <svg className="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -139,9 +335,9 @@ export function DubaiNorthernEmiratesFields({
           dir={isRTL ? "rtl" : "ltr"}
           disabled={
             disabled ||
-            local.emirateId === undefined ||
-            local.emirateId === null ||
-            emiratesLoading ||
+            local.zoneId === undefined ||
+            local.zoneId === null ||
+            zonesLoading ||
             areasLoading
           }
           value={
@@ -157,7 +353,8 @@ export function DubaiNorthernEmiratesFields({
               emit({ 
                 areaId: selectedArea.Id,
                 areaManhalCode: selectedArea.ManhalCode,
-                zoneManhalCode: selectedArea.ZoneManhalCode || null // Store zone ManhalCode from area
+                areaNameEn: selectedArea.TitleEn,
+                areaNameAr: selectedArea.TitleAr,
               });
             }
           }}
@@ -204,72 +401,6 @@ export function DubaiNorthernEmiratesFields({
           </SelectContent>
         </Select>
         {areaError && (
-          <p className="text-xs text-destructive flex items-center gap-1.5 animate-in slide-in-from-top-1">
-            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-            </svg>
-            {l.requiredField}
-          </p>
-        )}
-      </div>
-
-      {/* Street name */}
-      <div className="flex flex-col gap-2.5">
-        <label className="text-sm font-medium text-foreground flex items-center gap-1.5">
-          <svg className="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-          </svg>
-          {l.streetName}
-          {req.streetName && <span className="text-destructive">*</span>}
-        </label>
-        <Input
-          disabled={disabled}
-          value={local.streetName ?? ""}
-          onChange={(e) => emit({ streetName: e.target.value })}
-          onBlur={() => setTouched((t) => ({ ...t, streetName: true }))}
-          className={cn(
-            "h-12 rounded-xl border-2 bg-background shadow-sm transition-all duration-200",
-            "hover:border-primary/50 hover:shadow-md focus-visible:border-primary focus-visible:ring-4 focus-visible:ring-primary/10",
-            "disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-60",
-            streetError &&
-              "border-destructive/50 focus-visible:border-destructive focus-visible:ring-destructive/10"
-          )}
-          placeholder={l.streetName}
-        />
-        {streetError && (
-          <p className="text-xs text-destructive flex items-center gap-1.5 animate-in slide-in-from-top-1">
-            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-            </svg>
-            {l.requiredField}
-          </p>
-        )}
-      </div>
-
-      {/* House number */}
-      <div className="flex flex-col gap-2.5">
-        <label className="text-sm font-medium text-foreground flex items-center gap-1.5">
-          <svg className="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-          </svg>
-          {l.houseNumber}
-          {req.houseNumber && <span className="text-destructive">*</span>}
-        </label>
-        <Input
-          disabled={disabled}
-          value={local.houseNumber ?? ""}
-          onChange={(e) => emit({ houseNumber: e.target.value })}
-          onBlur={() => setTouched((t) => ({ ...t, houseNumber: true }))}
-          className={cn(
-            "h-12 rounded-xl border-2 bg-background shadow-sm transition-all duration-200",
-            "hover:border-primary/50 hover:shadow-md focus-visible:border-primary focus-visible:ring-4 focus-visible:ring-primary/10",
-            "disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-60",
-            houseError &&
-              "border-destructive/50 focus-visible:border-destructive focus-visible:ring-destructive/10"
-          )}
-          placeholder={l.houseNumber}
-        />
-        {houseError && (
           <p className="text-xs text-destructive flex items-center gap-1.5 animate-in slide-in-from-top-1">
             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />

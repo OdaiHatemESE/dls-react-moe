@@ -37,24 +37,21 @@ export async function GET(req: Request) {
     let rows: AreaRow[] = [];
 
     if (isAbuDhabi) {
-      // direct filter on ZoneId
+      // Abu Dhabi: direct filter on ZoneId with IsActive = 1
       rows = (await prisma.$queryRaw(
         Prisma.sql`SELECT Id, TitleAr, TitleEn, IsActive, ZoneId, ManhalCode
                    FROM Areas
-                   WHERE IsActive = 1 AND ZoneId = ${zoneId}
+                   WHERE IsActive = CAST(1 AS bit) AND ZoneId = ${zoneId}
                    ORDER BY TitleAr ASC`
       )) as AreaRow[];
     } else {
-      // match EF: Areas where Area.IsActive and Area.Zone.Region.Emirate.Id == zoneId
-      // Joins: Areas -> Zones (on Areas.ZoneId = Zones.Id), Zones -> Regions (Regions.Id = Zones.RegionId), Regions -> Emirates (Emirates.Id = Regions.EmirateId)
-      // ALSO include Zone.ManhalCode for enrichment
+      // Dubai/Northern Emirates: direct filter on ZoneId with IsActive = 1
+      // Include Zone.ManhalCode for enrichment
       rows = (await prisma.$queryRaw(
         Prisma.sql`SELECT A.Id, A.TitleAr, A.TitleEn, A.IsActive, A.ZoneId, A.ManhalCode, Z.ManhalCode AS ZoneManhalCode
                    FROM Areas A
                    INNER JOIN Zones Z ON Z.Id = A.ZoneId
-                   INNER JOIN Regions R ON R.Id = Z.RegionId
-                   INNER JOIN Emirates E ON E.Id = R.EmirateId
-                   WHERE A.IsActive = 1 AND E.Id = ${zoneId}
+                   WHERE A.IsActive = CAST(1 AS bit) AND A.ZoneId = ${zoneId}
                    ORDER BY A.TitleAr ASC`
       )) as AreaRow[];
     }
